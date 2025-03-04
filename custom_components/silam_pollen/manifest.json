@@ -1,0 +1,13 @@
+{
+  "domain": "silam_pollen",
+  "name": "SILAM Pollen XML",
+  "version": "0.1",
+  "config_flow": true,
+  "documentation": "https://github.com/danishru/silam_pollen/blob/main/README.md",
+  "issue_tracker": "https://github.com/danishru/silam_pollen/issues",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": [
+    "@danishru"
+  ]
+}
