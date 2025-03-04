@@ -1,0 +1,7 @@
+{
+  "name": "SILAM Pollen",
+  "render_readme": true,
+  "domains": ["sensor"],
+  "maintainers": ["danishru"],
+  "zip_release": false
+}
