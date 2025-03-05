@@ -8,14 +8,11 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.const import CONF_NAME
 from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
 
-# Определяем домен интеграции
 DOMAIN = "silam_pollen"
 
 _LOGGER = logging.getLogger(__name__)
 
 # Шаблон URL для запроса данных.
-# Передаются три параметра var: основной (из настроек), а также POLI и POLISRC.
-# Время фиксированное ("present").
 URL_TEMPLATE = (
     "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v6_0/"
     "silam_europe_pollen_v6_0_best.ncd?var={var}&var=POLI&var=POLISRC&latitude={latitude}&longitude={longitude}"
@@ -27,18 +24,18 @@ async def async_setup_entry(hass, entry, async_add_entities):
     Настройка интеграции через config entry.
 
     Из записи извлекаются:
-      - altitude: желаемая высота (если не задана, берется из hass.config.elevation)
+      - altitude: желаемая высота (если не указана, берется из hass.config.elevation)
       - manual_coordinates, latitude, longitude: параметры для координат (при ручном вводе)
       - var: выбранная переменная (например, "cnc_POLLEN_ALDER_m22")
       - update_interval: интервал опроса в минутах
 
-    Имя устройства (base_device_name) формируется в config_flow и хранится в entry.title,
-    например, "SILAM Pollen Alder". Создаются три сенсора с разными типами, которые объединяются
-    в одно устройство по entry.entry_id.
+    Имя устройства (base_device_name) формируется в config_flow и хранится в entry.title.
+    Создаются три сенсора с разными типами, которые объединяются в одно устройство по entry.entry_id.
     """
     base_device_name = entry.title  # Общее имя устройства
     altitude = entry.data.get("altitude")
-    if altitude in (None, "", 0):
+    # Если значение altitude отсутствует или пустое, то используем значение из конфигурации
+    if altitude in (None, ""):
         altitude = hass.config.elevation
         _LOGGER.debug("Используем встроенную высоту из hass.config.elevation: %s", altitude)
     manual_coordinates = entry.data.get("manual_coordinates", False)
@@ -100,21 +97,21 @@ class SilamPollenSensor(Entity):
         """
         Инициализация сенсора.
 
-        :param sensor_name: Индивидуальное имя сенсора (например, "SILAM Pollen Alder Pollen Index").
-        :param base_device_name: Общее имя устройства (например, "SILAM Pollen Alder") для объединения сенсоров.
+        :param sensor_name: Имя сенсора (например, "SILAM Pollen Alder Pollen Index").
+        :param base_device_name: Общее имя устройства для объединения сенсоров.
         :param hass: Экземпляр Home Assistant.
-        :param altitude: Желательная высота.
+        :param altitude: Желаемая высота.
         :param manual_coordinates: Флаг ручного ввода координат.
         :param manual_latitude: Ручная широта.
         :param manual_longitude: Ручная долгота.
-        :param var: Выбранная переменная (например, "cnc_POLLEN_ALDER_m22").
-        :param entry_id: Уникальный идентификатор config entry для объединения сенсоров.
+        :param var: Выбранная переменная.
+        :param entry_id: Уникальный идентификатор config entry.
         :param sensor_type: Тип сенсора: "main", "pollen_index" или "responsible_elevated".
         """
         self._state = None
         self._extra_attributes = {}
         self._name = sensor_name
-        self._base_device_name = base_device_name  # Общее имя для всех сенсоров
+        self._base_device_name = base_device_name
         self._hass = hass
         self._altitude = altitude
         self._manual_coordinates = manual_coordinates
@@ -124,10 +121,10 @@ class SilamPollenSensor(Entity):
         self._entry_id = entry_id
         self._sensor_type = sensor_type
 
-        # Устанавливаем _attr_device_info для объединения всех сенсоров в одно устройство.
+        # Объединяем сенсоры в одно устройство.
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._entry_id)},
-            name=self._base_device_name,  # Общее имя устройства, например "SILAM Pollen Alder"
+            name=self._base_device_name,
             manufacturer="SILAM",
             model="SILAM Pollen Sensor",
             sw_version="0.1.0-beta",
@@ -137,28 +134,24 @@ class SilamPollenSensor(Entity):
 
     @property
     def name(self):
-        """Возвращает имя сенсора."""
         return self._name
 
     @property
     def unique_id(self):
-        """Возвращает уникальный идентификатор сенсора для управления через UI."""
         return f"{self._entry_id}_{self._sensor_type}"
 
     @property
     def state(self):
-        """Возвращает основное состояние сенсора."""
         return self._state
 
     @property
     def extra_state_attributes(self):
-        """Возвращает дополнительные атрибуты сенсора."""
         return self._extra_attributes
 
     async def async_update(self, now=None):
         """
         Обновляет данные сенсора.
-        В зависимости от sensor_type выбирается соответствующее значение из fetch_data.
+        Для основного сенсора обновляются данные из XML, и в атрибуты добавляется сконфигурированная высота.
         """
         data = await self.fetch_data()
         if data:
@@ -174,20 +167,12 @@ class SilamPollenSensor(Entity):
 
     async def fetch_data(self):
         """
-        Выполняет HTTP-запрос и парсит XML, возвращая данные для всех сенсоров.
-
-        Процесс:
-          1. Определяются координаты (ручной ввод или из zone.home).
-          2. Формируется URL с фиксированным временем "present" и тремя параметрами var.
-          3. Выполняется запрос, XML разбирается.
-          4. Для основного сенсора выбирается stationFeature с высотой, наиболее близкой к желаемой,
-             извлекаются pollen_value, measurement_date и measurement_altitude.
-          5. Из дополнительного блока извлекаются значения для POLI (pollen_index) и POLISRC (responsible_elevated).
+        Выполняет HTTP-запрос, парсит XML и возвращает данные для сенсоров.
         """
         try:
             var = self._var
 
-            # Определяем координаты: если ручной ввод активирован, используем введённые значения; иначе – из zone.home.
+            # Определяем координаты: если ручной ввод активирован, используем введённые значения; иначе – из зоны "home".
             if self._manual_coordinates and self._manual_latitude is not None and self._manual_longitude is not None:
                 latitude = self._manual_latitude
                 longitude = self._manual_longitude

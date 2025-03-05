@@ -69,7 +69,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             schema_fields = collections.OrderedDict()
             # Поле zone_name – отображается первым (выше карты)
             schema_fields[vol.Optional("zone_name", default=default_zone_name)] = str
-            # Далее селектор местоположения – он рендерит карту и ниже показывает поля для ввода координат
+            # Селектор местоположения с картой и полями для ввода координат
             schema_fields[vol.Required("location", default={
                 "latitude": default_latitude,
                 "longitude": default_longitude,
@@ -84,10 +84,15 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         location = user_input.get("location", {})
         latitude = location.get("latitude")
         longitude = location.get("longitude")
+        altitude_input = user_input.get("altitude")
+        # Если пользователь не ввёл высоту, используем значение из конфигурации
+        if altitude_input in (None, ""):
+            altitude_input = getattr(self.hass.config, "elevation", 275)
         base_data = self.context.get("base_data", {})
         base_data["latitude"] = latitude
         base_data["longitude"] = longitude
-        base_data["altitude"] = user_input.get("altitude")
+        base_data["altitude"] = altitude_input
         base_data["zone_name"] = user_input.get("zone_name")
+        base_data["manual_coordinates"] = True  # Флаг, что координаты заданы вручную
         base_data["title"] = f"SILAM Pollen - {base_data['zone_name']}"
         return self.async_create_entry(title=base_data["title"], data=base_data)
