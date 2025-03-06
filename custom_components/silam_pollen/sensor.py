@@ -6,10 +6,7 @@ import xml.etree.ElementTree as ET
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.event import async_track_time_interval
-from homeassistant.const import CONF_NAME
 from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
-
-# Импорт маппинга и DOMAIN из файла констант
 from .const import DOMAIN, VAR_OPTIONS
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,13 +27,13 @@ else:
 async def async_setup_entry(hass, entry, async_add_entities):
     """
     Настройка интеграции через config entry.
-
+    
     Из параметров записи извлекаются:
       - altitude: высота (если не задана, берется из hass.config.elevation)
       - manual_coordinates, latitude, longitude: параметры для координат.
       - var: список типов пыльцы (например, ["cnc_POLLEN_GRASS_m32", ...]), может быть пустым.
       - update_interval: интервал опроса данных в минутах.
-
+      
     Создаётся один сенсор "index" (сводный) и для каждого выбранного типа пыльцы дополнительно создаётся сенсор "main".
     Все сенсоры объединяются в одно устройство.
     """
@@ -52,7 +49,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     update_interval_minutes = entry.data.get("update_interval", 5)
 
     sensors = []
-    # Создаем сенсор "index" (сводный)
+    # Создаем сводный сенсор "index"
     sensors.append(
         SilamPollenSensor(
             sensor_name=f"{base_device_name} Index",
@@ -67,19 +64,21 @@ async def async_setup_entry(hass, entry, async_add_entities):
             sensor_type="index"
         )
     )
-    # Для каждого выбранного типа пыльцы создаем сенсор "main" (отображает числовое значение пыльцы)
+    # Для каждого выбранного типа пыльцы создаем сенсор "main"
     for pollen in var_list:
-        display_name = VAR_OPTIONS.get(pollen, pollen)
+        # Получаем ключ перевода для типа пыльцы из VAR_OPTIONS (например, "alder", "birch" и т.д.)
+        translation_key = VAR_OPTIONS.get(pollen, pollen)
+        # Имя сенсора формируется с базовым именем и ключом перевода; далее через атрибут translation_key HA подставит перевод
         sensors.append(
             SilamPollenSensor(
-                sensor_name=f"{base_device_name} {display_name}",
+                sensor_name=f"{base_device_name} {translation_key}",
                 base_device_name=base_device_name,
                 hass=hass,
                 altitude=altitude,
                 manual_coordinates=manual_coordinates,
                 manual_latitude=manual_latitude,
                 manual_longitude=manual_longitude,
-                var=pollen,  # Для "main" передается конкретный тип пыльцы (строка).
+                var=pollen,  # Для "main" передается конкретный тип пыльцы.
                 entry_id=entry.entry_id,
                 sensor_type="main"
             )
@@ -95,13 +94,13 @@ class SilamPollenSensor(SensorEntity):
                  manual_latitude, manual_longitude, var, entry_id, sensor_type):
         """
         Инициализация сенсора SILAM Pollen.
-
+        
         sensor_type:
           - "index": сводный сенсор, обрабатывающий данные из блока stationFeatureCollection.
                      Здесь self._var – список типов пыльцы.
           - "main": сенсор для конкретного типа пыльцы, отображающий pollen_value.
                     Здесь self._var – строка с выбранным типом пыльцы.
-
+                    
         Все сенсоры объединяются в одно устройство (DeviceInfo формируется по entry_id).
         """
         self._state = None
@@ -129,10 +128,15 @@ class SilamPollenSensor(SensorEntity):
             entry_type=DeviceEntryType.SERVICE,
             configuration_url="https://silam.fmi.fi/pollen.html?region=europe"
         )
+        # Для сенсоров "main" задаем translation_key, чтобы HA мог автоматически подставить переведенное имя
+        if self._sensor_type == "main":
+            self._attr_translation_key = VAR_OPTIONS.get(self._var, None)
+        else:
+            self._attr_translation_key = None
 
     @property
     def name(self):
-        """Имя сенсора для отображения в Home Assistant."""
+        """Возвращает имя сенсора для отображения в Home Assistant."""
         return self._name
 
     @property
@@ -170,7 +174,7 @@ class SilamPollenSensor(SensorEntity):
     def suggested_display_precision(self):
         """
         Предлагаемая точность отображения.
-        Для сенсоров "main" по умолчанию округляем до целых чисел (0 знаков).
+        Для сенсоров "main" возвращается 0 (округление до целых чисел).
         """
         if self._sensor_type == "main":
             return 0
@@ -198,7 +202,7 @@ class SilamPollenSensor(SensorEntity):
     def _build_url_main(self, latitude, longitude):
         """
         Формирует URL запроса для сенсора "main".
-
+        
         Для конкретного типа пыльцы (self._var – строка) добавляется параметр var=<тип>.
         Затем добавляются обязательные параметры: var=POLI, var=POLISRC, координаты, время и формат.
         """
@@ -215,7 +219,7 @@ class SilamPollenSensor(SensorEntity):
     async def async_update(self, now=None):
         """
         Обновляет данные сенсора.
-
+        
         Для сенсора "index" извлекается числовой индекс (POLI) и значение POLISRC.
         Для сенсора "main" выбирается оптимальный stationFeature по близости к заданной высоте,
         и из него извлекается pollen_value для выбранного типа пыльцы, а также единицы измерения.
@@ -271,16 +275,14 @@ class SilamPollenSensor(SensorEntity):
     async def fetch_data(self):
         """
         Выполняет HTTP-запрос для получения XML-данных, парсит их и возвращает данные для сенсора.
-
+        
         Логика обработки:
-          - Для сенсора "index":
-              Используется URL, сформированный через _build_url_index.
-              Извлекаются данные из блока stationFeatureCollection (значения POLI и POLISRC).
-          - Для сенсора "main":
-              Используется URL, сформированный через _build_url_main.
-              Извлекается блок stationProfileFeatureCollection, выбирается оптимальный stationFeature по близости к заданной высоте,
-              и из него извлекается pollen_value для выбранного типа пыльцы.
-              Дополнительно извлекается атрибут units из data-элемента и сохраняется как unit_of_measurement.
+          - Для сенсора "index": используется URL, сформированный через _build_url_index.
+            Извлекаются данные из блока stationFeatureCollection (значения POLI и POLISRC).
+          - Для сенсора "main": используется URL, сформированный через _build_url_main.
+            Извлекается блок stationProfileFeatureCollection, выбирается оптимальный stationFeature по близости к заданной высоте,
+            и из него извлекается pollen_value для выбранного типа пыльцы.
+            Дополнительно извлекается атрибут units из data-элемента и сохраняется как unit_of_measurement.
         """
         try:
             if self._manual_coordinates and self._manual_latitude is not None and self._manual_longitude is not None:

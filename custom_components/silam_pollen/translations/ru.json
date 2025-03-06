@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "zone_id": "Зона",
+          "altitude": "Высота над уровнем моря",
+          "var": "Тип пыльцы",
+          "update_interval": "Интервал обновления"
+        },
+        "title": "Настройка мониторинга пыльцы",
+        "description": "Добро пожаловать в настройку SILAM Pollen. Пожалуйста, выберите параметры ниже."
+      },
+      "manual_coords": {
+        "data": {
+          "zone_name": "Название зоны",
+          "location": "Местоположение",
+          "altitude": "Высота над уровнем моря"
+        },
+        "description": "Введите название зоны и при необходимости отрегулируйте координаты."
+      },
+      "title": "SILAM Pollen - {zone_name}"
+    }
+  },
+  "selector": {
+    "config.pollen": {
+      "options": {
+        "cnc_POLLEN_ALDER_m22": "Ольха",
+        "cnc_POLLEN_BIRCH_m22": "Берёза",
+        "cnc_POLLEN_GRASS_m32": "Трава",
+        "cnc_POLLEN_HAZEL_m23": "Лещина",
+        "cnc_POLLEN_MUGWORT_m18": "Полынь",
+        "cnc_POLLEN_OLIVE_m28": "Олива",
+        "cnc_POLLEN_RAGWEED_m18": "Амброзия"
+      }
+    }
+  }
+}
