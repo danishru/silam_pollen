@@ -4,7 +4,7 @@ from datetime import timedelta
 import aiohttp
 import xml.etree.ElementTree as ET
 
-from homeassistant.helpers.entity import Entity
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.const import CONF_NAME
 from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
@@ -33,9 +33,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     Из параметров записи извлекаются:
       - altitude: высота (если не задана, берется из hass.config.elevation)
-      - manual_coordinates, latitude, longitude: параметры для координат
+      - manual_coordinates, latitude, longitude: параметры для координат.
       - var: список типов пыльцы (например, ["cnc_POLLEN_GRASS_m32", ...]), может быть пустым.
-      - update_interval: интервал опроса данных в минутах
+      - update_interval: интервал опроса данных в минутах.
 
     Создаётся один сенсор "index" (сводный) и для каждого выбранного типа пыльцы дополнительно создаётся сенсор "main".
     Все сенсоры объединяются в одно устройство.
@@ -62,7 +62,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             manual_coordinates=manual_coordinates,
             manual_latitude=manual_latitude,
             manual_longitude=manual_longitude,
-            var=var_list,  # Для "index" передается список типов пыльцы
+            var=var_list,  # Для "index" передается список типов пыльцы.
             entry_id=entry.entry_id,
             sensor_type="index"
         )
@@ -79,7 +79,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 manual_coordinates=manual_coordinates,
                 manual_latitude=manual_latitude,
                 manual_longitude=manual_longitude,
-                var=pollen,  # Для "main" передается конкретный тип пыльцы (строка)
+                var=pollen,  # Для "main" передается конкретный тип пыльцы (строка).
                 entry_id=entry.entry_id,
                 sensor_type="main"
             )
@@ -90,19 +90,19 @@ async def async_setup_entry(hass, entry, async_add_entities):
     for sensor in sensors:
         sensor.async_unsub_update = async_track_time_interval(hass, sensor.async_update, interval)
 
-class SilamPollenSensor(Entity):
+class SilamPollenSensor(SensorEntity):
     def __init__(self, sensor_name, base_device_name, hass, altitude, manual_coordinates,
                  manual_latitude, manual_longitude, var, entry_id, sensor_type):
         """
         Инициализация сенсора SILAM Pollen.
 
-        Параметр sensor_type:
+        sensor_type:
           - "index": сводный сенсор, обрабатывающий данные из блока stationFeatureCollection.
                      Здесь self._var – список типов пыльцы.
           - "main": сенсор для конкретного типа пыльцы, отображающий pollen_value.
                     Здесь self._var – строка с выбранным типом пыльцы.
-                    
-        Все сенсоры объединяются в одно устройство, поэтому DeviceInfo формируется по entry_id.
+
+        Все сенсоры объединяются в одно устройство (DeviceInfo формируется по entry_id).
         """
         self._state = None
         self._extra_attributes = {}
@@ -116,6 +116,8 @@ class SilamPollenSensor(Entity):
         self._var = var
         self._entry_id = entry_id
         self._sensor_type = sensor_type
+        # Для сенсоров "main" будем извлекать единицы измерения
+        self._unit_of_measurement = None
 
         sw_version = SILAM_VERSION.replace("_", ".")
         self._attr_device_info = DeviceInfo(
@@ -142,8 +144,11 @@ class SilamPollenSensor(Entity):
         return f"{self._entry_id}_{self._sensor_type}_{self._var}"
 
     @property
-    def state(self):
-        """Возвращает текущее состояние сенсора."""
+    def native_value(self):
+        """
+        Возвращает текущее значение сенсора в виде числа.
+        Это значение используется Home Assistant для округления согласно suggested_display_precision.
+        """
         return self._state
 
     @property
@@ -151,10 +156,30 @@ class SilamPollenSensor(Entity):
         """Дополнительные атрибуты сенсора."""
         return self._extra_attributes
 
+    @property
+    def native_unit_of_measurement(self):
+        """
+        Возвращает единицы измерения для сенсора "main".
+        Для сенсора "index" возвращается None.
+        """
+        if self._sensor_type == "main":
+            return self._unit_of_measurement
+        return None
+
+    @property
+    def suggested_display_precision(self):
+        """
+        Предлагаемая точность отображения.
+        Для сенсоров "main" по умолчанию округляем до целых чисел (0 знаков).
+        """
+        if self._sensor_type == "main":
+            return 0
+        return None
+
     def _build_url_index(self, latitude, longitude):
         """
         Формирует URL запроса для сенсора "index".
-
+        
         Если список self._var (типы пыльцы) не пустой, для каждого типа добавляем параметр var.
         Затем добавляются обязательные параметры: var=POLI, var=POLISRC, широта, долгота, время и формат.
         """
@@ -193,7 +218,7 @@ class SilamPollenSensor(Entity):
 
         Для сенсора "index" извлекается числовой индекс (POLI) и значение POLISRC.
         Для сенсора "main" выбирается оптимальный stationFeature по близости к заданной высоте,
-        и из него извлекается pollen_value для выбранного типа пыльцы.
+        и из него извлекается pollen_value для выбранного типа пыльцы, а также единицы измерения.
         """
         data = await self.fetch_data()
         if data:
@@ -238,6 +263,8 @@ class SilamPollenSensor(Entity):
                 main_data = data.get("main", {})
                 self._state = main_data.get("pollen_value")
                 self._extra_attributes.update(main_data)
+                # Сохраняем единицы измерения для сенсора "main"
+                self._unit_of_measurement = main_data.get("unit_of_measurement")
         else:
             _LOGGER.error("Не удалось получить или обработать XML данные")
 
@@ -253,6 +280,7 @@ class SilamPollenSensor(Entity):
               Используется URL, сформированный через _build_url_main.
               Извлекается блок stationProfileFeatureCollection, выбирается оптимальный stationFeature по близости к заданной высоте,
               и из него извлекается pollen_value для выбранного типа пыльцы.
+              Дополнительно извлекается атрибут units из data-элемента и сохраняется как unit_of_measurement.
         """
         try:
             if self._manual_coordinates and self._manual_latitude is not None and self._manual_longitude is not None:
@@ -331,6 +359,9 @@ class SilamPollenSensor(Entity):
                                     data_element = best_feature.find(".//data[@name='{}']".format(self._var))
                                     if data_element is not None:
                                         main_data["pollen_value"] = float(data_element.text)
+                                        unit = data_element.get("units")
+                                        if unit:
+                                            main_data["unit_of_measurement"] = unit
                                     main_data["measurement_date"] = best_feature.get("date")
                                     main_data["measurement_altitude"] = best_feature.get("altitude")
                         return {"main": main_data}
