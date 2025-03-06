@@ -1,28 +1,22 @@
 import collections
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.helpers.selector import LocationSelector, LocationSelectorConfig
-
-DOMAIN = "silam_pollen"
-
-VAR_OPTIONS = {
-    "cnc_POLLEN_ALDER_m22": "Alder",
-    "cnc_POLLEN_BIRCH_m22": "Birch",
-    "cnc_POLLEN_GRASS_m32": "Grass",
-    "cnc_POLLEN_HAZEL_m23": "Hazel",
-    "cnc_POLLEN_MUGWORT_m18": "Mugwort",
-    "cnc_POLLEN_OLIVE_m28": "Olive",
-    "cnc_POLLEN_RAGWEED_m18": "Ragweed"
-}
+from homeassistant.helpers.selector import (
+    LocationSelector,
+    LocationSelectorConfig,
+    SelectSelector,
+    SelectSelectorConfig,
+)
+from .const import DOMAIN, VAR_OPTIONS
 
 class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Конфигурационный мастер для интеграции SILAM Pollen с двумя шагами.
+    """
+    Конфигурационный мастер для интеграции SILAM Pollen с двумя шагами.
 
-    Шаг 1: Пользователь выбирает базовые параметры – зону (из динамического списка),
-            altitude, var и update_interval.
-    Шаг 2: Отображаются координаты, полученные из выбранной зоны, и предлагается ввести (или исправить)
-            zone_name, а также выбрать координаты через селектор местоположения (карта).
-            Итоговое имя интеграции будет формироваться как "SILAM Pollen - <zone_name>".
+    Шаг 1: Пользователь выбирает базовые параметры – зону, высоту (altitude), типы пыльцы (опционально)
+           и интервал обновления (update_interval).
+    Шаг 2: Отображаются координаты выбранной зоны и предлагается ввести (или исправить) название зоны и координаты через селектор местоположения.
+           Итоговое имя интеграции формируется как "SILAM Pollen - <zone_name>".
     """
     VERSION = 1
 
@@ -36,10 +30,18 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             zones = {"zone.home": "Home"}
         default_zone = "zone.home" if "zone.home" in zones else list(zones.keys())[0]
         default_altitude = getattr(self.hass.config, "elevation", 275)
+        # Поле 'var' опциональное. Используем селектор с мультивыбором,
+        # чтобы пользователь мог выбрать ни один, один или несколько типов пыльцы.
         data_schema = vol.Schema({
             vol.Required("zone_id", default=default_zone): vol.In(zones),
             vol.Required("altitude", default=default_altitude): vol.Coerce(float),
-            vol.Required("var", default="cnc_POLLEN_BIRCH_m22"): vol.In(VAR_OPTIONS),
+            vol.Optional("var", default=[]): SelectSelector(
+                SelectSelectorConfig(
+                    options=[{"value": key, "label": VAR_OPTIONS[key]} for key in VAR_OPTIONS],
+                    multiple=True,
+                    mode="dropdown"
+                )
+            ),
             vol.Required("update_interval", default=5): vol.Coerce(int),
         })
         if user_input is None:
@@ -67,14 +69,14 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             default_altitude = base_data.get("altitude", getattr(self.hass.config, "elevation", 275))
 
             schema_fields = collections.OrderedDict()
-            # Поле zone_name – отображается первым (выше карты)
+            # Поле zone_name отображается первым (над картой)
             schema_fields[vol.Optional("zone_name", default=default_zone_name)] = str
-            # Селектор местоположения с картой и полями для ввода координат
+            # Селектор местоположения с картой и полями ввода координат
             schema_fields[vol.Required("location", default={
                 "latitude": default_latitude,
                 "longitude": default_longitude,
             })] = LocationSelector(LocationSelectorConfig(radius=False))
-            # Поле altitude – внизу
+            # Поле altitude отображается внизу
             schema_fields[vol.Required("altitude", default=default_altitude)] = vol.Coerce(float)
 
             data_schema = vol.Schema(schema_fields)
@@ -85,7 +87,6 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         latitude = location.get("latitude")
         longitude = location.get("longitude")
         altitude_input = user_input.get("altitude")
-        # Если пользователь не ввёл высоту, используем значение из конфигурации
         if altitude_input in (None, ""):
             altitude_input = getattr(self.hass.config, "elevation", 275)
         base_data = self.context.get("base_data", {})
