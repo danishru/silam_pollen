@@ -1,12 +1,18 @@
 {
+  "entity": {
+    "sensor": {
+      "index": {
+        "name": "Pollen Index"
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {
         "data": {
           "zone_id": "Zone",
-          "altitude": "Altitude above sea level",
           "var": "Polen type",
-          "update_interval": "Update Interval"
+          "update_interval": "Update Interval (minutes, minimum 30)"
         },
         "title": "Pollen monitoring setup",
         "description": "Welcome to the SILAM Pollen configuration. Please choose your settings below."
@@ -20,6 +26,17 @@
         "description": "Enter the zone name and adjust the coordinates if needed."
       },
       "title": "SILAM Pollen - {zone_name}"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Update Interval (minutes, minimum 30)",
+          "var": "Polen type"
+        },
+        "title": "SILAM Pollen Options"
+      }
     }
   },
   "selector": {

@@ -8,7 +8,7 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
 )
-from .const import DOMAIN, VAR_OPTIONS
+from .const import DOMAIN, VAR_OPTIONS, DEFAULT_UPDATE_INTERVAL, DEFAULT_ALTITUDE
 
 class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """
@@ -32,10 +32,18 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if not zones:
             zones = {"zone.home": "Home"}
         default_zone = "zone.home" if "zone.home" in zones else list(zones.keys())[0]
-        default_altitude = getattr(self.hass.config, "elevation", 275)
+        default_altitude = getattr(self.hass.config, "elevation", DEFAULT_ALTITUDE)
+        # Создаем список опций из словаря zones
+        zone_options = [{"value": zone_id, "label": name} for zone_id, name in zones.items()]
         data_schema = vol.Schema({
-            vol.Required("zone_id", default=default_zone): vol.In(zones),
-            vol.Required("altitude", default=default_altitude): vol.Coerce(float),
+            vol.Required("zone_id", default=default_zone): SelectSelector(
+                SelectSelectorConfig(
+                    options=zone_options,
+                    multiple=False,
+                    mode="dropdown"
+                    )
+            ),
+            #vol.Required("altitude", default=default_altitude): vol.Coerce(float),
             vol.Optional("var", default=[]): SelectSelector(
                 SelectSelectorConfig(
                     options=[
@@ -52,13 +60,12 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     translation_key="config.pollen"
                 )
             ),
-            vol.Required("update_interval", default=5): vol.Coerce(int),
+            vol.Required("update_interval", default=DEFAULT_UPDATE_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=30)),
         })
         if user_input is None:
             return self.async_show_form(
                 step_id="user",
-                data_schema=data_schema,
-                description_placeholders={"altitude": "Altitude above sea level"}
+                data_schema=data_schema
             )
 
         # Сохраняем данные первого шага в context
@@ -80,15 +87,16 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 default_longitude = self.hass.config.longitude
                 default_zone_name = "Home"
             base_data = self.context.get("base_data", {})
-            default_altitude = base_data.get("altitude", getattr(self.hass.config, "elevation", 275))
+            default_altitude = base_data.get("altitude", getattr(self.hass.config, "elevation", DEFAULT_ALTITUDE))
 
             schema_fields = collections.OrderedDict()
             schema_fields[vol.Optional("zone_name", default=default_zone_name)] = str
+            schema_fields[vol.Required("altitude", default=default_altitude)] = vol.Coerce(float)
             schema_fields[vol.Required("location", default={
                 "latitude": default_latitude,
                 "longitude": default_longitude,
-            })] = LocationSelector(LocationSelectorConfig(radius=False))
-            schema_fields[vol.Required("altitude", default=default_altitude)] = vol.Coerce(float)
+                "radius" : 5000,
+            })] = LocationSelector(LocationSelectorConfig(radius=True))
 
             data_schema = vol.Schema(schema_fields)
             return self.async_show_form(
@@ -103,7 +111,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         longitude = location.get("longitude")
         altitude_input = user_input.get("altitude")
         if altitude_input in (None, ""):
-            altitude_input = getattr(self.hass.config, "elevation", 275)
+            altitude_input = getattr(self.hass.config, "elevation", DEFAULT_ALTITUDE)
         base_data = self.context.get("base_data", {})
         base_data["latitude"] = latitude
         base_data["longitude"] = longitude
@@ -133,12 +141,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         data_schema = vol.Schema({
             vol.Optional(
-                "update_interval",
-                default=self.config_entry.options.get(
-                    "update_interval", self.config_entry.data.get("update_interval", 5)
-                )
-            ): vol.Coerce(int),
-            vol.Optional(
                 "var",
                 default=self.config_entry.options.get("var", self.config_entry.data.get("var", []))
             ): SelectSelector(
@@ -157,5 +159,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     translation_key="config.pollen"
                 )
             ),
+            vol.Optional(
+                "update_interval",
+                default=self.config_entry.options.get(
+                    "update_interval", self.config_entry.data.get("update_interval", DEFAULT_UPDATE_INTERVAL)
+                )
+            ): vol.All(vol.Coerce(int), vol.Range(min=30)),
         })
         return self.async_show_form(step_id="init", data_schema=data_schema)

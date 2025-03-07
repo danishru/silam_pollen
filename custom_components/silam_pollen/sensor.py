@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
-from .const import DOMAIN, VAR_OPTIONS
+from .const import DOMAIN, VAR_OPTIONS, DEFAULT_UPDATE_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     # Читаем список типов пыльцы и интервал опроса из опций, если они заданы,
     # иначе используем значения из config_entry.data.
     var_list = entry.options.get("var", entry.data.get("var", []))
-    update_interval_minutes = entry.options.get("update_interval", entry.data.get("update_interval", 5))
+    update_interval_minutes = entry.options.get("update_interval", entry.data.get("update_interval", DEFAULT_UPDATE_INTERVAL))
 
     sensors = []
     # Создаем "сводный" сенсор для индекса (тип "index")
@@ -128,22 +128,24 @@ class SilamPollenSensor(SensorEntity):
         self._sensor_type = sensor_type
         # Для сенсоров "main" будем получать единицы измерения
         self._unit_of_measurement = None
-
+        try:
+            lat = round(float(self._manual_latitude), 3)
+            lon = round(float(self._manual_longitude), 3)
+            lat_hemisphere = "N" if lat >= 0 else "S"
+            lon_hemisphere = "E" if lon >= 0 else "W"
+            coordinates = f"GPS - {abs(lat):.3f}°{lat_hemisphere}, {abs(lon):.3f}°{lon_hemisphere}"
+        except (ValueError, TypeError):
+            coordinates = f"GPS - {self._manual_latitude}, {self._manual_longitude}"
         sw_version = SILAM_VERSION.replace("_", ".")
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._entry_id)},
             name=self._base_device_name,
-            manufacturer="SILAM",
-            model="SILAM Pollen Sensor",
+            manufacturer=coordinates,
+            model=base_device_name,
             sw_version=sw_version,
             entry_type=DeviceEntryType.SERVICE,
             configuration_url="https://silam.fmi.fi/pollen.html?region=europe"
         )
-        # Если сенсор "main", задаем ключ перевода для автоматического перевода имени
-        if self._sensor_type == "main":
-            self._attr_translation_key = VAR_OPTIONS.get(self._var, None)
-        else:
-            self._attr_translation_key = None
 
     @property
     def name(self):
@@ -243,7 +245,6 @@ class SilamPollenSensor(SensorEntity):
                         index_value = int(pollen_index)
                     except (ValueError, TypeError):
                         index_value = None
-                    # Отображаем индекс пыльцы в виде текстового значения
                     mapping = {
                         1: "VeryLow",
                         2: "Low",
@@ -254,7 +255,7 @@ class SilamPollenSensor(SensorEntity):
                     self._state = mapping.get(index_value, "Unknown")
                 else:
                     self._state = None
-
+            
                 responsible_elevated = data.get("responsible_elevated")
                 if responsible_elevated is not None:
                     try:
@@ -274,6 +275,10 @@ class SilamPollenSensor(SensorEntity):
                     self._extra_attributes["responsible_elevated"] = re_mapping.get(re_value, "Unknown")
                 else:
                     self._extra_attributes["responsible_elevated"] = None
+            
+                # Добавляем дату, извлечённую из XML, в атрибуты
+                if data.get("date"):
+                    self._extra_attributes["date"] = data.get("date")
             elif self._sensor_type == "main":
                 main_data = data.get("main", {})
                 self._state = main_data.get("pollen_value")
@@ -330,18 +335,29 @@ class SilamPollenSensor(SensorEntity):
                         else:
                             additional_collection = root.find(".//stationFeatureCollection")
                         additional_data = {}
+                        data_dict = {}
                         if additional_collection is not None:
                             additional_feature = additional_collection.find(".//stationFeature")
                             if additional_feature is not None:
+                                # Извлекаем дату из атрибута date элемента stationFeature
+                                additional_data["date"] = additional_feature.get("date")
                                 poli_elem = additional_feature.find(".//data[@name='POLI']")
                                 polisrc_elem = additional_feature.find(".//data[@name='POLISRC']")
                                 if poli_elem is not None:
                                     additional_data["pollen_index"] = float(poli_elem.text)
                                 if polisrc_elem is not None:
                                     additional_data["responsible_elevated"] = float(polisrc_elem.text)
+                                # Собираем все элементы <data> в словарь data_dict
+                                for data_elem in additional_feature.findall("data"):
+                                    name = data_elem.get("name")
+                                    value = data_elem.text
+                                    if name:
+                                        data_dict[name] = value
                         return {
                             "pollen_index": additional_data.get("pollen_index"),
-                            "responsible_elevated": additional_data.get("responsible_elevated")
+                            "responsible_elevated": additional_data.get("responsible_elevated"),
+                            "date": additional_data.get("date"),
+                            "data": data_dict
                         }
                     elif self._sensor_type == "main":
                         # Ищем блок stationProfileFeatureCollection для сенсора "main"
@@ -374,16 +390,19 @@ class SilamPollenSensor(SensorEntity):
                                     best_feature = station_features[0]
                                 
                                 if best_feature is not None:
-                                    # Извлекаем pollen_value для выбранного типа пыльцы
+                                    # Извлекаем pollen_value для выбранного типа пыльцы и округляем его до целого
                                     data_element = best_feature.find(".//data[@name='{}']".format(self._var))
                                     if data_element is not None:
-                                        main_data["pollen_value"] = float(data_element.text)
+                                        try:
+                                            pollen_val = float(data_element.text)
+                                            main_data["pollen_value"] = int(round(pollen_val))
+                                        except (ValueError, TypeError):
+                                            main_data["pollen_value"] = None
                                         unit = data_element.get("units")
                                         if unit:
                                             main_data["unit_of_measurement"] = unit
-                                    # Дополнительные атрибуты, такие как дата измерения и высота станции
-                                    main_data["measurement_date"] = best_feature.get("date")
-                                    main_data["measurement_altitude"] = best_feature.get("altitude")
+                                    # Добавляем атрибут высоты станции под именем "altitude"
+                                    main_data["altitude"] = best_feature.get("altitude")
                         return {"main": main_data}
         except Exception as e:
             _LOGGER.error("Ошибка при получении или обработке XML: %s", e)
