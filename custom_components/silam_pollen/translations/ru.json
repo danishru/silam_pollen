@@ -131,7 +131,7 @@
     }
   },
     "selector": {
-      "config.pollen": {
+      "config_pollen": {
         "options": {
           "alder_m22": "Ольха",
           "birch_m22": "Берёза",

@@ -57,7 +57,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     ],
                     multiple=True,
                     mode="dropdown",
-                    translation_key="config.pollen"
+                    translation_key="config_pollen"
                 )
             ),
             vol.Required("update_interval", default=DEFAULT_UPDATE_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=30)),
@@ -161,7 +161,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     ],
                     multiple=True,
                     mode="dropdown",
-                    translation_key="config.pollen"
+                    translation_key="config_pollen"
                 )
             ),
             vol.Optional(
