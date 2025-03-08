@@ -109,7 +109,9 @@
         },
         "description": "Enter the zone name and adjust the coordinates if needed."
       },
-      "title": "SILAM Pollen Monitor - {zone_name}"
+      "title": {
+        "default": "SILAM Pollen Monitor - {zone_name}"
+      }
     }
   },
   "options": {
@@ -119,7 +121,10 @@
           "update_interval": "Update Interval (minutes, minimum 30)",
           "var": "Pollen type"
         },
-        "title": "SILAM Pollen Options"
+
+        "title": {
+          "default": "SILAM Pollen Options"
+      }
       }
     }
   },

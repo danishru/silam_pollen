@@ -109,7 +109,9 @@
         },
         "description": "Введите название зоны и при необходимости отрегулируйте координаты."
       },
-      "title": "SILAM Pollen Monitor - {zone_name}"
+      "title": {
+        "default": "SILAM Pollen Monitor - {zone_name}"
+      }
     }
   },
   "options": {
@@ -119,7 +121,9 @@
           "update_interval": "Интервал обновления (в минутах, минимум 30)",
           "var": "Тип пыльцы"
         },
-        "title": "Настройки SILAM Pollen"
+        "title": {
+          "default": "Настройки SILAM Pollen"
+        }
       }
     }
   },
