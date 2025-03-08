@@ -9,21 +9,6 @@ async def async_setup_entry(hass, entry):
     # Перенаправляем настройку сенсоров
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 
-    async def async_force_update(call):
-        entity_id = call.data.get("entity_id")
-        if entity_id:
-            hass.async_create_task(
-                hass.services.async_call("homeassistant", "update_entity", {"entity_id": entity_id})
-            )
-        else:
-            hass.async_create_task(
-                hass.services.async_call("homeassistant", "update_entity", {"entity_id": "sensor.silam_pollen_alder"})
-            )
-
-    # Регистрируем сервис force_update и регистрируем его на отмену при выгрузке
-    hass.services.async_register(DOMAIN, "force_update", async_force_update)
-    entry.async_on_unload(lambda: hass.services.async_remove(DOMAIN, "force_update"))
-    
     # Регистрируем слушатель обновления опций, чтобы при изменении опций запись перезагружалась
     entry.async_on_unload(entry.add_update_listener(update_listener))
 

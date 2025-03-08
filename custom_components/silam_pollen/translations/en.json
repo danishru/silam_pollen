@@ -5,11 +5,12 @@
       "index": {
         "name": " Index",
         "state": {
-          "VeryLow": "Very Low",
-          "Low": "Low",
-          "Moderate": "Moderate",
-          "High": "High",
-          "VeryHigh": "Very High"
+          "very_low": "Very Low",
+          "low": "Low",
+          "moderate": "Moderate",
+          "high": "High",
+          "very_high": "Very High",
+          "unknown": "Unknown"
         },
         "state_attributes": {
           "responsible_elevated": {
