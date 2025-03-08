@@ -5,14 +5,25 @@ DEFAULT_ALTITUDE = 275
 
 # Маппинг типов пыльцы: ключ – внутреннее название, значение – дефолтное (англ.) имя
 VAR_OPTIONS = {
-    "cnc_POLLEN_ALDER_m22": "alder",
-    "cnc_POLLEN_BIRCH_m22": "birch",
-    "cnc_POLLEN_GRASS_m32": "grass",
-    "cnc_POLLEN_HAZEL_m23": "hazel",
-    "cnc_POLLEN_MUGWORT_m18": "mugwort",
-    "cnc_POLLEN_OLIVE_m28": "olive",
-    "cnc_POLLEN_RAGWEED_m18": "ragweed"
+    "alder_m22": "alder",
+    "birch_m22": "birch",
+    "grass_m32": "grass",
+    "hazel_m23": "hazel",
+    "mugwort_m18": "mugwort",
+    "olive_m28": "olive",
+    "ragweed_m18": "ragweed"
 }
+
+URL_VAR_MAPPING = {
+    "alder_m22": "cnc_POLLEN_ALDER_m22",
+    "birch_m22": "cnc_POLLEN_BIRCH_m22",
+    "grass_m32": "cnc_POLLEN_GRASS_m32",
+    "hazel_m23": "cnc_POLLEN_HAZEL_m23",
+    "mugwort_m18": "cnc_POLLEN_MUGWORT_m18",
+    "olive_m28": "cnc_POLLEN_OLIVE_m28",
+    "ragweed_m18": "cnc_POLLEN_RAGWEED_m18"
+}
+
 INDEX_MAPPING = {
     1: "very_low",
     2: "low",

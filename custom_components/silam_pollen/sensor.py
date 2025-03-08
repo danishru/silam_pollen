@@ -35,7 +35,7 @@ import xml.etree.ElementTree as ET
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
-from .const import DOMAIN, VAR_OPTIONS, DEFAULT_UPDATE_INTERVAL, INDEX_MAPPING, RESPONSIBLE_MAPPING
+from .const import DOMAIN, VAR_OPTIONS, DEFAULT_UPDATE_INTERVAL, INDEX_MAPPING, RESPONSIBLE_MAPPING, URL_VAR_MAPPING
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,7 +68,9 @@ def _build_unified_url(latitude, longitude, var_list):
     query_params = []
     if var_list:
         for allergen in var_list:
-            query_params.append(f"var={allergen}")
+            # Преобразуем значение (например, "alder_m22") в полное название ("cnc_POLLEN_ALDER_m22")
+            full_allergen = URL_VAR_MAPPING.get(allergen, allergen)
+            query_params.append(f"var={full_allergen}")
     query_params.append("var=POLI")
     query_params.append("var=POLISRC")
     query_params.append(f"latitude={latitude}")
@@ -356,7 +358,8 @@ class SilamPollenSensor(SensorEntity):
                         best_feature = station_features[0]
                     
                     if best_feature is not None:
-                        data_element = best_feature.find(f".//data[@name='{self._var}']")
+                        full_var = URL_VAR_MAPPING.get(self._var, self._var)
+                        data_element = best_feature.find(f".//data[@name='{full_var}']")
                         if data_element is not None:
                             try:
                                 pollen_val = float(data_element.text)
