@@ -3,7 +3,7 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": " Index",
+        "name": "Index",
         "state": {
           "very_low": "Very Low",
           "low": "Low",
@@ -124,7 +124,7 @@
     }
   },
   "selector": {
-    "config.pollen": {
+    "config_pollen": {
       "options": {
         "cnc_POLLEN_ALDER_m22": "Alder",
         "cnc_POLLEN_BIRCH_m22": "Birch",
