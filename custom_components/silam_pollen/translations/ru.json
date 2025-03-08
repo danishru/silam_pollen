@@ -1,18 +1,91 @@
 {
-  "sensor": {
-    "alder": "Ольха",
-    "birch": "Берёза",
-    "grass": "Трава",
-    "hazel": "Лещина",
-    "mugwort": "Полынь",
-    "olive": "Олива",
-    "ragweed": "Амброзия",
-    "index": "Индекс пыльцы"
-  },
   "entity": {
     "sensor": {
       "index": {
-        "name": "Индекс пыльцы"
+        "name": " Индекс пыльцы",
+        "state": {
+          "very_low": "Очень низкий",
+          "low": "Низкий",
+          "moderate": "Средний",
+          "high": "Высокий",
+          "very_high": "Очень высокий",
+          "unknown": "Неизвестно"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Основной аллерген",
+            "state": {
+              "missing": "Нет данных",
+              "alder": "Ольха",
+              "birch": "Берёза",
+              "grass": "Трава",
+              "olive": "Олива",
+              "mugwort": "Полынь",
+              "ragweed": "Амброзия",
+              "hazel": "Лещина",
+              "unknown": "Неизвестно"
+            }
+          },
+          "date": {
+            "name": "Дата/время прогноза"
+          }
+        }
+      },
+      "alder": {
+        "name": "Ольха",
+        "state_attributes": {
+          "altitude": {
+            "name": "Высота (уровень моря)"
+            }
+         }
+      },
+      "birch": {
+        "name": "Берёза",
+        "state_attributes": {
+          "altitude": {
+            "name": "Высота (уровень моря)"
+            }
+         }
+      },
+      "grass": {
+        "name": "Трава",
+        "state_attributes": {
+          "altitude": {
+            "name": "Высота (уровень моря)"
+            }
+         }
+      },
+      "hazel": {
+        "name": "Лещина",
+        "state_attributes": {
+          "altitude": {
+            "name": "Высота (уровень моря)"
+            }
+         }
+      },
+      "mugwort": {
+        "name": "Полынь",
+        "state_attributes": {
+          "altitude": {
+            "name": "Высота (уровень моря)"
+            }
+         }
+      },
+      "olive": {
+        "name": "Олива",
+        "state_attributes": {
+          "altitude": {
+            "name": "Высота (уровень моря)"
+            }
+         }
+      },
+      "ragweed": {
+        "name": "Амброзия",
+        "state_attributes": {
+          "altitude": {
+            "name": "Высота (уровень моря)"
+            }
+         }
       }
     }
   },
@@ -20,13 +93,13 @@
     "step": {
       "user": {
         "data": {
-          "zone_id": "Зона",
+          "zone_id": "Зона наблюдения",
           "altitude": "Высота над уровнем моря",
           "var": "Тип пыльцы",
           "update_interval": "Интервал обновления (в минутах, минимум 30)"
         },
         "title": "Настройка мониторинга пыльцы",
-        "description": "Добро пожаловать в настройку SILAM Pollen. Пожалуйста, выберите параметры ниже."
+        "description": "Настройте SILAM Pollen Monitor, указав параметры ниже.\nПримечание: Прогнозы предназначены для научного использования, не подтверждены для клинических целей.\nТочность и полнота информации не гарантируются."
       },
       "manual_coords": {
         "data": {
@@ -36,7 +109,7 @@
         },
         "description": "Введите название зоны и при необходимости отрегулируйте координаты."
       },
-      "title": "SILAM Pollen - {zone_name}"
+      "title": "SILAM Pollen Monitor - {zone_name}"
     }
   },
   "options": {

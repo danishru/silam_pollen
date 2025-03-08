@@ -13,3 +13,20 @@ VAR_OPTIONS = {
     "cnc_POLLEN_OLIVE_m28": "olive",
     "cnc_POLLEN_RAGWEED_m18": "ragweed"
 }
+INDEX_MAPPING = {
+    1: "very_low",
+    2: "low",
+    3: "moderate",
+    4: "high",
+    5: "very_high"
+}
+RESPONSIBLE_MAPPING = {
+    -1: "missing",
+    1: "alder",
+    2: "birch",
+    3: "grass",
+    4: "olive",
+    5: "mugwort",
+    6: "ragweed",
+    7: "hazel"
+}

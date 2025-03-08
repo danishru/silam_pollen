@@ -14,7 +14,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """
     Конфигурационный мастер для интеграции SILAM Pollen с двумя шагами.
     
-    Шаг 1: Пользователь выбирает базовые параметры – зону, высоту, типы пыльцы (опционально)
+    Шаг 1: Пользователь выбирает базовые параметры – зону наблюдения, типы пыльцы (опционально)
            и интервал обновления.
     Шаг 2: Отображаются координаты выбранной зоны и предлагается ввести (или исправить)
            название зоны и координаты через селектор местоположения.
@@ -87,7 +87,12 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 default_longitude = self.hass.config.longitude
                 default_zone_name = "Home"
             base_data = self.context.get("base_data", {})
-            default_altitude = base_data.get("altitude", getattr(self.hass.config, "elevation", DEFAULT_ALTITUDE))
+            # Если выбрана зона "zone.home", берем высоту из hass.config.elevation,
+            # иначе используем DEFAULT_ALTITUDE из const.py.
+            if zone_id == "zone.home":
+                default_altitude = getattr(self.hass.config, "elevation", DEFAULT_ALTITUDE)
+            else:
+                default_altitude = DEFAULT_ALTITUDE
 
             schema_fields = collections.OrderedDict()
             schema_fields[vol.Optional("zone_name", default=default_zone_name)] = str

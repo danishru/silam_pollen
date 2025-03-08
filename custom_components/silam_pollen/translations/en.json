@@ -1,8 +1,91 @@
 {
+  "title": "SILAM Pollen Monitor",
   "entity": {
     "sensor": {
       "index": {
-        "name": "Pollen Index"
+        "name": " Index",
+        "state": {
+          "VeryLow": "Very Low",
+          "Low": "Low",
+          "Moderate": "Moderate",
+          "High": "High",
+          "VeryHigh": "Very High"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Primary allergen",
+            "state": {
+              "missing": "No data",
+              "alder": "Alder",
+              "birch": "Birch",
+              "grass": "Grass",
+              "olive": "Olive",
+              "mugwort": "Mugwort",
+              "ragweed": "Ragweed",
+              "hazel": "Hazel",
+              "unknown": "Unknown"
+            }
+          },
+          "date": {
+            "name": "Forecast Date & Time"
+          }
+        }
+      },
+      "alder": {
+        "name": "Alder",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitude (sea level)"
+            }
+         }
+      },
+      "birch": {
+        "name": "Birch",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitude (sea level)"
+            }
+         }
+      },
+      "grass": {
+        "name": "Grass",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitude (sea level)"
+            }
+         }
+      },
+      "hazel": {
+        "name": "Hazel",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitude (sea level)"
+            }
+         }
+      },
+      "mugwort": {
+        "name": "Mugwort",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitude (sea level)"
+            }
+         }
+      },
+      "olive": {
+        "name": "Olive",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitude (sea level)"
+            }
+         }
+      },
+      "ragweed": {
+        "name": "Ragweed",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitude (sea level)"
+            }
+         }
       }
     }
   },
@@ -10,12 +93,12 @@
     "step": {
       "user": {
         "data": {
-          "zone_id": "Zone",
-          "var": "Polen type",
+          "zone_id": "Observation zone",
+          "var": "Pollen type",
           "update_interval": "Update Interval (minutes, minimum 30)"
         },
         "title": "Pollen monitoring setup",
-        "description": "Welcome to the SILAM Pollen configuration. Please choose your settings below."
+        "description": "Configure SILAM Pollen Monitor using the options below.\nNote: Forecasts are for scientific use only, not verified for clinical decisions. Accuracy and completeness are not guaranteed."
       },
       "manual_coords": {
         "data": {
@@ -25,7 +108,7 @@
         },
         "description": "Enter the zone name and adjust the coordinates if needed."
       },
-      "title": "SILAM Pollen - {zone_name}"
+      "title": "SILAM Pollen Monitor - {zone_name}"
     }
   },
   "options": {
@@ -33,7 +116,7 @@
       "init": {
         "data": {
           "update_interval": "Update Interval (minutes, minimum 30)",
-          "var": "Polen type"
+          "var": "Pollen type"
         },
         "title": "SILAM Pollen Options"
       }
