@@ -107,10 +107,8 @@
           "location": "Location",
           "altitude": "Altitude above sea level"
         },
+        "title": "Pollen monitoring setup",
         "description": "Enter the zone name and adjust the coordinates if needed."
-      },
-      "title": {
-        "default": "SILAM Pollen Monitor - {zone_name}"
       }
     }
   },
@@ -121,10 +119,7 @@
           "update_interval": "Update Interval (minutes, minimum 30)",
           "var": "Pollen type"
         },
-
-        "title": {
-          "default": "SILAM Pollen Options"
-      }
+        "title": "SILAM Pollen Options"
       }
     }
   },
