@@ -8,7 +8,7 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
 )
-from .const import DOMAIN, VAR_OPTIONS, DEFAULT_UPDATE_INTERVAL, DEFAULT_ALTITUDE
+from .const import DOMAIN, DEFAULT_UPDATE_INTERVAL, DEFAULT_ALTITUDE
 
 class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """
@@ -47,13 +47,13 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional("var", default=[]): SelectSelector(
                 SelectSelectorConfig(
                     options=[
-                        "cnc_POLLEN_ALDER_m22",
-                        "cnc_POLLEN_BIRCH_m22",
-                        "cnc_POLLEN_GRASS_m32",
-                        "cnc_POLLEN_HAZEL_m23",
-                        "cnc_POLLEN_MUGWORT_m18",
-                        "cnc_POLLEN_OLIVE_m28",
-                        "cnc_POLLEN_RAGWEED_m18"
+                        "alder_m22",
+                        "birch_m22",
+                        "grass_m32",
+                        "hazel_m23",
+                        "mugwort_m18",
+                        "olive_m28",
+                        "ragweed_m18"
                     ],
                     multiple=True,
                     mode="dropdown",
@@ -151,13 +151,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ): SelectSelector(
                 SelectSelectorConfig(
                     options=[
-                        "cnc_POLLEN_ALDER_m22",
-                        "cnc_POLLEN_BIRCH_m22",
-                        "cnc_POLLEN_GRASS_m32",
-                        "cnc_POLLEN_HAZEL_m23",
-                        "cnc_POLLEN_MUGWORT_m18",
-                        "cnc_POLLEN_OLIVE_m28",
-                        "cnc_POLLEN_RAGWEED_m18"
+                        "alder_m22",
+                        "birch_m22",
+                        "grass_m32",
+                        "hazel_m23",
+                        "mugwort_m18",
+                        "olive_m28",
+                        "ragweed_m18"
                     ],
                     multiple=True,
                     mode="dropdown",

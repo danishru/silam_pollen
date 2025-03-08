@@ -33,6 +33,7 @@
       },
       "alder": {
         "name": "Ольха",
+        "unit_of_measurement": "зерна/м³",
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
@@ -41,6 +42,7 @@
       },
       "birch": {
         "name": "Берёза",
+        "unit_of_measurement": "зерна/м³",
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
@@ -49,6 +51,7 @@
       },
       "grass": {
         "name": "Трава",
+        "unit_of_measurement": "зерна/м³",
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
@@ -57,6 +60,7 @@
       },
       "hazel": {
         "name": "Лещина",
+        "unit_of_measurement": "зерна/м³",
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
@@ -65,6 +69,7 @@
       },
       "mugwort": {
         "name": "Полынь",
+        "unit_of_measurement": "зерна/м³",
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
@@ -73,6 +78,7 @@
       },
       "olive": {
         "name": "Олива",
+        "unit_of_measurement": "зерна/м³",
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
@@ -81,6 +87,7 @@
       },
       "ragweed": {
         "name": "Амброзия",
+        "unit_of_measurement": "зерна/м³",
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
@@ -123,17 +130,17 @@
       }
     }
   },
-  "selector": {
-    "config_pollen": {
-      "options": {
-        "cnc_POLLEN_ALDER_m22": "Ольха",
-        "cnc_POLLEN_BIRCH_m22": "Берёза",
-        "cnc_POLLEN_GRASS_m32": "Трава",
-        "cnc_POLLEN_HAZEL_m23": "Лещина",
-        "cnc_POLLEN_MUGWORT_m18": "Полынь",
-        "cnc_POLLEN_OLIVE_m28": "Олива",
-        "cnc_POLLEN_RAGWEED_m18": "Амброзия"
+    "selector": {
+      "config_pollen": {
+        "options": {
+          "alder_m22": "Ольха",
+          "birch_m22": "Берёза",
+          "grass_m32": "Трава",
+          "hazel_m23": "Лещина",
+          "mugwort_m18": "Полынь",
+          "olive_m28": "Олива",
+          "ragweed_m18": "Амброзия"
+        }
       }
     }
-  }
 }
