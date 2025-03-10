@@ -1,7 +1,5 @@
 {
-  "name": "SILAM Pollen",
+  "name": "SILAM Pollen Allergy",
   "render_readme": true,
-  "domains": ["sensor"],
-  "maintainers": ["danishru"],
   "zip_release": false
 }
