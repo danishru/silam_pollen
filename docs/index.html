@@ -2,20 +2,26 @@
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
-    <title>OpenLayers: Rotated Polygon with Custom Controls</title>
+    <title>OpenLayers с i18next для локализации координат</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css" />
     <style>
-      .map {
-        width: 1000px;
-        height: 800px;
-        position: relative;
-      }
-      /* Элемент для отображения координат под курсором */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
       .mouse-position {
         position: absolute;
         pointer-events: none;
         padding: 5px 10px;
-        background: rgba(255, 255, 255, 0.7);
+        background: rgba(255, 255, 255, 0.5);
         font-size: 14px;
         border: 1px solid #ccc;
         border-radius: 3px;
@@ -28,69 +34,82 @@
     <div id="map" class="map">
       <div id="mouse-position" class="mouse-position"></div>
     </div>
-
-    <!-- Подключаем массив координат из внешнего файла -->
+    
+    <!-- Внешний файл с координатами можно подключить здесь -->
     <script src="rotatedPolygon.js"></script>
-    <!-- Подключаем библиотеку OpenLayers -->
+    
+    <!-- Подключаем библиотеку OpenLayers без изменений -->
     <script src="https://cdn.jsdelivr.net/npm/ol/dist/ol.js"></script>
+    <!-- Подключаем i18next -->
+    <script src="https://unpkg.com/i18next@latest/dist/umd/i18next.min.js"></script>
+    
     <script>
-      window.onload = function() {
-        // Преобразуем массив координат: OpenLayers ожидает формат [longitude, latitude] в проекции EPSG:3857.
-        const polygonCoords = rotatedPolygon.map(coord =>
-          ol.proj.fromLonLat([coord[1], coord[0]])
-        );
-
-        // Создаем полигон
-        const polygonFeature = new ol.Feature({
-          geometry: new ol.geom.Polygon([polygonCoords])
-        });
-
-        // Создаем векторный источник и слой полигона с кастомными стилями:
-        // Обводка: rgba(255,200,0,1) толщиной 0.5 пикселя, заливка: полупрозрачный желтый.
-        const vectorSource = new ol.source.Vector({
-          features: [polygonFeature]
-        });
-        const vectorLayer = new ol.layer.Vector({
-          source: vectorSource,
-          style: new ol.style.Style({
-            stroke: new ol.style.Stroke({
-              color: 'rgba(255,200,0,1)',
-              width: 0.5
-            }),
-            fill: new ol.style.Fill({
-              color: 'rgba(255,255,0,0.2)'
+      // Инициализируем i18next с ресурсами для локализации.
+      i18next.init({
+        lng: 'ru', // измените на 'en', если нужен английский
+        resources: {
+          ru: { translation: { lat: 'Широта', lon: 'Долгота' } },
+          en: { translation: { lat: 'Lat', lon: 'Lon' } }
+        }
+      }, function(err, t) {
+        // После инициализации i18next запускаем остальной код карты.
+        window.onload = function() {
+          // Преобразуем массив координат: OpenLayers ожидает формат [longitude, latitude] в проекции EPSG:3857.
+          const polygonCoords = rotatedPolygon.map(coord =>
+            ol.proj.fromLonLat([coord[1], coord[0]])
+          );
+          
+          // Создаем полигон
+          const polygonFeature = new ol.Feature({
+            geometry: new ol.geom.Polygon([polygonCoords])
+          });
+          
+          // Создаем векторный источник и слой полигона с кастомными стилями.
+          const vectorSource = new ol.source.Vector({
+            features: [polygonFeature]
+          });
+          const vectorLayer = new ol.layer.Vector({
+            source: vectorSource,
+            style: new ol.style.Style({
+              stroke: new ol.style.Stroke({
+                color: 'rgba(255,200,0,1)',
+                width: 0.5
+              }),
+              fill: new ol.style.Fill({
+                color: 'rgba(255,255,0,0.2)'
+              })
             })
-          })
-        });
-
-        // Создаем базовый слой OpenStreetMap
-        const rasterLayer = new ol.layer.Tile({
-          source: new ol.source.OSM()
-        });
-
-        // Создаем карту
-        const map = new ol.Map({
-          target: 'map',
-          layers: [rasterLayer, vectorLayer],
-          view: new ol.View({
-            center: ol.proj.fromLonLat([20, 20]),
-            zoom: 4
-          })
-        });
-
-        // Добавляем контрол для отображения координат под курсором
-        map.on('pointermove', function(evt) {
-          const coord = ol.proj.toLonLat(evt.coordinate);
-          const pos = map.getPixelFromCoordinate(evt.coordinate);
-          const mousePosEl = document.getElementById('mouse-position');
-          mousePosEl.innerHTML = `Lat: ${coord[1].toFixed(6)}, Lon: ${coord[0].toFixed(6)}`;
-          mousePosEl.style.left = (pos[0] + 15) + 'px';
-          mousePosEl.style.top = (pos[1] + 15) + 'px';
-        });
-
-        // Ограничиваем область карты по границам полигона с небольшим отступом
-        map.getView().fit(vectorSource.getExtent(), { padding: [10, 10, 10, 10] });
-      };
+          });
+          
+          // Базовый слой OpenStreetMap.
+          const rasterLayer = new ol.layer.Tile({
+            source: new ol.source.OSM()
+          });
+          
+          // Создаем карту.
+          const map = new ol.Map({
+            target: 'map',
+            layers: [rasterLayer, vectorLayer],
+            view: new ol.View({
+              center: ol.proj.fromLonLat([20, 20]),
+              zoom: 4
+            })
+          });
+          
+          // Добавляем контрол для отображения координат под курсором.
+          map.on('pointermove', function(evt) {
+            const coord = ol.proj.toLonLat(evt.coordinate);
+            const pos = map.getPixelFromCoordinate(evt.coordinate);
+            const mousePosEl = document.getElementById('mouse-position');
+            mousePosEl.innerHTML = `${i18next.t('lat')}: ${coord[1].toFixed(6)}, ${i18next.t('lon')}: ${coord[0].toFixed(6)}`;
+            mousePosEl.style.left = (pos[0] + 15) + 'px';
+            mousePosEl.style.top = (pos[1] + 15) + 'px';
+          });
+          
+          // Подгоняем масштаб карты по границам полигона с небольшим отступом.
+          map.getView().fit(vectorSource.getExtent(), { padding: [10, 10, 10, 10] });
+        };
+      });
     </script>
   </body>
 </html>
