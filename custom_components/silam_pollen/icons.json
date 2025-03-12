@@ -1,0 +1,38 @@
+{
+  "entity": {
+    "sensor": {
+      "index": {
+        "default": "mdi:progress-question",
+        "state": {
+          "very_low": "mdi:emoticon-happy-outline",
+          "low": "mdi:emoticon-neutral-outline",
+          "moderate": "mdi:emoticon-sad-outline",
+          "high": "mdi:emoticon-cry-outline",
+          "very_high": "mdi:emoticon-dead-outline",
+          "unknown": "mdi:progress-question"
+        }
+      },
+      "alder": {
+        "default": "mdi:tree"
+      },
+      "birch": {
+        "default": "mdi:tree-outline"
+      },
+      "grass": {
+        "default": "mdi:grass"
+      },
+      "hazel": {
+        "default": "mdi:hops"
+      },
+      "mugwort": {
+        "default": "mdi:barley"
+      },
+      "olive": {
+        "default": "mdi:grain"
+      },
+      "ragweed": {
+        "default": "mdi:barley"
+      }
+    }
+  }
+}
