@@ -103,6 +103,34 @@
 |  ![image](https://github.com/user-attachments/assets/b5d990c6-3d0b-4dcb-a191-7c15a77fe8f7) | ![image](https://github.com/user-attachments/assets/aacafdae-07c3-48ce-8aa3-f31e3e9932a6)  |
 | ------------- | ------------- |
 
+## Дополнительные ресурсы
+
+Для более подробного изучения информации о пыльце и зонах её распространения рекомендуем ознакомиться со следующими проектами:
+
+- **SILAM Pollen (FMI)**  
+  [https://silam.fmi.fi/pollen.html](https://silam.fmi.fi/pollen.html)  
+  Официальный источник данных о пыльце, генерируемых Finnish Meteorological Institute, с подробной информацией о прогнозах и зонах наблюдения.
+
+- **Pollen Club**  
+  [https://pollen.club/](https://pollen.club/)  
+  Платформа, предоставляющая актуальные данные о уровне пыльцы в различных регионах, а также полезную информацию для людей с аллергией.
+
+- **Allergotop: Allergofon**  
+  [https://allergotop.com/allergofon](https://allergotop.com/allergofon)  
+  Сервис, предлагающий прогнозы аллергенов и информацию по пыльце для контроля аллергических реакций.
+
+- **MyAllergo**  
+  [https://myallergo.ru/pylca/](https://myallergo.ru/pylca/)  
+  Ресурс, посвящённый мониторингу пыльцы и предоставлению информации для людей, страдающих аллергией.
+
+- **Яндекс.Погода – Аллергии**  
+  [https://yandex.ru/pogoda/allergies](https://yandex.ru/pogoda/allergies)  
+  Раздел Яндекс.Погоды, где можно узнать о текущем пыльцевом фоне и уровне аллергенов в регионе.
+
+ - **Allergo.Space: Pollen Monitoring**  
+  [https://allergo.space/pollen-monitoring/](https://allergo.space/pollen-monitoring/)  
+  Проект, посвящённый мониторингу пыльцы с использованием современных методов анализа данных и прогнозирования. 
+
 ## Лицензия
 
 [MIT License](LICENSE)
