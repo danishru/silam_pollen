@@ -1,6 +1,6 @@
 [![GitHub Release][releases-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]
-[![Downloads][download-latest-shield]](Downloads)
+[![Downloads][download-shield]][Downloads]
 [![License][license-shield]][license]
 [![HACS Custom][hacsbadge]][hacs]
 
@@ -150,7 +150,7 @@
 [releases]: https://github.com/danishru/silam_pollen/releases
 [commits-shield]: https://img.shields.io/github/commit-activity/m/danishru/silam_pollen.svg?style=for-the-badge
 [commits]: https://github.com/danishru/silam_pollen/commits
-[download-latest-shield]: https://img.shields.io/github/downloads/danishru/silam_pollen/latest/total.svg?style=for-the-badge
+[download-shield]: https://img.shields.io/github/downloads/danishru/silam_pollen/total.svg?style=for-the-badge
 [downloads]: https://github.com/danishru/silam_pollen/releases
 [license-shield]: https://img.shields.io/github/license/danishru/silam_pollen.svg?style=for-the-badge
 [license]: https://github.com/danishru/silam_pollen/blob/master/LICENSE
