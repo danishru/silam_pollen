@@ -1,3 +1,9 @@
+[![GitHub Release][releases-shield]][releases]
+[![GitHub Activity][commits-shield]][commits]
+[![Downloads][download-latest-shield]](Downloads)
+[![License][license-shield]][license]
+[![HACS Custom][hacsbadge]][hacs]
+
 # SILAM Pollen Allergy Sensor for Home Assistant
 
 Интеграция для Home Assistant, использующая набор данных `"Лучший временной ряд, полученный из последнего доступного прогона."` с сервера SILAM Thredds server для создания службы с сенсорами уровня пыльцы для конкретного местоположения. Расчет прогноза производится Finnish Meteorological Institute с учетом данных аэробиологических, фенологических и метеорологических наблюдений.
@@ -138,3 +144,15 @@
 ## Поддержка
 
 Если возникнут вопросы или проблемы, создайте issue в [репозитории](https://github.com/danishru/silam_pollen/issues).
+
+<!-- Определения ссылок для бейджей -->
+[releases-shield]: https://img.shields.io/github/release/danishru/silam_pollen.svg?style=for-the-badge
+[releases]: https://github.com/danishru/silam_pollen/releases
+[commits-shield]: https://img.shields.io/github/commit-activity/m/danishru/silam_pollen.svg?style=for-the-badge
+[commits]: https://github.com/danishru/silam_pollen/commits
+[download-latest-shield]: https://img.shields.io/github/downloads/danishru/silam_pollen/latest/total.svg?style=for-the-badge
+[downloads]: https://github.com/danishru/silam_pollen/releases
+[license-shield]: https://img.shields.io/github/license/danishru/silam_pollen.svg?style=for-the-badge
+[license]: https://github.com/danishru/silam_pollen/blob/master/LICENSE
+[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[hacs]: https://hacs.xyz/
