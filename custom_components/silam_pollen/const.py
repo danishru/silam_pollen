@@ -3,6 +3,17 @@ DOMAIN = "silam_pollen"
 DEFAULT_UPDATE_INTERVAL = 60
 DEFAULT_ALTITUDE = 275
 
+# Базовые URL для запросов API SILAM
+BASE_URL_V6_0 = (
+    "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v6_0/"
+    "silam_europe_pollen_v6_0_best.ncd"
+)
+
+BASE_URL_V5_9_1 = (
+    "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_regional_pollen_v5_9_1/"
+    "silam_regional_pollen_v5_9_1_best.ncd"
+)
+
 # Маппинг типов пыльцы: ключ – внутреннее название, значение – дефолтное (англ.) имя
 VAR_OPTIONS = {
     "alder_m22": "alder",

@@ -1,5 +1,10 @@
 import collections
 import voluptuous as vol
+import aiohttp
+import async_timeout
+import xml.etree.ElementTree as ET
+import logging
+
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
@@ -8,7 +13,16 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
 )
-from .const import DOMAIN, DEFAULT_UPDATE_INTERVAL, DEFAULT_ALTITUDE
+from .const import (
+    DOMAIN,
+    DEFAULT_UPDATE_INTERVAL,
+    DEFAULT_ALTITUDE,
+    BASE_URL_V6_0,
+    INDEX_MAPPING,
+    RESPONSIBLE_MAPPING,
+)
+
+_LOGGER = logging.getLogger(__name__)
 
 class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """
@@ -41,7 +55,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     options=zone_options,
                     multiple=False,
                     mode="dropdown"
-                    )
+                )
             ),
             #vol.Required("altitude", default=default_altitude): vol.Coerce(float),
             vol.Optional("var", default=[]): SelectSelector(
@@ -124,7 +138,57 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         base_data["zone_name"] = user_input.get("zone_name")
         base_data["manual_coordinates"] = True
         base_data["title"] = "SILAM Pollen - {zone_name}".format(zone_name=base_data["zone_name"])
+
+        # Выполняем тестовый запрос к API с использованием введённых координат
+        valid, error = await self._test_api(latitude, longitude)
+        if not valid:
+            errors = {"base": error}
+            return self.async_show_form(
+                step_id="manual_coords",
+                data_schema=vol.Schema({
+                    vol.Optional("zone_name", default=base_data["zone_name"]): str,
+                    vol.Required("altitude", default=altitude_input): vol.Coerce(float),
+                    vol.Required("location", default={
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "radius": 5000,
+                    }): LocationSelector(LocationSelectorConfig(radius=True)),
+                }),
+                errors=errors,
+                description_placeholders={"altitude": "Altitude above sea level"}
+            )
+
         return self.async_create_entry(title=base_data["title"], data=base_data)
+
+    async def _test_api(self, latitude, longitude):
+        """
+        Вспомогательный метод для проверки доступности API с использованием введённых координат.
+        Проверяет, что HTTP-статус равен 200 и что в XML-ответе присутствует элемент <data name="POLI">
+        с числовым значением, которое содержится в ключах INDEX_MAPPING.
+        """
+        test_url = BASE_URL_V6_0 + f"?var=POLI&latitude={latitude}&longitude={longitude}&time=present&accept=xml"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with async_timeout.timeout(10):
+                    async with session.get(test_url) as response:
+                        text = await response.text()
+                        if response.status != 200:
+                            _LOGGER.debug("API returned %s: %s", response.status, text)
+                            return False, text
+                        # Парсим XML-ответ
+                        root = ET.fromstring(text)
+                        poli_elem = root.find(".//data[@name='POLI']")
+                        if poli_elem is not None:
+                            try:
+                                value = int(poli_elem.text)
+                                if value in INDEX_MAPPING:
+                                    return True, None
+                            except (ValueError, TypeError):
+                                _LOGGER.debug("Invalid POLI value: %s", poli_elem.text)
+                        _LOGGER.debug("API response invalid: %s", text)
+                        return False, text
+        except Exception as err:
+            return False, str(err)
 
     @staticmethod
     @callback

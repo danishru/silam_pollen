@@ -94,11 +94,6 @@
             }
          }
       }
-    },
-    "weather" : {
-      "test_pollen_forecast": {
-        "temperature_unit": "#/m³"
-      }
     }
   },
   "config": {

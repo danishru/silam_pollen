@@ -12,7 +12,7 @@ import async_timeout
 import xml.etree.ElementTree as ET
 from datetime import timedelta
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from .const import URL_VAR_MAPPING  # Импортируем маппинг для преобразования переменных
+from .const import URL_VAR_MAPPING, BASE_URL_V6_0  # Импортируем маппинг для преобразования переменных
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,10 +36,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         self._manual_coordinates = manual_coordinates
         self._manual_latitude = manual_latitude
         self._manual_longitude = manual_longitude
-        self._base_url = (
-            "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v6_0/"
-            "silam_europe_pollen_v6_0_best.ncd"
-        )
+        self._base_url = BASE_URL_V6_0
         # Извлекаем версию SILAM из BASE_URL
         match = re.search(r"pollen_v(\d+_\d+)", self._base_url)
         if match:
