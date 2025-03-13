@@ -17,9 +17,8 @@ from .const import (
     DOMAIN,
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_ALTITUDE,
+    BASE_URL_V5_9_1,
     BASE_URL_V6_0,
-    INDEX_MAPPING,
-    RESPONSIBLE_MAPPING,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -114,7 +113,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             schema_fields[vol.Required("location", default={
                 "latitude": default_latitude,
                 "longitude": default_longitude,
-                "radius" : 5000,
+                "radius": 5000,
             })] = LocationSelector(LocationSelectorConfig(radius=True))
 
             data_schema = vol.Schema(schema_fields)
@@ -139,8 +138,9 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         base_data["manual_coordinates"] = True
         base_data["title"] = "SILAM Pollen - {zone_name}".format(zone_name=base_data["zone_name"])
 
-        # Выполняем тестовый запрос к API с использованием введённых координат
-        valid, error = await self._test_api(latitude, longitude)
+        # Выполняем тестовый запрос к API с использованием введённых координат.
+        # Теперь метод _test_api возвращает также успешный URL (chosen_url)
+        valid, error, chosen_url = await self._test_api(latitude, longitude)
         if not valid:
             errors = {"base": error}
             return self.async_show_form(
@@ -157,38 +157,36 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors=errors,
                 description_placeholders={"altitude": "Altitude above sea level"}
             )
-
+        # Сохраняем выбранный базовый URL в конфигурационных данных.
+        base_data["base_url"] = chosen_url
         return self.async_create_entry(title=base_data["title"], data=base_data)
 
     async def _test_api(self, latitude, longitude):
         """
         Вспомогательный метод для проверки доступности API с использованием введённых координат.
-        Проверяет, что HTTP-статус равен 200 и что в XML-ответе присутствует элемент <data name="POLI">
-        с числовым значением, которое содержится в ключах INDEX_MAPPING.
+        Сначала пытается запрос к BASE_URL_V5_9_1, если статус не равен 200 – обращается к BASE_URL_V6_0.
+        Если один из базовых URL возвращает статус 200, метод возвращает True, None и выбранный URL.
         """
-        test_url = BASE_URL_V6_0 + f"?var=POLI&latitude={latitude}&longitude={longitude}&time=present&accept=xml"
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with async_timeout.timeout(10):
-                    async with session.get(test_url) as response:
-                        text = await response.text()
-                        if response.status != 200:
-                            _LOGGER.debug("API returned %s: %s", response.status, text)
-                            return False, text
-                        # Парсим XML-ответ
-                        root = ET.fromstring(text)
-                        poli_elem = root.find(".//data[@name='POLI']")
-                        if poli_elem is not None:
-                            try:
-                                value = int(poli_elem.text)
-                                if value in INDEX_MAPPING:
-                                    return True, None
-                            except (ValueError, TypeError):
-                                _LOGGER.debug("Invalid POLI value: %s", poli_elem.text)
-                        _LOGGER.debug("API response invalid: %s", text)
-                        return False, text
-        except Exception as err:
-            return False, str(err)
+        urls = [BASE_URL_V5_9_1, BASE_URL_V6_0]
+        last_response = ""
+        chosen_url = None
+        for url in urls:
+            test_url = url + f"?var=POLI&latitude={latitude}&longitude={longitude}&time=present&accept=xml"
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with async_timeout.timeout(10):
+                        async with session.get(test_url) as response:
+                            text = await response.text()
+                            if response.status == 200:
+                                chosen_url = url
+                                return True, None, chosen_url
+                            else:
+                                last_response = text
+                                _LOGGER.debug("API returned %s from %s: %s", response.status, url, text)
+            except Exception as err:
+                last_response = str(err)
+                _LOGGER.debug("Exception when requesting %s: %s", url, str(err))
+        return False, last_response, None
 
     @staticmethod
     @callback
@@ -206,7 +204,27 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         """Первый и единственный шаг Options Flow."""
         if user_input is not None:
+            # Обновляем конфигурационную запись, если изменился выбор версии
+            new_data = dict(self.config_entry.data)
+            new_version = user_input.get("version")
+            new_data["version"] = new_version
+            if new_version == "v5_9_1":
+                new_data["base_url"] = BASE_URL_V5_9_1
+            elif new_version == "v6_0":
+                new_data["base_url"] = BASE_URL_V6_0
+            else:
+                new_data["base_url"] = "unknown"
+            self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
             return self.async_create_entry(title="", data=user_input)
+
+        # Если user_input is None – показываем форму с предустановленным значением версии
+        base_url = self.config_entry.data.get("base_url", "")
+        if "silam_europe_pollen" in base_url:
+            default_version = "v6_0"
+        elif "silam_regional_pollen" in base_url:
+            default_version = "v5_9_1"
+        else:
+            default_version = "unknown"
 
         data_schema = vol.Schema({
             vol.Optional(
@@ -234,5 +252,18 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     "update_interval", self.config_entry.data.get("update_interval", DEFAULT_UPDATE_INTERVAL)
                 )
             ): vol.All(vol.Coerce(int), vol.Range(min=30)),
+            vol.Optional(
+                "version",
+                default=default_version
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=[
+                        {"value": "v6_0", "label": "SILAM Europe (v6.0)"},
+                        {"value": "v5_9_1", "label": "SILAM Regional (v5.9.1)"}
+                    ],
+                    multiple=False,
+                    mode="dropdown"
+                )
+            )
         })
         return self.async_show_form(step_id="init", data_schema=data_schema)

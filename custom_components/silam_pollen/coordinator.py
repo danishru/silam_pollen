@@ -19,7 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 class SilamCoordinator(DataUpdateCoordinator):
     """Координатор для интеграции SILAM Pollen."""
 
-    def __init__(self, hass, base_device_name, var_list, manual_coordinates, manual_latitude, manual_longitude, update_interval):
+    def __init__(self, hass, base_device_name, var_list, manual_coordinates, manual_latitude, manual_longitude, update_interval, base_url):
         """
         Инициализирует координатор.
 
@@ -36,7 +36,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         self._manual_coordinates = manual_coordinates
         self._manual_latitude = manual_latitude
         self._manual_longitude = manual_longitude
-        self._base_url = BASE_URL_V6_0
+        self._base_url = base_url
         # Извлекаем версию SILAM из BASE_URL
         match = re.search(r"pollen_v(\d+_\d+)", self._base_url)
         if match:

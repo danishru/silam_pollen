@@ -1,17 +1,24 @@
 from .const import DOMAIN
 from .config_flow import OptionsFlowHandler as SilamPollenOptionsFlow
 from .coordinator import SilamCoordinator
+from .migration import async_migrate_entry
 from homeassistant.helpers import entity_registry as er
 from homeassistant.components.persistent_notification import async_create as persistent_notification_async_create
 
 async def async_setup_entry(hass, entry):
     """Настраивает интеграцию через config entry."""
+    # Если поле base_url отсутствует, выполняем миграцию
+    if "base_url" not in entry.data:
+        await async_migrate_entry(hass, entry)
+
     base_device_name = entry.title
     manual_coordinates = entry.data.get("manual_coordinates", False)
     manual_latitude = entry.data.get("latitude")
     manual_longitude = entry.data.get("longitude")
     var_list = entry.options.get("var", entry.data.get("var", []))
     update_interval = entry.options.get("update_interval", entry.data.get("update_interval", 60))
+    # Получаем base_url из записи; новые записи должны содержать это поле
+    base_url = entry.data["base_url"]
 
     # Создаем экземпляр SilamCoordinator и выполняем первоначальное обновление
     coordinator = SilamCoordinator(
@@ -21,7 +28,8 @@ async def async_setup_entry(hass, entry):
         manual_coordinates,
         manual_latitude,
         manual_longitude,
-        update_interval=update_interval
+        update_interval,
+        base_url  # Передаём параметр base_url, полученный из записи
     )
     await coordinator.async_config_entry_first_refresh()
 

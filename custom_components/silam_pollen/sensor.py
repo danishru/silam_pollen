@@ -130,6 +130,7 @@ class SilamPollenSensor(SensorEntity):
         self._manual_latitude = manual_latitude
         self._manual_longitude = manual_longitude
 
+        # Формирование строки с GPS-координатами для отображения в DeviceInfo.
         try:
             lat = round(float(self._manual_latitude), 3)
             lon = round(float(self._manual_longitude), 3)
@@ -139,6 +140,15 @@ class SilamPollenSensor(SensorEntity):
         except (ValueError, TypeError):
             coordinates = f"GPS - {self._manual_latitude}, {self._manual_longitude}"
 
+        # Определяем, какой набор используется, на основе base_url из координатора
+        base_url = self.coordinator._base_url
+        if "silam_europe_pollen" in base_url:
+            dataset = "europe"
+        elif "silam_regional_pollen" in base_url:
+            dataset = "regional"
+        else:
+            dataset = "unknown"
+            
         # Получаем версию SILAM из координатора
         sw_version = self.coordinator.silam_version.replace("_", ".")
         self._attr_device_info = DeviceInfo(
@@ -146,6 +156,7 @@ class SilamPollenSensor(SensorEntity):
             name=self._base_device_name,
             manufacturer=coordinates,
             model=self._base_device_name,
+            model_id=dataset,
             sw_version=sw_version,
             entry_type=DeviceEntryType.SERVICE,
             configuration_url="https://silam.fmi.fi/pollen.html?region=europe"
