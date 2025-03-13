@@ -3,7 +3,7 @@ sensor.py для интеграции SILAM Pollen в Home Assistant.
 
 Реализует:
   - Динамическое формирование URL запроса к серверу SILAM на основе координат и выбранных аллергенов.
-  - Централизованное обновление данных через DataUpdateCoordinator (один запрос для всех сенсоров службы).
+  - Централизованное обновление данных через SilamCoordinator (один запрос для всех сенсоров службы).
   - Создание двух типов сенсоров:
       • "index" – сводной сенсор, отображающий общий индекс пыльцы.
       • "main" – сенсоры для конкретных аллергенов.
@@ -29,92 +29,14 @@ sensor.py для интеграции SILAM Pollen в Home Assistant.
 import logging
 import re
 from datetime import timedelta
-import aiohttp
 import xml.etree.ElementTree as ET
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
-from .const import DOMAIN, VAR_OPTIONS, DEFAULT_UPDATE_INTERVAL, INDEX_MAPPING, RESPONSIBLE_MAPPING, URL_VAR_MAPPING
+from .const import DOMAIN, VAR_OPTIONS, INDEX_MAPPING, RESPONSIBLE_MAPPING, URL_VAR_MAPPING
+from .coordinator import SilamCoordinator  # Импорт нового координатора
 
 _LOGGER = logging.getLogger(__name__)
-
-# Базовый URL для запроса данных SILAM Pollen
-BASE_URL = (
-    "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v6_0/"
-    "silam_europe_pollen_v6_0_best.ncd"
-)
-
-# Извлекаем версию SILAM из BASE_URL с помощью регулярного выражения
-match = re.search(r"pollen_v(\d+_\d+)", BASE_URL)
-if match:
-    SILAM_VERSION = match.group(1)
-else:
-    SILAM_VERSION = "unknown"
-
-def _build_unified_url(latitude, longitude, var_list):
-    """
-    Формирует единый URL для запроса к серверу SILAM на основе координат и списка аллергенов.
-
-    Если список var_list пустой:
-      URL содержит только обязательные параметры: POLI и POLISRC.
-      (Пример: ...?var=POLI&var=POLISRC&latitude=55.9&longitude=37.5&time=present&accept=xml)
-      
-    Если список не пустой:
-      URL включает выбранные аллергены, затем обязательные параметры.
-      (Пример: ...?var=cnc_POLLEN_ALDER_m22&var=cnc_POLLEN_HAZEL_m23&var=cnc_POLLEN_GRASS_m32&
-                var=POLI&var=POLISRC&latitude=55.0&longitude=37.0&time=present&accept=xml)
-    """
-    query_params = []
-    if var_list:
-        for allergen in var_list:
-            # Преобразуем значение (например, "alder_m22") в полное название ("cnc_POLLEN_ALDER_m22")
-            full_allergen = URL_VAR_MAPPING.get(allergen, allergen)
-            query_params.append(f"var={full_allergen}")
-    query_params.append("var=POLI")
-    query_params.append("var=POLISRC")
-    query_params.append(f"latitude={latitude}")
-    query_params.append(f"longitude={longitude}")
-    query_params.append("time=present")
-    query_params.append("accept=xml")
-    url = BASE_URL + "?" + "&".join(query_params)
-    return url
-
-async def async_update_data(hass, var_list, manual_coordinates, manual_latitude, manual_longitude):
-    """
-    Асинхронная функция для обновления данных.
-
-    Определяет координаты:
-      - Если включены ручные координаты, используются они.
-      - Иначе берутся координаты из состояния 'zone.home'.
-      
-    Формируется URL через _build_unified_url и выполняется HTTP-запрос.
-    Разбирается XML-ответ и возвращается его корневой элемент.
-    При ошибке выбрасывается UpdateFailed.
-    """
-    if manual_coordinates and manual_latitude is not None and manual_longitude is not None:
-        latitude = manual_latitude
-        longitude = manual_longitude
-    else:
-        zone = hass.states.get("zone.home")
-        if zone is None:
-            raise UpdateFailed("Зона 'home' не найдена")
-        latitude = zone.attributes.get("latitude")
-        longitude = zone.attributes.get("longitude")
-    
-    url = _build_unified_url(latitude, longitude, var_list)
-    _LOGGER.debug("Запуск update_method: выполняется запрос по URL: %s", url)
-    
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status != 200:
-                    raise UpdateFailed(f"HTTP error: {response.status}")
-                text = await response.text()
-                root = ET.fromstring(text)
-                return root
-    except Exception as err:
-        raise UpdateFailed(f"Ошибка при получении или обработке XML: {err}")
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """
@@ -126,15 +48,14 @@ async def async_setup_entry(hass, entry, async_add_entities):
       - Список аллергенов (var).
       - Интервал обновления (update_interval).
 
-    Создается отдельный DataUpdateCoordinator для данной службы, который выполняет один HTTP‑запрос
-    за интервал обновления. Затем создаются:
+    Создаётся экземпляр SilamCoordinator, которому передаются все параметры,
+    после чего вызывается async_config_entry_first_refresh.
+    Затем создаются:
       - Сводной сенсор "index" для общего индекса пыльцы.
       - Если список аллергенов не пуст, создаются индивидуальные сенсоры "main" для каждого аллергена.
     """
     base_device_name = entry.title
 
-
-    # Извлекаем высоту: если высота не указана (None или пустая строка), берём из конфигурации
     altitude = entry.data.get("altitude")
     if altitude in (None, ""):
         altitude = hass.config.elevation
@@ -142,25 +63,21 @@ async def async_setup_entry(hass, entry, async_add_entities):
     manual_latitude = entry.data.get("latitude")
     manual_longitude = entry.data.get("longitude")
     var_list = entry.options.get("var", entry.data.get("var", []))
-    update_interval_minutes = entry.options.get("update_interval", entry.data.get("update_interval", DEFAULT_UPDATE_INTERVAL))
+    update_interval_minutes = entry.options.get("update_interval", entry.data.get("update_interval", 60))
 
-    coordinator = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name=f"SILAM Pollen Coordinator ({base_device_name})",
-        update_method=lambda: async_update_data(hass, var_list, manual_coordinates, manual_latitude, manual_longitude),
-        update_interval=timedelta(minutes=update_interval_minutes),
-    )
-    await coordinator.async_config_entry_first_refresh()
+    # Получаем уже созданный координатор из hass.data
+    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    if coordinator is None:
+        _LOGGER.error("Координатор для записи %s не найден!", entry.entry_id)
+        return
 
     sensors = []
-    # Создаем сводной сенсор "index"
     sensors.append(
         SilamPollenSensor(
             sensor_name=f"{base_device_name} Index",
             base_device_name=base_device_name,
             coordinator=coordinator,
-            var=var_list,  # Для index передается список аллергенов
+            var=var_list,  # Для index передаётся список аллергенов
             entry_id=entry.entry_id,
             sensor_type="index",
             desired_altitude=altitude,
@@ -169,7 +86,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
             manual_longitude=manual_longitude,
         )
     )
-    # Если аллергены выбраны, создаем сенсоры "main"
     if var_list:
         for pollen in var_list:
             translation_key = VAR_OPTIONS.get(pollen, pollen)
@@ -195,14 +111,8 @@ class SilamPollenSensor(SensorEntity):
     Класс сенсора SILAM Pollen.
 
     Сенсоры делятся на два типа:
-      - "index": сводной сенсор, отображающий общий индекс пыльцы (из блока stationFeatureCollection).
-                 Для него задается translation_key равный "index", has_entity_name = True и fallback‑имя.
-      - "main": сенсор для конкретного аллергена, отображающий значение pollen_value
-                (из блока stationProfileFeatureCollection, с выбором оптимальной станции по высоте).
-                Для него translation_key берется из VAR_OPTIONS, has_entity_name = True и задается fallback‑имя.
-                
-    Для каждой службы используется уникальное имя (base_device_name из entry.title).
-    Дополнительно передаются ручные координаты для формирования информации об устройстве.
+      - "index": сводной сенсор, отображающий общий индекс пыльцы.
+      - "main": сенсор для конкретного аллергена, отображающий значение pollen_value.
     """
     def __init__(self, sensor_name, base_device_name, coordinator, var, entry_id, sensor_type, desired_altitude,
                  manual_coordinates, manual_latitude, manual_longitude):
@@ -216,12 +126,10 @@ class SilamPollenSensor(SensorEntity):
         self._extra_attributes = {}
         self._unit_of_measurement = None
 
-        # Сохраняем параметры для формирования информации об устройстве
         self._manual_coordinates = manual_coordinates
         self._manual_latitude = manual_latitude
         self._manual_longitude = manual_longitude
 
-        # Формирование строки с GPS-координатами для отображения в DeviceInfo.
         try:
             lat = round(float(self._manual_latitude), 3)
             lon = round(float(self._manual_longitude), 3)
@@ -231,7 +139,8 @@ class SilamPollenSensor(SensorEntity):
         except (ValueError, TypeError):
             coordinates = f"GPS - {self._manual_latitude}, {self._manual_longitude}"
 
-        sw_version = SILAM_VERSION.replace("_", ".")
+        # Получаем версию SILAM из координатора
+        sw_version = self.coordinator.silam_version.replace("_", ".")
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._entry_id)},
             name=self._base_device_name,
@@ -242,20 +151,14 @@ class SilamPollenSensor(SensorEntity):
             configuration_url="https://silam.fmi.fi/pollen.html?region=europe"
         )
 
-        # Подписываемся на обновления координатора для автоматического обновления состояния
         self.async_on_remove(self.coordinator.async_add_listener(self.async_write_ha_state))
 
-        # Настройка локализации
         if self._sensor_type == "index":
             self._attr_translation_key = "index"
-            # Убираем установку has_entity_name, чтобы fallback‑имя не комбинировалось с именем устройства
             self._attr_has_entity_name = True
-            #self._attr_name = "index"  # fallback‑имя (будет заменено переводом, если настроен)
         elif self._sensor_type == "main":
             self._attr_translation_key = VAR_OPTIONS.get(self._var, self._var)
             self._attr_has_entity_name = True
-            # Устанавливаем fallback‑имя только как значение из VAR_OPTIONS (например, "alder")
-            #self._attr_name = VAR_OPTIONS.get(self._var, self._var)
         else:
             self._attr_translation_key = None
             self._attr_has_entity_name = False
@@ -290,16 +193,6 @@ class SilamPollenSensor(SensorEntity):
     async def async_update(self):
         """
         Обновляет состояние сенсора, используя данные, полученные координатором.
-
-        Для сенсора "index":
-          - Если корневой элемент равен stationFeatureCollection, используем его напрямую,
-            иначе ищем его среди дочерних элементов.
-          - Извлекаются значения POLI и POLISRC, которые преобразуются в текстовое описание.
-          
-        Для сенсора "main":
-          - Извлекается блок stationProfileFeatureCollection,
-          - Выбирается оптимальная станция по близости к desired_altitude,
-          - Извлекается pollen_value и единицы измерения для конкретного аллергена.
         """
         data = self.coordinator.data
         if data is None:
@@ -336,6 +229,7 @@ class SilamPollenSensor(SensorEntity):
         elif self._sensor_type == "main":
             main_collection = data.find(".//stationProfileFeatureCollection")
             main_data = {}
+            state_value = None
             if main_collection is not None:
                 station_features = main_collection.findall(".//stationFeature")
                 if station_features:
@@ -371,5 +265,4 @@ class SilamPollenSensor(SensorEntity):
                                 main_data["unit_of_measurement"] = unit
                         main_data["altitude"] = best_feature.get("altitude")
             self._state = state_value
-            # Теперь не добавляем "pollen_value" в main_data, чтобы избежать дублирования
             self._extra_attributes.update(main_data)
