@@ -36,18 +36,16 @@
         left: 50%;
         transform: translateX(-50%);
       }
-      /* Новый указатель центра для мобильных: полупрозрачный сплошной круг с границей */
+      /* Центровой указатель для мобильных реализован через inline SVG.
+         Он сохраняет постоянную толщину линий независимо от ориентации экрана. */
       .center-pointer {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
         z-index: 1100;
-        width: 25px;
-        height: 25px;
-        background: rgba(255, 213, 0, 0.5); /* полупрозрачный фон */
-        border: 3px solid rgba(255, 170, 0, 0.6); /* небольшая граница */
-        border-radius: 50%; /* делаем круг */
       }
       /* Скрываем указатель на десктопе */
       @media (min-width: 768px) {
@@ -59,13 +57,20 @@
   </head>
   <body>
     <div id="map" class="map">
-      <!-- Указатель центра (виден только на мобильных) -->
-      <div id="center-pointer" class="center-pointer"></div>
+      <!-- Центровой указатель (виден только на мобильных) с inline SVG -->
+      <div id="center-pointer" class="center-pointer">
+        <svg width="20" height="20" viewBox="0 0 20 20" style="display:block;">
+          <line x1="0" y1="10" x2="8" y2="10" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
+          <line x1="12" y1="10" x2="20" y2="10" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
+          <line x1="10" y1="0" x2="10" y2="8" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
+          <line x1="10" y1="12" x2="10" y2="20" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
+        </svg>
+      </div>
       <!-- Элемент для отображения информации -->
       <div id="info-window" class="info-window"></div>
     </div>
     
-    <!-- Внешний файл с координатами (должны быть определены константы rotatedPolygon и rotatedPolygonRegional) -->
+    <!-- Внешний файл с координатами (rotatedPolygon и rotatedPolygonRegional должны быть определены) -->
     <script src="rotatedPolygon.js"></script>
     
     <!-- OpenLayers -->
@@ -98,7 +103,7 @@
           console.log('navigator.language:', navigator.language);
           console.log('i18next.language:', i18next.language);
           window.onload = function() {
-            // Преобразование координат для основного полигона (Europe)
+            // Преобразование координат для основного полигона (SILAM Europe)
             const polygonCoords = rotatedPolygon.map(coord =>
               ol.proj.fromLonLat([coord[1], coord[0]])
             );
@@ -121,7 +126,7 @@
               })
             });
             
-            // Преобразование координат для регионального полигона (Regional)
+            // Преобразование координат для регионального полигона (SILAM Regional)
             const regionalCoords = rotatedPolygonRegional.map(coord =>
               ol.proj.fromLonLat([coord[1], coord[0]])
             );
@@ -149,11 +154,11 @@
               source: new ol.source.OSM()
             });
             
-            // Определяем, мобильное ли устройство
+            // Определяем, мобильное ли устройство и задаем уровень зума
             const isMobile = isMobileDevice();
             const defaultZoom = isMobile ? 6 : 4;
             
-            // Создаем карту с обоими векторными слоями.
+            // Создаем карту с базовым и векторными слоями
             const map = new ol.Map({
               target: 'map',
               layers: [rasterLayer, vectorLayer, regionalVectorLayer],
@@ -163,7 +168,7 @@
               })
             });
             
-            // Элемент для информации
+            // Элемент для отображения информации
             const infoWindow = document.getElementById('info-window');
             if (isMobile) {
               infoWindow.classList.add('mobile-info');
@@ -193,19 +198,19 @@
                 </div>`;
               }
               
-              const coordText = `${i18next.t('lat')}: ${coordinate[1].toFixed(6)}, ${i18next.t('lon')}: ${coordinate[0].toFixed(6)}`;
+              const coordText = `${i18next.t('lat')}: ${coordinate[1].toFixed(3)}, ${i18next.t('lon')}: ${coordinate[0].toFixed(3)}`;
               infoWindow.innerHTML = legendHtml + coordText;
             }
             
             if (isMobile) {
-              // Для мобильных устройств обновляем информацию при завершении перемещения карты.
+              // Для мобильных устройств обновляем информацию по событию moveend (используем центр карты)
               map.on('moveend', function() {
                 const center = ol.proj.toLonLat(map.getView().getCenter());
                 const centerPixel = map.getPixelFromCoordinate(map.getView().getCenter());
                 updateInfo(center, centerPixel);
               });
             } else {
-              // Для десктопа обновляем информацию при движении указателя.
+              // Для десктопа обновляем информацию по событию pointermove
               map.on('pointermove', function(evt) {
                 const coord = ol.proj.toLonLat(evt.coordinate);
                 updateInfo(coord, evt.pixel);
