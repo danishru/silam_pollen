@@ -15,6 +15,8 @@ async def async_setup_entry(hass, entry):
     manual_coordinates = entry.data.get("manual_coordinates", False)
     manual_latitude = entry.data.get("latitude")
     manual_longitude = entry.data.get("longitude")
+    # Извлекаем высоту из записи; если её нет, используем значение из hass.config.elevation
+    desired_altitude = entry.data.get("altitude", hass.config.elevation)
     var_list = entry.options.get("var", entry.data.get("var", []))
     update_interval = entry.options.get("update_interval", entry.data.get("update_interval", 60))
     # Получаем base_url из записи; новые записи должны содержать это поле
@@ -28,6 +30,7 @@ async def async_setup_entry(hass, entry):
         manual_coordinates,
         manual_latitude,
         manual_longitude,
+        desired_altitude,
         update_interval,
         base_url  # Передаём параметр base_url, полученный из записи
     )
@@ -73,4 +76,5 @@ async def update_listener(hass, entry):
     await hass.config_entries.async_reload(entry.entry_id)
 
 async def async_get_options_flow(config_entry):
-    return SilamPollenOptionsFlow(config_entry)
+    # Теперь возвращаем экземпляр OptionsFlowHandler без передачи config_entry
+    return SilamPollenOptionsFlow()

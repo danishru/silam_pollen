@@ -192,19 +192,20 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry):
         """Возвращает обработчик Options Flow для этой записи."""
-        return OptionsFlowHandler(config_entry)
-
+        # Возвращаем OptionsFlowHandler без передачи config_entry
+        return OptionsFlowHandler()
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Обработчик Options Flow для интеграции SILAM Pollen."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        self.config_entry = config_entry
-
     async def async_step_init(self, user_input=None):
         """Первый и единственный шаг Options Flow."""
         if user_input is not None:
-            # Обновляем конфигурационную запись, если изменился выбор версии
+            # Обновляем опции
+            new_options = dict(self.config_entry.options)
+            new_options.update(user_input)
+            
+            # Обновляем данные: base_url хранится в data и используется координатором
             new_data = dict(self.config_entry.data)
             new_version = user_input.get("version")
             new_data["version"] = new_version
@@ -214,7 +215,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 new_data["base_url"] = BASE_URL_V6_0
             else:
                 new_data["base_url"] = "unknown"
-            self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
+            
+            self.hass.config_entries.async_update_entry(self.config_entry, data=new_data, options=new_options)
+            await self.hass.config_entries.async_reload(self.config_entry.entry_id)
             return self.async_create_entry(title="", data=user_input)
 
         # Если user_input is None – показываем форму с предустановленным значением версии.
@@ -230,6 +233,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         # Тестируем доступность BASE_URL_V5_9_1 с использованием координат из записи.
         lat = self.config_entry.data.get("latitude")
         lon = self.config_entry.data.get("longitude")
+        device_name = self.config_entry.title  # Имя устройства
         v5_9_1_available = False
         if lat is not None and lon is not None:
             try:
@@ -239,8 +243,15 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         async with session.get(test_url) as response:
                             if response.status == 200:
                                 v5_9_1_available = True
+                                _LOGGER.debug(
+                                    "Successful check: URL %s is available for device %s",
+                                    test_url, device_name
+                                )
             except Exception as err:
-                _LOGGER.debug("Тестовый запрос для v5_9_1 завершился ошибкой: %s", err)
+                _LOGGER.debug(
+                    "Test request for v5_9_1 failed for device %s on URL %s: %s",
+                    device_name, test_url, err
+                )
 
         # Если тест v5_9_1 не прошёл, вариант выбора будет только v6_0.
         if v5_9_1_available:

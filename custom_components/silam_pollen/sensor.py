@@ -211,69 +211,54 @@ class SilamPollenSensor(SensorEntity):
             return
 
         if self._sensor_type == "index":
-            if data.tag == "stationFeatureCollection":
-                additional_collection = data
-            else:
-                additional_collection = data.find(".//stationFeatureCollection")
-            if additional_collection is not None:
-                additional_feature = additional_collection.find(".//stationFeature")
-                if additional_feature is not None:
-                    date_val = additional_feature.get("date")
-                    if date_val:
-                        self._extra_attributes["date"] = date_val
-                    poli_elem = additional_feature.find(".//data[@name='POLI']")
-                    if poli_elem is not None:
-                        try:
-                            index_value = int(float(poli_elem.text))
-                        except (ValueError, TypeError):
-                            index_value = None
-                        self._state = INDEX_MAPPING.get(index_value, "unknown")
-                    else:
-                        self._state = None
-                    polisrc_elem = additional_feature.find(".//data[@name='POLISRC']")
-                    if polisrc_elem is not None:
-                        try:
-                            re_value = int(float(polisrc_elem.text))
-                        except (ValueError, TypeError):
-                            re_value = None
-                        self._extra_attributes["responsible_elevated"] = RESPONSIBLE_MAPPING.get(re_value, "unknown")
+            index_data = data.get("index")
+            if index_data is None:
+                _LOGGER.error("Нет данных для index")
+                return
+            additional_feature = index_data.find(".//stationFeature")
+            if additional_feature is not None:
+                date_val = additional_feature.get("date")
+                if date_val:
+                    self._extra_attributes["date"] = date_val
+                poli_elem = additional_feature.find(".//data[@name='POLI']")
+                if poli_elem is not None:
+                    try:
+                        index_value = int(float(poli_elem.text))
+                    except (ValueError, TypeError):
+                        index_value = None
+                    self._state = INDEX_MAPPING.get(index_value, "unknown")
+                else:
+                    self._state = None
+                polisrc_elem = additional_feature.find(".//data[@name='POLISRC']")
+                if polisrc_elem is not None:
+                    try:
+                        re_value = int(float(polisrc_elem.text))
+                    except (ValueError, TypeError):
+                        re_value = None
+                    self._extra_attributes["responsible_elevated"] = RESPONSIBLE_MAPPING.get(re_value, "unknown")
+
         elif self._sensor_type == "main":
-            main_collection = data.find(".//stationProfileFeatureCollection")
+            main_data_xml = data.get("main")
             main_data = {}
             state_value = None
-            if main_collection is not None:
-                station_features = main_collection.findall(".//stationFeature")
+            if main_data_xml is not None:
+                station_features = main_data_xml.findall(".//stationFeature")
                 if station_features:
-                    best_feature = None
-                    if self._desired_altitude is not None:
-                        best_diff = None
-                        for sf in station_features:
-                            alt_attr = sf.get("altitude")
-                            if alt_attr is None:
-                                continue
-                            try:
-                                alt_value = float(alt_attr)
-                            except ValueError:
-                                continue
-                            diff = abs(alt_value - self._desired_altitude)
-                            if best_diff is None or diff < best_diff:
-                                best_diff = diff
-                                best_feature = sf
-                    if best_feature is None:
-                        best_feature = station_features[0]
-                    
-                    if best_feature is not None:
-                        full_var = URL_VAR_MAPPING.get(self._var, self._var)
-                        data_element = best_feature.find(f".//data[@name='{full_var}']")
-                        if data_element is not None:
-                            try:
-                                pollen_val = float(data_element.text)
-                                state_value = int(round(pollen_val))
-                            except (ValueError, TypeError):
-                                state_value = None
-                            unit = data_element.get("units")
-                            if unit:
-                                main_data["unit_of_measurement"] = unit
-                        main_data["altitude"] = best_feature.get("altitude")
+                    # Теперь выбираем первый элемент, так как API уже возвращает данные с указанной высотой
+                    best_feature = station_features[0]
+                    full_var = URL_VAR_MAPPING.get(self._var, self._var)
+                    data_element = best_feature.find(f".//data[@name='{full_var}']")
+                    if data_element is not None:
+                        try:
+                            pollen_val = float(data_element.text)
+                            state_value = int(round(pollen_val))
+                        except (ValueError, TypeError):
+                            state_value = None
+                        unit = data_element.get("units")
+                        if unit:
+                            main_data["unit_of_measurement"] = unit
+                        station_elem = best_feature.find(".//station")
+                        if station_elem is not None:
+                            main_data["altitude"] = station_elem.get("altitude")
             self._state = state_value
             self._extra_attributes.update(main_data)
