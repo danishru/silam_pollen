@@ -159,7 +159,7 @@ class SilamPollenSensor(SensorEntity):
             model_id=dataset,
             sw_version=sw_version,
             entry_type=DeviceEntryType.SERVICE,
-            configuration_url="https://silam.fmi.fi/pollen.html?region=europe"
+            configuration_url=f"https://silam.fmi.fi/pollen.html?region={dataset}"
         )
 
         self.async_on_remove(self.coordinator.async_add_listener(self.async_write_ha_state))

@@ -139,7 +139,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         base_data["title"] = "SILAM Pollen - {zone_name}".format(zone_name=base_data["zone_name"])
 
         # Выполняем тестовый запрос к API с использованием введённых координат.
-        # Теперь метод _test_api возвращает также успешный URL (chosen_url)
+        # Метод _test_api возвращает True, None и выбранный URL (chosen_url) при успешном ответе.
         valid, error, chosen_url = await self._test_api(latitude, longitude)
         if not valid:
             errors = {"base": error}
@@ -217,7 +217,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
             return self.async_create_entry(title="", data=user_input)
 
-        # Если user_input is None – показываем форму с предустановленным значением версии
+        # Если user_input is None – показываем форму с предустановленным значением версии.
+        # Определяем значение автоматически по base_url из записи.
         base_url = self.config_entry.data.get("base_url", "")
         if "silam_europe_pollen" in base_url:
             default_version = "v6_0"
@@ -225,6 +226,33 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             default_version = "v5_9_1"
         else:
             default_version = "unknown"
+
+        # Тестируем доступность BASE_URL_V5_9_1 с использованием координат из записи.
+        lat = self.config_entry.data.get("latitude")
+        lon = self.config_entry.data.get("longitude")
+        v5_9_1_available = False
+        if lat is not None and lon is not None:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with async_timeout.timeout(10):
+                        test_url = BASE_URL_V5_9_1 + f"?var=POLI&latitude={lat}&longitude={lon}&time=present&accept=xml"
+                        async with session.get(test_url) as response:
+                            if response.status == 200:
+                                v5_9_1_available = True
+            except Exception as err:
+                _LOGGER.debug("Тестовый запрос для v5_9_1 завершился ошибкой: %s", err)
+
+        # Если тест v5_9_1 не прошёл, вариант выбора будет только v6_0.
+        if v5_9_1_available:
+            version_options = [
+                {"value": "v6_0", "label": "SILAM Europe (v6.0)"},
+                {"value": "v5_9_1", "label": "SILAM Regional (v5.9.1)"}
+            ]
+        else:
+            version_options = [
+                {"value": "v6_0", "label": "SILAM Europe (v6.0)"}
+            ]
+            default_version = "v6_0"
 
         data_schema = vol.Schema({
             vol.Optional(
@@ -248,19 +276,14 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ),
             vol.Optional(
                 "update_interval",
-                default=self.config_entry.options.get(
-                    "update_interval", self.config_entry.data.get("update_interval", DEFAULT_UPDATE_INTERVAL)
-                )
+                default=self.config_entry.options.get("update_interval", self.config_entry.data.get("update_interval", DEFAULT_UPDATE_INTERVAL))
             ): vol.All(vol.Coerce(int), vol.Range(min=30)),
             vol.Optional(
                 "version",
-                default=default_version
+                default=self.config_entry.options.get("version", self.config_entry.data.get("version", default_version))
             ): SelectSelector(
                 SelectSelectorConfig(
-                    options=[
-                        {"value": "v6_0", "label": "SILAM Europe (v6.0)"},
-                        {"value": "v5_9_1", "label": "SILAM Regional (v5.9.1)"}
-                    ],
+                    options=version_options,
                     multiple=False,
                     mode="dropdown"
                 )
