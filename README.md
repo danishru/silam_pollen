@@ -25,7 +25,7 @@
 > [!NOTE]
 > Обратите внимание, что охват территории ограничен и может не включать все регионы. Для подробного просмотра территории и оценки покрытия воспользуйтесь интерактивной картой ниже.
 
-[![Интерактивная карта покрытия с данными по уровню пыльцы](https://danishru.github.io/silam_pollen/pollen_area.png)](https://danishru.github.io/silam_pollen/)
+[![Интерактивная карта покрытия с данными по уровню пыльцы](https://danishru.github.io/silam_pollen/pollen_area.webp)](https://danishru.github.io/silam_pollen/)
 
 ## Установка
 
