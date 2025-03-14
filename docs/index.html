@@ -2,6 +2,8 @@
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
+    <!-- Мета-тег viewport для корректного масштабирования на мобильных устройствах -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pollen area available</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css" />
     <style>
@@ -16,25 +18,33 @@
         height: 100%;
         position: relative;
       }
-      .mouse-position {
+      /* Окно для отображения информации */
+      .info-window {
         position: absolute;
         pointer-events: none;
-        padding: 5px 10px;
-        background: rgba(255, 255, 255, 0.5);
+        padding: 4px 6px;
+        background: rgba(255, 255, 255, 0.8);
         font-size: 14px;
         border: 1px solid #ccc;
-        border-radius: 3px;
+        border-radius: 2px;
         white-space: nowrap;
         z-index: 1000;
+      }
+      /* Для мобильных устройств окно выводится в верхней части экрана по центру */
+      .mobile-info {
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
       }
     </style>
   </head>
   <body>
     <div id="map" class="map">
-      <div id="mouse-position" class="mouse-position"></div>
+      <!-- Элемент для отображения информации -->
+      <div id="info-window" class="info-window"></div>
     </div>
     
-    <!-- Внешний файл с координатами -->
+    <!-- Внешний файл с координатами (должны быть определены константы rotatedPolygon и rotatedPolygonRegional) -->
     <script src="rotatedPolygon.js"></script>
     
     <!-- OpenLayers -->
@@ -44,36 +54,36 @@
     <script src="https://unpkg.com/i18next-browser-languagedetector@latest/dist/umd/i18nextBrowserLanguageDetector.min.js"></script>
     
     <script>
-      // Используем плагин для автоматического определения языка
-i18next
-  .use(i18nextBrowserLanguageDetector)
-  .init({
-    fallbackLng: 'en',       // Резервный язык, если язык пользователя не поддерживается
-    load: 'languageOnly',    // Загружаем только базовый язык (без регионального суффикса)
-    detection: {
-      order: ['querystring', 'navigator'],
-      caches: []           // Отключаем кеширование, чтобы всегда определялся актуальный язык
-    },
-    resources: {
-      ru: { translation: { lat: 'Широта', lon: 'Долгота' } },
-      en: { translation: { lat: 'Lat', lon: 'Lon' } }
-    }
-  }, function(err, t) {
-    console.log('navigator.language:', navigator.language);
-	console.log('i18next.language:', i18next.language);
-          // После инициализации i18next запускаем остальной код карты.
+      // Функция для определения мобильного устройства
+      function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      }
+      
+      // Инициализация i18next
+      i18next
+        .use(i18nextBrowserLanguageDetector)
+        .init({
+          fallbackLng: 'en',
+          load: 'languageOnly',
+          detection: {
+            order: ['querystring', 'navigator'],
+            caches: []
+          },
+          resources: {
+            ru: { translation: { lat: 'Широта', lon: 'Долгота' } },
+            en: { translation: { lat: 'Lat', lon: 'Lon' } }
+          }
+        }, function(err, t) {
+          console.log('navigator.language:', navigator.language);
+          console.log('i18next.language:', i18next.language);
           window.onload = function() {
-            // Преобразуем массив координат: OpenLayers ожидает формат [longitude, latitude] в проекции EPSG:3857.
+            // Преобразование координат для основного полигона (Europe)
             const polygonCoords = rotatedPolygon.map(coord =>
               ol.proj.fromLonLat([coord[1], coord[0]])
             );
-            
-            // Создаем полигон
             const polygonFeature = new ol.Feature({
               geometry: new ol.geom.Polygon([polygonCoords])
             });
-            
-            // Создаем векторный источник и слой полигона.
             const vectorSource = new ol.source.Vector({
               features: [polygonFeature]
             });
@@ -90,32 +100,102 @@ i18next
               })
             });
             
-            // Базовый слой OpenStreetMap.
+            // Преобразование координат для регионального полигона (Regional)
+            const regionalCoords = rotatedPolygonRegional.map(coord =>
+              ol.proj.fromLonLat([coord[1], coord[0]])
+            );
+            const regionalFeature = new ol.Feature({
+              geometry: new ol.geom.Polygon([regionalCoords])
+            });
+            const regionalVectorSource = new ol.source.Vector({
+              features: [regionalFeature]
+            });
+            const regionalVectorLayer = new ol.layer.Vector({
+              source: regionalVectorSource,
+              style: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                  color: 'rgba(0,255,0,1)', // зеленый для регионального слоя
+                  width: 0.5
+                }),
+                fill: new ol.style.Fill({
+                  color: 'rgba(0,255,0,0.2)'
+                })
+              })
+            });
+            
+            // Базовый слой карты
             const rasterLayer = new ol.layer.Tile({
               source: new ol.source.OSM()
             });
             
-            // Создаем карту.
+            // Определяем, мобильное ли устройство
+            const isMobile = isMobileDevice();
+            // Для мобильных устанавливаем больший уровень зума по умолчанию
+            const defaultZoom = isMobile ? 6 : 4;
+            
+            // Создаем карту с обоими векторными слоями.
             const map = new ol.Map({
               target: 'map',
-              layers: [rasterLayer, vectorLayer],
+              layers: [rasterLayer, vectorLayer, regionalVectorLayer],
               view: new ol.View({
                 center: ol.proj.fromLonLat([20, 20]),
-                zoom: 4
+                zoom: defaultZoom
               })
             });
             
-            // Контрол для отображения координат под курсором.
-            map.on('pointermove', function(evt) {
-              const coord = ol.proj.toLonLat(evt.coordinate);
-              const pos = map.getPixelFromCoordinate(evt.coordinate);
-              const mousePosEl = document.getElementById('mouse-position');
-              mousePosEl.innerHTML = `${i18next.t('lat')}: ${coord[1].toFixed(6)}, ${i18next.t('lon')}: ${coord[0].toFixed(6)}`;
-              mousePosEl.style.left = (pos[0] + 15) + 'px';
-              mousePosEl.style.top = (pos[1] + 15) + 'px';
-            });
+            // Элемент для информации
+            const infoWindow = document.getElementById('info-window');
+            if (isMobile) {
+              infoWindow.classList.add('mobile-info');
+            }
             
-            // Подгоняем масштаб карты по границам полигона.
+            // Функция для обновления информации (координаты и легенда)
+            function updateInfo(coordinate, pixel) {
+              // Определяем, над каким слоем находится точка.
+              let layerDesc = '';
+              let squareColor = '';
+              map.forEachFeatureAtPixel(pixel, function(feature, layer) {
+                if (layer === regionalVectorLayer) {
+                  layerDesc = 'Regional';
+                  squareColor = 'rgba(0,255,0,1)';
+                  return true;
+                } else if (layer === vectorLayer) {
+                  layerDesc = 'Europe';
+                  squareColor = 'rgba(255,200,0,1)';
+                  return true;
+                }
+              });
+              
+              let legendHtml = '';
+              if (layerDesc) {
+                legendHtml = `<div style="margin-bottom:3px;">
+                  <span style="display:inline-block;width:14px;height:14px;background-color:${squareColor};vertical-align:middle;margin-right:5px;border:1px solid #000;"></span>
+                  <span>${layerDesc}</span>
+                </div>`;
+              }
+              
+              const coordText = `${i18next.t('lat')}: ${coordinate[1].toFixed(6)}, ${i18next.t('lon')}: ${coordinate[0].toFixed(6)}`;
+              infoWindow.innerHTML = legendHtml + coordText;
+            }
+            
+            if (isMobile) {
+              // Для мобильных устройств обновляем информацию по завершении перемещения карты.
+              map.on('moveend', function() {
+                const center = ol.proj.toLonLat(map.getView().getCenter());
+                const centerPixel = map.getPixelFromCoordinate(map.getView().getCenter());
+                updateInfo(center, centerPixel);
+              });
+            } else {
+              // Для десктопа обновляем информацию при движении указателя.
+              map.on('pointermove', function(evt) {
+                const coord = ol.proj.toLonLat(evt.coordinate);
+                updateInfo(coord, evt.pixel);
+                infoWindow.style.left = (evt.pixel[0] + 15) + 'px';
+                infoWindow.style.top = (evt.pixel[1] + 15) + 'px';
+              });
+            }
+            
+            // Подгоняем масштаб карты по границам основного полигона.
             map.getView().fit(vectorSource.getExtent(), { padding: [10, 10, 10, 10] });
           };
         });
