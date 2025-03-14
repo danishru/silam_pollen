@@ -36,10 +36,31 @@
         left: 50%;
         transform: translateX(-50%);
       }
+      /* Новый указатель центра для мобильных: полупрозрачный сплошной круг с границей */
+      .center-pointer {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1100;
+        width: 25px;
+        height: 25px;
+        background: rgba(255, 213, 0, 0.5); /* полупрозрачный фон */
+        border: 3px solid rgba(255, 170, 0, 0.6); /* небольшая граница */
+        border-radius: 50%; /* делаем круг */
+      }
+      /* Скрываем указатель на десктопе */
+      @media (min-width: 768px) {
+        .center-pointer {
+          display: none;
+        }
+      }
     </style>
   </head>
   <body>
     <div id="map" class="map">
+      <!-- Указатель центра (виден только на мобильных) -->
+      <div id="center-pointer" class="center-pointer"></div>
       <!-- Элемент для отображения информации -->
       <div id="info-window" class="info-window"></div>
     </div>
@@ -114,7 +135,7 @@
               source: regionalVectorSource,
               style: new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                  color: 'rgba(0,255,0,1)', // зеленый для регионального слоя
+                  color: 'rgba(0,255,0,1)',
                   width: 0.5
                 }),
                 fill: new ol.style.Fill({
@@ -130,7 +151,6 @@
             
             // Определяем, мобильное ли устройство
             const isMobile = isMobileDevice();
-            // Для мобильных устанавливаем больший уровень зума по умолчанию
             const defaultZoom = isMobile ? 6 : 4;
             
             // Создаем карту с обоими векторными слоями.
@@ -151,16 +171,15 @@
             
             // Функция для обновления информации (координаты и легенда)
             function updateInfo(coordinate, pixel) {
-              // Определяем, над каким слоем находится точка.
               let layerDesc = '';
               let squareColor = '';
               map.forEachFeatureAtPixel(pixel, function(feature, layer) {
                 if (layer === regionalVectorLayer) {
-                  layerDesc = 'Regional';
+                  layerDesc = 'SILAM Regional (v5.9.1)';
                   squareColor = 'rgba(0,255,0,1)';
                   return true;
                 } else if (layer === vectorLayer) {
-                  layerDesc = 'Europe';
+                  layerDesc = 'SILAM Europe (v6.0)';
                   squareColor = 'rgba(255,200,0,1)';
                   return true;
                 }
@@ -179,7 +198,7 @@
             }
             
             if (isMobile) {
-              // Для мобильных устройств обновляем информацию по завершении перемещения карты.
+              // Для мобильных устройств обновляем информацию при завершении перемещения карты.
               map.on('moveend', function() {
                 const center = ol.proj.toLonLat(map.getView().getCenter());
                 const centerPixel = map.getPixelFromCoordinate(map.getView().getCenter());
@@ -195,7 +214,6 @@
               });
             }
             
-            // Подгоняем масштаб карты по границам основного полигона.
             map.getView().fit(vectorSource.getExtent(), { padding: [10, 10, 10, 10] });
           };
         });
