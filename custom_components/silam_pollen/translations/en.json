@@ -105,8 +105,8 @@
           "var": "Pollen type",
           "update_interval": "Update Interval (minutes, minimum 30)"
         },
-        "title": "Pollen monitoring setup",
-        "description": "Configure SILAM Pollen Monitor using the options below.\nNote: Forecasts are for scientific use only, not verified for clinical decisions. Accuracy and completeness are not guaranteed."
+        "title": "Create SILAM Pollen Service",
+        "description": "Configure the parameters listed below.\nForecasts are for scientific use; accuracy is not guaranteed."
       },
       "manual_coords": {
         "data": {
@@ -114,8 +114,8 @@
           "location": "Location",
           "altitude": "Altitude above sea level"
         },
-        "title": "Pollen monitoring setup",
-        "description": "Enter the zone name and adjust the coordinates if needed."
+        "title": "Create SILAM Pollen Service",
+        "description": "Enter the zone name and adjust the coordinates if necessary.\n[Check out the service coverage map](https://danishru.github.io/silam_pollen/)."
       }
     }
   },
@@ -124,7 +124,8 @@
       "init": {
         "data": {
           "update_interval": "Update Interval (minutes, minimum 30)",
-          "var": "Pollen type"
+          "var": "Pollen type",
+          "version": "Dataset"
         },
         "title": "SILAM Pollen Options"
       }
