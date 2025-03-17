@@ -1,0 +1,184 @@
+{
+  "title": "SILAM Pollenmonitor",
+  "entity": {
+    "sensor": {
+      "index": {
+        "name": "Indeks",
+        "state": {
+          "very_low": "Meget lav",
+          "low": "Lav",
+          "moderate": "Moderat",
+          "high": "Høj",
+          "very_high": "Meget høj",
+          "unknown": "Ukendt"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Hovedallergen",
+            "state": {
+              "missing": "Ingen data",
+              "alder": "Al",
+              "birch": "Birk",
+              "grass": "Græs",
+              "olive": "Oliven",
+              "mugwort": "Malurt",
+              "ragweed": "Ambrosia",
+              "hazel": "Hassel",
+              "unknown": "Ukendt"
+            }
+          },
+          "date": {
+            "name": "Prognosedato & tid"
+          }
+        }
+      },
+      "alder": {
+        "name": "Al",
+        "unit_of_measurement": "korn/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Højde (ved havniveau)"
+          }
+        }
+      },
+      "birch": {
+        "name": "Birk",
+        "unit_of_measurement": "korn/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Højde (ved havniveau)"
+          }
+        }
+      },
+      "grass": {
+        "name": "Græs",
+        "unit_of_measurement": "korn/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Højde (ved havniveau)"
+          }
+        }
+      },
+      "hazel": {
+        "name": "Hassel",
+        "unit_of_measurement": "korn/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Højde (ved havniveau)"
+          }
+        }
+      },
+      "mugwort": {
+        "name": "Malurt",
+        "unit_of_measurement": "korn/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Højde (ved havniveau)"
+          }
+        }
+      },
+      "olive": {
+        "name": "Oliven",
+        "unit_of_measurement": "korn/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Højde (ved havniveau)"
+          }
+        }
+      },
+      "ragweed": {
+        "name": "Ambrosia",
+        "unit_of_measurement": "korn/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Højde (ved havniveau)"
+          }
+        }
+      }
+    },
+    "weather": {
+      "index_polen_weather": {
+        "name": "Pollenprognose **BETA**",
+        "state": {
+          "very_low": "Meget lav",
+          "low": "Lav",
+          "moderate": "Moderat",
+          "high": "Høj",
+          "very_high": "Meget høj",
+          "unknown": "Ukendt"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Hovedallergen",
+            "state": {
+              "missing": "Ingen data",
+              "alder": "Al",
+              "birch": "Birk",
+              "grass": "Græs",
+              "olive": "Oliven",
+              "mugwort": "Malurt",
+              "ragweed": "Ambrosia",
+              "hazel": "Hassel",
+              "unknown": "Ukendt"
+            }
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "zone_id": "Observationszone",
+          "var": "Pollentype",
+          "update_interval": "Opdateringsinterval (minutter, minimum 30)",
+          "forecast": "**BETA** Aktiver pollenprognose?"
+        },
+        "data_description": {
+          "forecast": "Prognosefunktionen kan øge API-svarstiden op til 10 gange."
+        },
+        "title": "Opret SILAM Pollen-tjeneste",
+        "description": "Konfigurer de nedenstående parametre.\nPrognoser er til videnskabelig brug; nøjagtighed garanteres ikke."
+      },
+      "manual_coords": {
+        "data": {
+          "zone_name": "Zones navn",
+          "location": "Placering",
+          "altitude": "Højde over havets overflade"
+        },
+        "title": "Opret SILAM Pollen-tjeneste",
+        "description": "Indtast zones navnet og juster koordinaterne om nødvendigt.\n[Tjek tjenestens dækningskort](https://danishru.github.io/silam_pollen/)."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Opdateringsinterval (minutter, minimum 30)",
+          "var": "Pollentype",
+          "version": "Datasæt",
+          "forecast": "**BETA** Aktiver pollenprognose?"
+        },
+        "data_description": {
+          "forecast": "Prognosefunktionen kan øge API-svarstiden op til 10 gange."
+        },
+        "title": "SILAM Pollen-indstillinger"
+      }
+    }
+  },
+  "selector": {
+    "config_pollen": {
+      "options": {
+        "alder_m22": "Al",
+        "birch_m22": "Birk",
+        "grass_m32": "Græs",
+        "hazel_m23": "Hassel",
+        "mugwort_m18": "Malurt",
+        "olive_m28": "Oliven",
+        "ragweed_m18": "Ambrosia"
+      }
+    }
+  }
+}

@@ -33,6 +33,19 @@
       "ragweed": {
         "default": "mdi:barley"
       }
+    },
+    "weather": {
+      "index_polen_weather": {
+        "default": "mdi:flower-pollen-outline",
+        "state": {
+          "very_low": "mdi:emoticon-happy-outline",
+          "low": "mdi:emoticon-neutral-outline",
+          "moderate": "mdi:emoticon-sad-outline",
+          "high": "mdi:emoticon-cry-outline",
+          "very_high": "mdi:emoticon-dead-outline",
+          "unknown": "mdi:progress-question"
+        }
+      }
     }
   }
 }

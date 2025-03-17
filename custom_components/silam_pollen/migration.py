@@ -49,6 +49,10 @@ async def async_migrate_entry(hass, config_entry):
 
         new_data["base_url"] = chosen_url
         _LOGGER.debug("Выбранный базовый URL: %s", chosen_url)
+        
+    # Устанавливаем опцию прогноза по умолчанию, если она не задана
+    if "forecast" not in new_data:
+        new_data["forecast"] = False
     
     # Обновляем запись с новой информацией
     hass.config_entries.async_update_entry(

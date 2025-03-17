@@ -6,7 +6,7 @@ weather.py для интеграции SILAM Pollen.
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from .test_pollen import TestPollenForecastSensor
+from .pollen_forecast import PollenForecastSensor
 from .const import DOMAIN
 import logging
 
@@ -20,7 +20,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         return
 
     async_add_entities([
-        TestPollenForecastSensor(
+        PollenForecastSensor(
             coordinator=coordinator,
             entry_id=entry.entry_id,
             base_device_name=base_device_name

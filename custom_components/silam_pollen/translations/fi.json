@@ -1,0 +1,184 @@
+{
+  "title": "SILAM Siitepölymonitori",
+  "entity": {
+    "sensor": {
+      "index": {
+        "name": "Indeksi",
+        "state": {
+          "very_low": "Erittäin alhainen",
+          "low": "Alhainen",
+          "moderate": "Kohtalainen",
+          "high": "Korkea",
+          "very_high": "Erittäin korkea",
+          "unknown": "Tuntematon"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Pääallergeni",
+            "state": {
+              "missing": "Ei tietoja",
+              "alder": "Leppä",
+              "birch": "Koivu",
+              "grass": "Heinä",
+              "olive": "Oliivi",
+              "mugwort": "Siankärsämö",
+              "ragweed": "Ambrosia",
+              "hazel": "Pähkinäleppä",
+              "unknown": "Tuntematon"
+            }
+          },
+          "date": {
+            "name": "Ennusteen päivämäärä ja kellonaika"
+          }
+        }
+      },
+      "alder": {
+        "name": "Leppä",
+        "unit_of_measurement": "jyvää/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Korkeus (meritasolla)"
+          }
+        }
+      },
+      "birch": {
+        "name": "Koivu",
+        "unit_of_measurement": "jyvää/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Korkeus (meritasolla)"
+          }
+        }
+      },
+      "grass": {
+        "name": "Heinä",
+        "unit_of_measurement": "jyvää/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Korkeus (meritasolla)"
+          }
+        }
+      },
+      "hazel": {
+        "name": "Pähkinäleppä",
+        "unit_of_measurement": "jyvää/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Korkeus (meritasolla)"
+          }
+        }
+      },
+      "mugwort": {
+        "name": "Siankärsämö",
+        "unit_of_measurement": "jyvää/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Korkeus (meritasolla)"
+          }
+        }
+      },
+      "olive": {
+        "name": "Oliivi",
+        "unit_of_measurement": "jyvää/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Korkeus (meritasolla)"
+          }
+        }
+      },
+      "ragweed": {
+        "name": "Ambrosia",
+        "unit_of_measurement": "jyvää/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Korkeus (meritasolla)"
+          }
+        }
+      }
+    },
+    "weather": {
+      "index_polen_weather": {
+        "name": "Siitepölyennuste **BETA**",
+        "state": {
+          "very_low": "Erittäin alhainen",
+          "low": "Alhainen",
+          "moderate": "Kohtalainen",
+          "high": "Korkea",
+          "very_high": "Erittäin korkea",
+          "unknown": "Tuntematon"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Pääallergeni",
+            "state": {
+              "missing": "Ei tietoja",
+              "alder": "Leppä",
+              "birch": "Koivu",
+              "grass": "Heinä",
+              "olive": "Oliivi",
+              "mugwort": "Siankärsämö",
+              "ragweed": "Ambrosia",
+              "hazel": "Pähkinäleppä",
+              "unknown": "Tuntematon"
+            }
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "zone_id": "Havainnointivyöhyke",
+          "var": "Siitepölyn laji",
+          "update_interval": "Päivitysväli (minuutteina, vähintään 30)",
+          "forecast": "**BETA** Ota siitepölyennuste käyttöön?"
+        },
+        "data_description": {
+          "forecast": "Ennustetoiminto voi kasvattaa API-vastausaikaa jopa 10-kertaiseksi."
+        },
+        "title": "Luo SILAM Pölypalvelu",
+        "description": "Määritä alla olevat parametrit.\nEnnusteet on tarkoitettu tieteelliseen käyttöön; tarkkuutta ei taata."
+      },
+      "manual_coords": {
+        "data": {
+          "zone_name": "Vyöhykkeen nimi",
+          "location": "Sijainti",
+          "altitude": "Korkeus merenpinnasta"
+        },
+        "title": "Luo SILAM Pölypalvelu",
+        "description": "Anna vyöhykkeen nimi ja säädä koordinaatteja tarvittaessa.\n[Tarkastele palvelun peittoaluetta kartalta](https://danishru.github.io/silam_pollen/)."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Päivitysväli (minuutteina, vähintään 30)",
+          "var": "Siitepölyn laji",
+          "version": "Aineisto",
+          "forecast": "**BETA** Ota siitepölyennuste käyttöön?"
+        },
+        "data_description": {
+          "forecast": "Ennustetoiminto voi kasvattaa API-vastausaikaa jopa 10-kertaiseksi."
+        },
+        "title": "SILAM Pölyasetukset"
+      }
+    }
+  },
+  "selector": {
+    "config_pollen": {
+      "options": {
+        "alder_m22": "Leppä",
+        "birch_m22": "Koivu",
+        "grass_m32": "Heinä",
+        "hazel_m23": "Pähkinäleppä",
+        "mugwort_m18": "Siankärsämö",
+        "olive_m28": "Oliivi",
+        "ragweed_m18": "Ambrosia"
+      }
+    }
+  }
+}

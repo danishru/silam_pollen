@@ -1,0 +1,184 @@
+{
+  "title": "Monitor del Pollen SILAM",
+  "entity": {
+    "sensor": {
+      "index": {
+        "name": "Indice",
+        "state": {
+          "very_low": "Molto basso",
+          "low": "Basso",
+          "moderate": "Moderato",
+          "high": "Alto",
+          "very_high": "Molto alto",
+          "unknown": "Sconosciuto"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Allergene principale",
+            "state": {
+              "missing": "Nessun dato",
+              "alder": "Ontano",
+              "birch": "Betulla",
+              "grass": "Erba",
+              "olive": "Oliva",
+              "mugwort": "Artemisia",
+              "ragweed": "Ambrosia",
+              "hazel": "Nocciolo",
+              "unknown": "Sconosciuto"
+            }
+          },
+          "date": {
+            "name": "Data e ora della previsione"
+          }
+        }
+      },
+      "alder": {
+        "name": "Ontano",
+        "unit_of_measurement": "granuli/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitudine (a livello del mare)"
+          }
+        }
+      },
+      "birch": {
+        "name": "Betulla",
+        "unit_of_measurement": "granuli/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitudine (a livello del mare)"
+          }
+        }
+      },
+      "grass": {
+        "name": "Erba",
+        "unit_of_measurement": "granuli/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitudine (a livello del mare)"
+          }
+        }
+      },
+      "hazel": {
+        "name": "Nocciolo",
+        "unit_of_measurement": "granuli/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitudine (a livello del mare)"
+          }
+        }
+      },
+      "mugwort": {
+        "name": "Artemisia",
+        "unit_of_measurement": "granuli/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitudine (a livello del mare)"
+          }
+        }
+      },
+      "olive": {
+        "name": "Oliva",
+        "unit_of_measurement": "granuli/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitudine (a livello del mare)"
+          }
+        }
+      },
+      "ragweed": {
+        "name": "Ambrosia",
+        "unit_of_measurement": "granuli/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitudine (a livello del mare)"
+          }
+        }
+      }
+    },
+    "weather": {
+      "index_polen_weather": {
+        "name": "Previsione del polline **BETA**",
+        "state": {
+          "very_low": "Molto basso",
+          "low": "Basso",
+          "moderate": "Moderato",
+          "high": "Alto",
+          "very_high": "Molto alto",
+          "unknown": "Sconosciuto"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Allergene principale",
+            "state": {
+              "missing": "Nessun dato",
+              "alder": "Ontano",
+              "birch": "Betulla",
+              "grass": "Erba",
+              "olive": "Oliva",
+              "mugwort": "Artemisia",
+              "ragweed": "Ambrosia",
+              "hazel": "Nocciolo",
+              "unknown": "Sconosciuto"
+            }
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "zone_id": "Zona di osservazione",
+          "var": "Tipo di polline",
+          "update_interval": "Intervallo di aggiornamento (minuti, minimo 30)",
+          "forecast": "**BETA** Abilitare la previsione del polline?"
+        },
+        "data_description": {
+          "forecast": "La funzione di previsione può aumentare il tempo di risposta dell'API fino a 10 volte."
+        },
+        "title": "Crea servizio SILAM Pollen",
+        "description": "Configura i parametri elencati di seguito.\nLe previsioni sono per uso scientifico; l'accuratezza non è garantita."
+      },
+      "manual_coords": {
+        "data": {
+          "zone_name": "Nome della zona",
+          "location": "Località",
+          "altitude": "Altitudine sul livello del mare"
+        },
+        "title": "Crea servizio SILAM Pollen",
+        "description": "Inserisci il nome della zona e regola le coordinate se necessario.\n[Consulta la mappa di copertura del servizio](https://danishru.github.io/silam_pollen/)."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Intervallo di aggiornamento (minuti, minimo 30)",
+          "var": "Tipo di polline",
+          "version": "Dataset",
+          "forecast": "**BETA** Abilita la previsione del polline?"
+        },
+        "data_description": {
+          "forecast": "La funzione di previsione può aumentare il tempo di risposta dell'API fino a 10 volte."
+        },
+        "title": "Opzioni SILAM Pollen"
+      }
+    }
+  },
+  "selector": {
+    "config_pollen": {
+      "options": {
+        "alder_m22": "Ontano",
+        "birch_m22": "Betulla",
+        "grass_m32": "Erba",
+        "hazel_m23": "Nocciolo",
+        "mugwort_m18": "Artemisia",
+        "olive_m28": "Oliva",
+        "ragweed_m18": "Ambrosia"
+      }
+    }
+  }
+}

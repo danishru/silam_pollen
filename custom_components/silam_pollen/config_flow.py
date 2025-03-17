@@ -74,6 +74,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
             ),
             vol.Required("update_interval", default=DEFAULT_UPDATE_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=30)),
+            vol.Optional("forecast", default=False): bool,
         })
         if user_input is None:
             return self.async_show_form(
@@ -201,6 +202,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         """Первый и единственный шаг Options Flow."""
         if user_input is not None:
+            
+            # Если пользователь выбрал forecast_daily, то автоматически устанавливаем forecast_hourly в True
+            if user_input.get("forecast_daily"):
+                user_input["forecast_hourly"] = True
+                
             # Обновляем опции
             new_options = dict(self.config_entry.options)
             new_options.update(user_input)
@@ -298,6 +304,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     multiple=False,
                     mode="dropdown"
                 )
-            )
+            ),
+            vol.Optional("forecast", default=self.config_entry.options.get("forecast", False)): bool,
         })
         return self.async_show_form(step_id="init", data_schema=data_schema)

@@ -19,7 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 class SilamCoordinator(DataUpdateCoordinator):
     """Координатор для интеграции SILAM Pollen."""
 
-    def __init__(self, hass, base_device_name, var_list, manual_coordinates, manual_latitude, manual_longitude, desired_altitude, update_interval, base_url):
+    def __init__(self, hass, base_device_name, var_list, manual_coordinates, manual_latitude, manual_longitude, desired_altitude, update_interval, base_url, forecast=False):
         """
         Инициализирует координатор.
 
@@ -32,6 +32,8 @@ class SilamCoordinator(DataUpdateCoordinator):
         :param desired_altitude: высота над уровнем моря, заданная пользователем.
         :param update_interval: интервал обновления (в минутах).
         :param base_url: базовый URL для запросов.
+        :param time_duration: длительность запроса данных (например, "PT0H" или "PT36H"). 
+                              Значение по умолчанию "PT0H".  # Новый параметр для управления длительностью запроса
         """
         self._base_device_name = base_device_name
         self._var_list = var_list
@@ -40,6 +42,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         self._manual_longitude = manual_longitude
         self._desired_altitude = desired_altitude
         self._base_url = base_url
+        self._forecast_enabled = forecast
         # Извлекаем версию SILAM из BASE_URL
         match = re.search(r"pollen_v(\d+_\d+)", self._base_url)
         if match:
@@ -69,18 +72,21 @@ class SilamCoordinator(DataUpdateCoordinator):
         Параметры:
           var=POLI
           var=POLISRC
+          var=temp_2m
           latitude, longitude
           time_start=present
-          time_duration=PT0H
+          time_duration=<значение из параметра self._time_duration>
           accept=xml
         """
+        time_duration = "PT36H" if self._forecast_enabled else "PT0H"
         query_params = [
             "var=POLI",
             "var=POLISRC",
+            "var=temp_2m",
             f"latitude={latitude}",
             f"longitude={longitude}",
             "time_start=present",
-            "time_duration=PT0H",
+            f"time_duration={time_duration}",
             "accept=xml"
         ]
         url = self._base_url + "?" + "&".join(query_params)

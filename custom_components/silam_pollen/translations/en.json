@@ -95,6 +95,35 @@
           }
         }
       }
+    },
+    "weather": {
+      "index_polen_weather": {
+        "name": "Pollen forecast **BETA**",
+        "state": {
+          "very_low": "Very Low",
+          "low": "Low",
+          "moderate": "Moderate",
+          "high": "High",
+          "very_high": "Very High",
+          "unknown": "Unknown"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Primary allergen",
+            "state": {
+              "missing": "No data",
+              "alder": "Alder",
+              "birch": "Birch",
+              "grass": "Grass",
+              "olive": "Olive",
+              "mugwort": "Mugwort",
+              "ragweed": "Ragweed",
+              "hazel": "Hazel",
+              "unknown": "Unknown"
+            }
+          }
+        }
+      }
     }
   },
   "config": {
@@ -103,7 +132,11 @@
         "data": {
           "zone_id": "Observation zone",
           "var": "Pollen type",
-          "update_interval": "Update Interval (minutes, minimum 30)"
+          "update_interval": "Update Interval (minutes, minimum 30)",
+          "forecast": "**BETA** Enable pollen forecast?"
+        },
+        "data_description": {
+          "forecast": "The forecast feature may increase API response time up to 10x."
         },
         "title": "Create SILAM Pollen Service",
         "description": "Configure the parameters listed below.\nForecasts are for scientific use; accuracy is not guaranteed."
@@ -125,7 +158,11 @@
         "data": {
           "update_interval": "Update Interval (minutes, minimum 30)",
           "var": "Pollen type",
-          "version": "Dataset"
+          "version": "Dataset",
+          "forecast": "**BETA** Enable pollen forecast?"
+        },
+        "data_description": {
+          "forecast": "The forecast feature may increase API response time up to 10x."
         },
         "title": "SILAM Pollen Options"
       }

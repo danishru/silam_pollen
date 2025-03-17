@@ -215,8 +215,10 @@ class SilamPollenSensor(SensorEntity):
             if index_data is None:
                 _LOGGER.error("Нет данных для index")
                 return
-            additional_feature = index_data.find(".//stationFeature")
-            if additional_feature is not None:
+            # Получаем все элементы stationFeature и берем первый
+            station_features = index_data.findall(".//stationFeature")
+            if station_features:
+                additional_feature = station_features[0]
                 date_val = additional_feature.get("date")
                 if date_val:
                     self._extra_attributes["date"] = date_val

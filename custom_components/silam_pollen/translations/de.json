@@ -1,0 +1,184 @@
+{
+  "title": "SILAM Pollenmonitor",
+  "entity": {
+    "sensor": {
+      "index": {
+        "name": "Index",
+        "state": {
+          "very_low": "Sehr niedrig",
+          "low": "Niedrig",
+          "moderate": "Mäßig",
+          "high": "Hoch",
+          "very_high": "Sehr hoch",
+          "unknown": "Unbekannt"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Hauptallergen",
+            "state": {
+              "missing": "Keine Daten",
+              "alder": "Erle",
+              "birch": "Birke",
+              "grass": "Gras",
+              "olive": "Olive",
+              "mugwort": "Beifuß",
+              "ragweed": "Ambrosia",
+              "hazel": "Hasel",
+              "unknown": "Unbekannt"
+            }
+          },
+          "date": {
+            "name": "Vorhersagedatum & Uhrzeit"
+          }
+        }
+      },
+      "alder": {
+        "name": "Erle",
+        "unit_of_measurement": "Körner/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Höhe (Meeresspiegel)"
+          }
+        }
+      },
+      "birch": {
+        "name": "Birke",
+        "unit_of_measurement": "Körner/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Höhe (Meeresspiegel)"
+          }
+        }
+      },
+      "grass": {
+        "name": "Gras",
+        "unit_of_measurement": "Körner/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Höhe (Meeresspiegel)"
+          }
+        }
+      },
+      "hazel": {
+        "name": "Hasel",
+        "unit_of_measurement": "Körner/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Höhe (Meeresspiegel)"
+          }
+        }
+      },
+      "mugwort": {
+        "name": "Beifuß",
+        "unit_of_measurement": "Körner/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Höhe (Meeresspiegel)"
+          }
+        }
+      },
+      "olive": {
+        "name": "Olive",
+        "unit_of_measurement": "Körner/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Höhe (Meeresspiegel)"
+          }
+        }
+      },
+      "ragweed": {
+        "name": "Ambrosia",
+        "unit_of_measurement": "Körner/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Höhe (Meeresspiegel)"
+          }
+        }
+      }
+    },
+    "weather": {
+      "index_polen_weather": {
+        "name": "Pollen-Vorhersage **BETA**",
+        "state": {
+          "very_low": "Sehr niedrig",
+          "low": "Niedrig",
+          "moderate": "Mäßig",
+          "high": "Hoch",
+          "very_high": "Sehr hoch",
+          "unknown": "Unbekannt"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Hauptallergen",
+            "state": {
+              "missing": "Keine Daten",
+              "alder": "Erle",
+              "birch": "Birke",
+              "grass": "Gras",
+              "olive": "Olive",
+              "mugwort": "Beifuß",
+              "ragweed": "Ambrosia",
+              "hazel": "Hasel",
+              "unknown": "Unbekannt"
+            }
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "zone_id": "Beobachtungszone",
+          "var": "Pollenart",
+          "update_interval": "Aktualisierungsintervall (Minuten, mindestens 30)",
+          "forecast": "**BETA** Pollenprognose aktivieren?"
+        },
+        "data_description": {
+          "forecast": "Die Prognosefunktion kann die API-Antwortzeit bis zu 10x erhöhen."
+        },
+        "title": "SILAM Pollen-Service erstellen",
+        "description": "Konfigurieren Sie die unten aufgeführten Parameter.\nPrognosen dienen wissenschaftlichen Zwecken; ihre Genauigkeit ist nicht garantiert."
+      },
+      "manual_coords": {
+        "data": {
+          "zone_name": "Zonename",
+          "location": "Standort",
+          "altitude": "Höhe über dem Meeresspiegel"
+        },
+        "title": "SILAM Pollen-Service erstellen",
+        "description": "Geben Sie den Zonennamen ein und passen Sie bei Bedarf die Koordinaten an.\n[Siehe Service-Abdeckungsplan](https://danishru.github.io/silam_pollen/)."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Aktualisierungsintervall (Minuten, mindestens 30)",
+          "var": "Pollenart",
+          "version": "Datensatz",
+          "forecast": "**BETA** Pollenprognose aktivieren?"
+        },
+        "data_description": {
+          "forecast": "Die Prognosefunktion kann die API-Antwortzeit bis zu 10x erhöhen."
+        },
+        "title": "SILAM Pollen-Optionen"
+      }
+    }
+  },
+  "selector": {
+    "config_pollen": {
+      "options": {
+        "alder_m22": "Erle",
+        "birch_m22": "Birke",
+        "grass_m32": "Gras",
+        "hazel_m23": "Hasel",
+        "mugwort_m18": "Beifuß",
+        "olive_m28": "Olive",
+        "ragweed_m18": "Ambrosia"
+      }
+    }
+  }
+}
