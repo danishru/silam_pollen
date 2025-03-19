@@ -2,7 +2,7 @@
 coordinator.py
 
 Реализует SilamCoordinator для интеграции SILAM Pollen.
-Использует DataUpdateCoordinator для обновления данных для всех сущностей интеграции.
+Использует DataUpdateCoordinator для обновления данных для всех сенсоров интеграции.
 """
 
 import logging
@@ -32,8 +32,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         :param desired_altitude: высота над уровнем моря, заданная пользователем.
         :param update_interval: интервал обновления (в минутах).
         :param base_url: базовый URL для запросов.
-        :param time_duration: длительность запроса данных (например, "PT0H" или "PT36H"). 
-                              Значение по умолчанию "PT0H".  # Новый параметр для управления длительностью запроса
+        :param forecast: включает режим прогноза (определяет длительность запроса).
         """
         self._base_device_name = base_device_name
         self._var_list = var_list
@@ -49,6 +48,9 @@ class SilamCoordinator(DataUpdateCoordinator):
             self.silam_version = match.group(1)
         else:
             self.silam_version = "unknown"
+
+        # Инициализируем merged_data (будет заполняться после обновления)
+        self.merged_data = {}
 
         super().__init__(
             hass,
@@ -75,7 +77,7 @@ class SilamCoordinator(DataUpdateCoordinator):
           var=temp_2m
           latitude, longitude
           time_start=present
-          time_duration=<значение из параметра self._time_duration>
+          time_duration=<значение из параметра self._forecast_enabled>
           accept=xml
         """
         time_duration = "PT36H" if self._forecast_enabled else "PT0H"
@@ -168,4 +170,13 @@ class SilamCoordinator(DataUpdateCoordinator):
         except Exception as err:
             raise UpdateFailed(f"Ошибка при получении или обработке XML: {err}")
 
-        return data
+        # Объединяем данные один раз и кешируем в merged_data,
+        # при этом оригинальный словарь data возвращается как есть для совместимости
+        try:
+            from .data_processing import merge_station_features
+            merged = merge_station_features(data.get("index"), data.get("main"), forecast_enabled=self._forecast_enabled)
+        #    _LOGGER.debug("Сформированные объединённые данные: %s", merged)
+            self.merged_data = {**merged}
+        except Exception as err:
+            _LOGGER.error("Ошибка при объединении или обработке прогнозных данных: %s", err)
+            self.merged_data = {}

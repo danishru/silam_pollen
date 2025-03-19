@@ -98,7 +98,7 @@
     },
     "weather": {
       "index_polen_weather": {
-        "name": "Pollen forecast **BETA**",
+        "name": "Forecast",
         "state": {
           "very_low": "Very Low",
           "low": "Low",

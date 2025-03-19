@@ -2,28 +2,15 @@
 sensor.py для интеграции SILAM Pollen в Home Assistant.
 
 Реализует:
-  - Динамическое формирование URL запроса к серверу SILAM на основе координат и выбранных аллергенов.
-  - Централизованное обновление данных через SilamCoordinator (один запрос для всех сенсоров службы).
-  - Создание двух типов сенсоров:
-      • "index" – сводной сенсор, отображающий общий индекс пыльцы.
-      • "main" – сенсоры для конкретных аллергенов.
-      
-Особенность:
-  Если пользователь не выбрал никаких аллергенов (var_list пуст),
-  сервер вернет XML вида:
+  - Централизованное обновление данных через SilamCoordinator, который объединяет данные из двух
+    источников (index и main) один раз за цикл обновления и сохраняет их в атрибуте merged_data.
+  - Использование объединённых (кэшированных) данных для обновления состояний сенсоров.
   
-  <?xml version="1.0" encoding="UTF-8"?>
-  <stationFeatureCollection>
-      <stationFeature date="2025-03-05T21:00:00Z">
-          <station name="GridPointRequestedAt[55.000N_37.000E]" latitude="54.965" longitude="36.973" altitude="0">
-              GridPointRequestedAt[55.000N_37.000E]
-          </station>
-          <data name="POLI" units="">2</data>
-          <data name="POLISRC" units="">1</data>
-      </stationFeature>
-  </stationFeatureCollection>
-  
-При этом для такой службы будет создаваться только сводной сенсор "index".
+Создаются два типа сенсоров:
+  • "index" – сводной сенсор, отображающий общий индекс пыльцы. Он извлекает данные из объединённого
+    словаря (merged_data) по ключу "now" для параметров "POLI" и "POLISRC" и определяет состояние через INDEX_MAPPING.
+  • "main" – сенсоры для конкретных аллергенов. Для них используется объединённый словарь, из которого
+    извлекается значение, соответствующее полному имени параметра (через URL_VAR_MAPPING).
 """
 
 import logging
@@ -34,7 +21,7 @@ import xml.etree.ElementTree as ET
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
 from .const import DOMAIN, VAR_OPTIONS, INDEX_MAPPING, RESPONSIBLE_MAPPING, URL_VAR_MAPPING
-from .coordinator import SilamCoordinator  # Импорт нового координатора
+from .coordinator import SilamCoordinator  # Импорт координатора интеграции
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,12 +34,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
       - Координаты и высота (altitude, manual_coordinates, latitude, longitude).
       - Список аллергенов (var).
       - Интервал обновления (update_interval).
-
-    Создаётся экземпляр SilamCoordinator, которому передаются все параметры,
-    после чего вызывается async_config_entry_first_refresh.
-    Затем создаются:
-      - Сводной сенсор "index" для общего индекса пыльцы.
-      - Если список аллергенов не пуст, создаются индивидуальные сенсоры "main" для каждого аллергена.
+    
+    После создания координатора создаются:
+      - Сенсор "index" – сводной сенсор, отображающий общий индекс пыльцы.
+      - При наличии выбранных аллергенов создаются дополнительные сенсоры "main".
     """
     base_device_name = entry.title
 
@@ -65,19 +50,20 @@ async def async_setup_entry(hass, entry, async_add_entities):
     var_list = entry.options.get("var", entry.data.get("var", []))
     update_interval_minutes = entry.options.get("update_interval", entry.data.get("update_interval", 60))
 
-    # Получаем уже созданный координатор из hass.data
+    # Получаем координатор, ранее сохранённый в hass.data
     coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
     if coordinator is None:
         _LOGGER.error("Координатор для записи %s не найден!", entry.entry_id)
         return
 
     sensors = []
+    # Создаём сенсор типа "index"
     sensors.append(
         SilamPollenSensor(
             sensor_name=f"{base_device_name} Index",
             base_device_name=base_device_name,
             coordinator=coordinator,
-            var=var_list,  # Для index передаётся список аллергенов
+            var=var_list,  # Для index передаётся список аллергенов (используется для формирования имени)
             entry_id=entry.entry_id,
             sensor_type="index",
             desired_altitude=altitude,
@@ -86,6 +72,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             manual_longitude=manual_longitude,
         )
     )
+    # Если выбраны конкретные аллергены, создаём сенсоры типа "main" для каждого из них
     if var_list:
         for pollen in var_list:
             translation_key = VAR_OPTIONS.get(pollen, pollen)
@@ -94,7 +81,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                     sensor_name=f"{base_device_name} {translation_key}",
                     base_device_name=base_device_name,
                     coordinator=coordinator,
-                    var=pollen,  # Для main – конкретный аллерген
+                    var=pollen,  # Для main передаётся конкретный аллерген
                     entry_id=entry.entry_id,
                     sensor_type="main",
                     desired_altitude=altitude,
@@ -109,10 +96,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class SilamPollenSensor(SensorEntity):
     """
     Класс сенсора SILAM Pollen.
-
-    Сенсоры делятся на два типа:
-      - "index": сводной сенсор, отображающий общий индекс пыльцы.
-      - "main": сенсор для конкретного аллергена, отображающий значение pollen_value.
+    
+    Различают два типа сенсоров:
+      - "index": отображает общий индекс пыльцы, используя данные из ключа "now" объединённого словаря.
+      - "main": отображает значение для конкретного аллергена, используя данные из ключа "now".
     """
     def __init__(self, sensor_name, base_device_name, coordinator, var, entry_id, sensor_type, desired_altitude,
                  manual_coordinates, manual_latitude, manual_longitude):
@@ -130,7 +117,7 @@ class SilamPollenSensor(SensorEntity):
         self._manual_latitude = manual_latitude
         self._manual_longitude = manual_longitude
 
-        # Формирование строки с GPS-координатами для отображения в DeviceInfo.
+        # Формируем строку с GPS-координатами для DeviceInfo
         try:
             lat = round(float(self._manual_latitude), 3)
             lon = round(float(self._manual_longitude), 3)
@@ -140,7 +127,7 @@ class SilamPollenSensor(SensorEntity):
         except (ValueError, TypeError):
             coordinates = f"GPS - {self._manual_latitude}, {self._manual_longitude}"
 
-        # Определяем, какой набор используется, на основе base_url из координатора
+        # Определяем используемый набор данных по base_url
         base_url = self.coordinator._base_url
         if "silam_europe_pollen" in base_url:
             dataset = "europe"
@@ -162,8 +149,10 @@ class SilamPollenSensor(SensorEntity):
             configuration_url=f"https://silam.fmi.fi/pollen.html?region={dataset}"
         )
 
+        # Регистрируем слушатель обновлений для автоматического обновления состояния сенсора
         self.async_on_remove(self.coordinator.async_add_listener(self.async_write_ha_state))
 
+        # Настраиваем перевод и имя сущности в зависимости от типа сенсора
         if self._sensor_type == "index":
             self._attr_translation_key = "index"
             self._attr_has_entity_name = True
@@ -203,64 +192,58 @@ class SilamPollenSensor(SensorEntity):
 
     async def async_update(self):
         """
-        Обновляет состояние сенсора, используя данные, полученные координатором.
+        Обновляет состояние сенсора, используя данные из объединённого словаря, сохранённого в self.coordinator.merged_data.
+
+        Для сенсора "index":
+          - Из раздела "now" объединённого словаря извлекается значение "POLI" и "POLISRC".
+          - Состояние определяется через INDEX_MAPPING, а дополнительные атрибуты сохраняются.
+        
+        Для сенсора "main":
+          - Из раздела "now" извлекается элемент с именем параметра (определяемым через URL_VAR_MAPPING).
+          - Значение преобразуется в число, а единицы измерения и другие атрибуты сохраняются.
         """
-        data = self.coordinator.data
-        if data is None:
-            _LOGGER.error("Нет данных от координатора")
+        merged = self.coordinator.merged_data
+        if not merged or "now" not in merged:
+            _LOGGER.error("Объединённые данные отсутствуют или не содержат ключ 'now'")
             return
 
+        # Используем раздел "now" для получения данных
+        entry = merged["now"]
+
         if self._sensor_type == "index":
-            index_data = data.get("index")
-            if index_data is None:
-                _LOGGER.error("Нет данных для index")
-                return
-            # Получаем все элементы stationFeature и берем первый
-            station_features = index_data.findall(".//stationFeature")
-            if station_features:
-                additional_feature = station_features[0]
-                date_val = additional_feature.get("date")
-                if date_val:
-                    self._extra_attributes["date"] = date_val
-                poli_elem = additional_feature.find(".//data[@name='POLI']")
-                if poli_elem is not None:
-                    try:
-                        index_value = int(float(poli_elem.text))
-                    except (ValueError, TypeError):
-                        index_value = None
-                    self._state = INDEX_MAPPING.get(index_value, "unknown")
-                else:
-                    self._state = None
-                polisrc_elem = additional_feature.find(".//data[@name='POLISRC']")
-                if polisrc_elem is not None:
-                    try:
-                        re_value = int(float(polisrc_elem.text))
-                    except (ValueError, TypeError):
-                        re_value = None
-                    self._extra_attributes["responsible_elevated"] = RESPONSIBLE_MAPPING.get(re_value, "unknown")
+            self._extra_attributes["date"] = entry.get("date")
+            poli_raw = entry["data"].get("POLI", {}).get("value")
+            try:
+                index_value = int(float(poli_raw))
+            except (ValueError, TypeError):
+                index_value = None
+            self._state = INDEX_MAPPING.get(index_value, "unknown")
+
+            polisrc_raw = entry["data"].get("POLISRC", {}).get("value")
+            try:
+                re_value = int(float(polisrc_raw))
+            except (ValueError, TypeError):
+                re_value = None
+            self._extra_attributes["responsible_elevated"] = RESPONSIBLE_MAPPING.get(re_value, "unknown")
 
         elif self._sensor_type == "main":
-            main_data_xml = data.get("main")
-            main_data = {}
+            full_var = URL_VAR_MAPPING.get(self._var, self._var)
+            data_element = entry["data"].get(full_var)
             state_value = None
-            if main_data_xml is not None:
-                station_features = main_data_xml.findall(".//stationFeature")
-                if station_features:
-                    # Теперь выбираем первый элемент, так как API уже возвращает данные с указанной высотой
-                    best_feature = station_features[0]
-                    full_var = URL_VAR_MAPPING.get(self._var, self._var)
-                    data_element = best_feature.find(f".//data[@name='{full_var}']")
-                    if data_element is not None:
-                        try:
-                            pollen_val = float(data_element.text)
-                            state_value = int(round(pollen_val))
-                        except (ValueError, TypeError):
-                            state_value = None
-                        unit = data_element.get("units")
-                        if unit:
-                            main_data["unit_of_measurement"] = unit
-                        station_elem = best_feature.find(".//station")
-                        if station_elem is not None:
-                            main_data["altitude"] = station_elem.get("altitude")
+            main_data = {}
+            if data_element:
+                try:
+                    pollen_val = float(data_element.get("value"))
+                    state_value = int(round(pollen_val))
+                except (ValueError, TypeError):
+                    state_value = None
+                unit = data_element.get("units")
+                if unit:
+                    main_data["unit_of_measurement"] = unit
+
+            station = entry.get("station", {})
+            if station:
+                main_data["altitude"] = station.get("altitude")
+
             self._state = state_value
             self._extra_attributes.update(main_data)
