@@ -29,6 +29,17 @@
           },
           "date": {
             "name": "Forecast Date & Time"
+          },
+          "index_tomorrow": {
+            "name": "Forecast for Tomorrow",
+            "state": {
+              "very_low": "Very Low",
+              "low": "Low",
+              "moderate": "Moderate",
+              "high": "High",
+              "very_high": "Very High",
+              "unknown": "Unknown"
+            }
           }
         }
       },
@@ -178,6 +189,18 @@
         "mugwort_m18": "Mugwort",
         "olive_m28": "Olive",
         "ragweed_m18": "Ragweed"
+      }
+    }
+  },
+  "services": {
+    "manual_update": {
+      "name": "Manual Update",
+      "description": "Manually trigger a data refresh for the selected SILAM Pollen integration targets.",
+      "fields": {
+        "targets": {
+          "name": "Targets",
+          "description": "Select one or more devices or entities to update."
+        }
       }
     }
   }

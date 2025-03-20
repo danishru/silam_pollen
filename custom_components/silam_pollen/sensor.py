@@ -130,9 +130,9 @@ class SilamPollenSensor(SensorEntity):
         # Определяем используемый набор данных по base_url
         base_url = self.coordinator._base_url
         if "silam_europe_pollen" in base_url:
-            dataset = "europe"
+            dataset = "Europe v6.0"
         elif "silam_regional_pollen" in base_url:
-            dataset = "regional"
+            dataset = "Regional v5.9.1"
         else:
             dataset = "unknown"
             
@@ -225,6 +225,21 @@ class SilamPollenSensor(SensorEntity):
             except (ValueError, TypeError):
                 re_value = None
             self._extra_attributes["responsible_elevated"] = RESPONSIBLE_MAPPING.get(re_value, "unknown")
+            # Добавляем новый атрибут "index_tomorrow" только если включён прогноз
+            if self.coordinator._forecast_enabled:
+                twice_daily = merged.get("twice_daily_forecast", [])
+                condition_tomorrow = None
+                if twice_daily:
+                    # Если первый прогноз дневной, берем третий (если он есть и тоже дневной)
+                    if twice_daily[0].get("is_daytime"):
+                        if len(twice_daily) >= 3 and twice_daily[2].get("is_daytime"):
+                            condition_tomorrow = twice_daily[2].get("condition")
+                    # Если первый прогноз ночной, то берем второй (если он дневной)
+                    else:
+                        if len(twice_daily) >= 2 and twice_daily[1].get("is_daytime"):
+                            condition_tomorrow = twice_daily[1].get("condition")
+                if condition_tomorrow is not None:
+                    self._extra_attributes["index_tomorrow"] = condition_tomorrow
 
         elif self._sensor_type == "main":
             full_var = URL_VAR_MAPPING.get(self._var, self._var)

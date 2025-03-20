@@ -138,6 +138,11 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         base_data["zone_name"] = user_input.get("zone_name")
         base_data["manual_coordinates"] = True
         base_data["title"] = "SILAM Pollen - {zone_name}".format(zone_name=base_data["zone_name"])
+        # Добавляем уникальный идентификатор на основе координат.
+        # (Можно использовать другую логику для генерации уникального идентификатора)
+        unique_id = f"{latitude}_{longitude}"
+        await self.async_set_unique_id(unique_id)
+        self._abort_if_unique_id_configured()
 
         # Выполняем тестовый запрос к API с использованием введённых координат.
         # Метод _test_api возвращает True, None и выбранный URL (chosen_url) при успешном ответе.

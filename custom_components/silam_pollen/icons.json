@@ -1,4 +1,9 @@
 {
+  "services": {
+    "manual_update": {
+      "service": "mdi:refresh"
+    }
+  },
   "entity": {
     "sensor": {
       "index": {

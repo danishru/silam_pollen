@@ -53,10 +53,24 @@ async def async_migrate_entry(hass, config_entry):
     # Устанавливаем опцию прогноза по умолчанию, если она не задана
     if "forecast" not in new_data:
         new_data["forecast"] = False
-    
-    # Обновляем запись с новой информацией
+
+    # Если unique_id отсутствует, задаем его на основе координат.
+    if new_data.get("unique_id") is None:
+        latitude = new_data.get("latitude")
+        longitude = new_data.get("longitude")
+        if latitude is not None and longitude is not None:
+            unique_id = f"{latitude}_{longitude}"
+            new_data["unique_id"] = unique_id
+            _LOGGER.debug("Установлен unique_id: %s", unique_id)
+
+    # Пример проверки minor_version: если текущая версия 1 и minor_version меньше 2, обновляем minor_version.
+    if config_entry.version == 1 and config_entry.minor_version < 2:
+        new_minor_version = 2
+    else:
+        new_minor_version = config_entry.minor_version
+
     hass.config_entries.async_update_entry(
-        config_entry, data=new_data, minor_version=1, version=config_entry.version
+        config_entry, data=new_data, minor_version=new_minor_version, version=config_entry.version
     )
     _LOGGER.debug("Миграция успешна, новые данные: %s", new_data)
     return True

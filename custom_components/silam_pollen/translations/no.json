@@ -180,5 +180,17 @@
         "ragweed_m18": "Ambrosia"
       }
     }
+  },
+  "services": {
+    "manual_update": {
+      "name": "Manuell oppdatering",
+      "description": "Manuell igangsetting av datoppdatering for de valgte målene for SILAM Pollen-integrasjonen.",
+      "fields": {
+        "targets": {
+          "name": "Mål",
+          "description": "Velg ett eller flere enheter eller entiteter for oppdatering."
+        }
+      }
+    }
   }
 }

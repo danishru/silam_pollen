@@ -66,7 +66,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         Логирует контекст вызова (например, идентификатор сущности, которая запросила обновление).
         """
         _LOGGER.debug("Запрошено обновление данных. Контекст: %s", context)
-        return await super().async_request_refresh(context=context)
+        return await super().async_request_refresh()
 
     def _build_index_url(self, latitude, longitude):
         """

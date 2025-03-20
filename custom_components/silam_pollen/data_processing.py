@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import statistics
+import math
 from datetime import datetime, timedelta, timezone
 from .const import INDEX_MAPPING
 
@@ -74,7 +75,7 @@ def merge_station_features(index_xml: ET.Element, main_xml: ET.Element = None, f
             "data": combined_data
         }
     
-    # Выбираем самую раннюю запись для ключа "now"
+    # Выбираем самую раннюю запись для ключа "now" и добавляем дату
     now_record = {}
     if raw_merged:
         try:
@@ -83,6 +84,7 @@ def merge_station_features(index_xml: ET.Element, main_xml: ET.Element = None, f
             sorted_dates = list(raw_merged.keys())
         earliest = sorted_dates[0]
         now_record = raw_merged[earliest]
+        now_record["date"] = earliest  # Добавляем дату
     else:
         earliest = None
 
@@ -109,7 +111,7 @@ def merge_station_features(index_xml: ET.Element, main_xml: ET.Element = None, f
 
             raw_all.append({
                 "datetime": date_str,
-                "temperature": temp_value,
+                "temperature": round(temp_value, 1),
                 "pollen_index": pollen_index,
             })
         try:
@@ -137,9 +139,9 @@ def merge_station_features(index_xml: ET.Element, main_xml: ET.Element = None, f
             aggregated_hourly.append({
                 "datetime": rep_time_str,
                 "condition": condition,
-                "native_temperature": max_temp,
+                "native_temperature": round(max_temp, 1),
                 "native_temperature_unit": "°C",
-                "pollen_index": int(round(median_index)) if median_index is not None else None,
+                "pollen_index": int(math.ceil(median_index)) if median_index is not None else None
             })
         hourly_forecast = aggregated_hourly
 
@@ -177,9 +179,9 @@ def merge_station_features(index_xml: ET.Element, main_xml: ET.Element = None, f
                         "datetime": fixed_dt_str,
                         "is_daytime": (6 <= fixed_local_dt.hour < 18),
                         "condition": condition,
-                        "native_temperature": max_temp,
-                        "native_templow": min_temp,
-                        "pollen_index": int(round(median_index)) if median_index is not None else None
+                        "native_temperature": round(max_temp, 1),
+                        "native_templow": round(min_temp, 1),
+                        "pollen_index": int(math.ceil(median_index)) if median_index is not None else None
                     })
         aggregated_twice.sort(key=lambda x: x["datetime"])
         twice_daily_forecast = aggregated_twice

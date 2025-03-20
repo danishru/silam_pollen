@@ -57,12 +57,23 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
         """Возвращает дополнительные атрибуты сенсора."""
         return self._extra_attributes
 
+    def _update_listener(self) -> None:
+        """Синхронная обёртка для запуска обновления прогноза.
+        
+        Эта функция вызывается координатором и должна возвращать None.
+        """
+        self.hass.async_create_task(self._handle_coordinator_update())
+        # Явно возвращаем None
+        return None
+
     async def async_added_to_hass(self) -> None:
-        """Вызывается после добавления сенсора в HA. Регистрируем слушателя обновлений и обновляем прогноз."""
+        """Вызывается после добавления сенсора в HA.
+        
+        Регистрируем слушателя обновлений через обёртку, чтобы callback возвращал None.
+        Затем запускаем обновление прогноза.
+        """
         await super().async_added_to_hass()
-        self.async_on_remove(
-            self.coordinator.async_add_listener(self.async_write_ha_state)
-        )
+        self.async_on_remove(self.coordinator.async_add_listener(self._update_listener))
         await self._handle_coordinator_update()
 
     @property
