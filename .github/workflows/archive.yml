@@ -1,31 +1,26 @@
-name: Build and attach ZIP archive to release
+name: Create and Upload Archive
 
 on:
   release:
     types: [published]
 
 jobs:
-  zip-and-upload:
-    name: Zip and attach integration archive
+  build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: List repository structure for debugging
-        run: |
-          ls -la
-          ls -la custom_components
-
-      - name: Create ZIP archive from custom_components/silam_pollen
-        run: |
-          mkdir -p build
-          zip -r build/silam_pollen-${{ github.ref_name }}.zip custom_components/silam_pollen
-
-      - name: Upload archive to GitHub Release
-        uses: softprops/action-gh-release@v1
+      - name: Create ZIP archive of silam_pollen integration
+        uses: TheDoctor0/zip-release@0.7.6
         with:
-          files: build/silam_pollen-${{ github.ref_name }}.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          type: 'zip'
+          filename: silam_pollen-${{ github.ref_name }}.zip
+          # Указываем путь к папке, которую нужно архивировать (относительно корня репозитория)
+          path: custom_components/silam_pollen
+
+      - name: Upload Archive to Release
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          artifacts: silam_pollen-${{ github.ref_name }}.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
