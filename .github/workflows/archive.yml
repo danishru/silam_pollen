@@ -13,10 +13,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Create ZIP archive from silam_pollen/
+      - name: Create ZIP archive from custom_components/silam_pollen
         run: |
           mkdir -p build
-          zip -r build/silam_pollen-${{ github.ref_name }}.zip silam_pollen
+          zip -r build/silam_pollen-${{ github.ref_name }}.zip custom_components/silam_pollen
 
       - name: Upload archive to GitHub Release
         uses: softprops/action-gh-release@v1
