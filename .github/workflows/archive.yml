@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: List repository structure (for debugging)
+      - name: List repository structure for debugging
         run: |
           ls -la
           ls -la custom_components
