@@ -6,17 +6,22 @@ on:
 
 jobs:
   zip-and-upload:
-    name: Zip and attach silam_pollen integration
+    name: Zip and attach integration archive
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Create ZIP archive from silam_pollen/custom_components/silam_pollen
+      - name: List repository structure (for debugging)
+        run: |
+          ls -la
+          ls -la custom_components
+
+      - name: Create ZIP archive from custom_components/silam_pollen
         run: |
           mkdir -p build
-          zip -r build/silam_pollen-${{ github.ref_name }}.zip silam_pollen/custom_components/silam_pollen
+          zip -r build/silam_pollen-${{ github.ref_name }}.zip custom_components/silam_pollen
 
       - name: Upload archive to GitHub Release
         uses: softprops/action-gh-release@v1
