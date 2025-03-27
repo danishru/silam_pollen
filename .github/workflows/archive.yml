@@ -1,0 +1,26 @@
+name: Build and attach ZIP archive to release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  zip-and-upload:
+    name: Zip and attach silam_pollen integration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create ZIP archive from silam_pollen/
+        run: |
+          mkdir -p build
+          zip -r build/silam_pollen-${{ github.ref_name }}.zip silam_pollen
+
+      - name: Upload archive to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/silam_pollen-${{ github.ref_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
