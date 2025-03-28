@@ -1,5 +1,6 @@
 {
   "name": "SILAM Pollen Allergy",
+  "filename": "silam_pollen.zip",
   "render_readme": true,
-  "zip_release": false
+  "zip_release": true
 }
