@@ -17,6 +17,13 @@
 > [!IMPORTANT]  
 > Эта интеграция создана с использованием редакции ChatGPT для совместного написания кода, исправления ошибок и редактуры.
 > Если вы придерживаетесь иной этической точки зрения, приношу извинения. Однако, я считаю, что данное применение является морально приемлемым, поскольку интеграция является некоммерческой, бесплатной и свободной, а её цель — способствовать открытости и взаимодействию.
+## 🆕 Что нового в v0.2.1
+
+**🌸 Прогноз пыльцы (BETA)**   
+ - В почасовой и дважды в день прогнозы пыльцы добавлены значения для выбранных аллергенов.  
+ - Для каждого сенсора пыльцы теперь добавлен атрибут с прогнозом на следующий день, который отображает дневной прогноз на следующий день, так же как для индекса пыльцы.
+
+[![Подробнее в релизе v0.2.1](https://img.shields.io/badge/Подробнее--в--релизе-v0.2.1-blue?style=for-the-badge)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.1)
 
 ## 🆕 Что нового в v0.2.0
 
@@ -132,7 +139,7 @@
 
 Если выбран тип пыльцы, то для каждого выбранного типа создается отдельный сенсор, отображающий округленное до целого число, представляющее смоделированное количество пыльцы (единиц на кубический метр). В атрибутах таких сенсоров также указывается ближайшая доступная высота над уровнем моря, которая использовалась для выборки данных.
 
-|  ![image](https://github.com/user-attachments/assets/7ddd51f8-7176-41b5-95f2-9b4fc83f3165) | ![image](https://github.com/user-attachments/assets/cdd218fc-a534-4c58-98c9-2e2a5cbf7793)  |
+|  ![image](https://github.com/user-attachments/assets/99a5e8a3-303c-4c7c-b885-a70c5e54269b) | ![image](https://github.com/user-attachments/assets/dbc735f0-10f0-4a88-8fbb-1dbc5d98f5eb)  |
 | ------------- | ------------- |
 
 Если включена опция **Прогноз пыльцы (BETA)**, будет создан дополнительный **погодный сенсор**, который предоставляет:
@@ -153,46 +160,62 @@
 ```yaml
 weather.silam_pollen_frantsiia_forecast:
   forecast:
-    - datetime: "2025-03-27T13:00:00+00:00"
-      condition: moderate
-      native_temperature_unit: °C
-      pollen_index: 3
-      temperature: 14
-    - datetime: "2025-03-27T16:00:00+00:00"
-      condition: moderate
-      native_temperature_unit: °C
-      pollen_index: 3
-      temperature: 14.7
-    - datetime: "2025-03-27T19:00:00+00:00"
-      condition: moderate
-      native_temperature_unit: °C
-      pollen_index: 3
-      temperature: 13.1
-    - datetime: "2025-03-27T22:00:00+00:00"
-      condition: low
-      native_temperature_unit: °C
-      pollen_index: 2
-      temperature: 9.2
-    - datetime: "2025-03-28T01:00:00+00:00"
-      condition: very_low
-      native_temperature_unit: °C
-      pollen_index: 1
-      temperature: 6.9
-    - datetime: "2025-03-28T04:00:00+00:00"
+    - datetime: "2025-04-10T14:00:00+00:00"
       condition: high
       native_temperature_unit: °C
       pollen_index: 4
-      temperature: 4.7
-    - datetime: "2025-03-28T07:00:00+00:00"
+      temperature: 15.2
+      pollen_alder: 0
+      pollen_birch: 260
+    - datetime: "2025-04-10T17:00:00+00:00"
+      condition: high
+      native_temperature_unit: °C
+      pollen_index: 4
+      temperature: 15.3
+      pollen_alder: 0
+      pollen_birch: 308
+    - datetime: "2025-04-10T20:00:00+00:00"
+      condition: high
+      native_temperature_unit: °C
+      pollen_index: 4
+      temperature: 13.7
+      pollen_alder: 0
+      pollen_birch: 340
+    - datetime: "2025-04-10T23:00:00+00:00"
+      condition: high
+      native_temperature_unit: °C
+      pollen_index: 4
+      temperature: 10.5
+      pollen_alder: 0
+      pollen_birch: 264
+    - datetime: "2025-04-11T02:00:00+00:00"
       condition: moderate
       native_temperature_unit: °C
       pollen_index: 3
-      temperature: 4.1
-    - datetime: "2025-03-28T10:00:00+00:00"
+      temperature: 7.8
+      pollen_alder: 0
+      pollen_birch: 79
+    - datetime: "2025-04-11T05:00:00+00:00"
       condition: moderate
       native_temperature_unit: °C
       pollen_index: 3
-      temperature: 8.6
+      temperature: 5.9
+      pollen_alder: 0
+      pollen_birch: 162
+    - datetime: "2025-04-11T08:00:00+00:00"
+      condition: high
+      native_temperature_unit: °C
+      pollen_index: 4
+      temperature: 10.3
+      pollen_alder: 0
+      pollen_birch: 352
+    - datetime: "2025-04-11T11:00:00+00:00"
+      condition: high
+      native_temperature_unit: °C
+      pollen_index: 4
+      temperature: 16.8
+      pollen_alder: 0
+      pollen_birch: 332
 ```
 </details>
 
@@ -202,24 +225,30 @@ weather.silam_pollen_frantsiia_forecast:
 ```yaml
 weather.silam_pollen_frantsiia_forecast:
   forecast:
-    - datetime: "2025-03-27T21:00:00+00:00"
+    - datetime: "2025-04-10T21:00:00+00:00"
       is_daytime: false
-      condition: moderate
-      pollen_index: 3
-      temperature: 14.7
-      templow: 7.6
-    - datetime: "2025-03-28T09:00:00+00:00"
+      condition: high
+      pollen_index: 4
+      temperature: 15.3
+      pollen_alder: 0
+      pollen_birch: 296
+      templow: 8.6
+    - datetime: "2025-04-11T09:00:00+00:00"
       is_daytime: true
       condition: moderate
       pollen_index: 3
-      temperature: 8.6
-      templow: 3.6
-    - datetime: "2025-03-28T21:00:00+00:00"
+      temperature: 16.8
+      pollen_alder: 0
+      pollen_birch: 278
+      templow: 5.2
+    - datetime: "2025-04-11T21:00:00+00:00"
       is_daytime: false
-      condition: moderate
-      pollen_index: 3
-      temperature: 12.6
-      templow: 6.4
+      condition: high
+      pollen_index: 4
+      temperature: 19.7
+      pollen_alder: 0
+      pollen_birch: 416
+      templow: 12.1
 ```
 </details>
 
@@ -232,6 +261,7 @@ weather.silam_pollen_frantsiia_forecast:
 - Для каждого 3-часового окна рассчитываются:
   - Максимальная температура.
   - Индекс пыльцы — медианное значение, округлённое вверх до ближайшего целого.
+  - Медианное значение для каждого выбранного аллергена.
 - Используется текущая дата + 24 часа вперёд.
 
 #### Прогноз дважды в сутки (36 часов)
@@ -239,6 +269,7 @@ weather.silam_pollen_frantsiia_forecast:
 - Вычисляется:
   - Максимальная и минимальная температура.
   - Индекс пыльцы — медианное значение по интервалу, также округляется вверх.
+  - Медианное значение для каждого выбранного аллергена.
 - Прогнозы фиксируются на 00:00 и 12:00 (локальное время пользователя).
 
 #### Используемые параметры
