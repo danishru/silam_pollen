@@ -101,10 +101,13 @@ class SilamCoordinator(DataUpdateCoordinator):
         Плюс общие параметры:
           latitude, longitude
           time_start=present
-          time_duration=PT0H
+          time_duration=<значение из параметра self._forecast_enabled>
           vertCoord=<desired_altitude>
           accept=xml
         """
+        # Определяем длительность прогноза
+        time_duration = "PT36H" if self._forecast_enabled else "PT0H"
+    
         query_params = []
         if self._var_list:
             for allergen in self._var_list:
@@ -113,9 +116,10 @@ class SilamCoordinator(DataUpdateCoordinator):
         query_params.append(f"latitude={latitude}")
         query_params.append(f"longitude={longitude}")
         query_params.append("time_start=present")
-        query_params.append("time_duration=PT0H")
+        query_params.append(f"time_duration={time_duration}")  # Добавляем параметр времени прогноза
         query_params.append(f"vertCoord={self._desired_altitude}")
         query_params.append("accept=xml")
+        
         url = self._base_url + "?" + "&".join(query_params)
         return url
 
@@ -174,8 +178,13 @@ class SilamCoordinator(DataUpdateCoordinator):
         # при этом оригинальный словарь data возвращается как есть для совместимости
         try:
             from .data_processing import merge_station_features
-            merged = merge_station_features(data.get("index"), data.get("main"), forecast_enabled=self._forecast_enabled)
-        #    _LOGGER.debug("Сформированные объединённые данные: %s", merged)
+            merged = merge_station_features(
+                data.get("index"),
+                data.get("main"),
+                forecast_enabled=self._forecast_enabled,
+                selected_allergens=self._var_list
+            )
+            _LOGGER.debug("Сформированные объединённые данные: %s", merged)
             self.merged_data = {**merged}
         except Exception as err:
             _LOGGER.error("Ошибка при объединении или обработке прогнозных данных: %s", err)

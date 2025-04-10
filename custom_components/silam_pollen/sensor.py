@@ -201,6 +201,7 @@ class SilamPollenSensor(SensorEntity):
         Для сенсора "main":
           - Из раздела "now" извлекается элемент с именем параметра (определяемым через URL_VAR_MAPPING).
           - Значение преобразуется в число, а единицы измерения и другие атрибуты сохраняются.
+          - Если включён прогноз, добавляется атрибут "tomorrow", в котором хранится агрегированное значение прогноза пыльцы для завтрашнего дня.
         """
         merged = self.coordinator.merged_data
         if not merged or "now" not in merged:
@@ -262,3 +263,20 @@ class SilamPollenSensor(SensorEntity):
 
             self._state = state_value
             self._extra_attributes.update(main_data)
+            # Добавляем атрибут "tomorrow" для сенсора main,
+            # который содержит прогнозное значение пыльцы (агрегированное по forecast_key)
+            if self.coordinator._forecast_enabled:
+                twice_daily = merged.get("twice_daily_forecast", [])
+                tomorrow_value = None
+                # Ключ для аллергена формируется по схеме "pollen_<имя>", где имя определяется
+                # как часть переменной до символа "_", приведённая к нижнему регистру.
+                forecast_key = "pollen_" + self._var.split('_')[0].lower()
+                if twice_daily:
+                    if twice_daily[0].get("is_daytime"):
+                        if len(twice_daily) >= 3 and twice_daily[2].get("is_daytime"):
+                            tomorrow_value = twice_daily[2].get(forecast_key)
+                    else:
+                        if len(twice_daily) >= 2 and twice_daily[1].get("is_daytime"):
+                            tomorrow_value = twice_daily[1].get(forecast_key)
+                if tomorrow_value is not None:
+                    self._extra_attributes["tomorrow"] = tomorrow_value

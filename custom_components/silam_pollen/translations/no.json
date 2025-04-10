@@ -29,6 +29,17 @@
           },
           "date": {
             "name": "Prognosedato og tid"
+          },
+          "index_tomorrow": {
+            "name": "Prognose for i morgen",
+            "state": {
+              "very_low": "Svært lav",
+              "low": "Lav",
+              "moderate": "Moderat",
+              "high": "Høy",
+              "very_high": "Svært høy",
+              "unknown": "Ukjent"
+            }
           }
         }
       },
@@ -38,6 +49,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Høyde (sjønivå)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -47,6 +61,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Høyde (sjønivå)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -56,6 +73,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Høyde (sjønivå)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -65,6 +85,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Høyde (sjønivå)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -74,6 +97,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Høyde (sjønivå)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -83,6 +109,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Høyde (sjønivå)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -92,6 +121,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Høyde (sjønivå)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       }

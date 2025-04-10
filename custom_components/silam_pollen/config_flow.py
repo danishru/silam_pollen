@@ -138,6 +138,8 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         base_data["zone_name"] = user_input.get("zone_name")
         base_data["manual_coordinates"] = True
         base_data["title"] = "SILAM Pollen - {zone_name}".format(zone_name=base_data["zone_name"])
+        # Сохранение параметра "forecast" из первого шага
+        base_data["forecast"] = self.context.get("base_data", {}).get("forecast", False)
         # Добавляем уникальный идентификатор на основе координат.
         # (Можно использовать другую логику для генерации уникального идентификатора)
         unique_id = f"{latitude}_{longitude}"
@@ -310,6 +312,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     mode="dropdown"
                 )
             ),
-            vol.Optional("forecast", default=self.config_entry.options.get("forecast", False)): bool,
+            vol.Optional(
+                "forecast",
+                default=self.config_entry.options.get("forecast", self.config_entry.data.get("forecast", False))
+            ): bool,
         })
         return self.async_show_form(step_id="init", data_schema=data_schema)

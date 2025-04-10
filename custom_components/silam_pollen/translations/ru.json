@@ -48,6 +48,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
+            },
+          "tomorrow": {
+            "name": "Прогноз на завтра"
             }
          }
       },
@@ -57,6 +60,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
+            },
+          "tomorrow": {
+            "name": "Прогноз на завтра"
             }
          }
       },
@@ -66,6 +72,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
+            },
+          "tomorrow": {
+            "name": "Прогноз на завтра"
             }
          }
       },
@@ -75,6 +84,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
+            },
+          "tomorrow": {
+            "name": "Прогноз на завтра"
             }
          }
       },
@@ -84,6 +96,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
+            },
+          "tomorrow": {
+            "name": "Прогноз на завтра"
             }
          }
       },
@@ -93,6 +108,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
+            },
+          "tomorrow": {
+            "name": "Прогноз на завтра"
             }
          }
       },
@@ -102,6 +120,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
+            },
+          "tomorrow": {
+            "name": "Прогноз на завтра"
             }
          }
       }

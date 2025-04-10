@@ -29,6 +29,17 @@
           },
           "date": {
             "name": "Prognosedato & tid"
+          },
+          "index_tomorrow": {
+            "name": "Prognose for i morgen",
+            "state": {
+              "very_low": "Meget lav",
+              "low": "Lav",
+              "moderate": "Moderat",
+              "high": "Høj",
+              "very_high": "Meget høj",
+              "unknown": "Ukendt"
+            }
           }
         }
       },
@@ -38,6 +49,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Højde (ved havniveau)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -47,6 +61,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Højde (ved havniveau)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -56,6 +73,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Højde (ved havniveau)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -65,6 +85,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Højde (ved havniveau)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -74,6 +97,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Højde (ved havniveau)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -83,6 +109,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Højde (ved havniveau)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       },
@@ -92,6 +121,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Højde (ved havniveau)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
           }
         }
       }

@@ -49,6 +49,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Altitude (sea level)"
+          },
+          "tomorrow": {
+            "name": "Forecast for Tomorrow"
           }
         }
       },
@@ -58,6 +61,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Altitude (sea level)"
+          },
+          "tomorrow": {
+            "name": "Forecast for Tomorrow"
           }
         }
       },
@@ -67,6 +73,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Altitude (sea level)"
+          },
+          "tomorrow": {
+            "name": "Forecast for Tomorrow"
           }
         }
       },
@@ -76,6 +85,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Altitude (sea level)"
+          },
+          "tomorrow": {
+            "name": "Forecast for Tomorrow"
           }
         }
       },
@@ -85,6 +97,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Altitude (sea level)"
+          },
+          "tomorrow": {
+            "name": "Forecast for Tomorrow"
           }
         }
       },
@@ -94,6 +109,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Altitude (sea level)"
+          },
+          "tomorrow": {
+            "name": "Forecast for Tomorrow"
           }
         }
       },
@@ -103,6 +121,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Altitude (sea level)"
+          },
+          "tomorrow": {
+            "name": "Forecast for Tomorrow"
           }
         }
       }

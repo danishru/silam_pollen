@@ -29,6 +29,17 @@
           },
           "date": {
             "name": "Prognosdatum & tid"
+          },
+          "index_tomorrow": {
+            "name": "Pollenprognos för imorgon",
+            "state": {
+              "very_low": "Mycket låg",
+              "low": "Låg",
+              "moderate": "Moderat",
+              "high": "Hög",
+              "very_high": "Mycket hög",
+              "unknown": "Okänd"
+            }
           }
         }
       },
@@ -38,6 +49,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Höjd (havsnivå)"
+          },
+          "tomorrow": {
+            "name": "Pollenprognos för imorgon"
           }
         }
       },
@@ -47,6 +61,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Höjd (havsnivå)"
+          },
+          "tomorrow": {
+            "name": "Pollenprognos för imorgon"
           }
         }
       },
@@ -56,6 +73,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Höjd (havsnivå)"
+          },
+          "tomorrow": {
+            "name": "Pollenprognos för imorgon"
           }
         }
       },
@@ -65,6 +85,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Höjd (havsnivå)"
+          },
+          "tomorrow": {
+            "name": "Pollenprognos för imorgon"
           }
         }
       },
@@ -74,6 +97,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Höjd (havsnivå)"
+          },
+          "tomorrow": {
+            "name": "Pollenprognos för imorgon"
           }
         }
       },
@@ -83,6 +109,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Höjd (havsnivå)"
+          },
+          "tomorrow": {
+            "name": "Pollenprognos för imorgon"
           }
         }
       },
@@ -92,6 +121,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Höjd (havsnivå)"
+          },
+          "tomorrow": {
+            "name": "Pollenprognos för imorgon"
           }
         }
       }
@@ -172,23 +204,23 @@
     "config_pollen": {
       "options": {
         "alder_m22": "Al",
-        "birch_m22": "Björk",
-        "grass_m32": "Gräs",
+        "birch_m22": "Bjørk",
+        "grass_m32": "Gress",
         "hazel_m23": "Hassel",
-        "mugwort_m18": "Malört",
-        "olive_m28": "Oliv",
+        "mugwort_m18": "Malurt",
+        "olive_m28": "Oliven",
         "ragweed_m18": "Ambrosia"
       }
     }
   },
   "services": {
     "manual_update": {
-      "name": "Manuell uppdatering",
-      "description": "Manuell start av datauppdatering för de valda målen i SILAM Pollen-integrationen.",
+      "name": "Manuell oppdatering",
+      "description": "Manuell igangsetting av datoppdatering for de valgte målene for SILAM Pollen-integrasjonen.",
       "fields": {
         "targets": {
           "name": "Mål",
-          "description": "Välj en eller flera enheter eller entiteter att uppdatera."
+          "description": "Velg ett eller flere enheter eller entiteter for oppdatering."
         }
       }
     }

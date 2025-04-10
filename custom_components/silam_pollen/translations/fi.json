@@ -29,6 +29,17 @@
           },
           "date": {
             "name": "Ennusteen päivämäärä ja kellonaika"
+          },
+          "index_tomorrow": {
+            "name": "Ennuste huomiselle",
+            "state": {
+              "very_low": "Erittäin alhainen",
+              "low": "Alhainen",
+              "moderate": "Kohtalainen",
+              "high": "Korkea",
+              "very_high": "Erittäin korkea",
+              "unknown": "Tuntematon"
+            }
           }
         }
       },
@@ -38,6 +49,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Korkeus (meritasolla)"
+          },
+          "tomorrow": {
+            "name": "Ennuste huomiselle"
           }
         }
       },
@@ -47,6 +61,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Korkeus (meritasolla)"
+          },
+          "tomorrow": {
+            "name": "Ennuste huomiselle"
           }
         }
       },
@@ -56,6 +73,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Korkeus (meritasolla)"
+          },
+          "tomorrow": {
+            "name": "Ennuste huomiselle"
           }
         }
       },
@@ -65,6 +85,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Korkeus (meritasolla)"
+          },
+          "tomorrow": {
+            "name": "Ennuste huomiselle"
           }
         }
       },
@@ -74,6 +97,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Korkeus (meritasolla)"
+          },
+          "tomorrow": {
+            "name": "Ennuste huomiselle"
           }
         }
       },
@@ -83,6 +109,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Korkeus (meritasolla)"
+          },
+          "tomorrow": {
+            "name": "Ennuste huomiselle"
           }
         }
       },
@@ -92,6 +121,9 @@
         "state_attributes": {
           "altitude": {
             "name": "Korkeus (meritasolla)"
+          },
+          "tomorrow": {
+            "name": "Ennuste huomiselle"
           }
         }
       }
