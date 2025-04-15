@@ -1,0 +1,228 @@
+{
+  "title": "SILAM Pollen Monitor",
+  "entity": {
+    "sensor": {
+      "index": {
+        "name": "Index",
+        "state": {
+          "very_low": "Velmi nízký",
+          "low": "Nízký",
+          "moderate": "Mírný",
+          "high": "Vysoký",
+          "very_high": "Velmi vysoký",
+          "unknown": "Neznámý"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Hlavní alergen",
+            "state": {
+              "missing": "Žádná data",
+              "alder": "Alder",
+              "birch": "Birch",
+              "grass": "Grass",
+              "olive": "Olive",
+              "mugwort": "Mugwort",
+              "ragweed": "Ragweed",
+              "hazel": "Hazel",
+              "unknown": "Neznámý"
+            }
+          },
+          "date": {
+            "name": "Předpověď datum a čas"
+          },
+          "index_tomorrow": {
+            "name": "Předpověď na zítra",
+            "state": {
+              "very_low": "Velmi nízký",
+              "low": "Nízký",
+              "moderate": "Mírný",
+              "high": "Vysoký",
+              "very_high": "Velmi vysoký",
+              "unknown": "Neznámý"
+            }
+          }
+        }
+      },
+      "alder": {
+        "name": "Olše",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Nadmořská výška (hladina moře)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
+        }
+      },
+      "birch": {
+        "name": "Bříza",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Nadmořská výška (hladina moře)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
+        }
+      },
+      "grass": {
+        "name": "Tráva",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Nadmořská výška (hladina moře)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
+        }
+      },
+      "hazel": {
+        "name": "Líska",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Nadmořská výška (hladina moře)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
+        }
+      },
+      "mugwort": {
+        "name": "Pelyněk",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Nadmořská výška (hladina moře)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
+        }
+      },
+      "olive": {
+        "name": "Olivovník",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Nadmořská výška (hladina moře)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
+        }
+      },
+      "ragweed": {
+        "name": "Ambrózie",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Nadmořská výška (hladina moře)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
+        }
+      }
+    },
+    "weather": {
+      "index_polen_weather": {
+        "name": "Předpověď",
+        "state": {
+          "very_low": "Velmi nízký",
+          "low": "Nízký",
+          "moderate": "Mírný",
+          "high": "Vysoký",
+          "very_high": "Velmi vysoký",
+          "unknown": "Neznámý"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Hlavní alergen",
+            "state": {
+              "missing": "Žádná data",
+              "alder": "Olše",
+              "birch": "Bříza",
+              "grass": "Tráva",
+              "olive": "Olivovník",
+              "mugwort": "Pelyněk",
+              "ragweed": "Ambrózie",
+              "hazel": "Líska",
+              "unknown": "Neznámý"
+            }
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "zone_id": "Pozorovací zóna",
+          "var": "Typ pylu",
+          "update_interval": "Interval aktualizaqcí (minuty, minimum 30)",
+          "forecast": "**BETA** Povolit pylovou předpověď?"
+        },
+        "data_description": {
+          "forecast": "Funkce přepovědi může až 10x zvýšit odpověď API."
+        },
+        "title": "Vytvoření SILAM pylové služby",
+        "description": "Konfigurujte níže uvedené parametry.\nPřepovědi jsou určeny pro vědecké použití; přesnost není garantovaná."
+      },
+      "manual_coords": {
+        "data": {
+          "zone_name": "Jméno zóny",
+          "location": "Poloha",
+          "altitude": "Nadmořská výška"
+        },
+        "title": "Vytvoření SILAM pylové služby",
+        "description": "Zadejte jméno zóny a upřesněte souřadnice, je-li potřeba.\n[Zhlédněte mapu pokrytí.](https://danishru.github.io/silam_pollen/)."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Interval aktualizaqcí (minuty, minimum 30)",
+          "var": "Typ pylu",
+          "version": "Dataset",
+          "forecast": "**BETA** Povolit pylovou předpověď?"
+        },
+        "data_description": {
+          "forecast": "The forecast feature may increase API response time up to 10x."
+        },
+        "title": "SILAM Pollen Options"
+      }
+    }
+  },
+  "selector": {
+    "config_pollen": {
+      "options": {
+        "alder_m22": "Olše",
+        "birch_m22": "Bříza",
+        "grass_m32": "Tráva",
+        "hazel_m23": "Líska",
+        "mugwort_m18": "Pelyněk",
+        "olive_m28": "Olivovník",
+        "ragweed_m18": "Ambrózie"
+      }
+    }
+  },
+  "services": {
+    "manual_update": {
+      "name": "Ruční aktualizace",
+      "description": "Spustit ručně aktualizaci dat pro vybrané cíle SILAM Pollen integration.",
+      "fields": {
+        "targets": {
+          "name": "Cíle",
+          "description": "Vyberte jedno nebo více zařízení či entit k aktualizaci."
+        }
+      }
+    }
+  }
+}
