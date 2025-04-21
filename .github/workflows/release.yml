@@ -20,7 +20,9 @@ jobs:
       - name: "Adjust version number"
         shell: "bash"
         run: |
-          yq -i -o json '.version="${{ github.event.release.tag_name }}"' \
+          TAG="${{ github.event.release.tag_name }}"
+          TAG="${TAG#v}"
+          yq -i -o json ".version=\"$TAG\"" \
             "${{ github.workspace }}/custom_components/silam_pollen/manifest.json"
 
       - name: "ZIP the integration directory"
