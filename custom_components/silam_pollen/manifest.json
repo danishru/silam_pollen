@@ -11,5 +11,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/danishru/silam_pollen/issues",
   "requirements": [],
-  "version": "v0.2.1"
+  "version": "0.2.2-beta.1"
 }
