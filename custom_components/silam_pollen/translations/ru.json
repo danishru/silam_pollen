@@ -42,6 +42,9 @@
           }
         }
       },
+      "fetch_duration": {
+        "name": "Время запроса"
+      },
       "alder": {
         "name": "Ольха",
         "unit_of_measurement": "зерна/м³",

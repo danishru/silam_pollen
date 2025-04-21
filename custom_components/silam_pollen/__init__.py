@@ -168,7 +168,8 @@ async def update_listener(hass, entry):
     forecast_enabled = entry.options.get("forecast", entry.data.get("forecast", False))
     if forecast_enabled:
         expected_ids.add(f"{entry.entry_id}_pollen_forecast")
-
+    # Диагностический сенсор fetch duration
+    expected_ids.add(f"{entry.entry_id}_fetch_duration")
     for entity in list(registry.entities.values()):
         if entity.config_entry_id == entry.entry_id and entity.domain in ["sensor", "weather"]:
             if entity.unique_id not in expected_ids:

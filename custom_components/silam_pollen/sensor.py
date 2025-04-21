@@ -22,6 +22,7 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
 from .const import DOMAIN, VAR_OPTIONS, INDEX_MAPPING, RESPONSIBLE_MAPPING, URL_VAR_MAPPING
 from .coordinator import SilamCoordinator  # Импорт координатора интеграции
+from .diagnostics import SilamPollenFetchDurationSensor  # диагностический сенсор :contentReference[oaicite:0]{index=0}&#8203;:contentReference[oaicite:1]{index=1}
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,6 +39,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     После создания координатора создаются:
       - Сенсор "index" – сводной сенсор, отображающий общий индекс пыльцы.
       - При наличии выбранных аллергенов создаются дополнительные сенсоры "main".
+      - Диагностический сенсор длительности fetch (по умолчанию выключен).
     """
     base_device_name = entry.title
 
@@ -93,6 +95,15 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities(sensors, True)
 
+    # Добавляем диагностический сенсор длительности fetch (disabled by default)
+    diag = SilamPollenFetchDurationSensor(
+        coordinator=coordinator,
+        entry_id=entry.entry_id,
+        base_device_name=base_device_name,
+    )
+    async_add_entities([diag], True)
+
+
 class SilamPollenSensor(SensorEntity):
     """
     Класс сенсора SILAM Pollen.
@@ -131,8 +142,10 @@ class SilamPollenSensor(SensorEntity):
         base_url = self.coordinator._base_url
         if "silam_europe_pollen" in base_url:
             dataset = "Europe v6.0"
+            region_url = "europe"
         elif "silam_regional_pollen" in base_url:
             dataset = "Regional v5.9.1"
+            region_url = "regional"
         else:
             dataset = "unknown"
             
@@ -146,7 +159,7 @@ class SilamPollenSensor(SensorEntity):
             model_id=dataset,
             sw_version=sw_version,
             entry_type=DeviceEntryType.SERVICE,
-            configuration_url=f"https://silam.fmi.fi/pollen.html?region={dataset}"
+            configuration_url=f"https://silam.fmi.fi/pollen.html?region={region_url}"
         )
 
         # Регистрируем слушатель обновлений для автоматического обновления состояния сенсора
@@ -222,7 +235,7 @@ class SilamPollenSensor(SensorEntity):
 
             polisrc_raw = entry["data"].get("POLISRC", {}).get("value")
             try:
-                re_value = int(float(polisrc_raw))
+                re_value = int(float(polisrc_raw)) if polisrc_raw is not None else None
             except (ValueError, TypeError):
                 re_value = None
             self._extra_attributes["responsible_elevated"] = RESPONSIBLE_MAPPING.get(re_value, "unknown")
@@ -231,11 +244,11 @@ class SilamPollenSensor(SensorEntity):
                 twice_daily = merged.get("twice_daily_forecast", [])
                 condition_tomorrow = None
                 if twice_daily:
-                    # Если первый прогноз дневной, берем третий (если он есть и тоже дневной)
+                    # Если первый прогноз дневной, берем третий (если есть и дневной)
                     if twice_daily[0].get("is_daytime"):
                         if len(twice_daily) >= 3 and twice_daily[2].get("is_daytime"):
                             condition_tomorrow = twice_daily[2].get("condition")
-                    # Если первый прогноз ночной, то берем второй (если он дневной)
+                    # Иначе, если первый ночной, проверяем второй
                     else:
                         if len(twice_daily) >= 2 and twice_daily[1].get("is_daytime"):
                             condition_tomorrow = twice_daily[1].get("condition")
@@ -263,14 +276,11 @@ class SilamPollenSensor(SensorEntity):
 
             self._state = state_value
             self._extra_attributes.update(main_data)
-            # Добавляем атрибут "tomorrow" для сенсора main,
-            # который содержит прогнозное значение пыльцы (агрегированное по forecast_key)
+            # Добавляем атрибут "tomorrow" для сенсора main
             if self.coordinator._forecast_enabled:
                 twice_daily = merged.get("twice_daily_forecast", [])
-                tomorrow_value = None
-                # Ключ для аллергена формируется по схеме "pollen_<имя>", где имя определяется
-                # как часть переменной до символа "_", приведённая к нижнему регистру.
                 forecast_key = "pollen_" + self._var.split('_')[0].lower()
+                tomorrow_value = None
                 if twice_daily:
                     if twice_daily[0].get("is_daytime"):
                         if len(twice_daily) >= 3 and twice_daily[2].get("is_daytime"):

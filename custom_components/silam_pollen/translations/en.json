@@ -43,6 +43,9 @@
           }
         }
       },
+      "fetch_duration": {
+        "name": "Fetch Duration"
+      },
       "alder": {
         "name": "Alder",
         "unit_of_measurement": "grains/m³",

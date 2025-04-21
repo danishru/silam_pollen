@@ -17,6 +17,9 @@
           "unknown": "mdi:progress-question"
         }
       },
+      "fetch_duration": {
+        "default": "mdi:timer-refresh-outline"
+      },
       "alder": {
         "default": "mdi:tree"
       },

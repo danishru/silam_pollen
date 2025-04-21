@@ -7,6 +7,7 @@ coordinator.py
 
 import logging
 import re
+import time
 import aiohttp
 import async_timeout
 import xml.etree.ElementTree as ET
@@ -130,6 +131,9 @@ class SilamCoordinator(DataUpdateCoordinator):
           - Для сенсоров main с использованием _build_main_url (если var_list не пуст).
         Возвращает словарь с ключами 'index' и 'main' (если применимо).
         """
+        # Засекаем начало выполнения (_fetch_) всего процесса
+        start = time.monotonic()
+
         # Определяем координаты: если используются ручные координаты, то берем их,
         # иначе извлекаем координаты из зоны 'home'.
         if self._manual_coordinates and self._manual_latitude is not None and self._manual_longitude is not None:
@@ -184,7 +188,13 @@ class SilamCoordinator(DataUpdateCoordinator):
                 forecast_enabled=self._forecast_enabled,
                 selected_allergens=self._var_list
             )
-            _LOGGER.debug("Сформированные объединённые данные: %s", merged)
+            # Засекаем конец и вычисляем длительность фетча
+            duration = time.monotonic() - start
+            merged["last_fetch_duration"] = round(duration, 3)
+            _LOGGER.debug(
+                "Сформированные объединённые данные (fetch duration: %.3fs): %s",
+                duration, merged
+            )
             self.merged_data = {**merged}
         except Exception as err:
             _LOGGER.error("Ошибка при объединении или обработке прогнозных данных: %s", err)
