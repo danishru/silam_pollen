@@ -43,6 +43,9 @@
           }
         }
       },
+      "fetch_duration": {
+        "name": "Hentetid"
+      },
       "alder": {
         "name": "Al",
         "unit_of_measurement": "korn/m³",
@@ -165,10 +168,11 @@
           "zone_id": "Observasjonssone",
           "var": "Pollentype",
           "update_interval": "Oppdateringsintervall (minutter, minst 30)",
-          "forecast": "**BETA** Aktiver pollenprognose?"
+          "forecast": "**BETA** Aktiver pollenprognose?",
+          "forecast_duration": "Varighet for prognose (36–120 timer; standard 36)"
         },
         "data_description": {
-          "forecast": "Prognosefunksjonen kan øke API-svarstiden opptil 10 ganger."
+          "forecast": "Prognosefunksjonen kan betydelig øke API-svarstiden."
         },
         "title": "Opprett SILAM Pollen-tjeneste",
         "description": "Konfigurer parametrene nedenfor.\nPrognoser er for vitenskapelig bruk; nøyaktighet garanteres ikke."
@@ -191,10 +195,11 @@
           "update_interval": "Oppdateringsintervall (minutter, minst 30)",
           "var": "Pollentype",
           "version": "Datasett",
-          "forecast": "**BETA** Aktiver pollenprognose?"
+          "forecast": "**BETA** Aktiver pollenprognose?",
+          "forecast_duration": "Varighet for prognose (36–120 timer; standard 36)"
         },
         "data_description": {
-          "forecast": "Prognosefunksjonen kan øke API-svarstiden opptil 10 ganger."
+          "forecast": "Prognosefunksjonen kan betydelig øke API-svarstiden."
         },
         "title": "SILAM Pollen-alternativer"
       }

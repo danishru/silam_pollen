@@ -27,6 +27,7 @@ async def async_setup_entry(hass, entry):
     var_list = entry.options.get("var", entry.data.get("var", []))
     update_interval = entry.options.get("update_interval", entry.data.get("update_interval", 60))
     forecast_enabled = entry.options.get("forecast", entry.data.get("forecast", False))
+    forecast_duration = int(entry.options.get("forecast_duration", entry.data.get("forecast_duration", 36)))
     base_url = entry.data["base_url"]
 
     # Создаем координатор для обновления данных.
@@ -40,7 +41,8 @@ async def async_setup_entry(hass, entry):
         desired_altitude,
         update_interval,
         base_url,
-        forecast=forecast_enabled
+        forecast=forecast_enabled,
+        forecast_duration=forecast_duration
     )
     await coordinator.async_config_entry_first_refresh()
 

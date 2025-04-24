@@ -4,7 +4,13 @@ import math
 from datetime import datetime, timedelta, timezone
 from .const import INDEX_MAPPING, URL_VAR_MAPPING
 
-def merge_station_features(index_xml: ET.Element, main_xml: ET.Element = None, forecast_enabled: bool = False, selected_allergens: list = None) -> dict:
+def merge_station_features(
+    index_xml: ET.Element,
+    main_xml: ET.Element = None,
+    forecast_enabled: bool = False,
+    selected_allergens: list = None,
+    forecast_duration: int = 36,
+) -> dict:
     """
     Объединяет данные из XML-ответов для 'index' и 'main' по атрибуту date и формирует итоговый словарь.
     
@@ -16,12 +22,13 @@ def merge_station_features(index_xml: ET.Element, main_xml: ET.Element = None, f
       {
          "now": { ... },                  # Запись с самой ранней датой (текущая)
          "hourly_forecast": [ ... ],      # Почасовой прогноз с дополнительно добавленными ключами аллергенов
-         "twice_daily_forecast": [ ... ]  # Прогноз два раза в день с дополнительно добавленными ключами аллергенов
+         "twice_daily_forecast": [ ... ]  # Прогноз дважды в день с дополнительно добавленными ключами аллергенов
       }
     :param index_xml: XML-дерево, полученное из data["index"]
     :param main_xml: XML-дерево, полученное из data["main"] (может быть None)
     :param forecast_enabled: Флаг, указывающий, нужно ли выполнять агрегацию прогнозных данных.
     :param selected_allergens: Список выбранных аллергенов (например, ['alder_m22', 'birch_m22']).
+    :param forecast_duration: Длительность прогноза в часах для прогнозов (используется вместо фиксированных 36 ч).
     :return: Итоговый словарь агрегированных данных.
     """
     def parse_features(xml_root: ET.Element) -> dict:
@@ -147,7 +154,10 @@ def merge_station_features(index_xml: ET.Element, main_xml: ET.Element = None, f
         # Почасовой прогноз – окна по 3 часа (на следующие 24 часа)
         window_size = 3
         step = 3
-        raw_hourly = [item for item in raw_all if item["dt_obj"] > current_time and item["dt_obj"] <= current_time + timedelta(hours=24)]
+        raw_hourly = [
+            item for item in raw_all
+            if item["dt_obj"] > current_time and item["dt_obj"] <= current_time + timedelta(hours=24)
+        ]
         for i in range(0, len(raw_hourly) - window_size + 1, step):
             window = raw_hourly[i:i+window_size]
             temps = [item["temperature"] for item in window if item["temperature"] is not None]
@@ -170,17 +180,24 @@ def merge_station_features(index_xml: ET.Element, main_xml: ET.Element = None, f
             if selected_allergens:
                 for orig_allergen in selected_allergens:
                     forecast_key = "pollen_" + orig_allergen.split('_')[0].lower()
-                    allergen_values = [item["allergens"].get(forecast_key) for item in window if item["allergens"].get(forecast_key) is not None]
+                    allergen_values = [
+                        item["allergens"].get(forecast_key)
+                        for item in window
+                        if item["allergens"].get(forecast_key) is not None
+                    ]
                     if allergen_values:
                         forecast_entry[forecast_key] = int(math.ceil(statistics.median(allergen_values)))
             hourly_forecast.append(forecast_entry)
 
-        # Прогноз дважды в день – интервалы по 12 часов (на следующие 36 часов)
-        raw_twice = [item for item in raw_all if item["dt_obj"] > current_time and item["dt_obj"] <= current_time + timedelta(hours=36)]
+        # Прогноз дважды в день – интервалы по 12 часов (на следующие forecast_duration часов)
+        raw_twice = [
+            item for item in raw_all
+            if item["dt_obj"] > current_time and item["dt_obj"] <= current_time + timedelta(hours=forecast_duration)
+        ]
         interval_hours = 12
         aggregated_twice = []
         local_tz = datetime.now().astimezone().tzinfo
-        for i in range(0, 36, interval_hours):
+        for i in range(0, forecast_duration, interval_hours):
             start = current_time + timedelta(hours=i)
             end = current_time + timedelta(hours=i + interval_hours)
             group = [item for item in raw_twice if start < item["dt_obj"] <= end]
@@ -216,7 +233,11 @@ def merge_station_features(index_xml: ET.Element, main_xml: ET.Element = None, f
                     if selected_allergens:
                         for orig_allergen in selected_allergens:
                             forecast_key = "pollen_" + orig_allergen.split('_')[0].lower()
-                            allergen_values = [item["allergens"].get(forecast_key) for item in group if item["allergens"].get(forecast_key) is not None]
+                            allergen_values = [
+                                item["allergens"].get(forecast_key)
+                                for item in group
+                                if item["allergens"].get(forecast_key) is not None
+                            ]
                             if allergen_values:
                                 forecast_entry[forecast_key] = int(math.ceil(statistics.median(allergen_values)))
                     aggregated_twice.append(forecast_entry)

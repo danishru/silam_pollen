@@ -43,6 +43,9 @@
           }
         }
       },
+      "fetch_duration": {
+        "name": "Hakukesto"
+      },
       "alder": {
         "name": "Leppä",
         "unit_of_measurement": "jyvää/m³",
@@ -165,10 +168,11 @@
           "zone_id": "Havainnointivyöhyke",
           "var": "Siitepölyn laji",
           "update_interval": "Päivitysväli (minuutteina, vähintään 30)",
-          "forecast": "**BETA** Ota siitepölyennuste käyttöön?"
+          "forecast": "**BETA** Ota siitepölyennuste käyttöön?",
+          "forecast_duration": "Ennusteen kesto (36–120 tuntia; oletus 36)"
         },
         "data_description": {
-          "forecast": "Ennustetoiminto voi kasvattaa API-vastausaikaa jopa 10-kertaiseksi."
+          "forecast": "Ennusteominaisuus voi merkittävästi pidentää API-vastausaikaa."
         },
         "title": "Luo SILAM Pölypalvelu",
         "description": "Määritä alla olevat parametrit.\nEnnusteet on tarkoitettu tieteelliseen käyttöön; tarkkuutta ei taata."
@@ -191,10 +195,11 @@
           "update_interval": "Päivitysväli (minuutteina, vähintään 30)",
           "var": "Siitepölyn laji",
           "version": "Aineisto",
-          "forecast": "**BETA** Ota siitepölyennuste käyttöön?"
+          "forecast": "**BETA** Ota siitepölyennuste käyttöön?",
+          "forecast_duration": "Ennusteen kesto (36–120 tuntia; oletus 36)"
         },
         "data_description": {
-          "forecast": "Ennustetoiminto voi kasvattaa API-vastausaikaa jopa 10-kertaiseksi."
+          "forecast": "Ennusteominaisuus voi merkittävästi pidentää API-vastausaikaa."
         },
         "title": "SILAM Pölyasetukset"
       }

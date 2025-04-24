@@ -12,6 +12,8 @@ from homeassistant.helpers.selector import (
     LocationSelectorConfig,
     SelectSelector,
     SelectSelectorConfig,
+    NumberSelector,
+    NumberSelectorConfig,
 )
 from .const import (
     DOMAIN,
@@ -75,6 +77,15 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             vol.Required("update_interval", default=DEFAULT_UPDATE_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=30)),
             vol.Optional("forecast", default=False): bool,
+            vol.Optional("forecast_duration", default=36): NumberSelector(
+                NumberSelectorConfig(
+                    min=36,
+                    max=120,
+                    step=1,
+                    mode="slider",
+                    unit_of_measurement="h",
+                )
+            ),  # Длительность прогноза в часах (36–120), по умолчанию 36
         })
         if user_input is None:
             return self.async_show_form(
@@ -138,8 +149,9 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         base_data["zone_name"] = user_input.get("zone_name")
         base_data["manual_coordinates"] = True
         base_data["title"] = "SILAM Pollen - {zone_name}".format(zone_name=base_data["zone_name"])
-        # Сохранение параметра "forecast" из первого шага
+        # Сохранение параметров прогноза из первого шага
         base_data["forecast"] = self.context.get("base_data", {}).get("forecast", False)
+        base_data["forecast_duration"] = self.context.get("base_data", {}).get("forecast_duration", 36)
         # Добавляем уникальный идентификатор на основе координат.
         # (Можно использовать другую логику для генерации уникального идентификатора)
         unique_id = f"{latitude}_{longitude}"
@@ -316,5 +328,17 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 "forecast",
                 default=self.config_entry.options.get("forecast", self.config_entry.data.get("forecast", False))
             ): bool,
+            vol.Optional(
+                "forecast_duration",
+                default=self.config_entry.options.get("forecast_duration", 36)
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=36,
+                    max=120,
+                    step=1,
+                    mode="slider",
+                    unit_of_measurement="h",
+                )
+            ),  # Длительность прогноза в часах (36–120)
         })
         return self.async_show_form(step_id="init", data_schema=data_schema)

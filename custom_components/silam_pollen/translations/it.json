@@ -43,6 +43,9 @@
           }
         }
       },
+      "fetch_duration": {
+        "name": "Durata recupero"
+      },
       "alder": {
         "name": "Ontano",
         "unit_of_measurement": "granuli/m³",
@@ -165,10 +168,11 @@
           "zone_id": "Zona di osservazione",
           "var": "Tipo di polline",
           "update_interval": "Intervallo di aggiornamento (minuti, minimo 30)",
-          "forecast": "**BETA** Abilitare la previsione del polline?"
+          "forecast": "**BETA** Abilitare la previsione del polline?",
+          "forecast_duration": "Durata previsione (36–120 ore; predefinito 36)"
         },
         "data_description": {
-          "forecast": "La funzione di previsione può aumentare il tempo di risposta dell'API fino a 10 volte."
+          "forecast": "La funzionalità di previsione può aumentare significativamente i tempi di risposta dell'API."
         },
         "title": "Crea servizio SILAM Pollen",
         "description": "Configura i parametri elencati di seguito.\nLe previsioni sono per uso scientifico; l'accuratezza non è garantita."
@@ -191,10 +195,11 @@
           "update_interval": "Intervallo di aggiornamento (minuti, minimo 30)",
           "var": "Tipo di polline",
           "version": "Dataset",
-          "forecast": "**BETA** Abilita la previsione del polline?"
+          "forecast": "**BETA** Abilita la previsione del polline?",
+          "forecast_duration": "Durata previsione (36–120 ore; predefinito 36)"
         },
         "data_description": {
-          "forecast": "La funzione di previsione può aumentare il tempo di risposta dell'API fino a 10 volte."
+          "forecast": "La funzionalità di previsione può aumentare significativamente i tempi di risposta dell'API."
         },
         "title": "Opzioni SILAM Pollen"
       }

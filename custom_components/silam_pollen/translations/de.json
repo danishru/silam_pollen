@@ -43,6 +43,9 @@
           }
         }
       },
+      "fetch_duration": {
+        "name": "Abrufdauer"
+      },
       "alder": {
         "name": "Erle",
         "unit_of_measurement": "Körner/m³",
@@ -165,10 +168,11 @@
           "zone_id": "Beobachtungszone",
           "var": "Pollenart",
           "update_interval": "Aktualisierungsintervall (Minuten, mindestens 30)",
-          "forecast": "**BETA** Pollenprognose aktivieren?"
+          "forecast": "**BETA** Pollenprognose aktivieren?",
+          "forecast_duration": "Prognosedauer (36–120 Stunden; Standard 36)"
         },
         "data_description": {
-          "forecast": "Die Prognosefunktion kann die API-Antwortzeit bis zu 10x erhöhen."
+          "forecast": "Die Prognosefunktion kann die API-Antwortzeit erheblich erhöhen."
         },
         "title": "SILAM Pollen-Service erstellen",
         "description": "Konfigurieren Sie die unten aufgeführten Parameter.\nPrognosen dienen wissenschaftlichen Zwecken; ihre Genauigkeit ist nicht garantiert."
@@ -191,10 +195,11 @@
           "update_interval": "Aktualisierungsintervall (Minuten, mindestens 30)",
           "var": "Pollenart",
           "version": "Datensatz",
-          "forecast": "**BETA** Pollenprognose aktivieren?"
+          "forecast": "**BETA** Pollenprognose aktivieren?",
+          "forecast_duration": "Prognosedauer (36–120 Stunden; Standard 36)"
         },
         "data_description": {
-          "forecast": "Die Prognosefunktion kann die API-Antwortzeit bis zu 10x erhöhen."
+          "forecast": "Die Prognosefunktion kann die API-Antwortzeit erheblich erhöhen."
         },
         "title": "SILAM Pollen-Optionen"
       }

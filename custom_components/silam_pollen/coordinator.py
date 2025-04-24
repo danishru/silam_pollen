@@ -1,6 +1,7 @@
-"""
-coordinator.py
+   
+# coordinator.py
 
+"""
 Реализует SilamCoordinator для интеграции SILAM Pollen.
 Использует DataUpdateCoordinator для обновления данных для всех сенсоров интеграции.
 """
@@ -20,7 +21,20 @@ _LOGGER = logging.getLogger(__name__)
 class SilamCoordinator(DataUpdateCoordinator):
     """Координатор для интеграции SILAM Pollen."""
 
-    def __init__(self, hass, base_device_name, var_list, manual_coordinates, manual_latitude, manual_longitude, desired_altitude, update_interval, base_url, forecast=False):
+    def __init__(
+        self,
+        hass,
+        base_device_name,
+        var_list,
+        manual_coordinates,
+        manual_latitude,
+        manual_longitude,
+        desired_altitude,
+        update_interval,
+        base_url,
+        forecast=False,
+        forecast_duration: int = 36,
+    ):
         """
         Инициализирует координатор.
 
@@ -34,6 +48,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         :param update_interval: интервал обновления (в минутах).
         :param base_url: базовый URL для запросов.
         :param forecast: включает режим прогноза (определяет длительность запроса).
+        :param forecast_duration: длительность прогноза в часах (от 36 до 120).
         """
         self._base_device_name = base_device_name
         self._var_list = var_list
@@ -43,6 +58,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         self._desired_altitude = desired_altitude
         self._base_url = base_url
         self._forecast_enabled = forecast
+        self._forecast_duration = forecast_duration
         # Извлекаем версию SILAM из BASE_URL
         match = re.search(r"pollen_v(\d+_\d+)", self._base_url)
         if match:
@@ -78,10 +94,10 @@ class SilamCoordinator(DataUpdateCoordinator):
           var=temp_2m
           latitude, longitude
           time_start=present
-          time_duration=<значение из параметра self._forecast_enabled>
+          time_duration=<значение из параметра self._forecast_duration>
           accept=xml
         """
-        time_duration = "PT36H" if self._forecast_enabled else "PT0H"
+        time_duration = f"PT{self._forecast_duration}H" if self._forecast_enabled else "PT0H"
         query_params = [
             "var=POLI",
             "var=POLISRC",
@@ -102,12 +118,12 @@ class SilamCoordinator(DataUpdateCoordinator):
         Плюс общие параметры:
           latitude, longitude
           time_start=present
-          time_duration=<значение из параметра self._forecast_enabled>
+          time_duration=<значение из параметра self._forecast_duration>
           vertCoord=<desired_altitude>
           accept=xml
         """
-        # Определяем длительность прогноза
-        time_duration = "PT36H" if self._forecast_enabled else "PT0H"
+																		
+        time_duration = f"PT{self._forecast_duration}H" if self._forecast_enabled else "PT0H"
     
         query_params = []
         if self._var_list:
@@ -186,7 +202,8 @@ class SilamCoordinator(DataUpdateCoordinator):
                 data.get("index"),
                 data.get("main"),
                 forecast_enabled=self._forecast_enabled,
-                selected_allergens=self._var_list
+                selected_allergens=self._var_list,
+                forecast_duration=self._forecast_duration,
             )
             # Засекаем конец и вычисляем длительность фетча
             duration = time.monotonic() - start

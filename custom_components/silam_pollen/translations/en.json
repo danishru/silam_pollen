@@ -168,10 +168,11 @@
           "zone_id": "Observation zone",
           "var": "Pollen type",
           "update_interval": "Update Interval (minutes, minimum 30)",
-          "forecast": "**BETA** Enable pollen forecast?"
+          "forecast": "**BETA** Enable pollen forecast?",
+          "forecast_duration": "Forecast duration (36–120 h; default 36)"
         },
         "data_description": {
-          "forecast": "The forecast feature may increase API response time up to 10x."
+          "forecast": "The forecast feature may significantly increase API response time."
         },
         "title": "Create SILAM Pollen Service",
         "description": "Configure the parameters listed below.\nForecasts are for scientific use; accuracy is not guaranteed."
@@ -194,10 +195,11 @@
           "update_interval": "Update Interval (minutes, minimum 30)",
           "var": "Pollen type",
           "version": "Dataset",
-          "forecast": "**BETA** Enable pollen forecast?"
+          "forecast": "**BETA** Enable pollen forecast?",
+          "forecast_duration": "Forecast duration (36–120 h; default 36)"
         },
         "data_description": {
-          "forecast": "The forecast feature may increase API response time up to 10x."
+          "forecast": "The forecast feature may significantly increase API response time."
         },
         "title": "SILAM Pollen Options"
       }
