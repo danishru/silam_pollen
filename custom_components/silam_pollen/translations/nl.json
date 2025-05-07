@@ -1,0 +1,233 @@
+{
+  "title": "SILAM Pollen Monitor",
+  "entity": {
+    "sensor": {
+      "index": {
+        "name": "Index",
+        "state": {
+          "very_low": "Heel Laag",
+          "low": "Laag",
+          "moderate": "Gemiddeld",
+          "high": "Hoog",
+          "very_high": "Zeer Hoog",
+          "unknown": "Onbekend"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Primaire allergeen",
+            "state": {
+              "missing": "Geen gegevens",
+              "alder": "Els",
+              "birch": "Berk",
+              "grass": "Gras",
+              "olive": "Olijf",
+              "mugwort": "Bijvoet",
+              "ragweed": "Ambrosia",
+              "hazel": "Hazelaar",
+              "unknown": "Onbekend"
+            }
+          },
+          "date": {
+            "name": "Voorspellingsdatum & Tijd"
+          },
+          "index_tomorrow": {
+            "name": "Voorspelling voor Morgen",
+            "state": {
+              "very_low": "Heel Laag",
+              "low": "Laag",
+              "moderate": "Gemiddeld",
+              "high": "Hoog",
+              "very_high": "Zeer Hoog",
+              "unknown": "Onbekend"
+            }
+          }
+        }
+      },
+      "fetch_duration": {
+        "name": "Ophaalduur"
+      },
+      "alder": {
+        "name": "Els",
+        "unit_of_measurement": "korrels/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Hoogte (zeeniveau)"
+          },
+          "tomorrow": {
+            "name": "Voorspelling voor morgen"
+          }
+        }
+      },
+      "birch": {
+        "name": "Berk",
+        "unit_of_measurement": "korrels/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Hoogte (zeeniveau)"
+          },
+          "tomorrow": {
+            "name": "Voorspelling voor morgen"
+          }
+        }
+      },
+      "grass": {
+        "name": "Gras",
+        "unit_of_measurement": "korrels/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Hoogte (zeeniveau)"
+          },
+          "tomorrow": {
+            "name": "Voorspelling voor morgen"
+          }
+        }
+      },
+      "hazel": {
+        "name": "Hazelaar",
+        "unit_of_measurement": "korrels/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Hoogte (zeeniveau)"
+          },
+          "tomorrow": {
+            "name": "Voorspelling voor morgen"
+          }
+        }
+      },
+      "mugwort": {
+        "name": "Bijvoet",
+        "unit_of_measurement": "korrels/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Hoogte (zeeniveau)"
+          },
+          "tomorrow": {
+            "name": "Voorspelling voor morgen"
+          }
+        }
+      },
+      "olive": {
+        "name": "Olijf",
+        "unit_of_measurement": "korrels/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Hoogte (zeeniveau)"
+          },
+          "tomorrow": {
+            "name": "Voorspelling voor morgen"
+          }
+        }
+      },
+      "ragweed": {
+        "name": "Ambrosia",
+        "unit_of_measurement": "korrels/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Hoogte (zeeniveau)"
+          },
+          "tomorrow": {
+            "name": "Voorspelling voor morgen"
+          }
+        }
+      }
+    },
+    "weather": {
+      "index_polen_weather": {
+        "name": "Forecast",
+        "state": {
+          "very_low": "Heel Laag",
+          "low": "Laag",
+          "moderate": "Gemiddeld",
+          "high": "Hoog",
+          "very_high": "Zeer Hoog",
+          "unknown": "Onbekend"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Primaire allergeen",
+            "state": {
+              "missing": "Geen gegevens",
+              "alder": "Els",
+              "birch": "Berk",
+              "grass": "Gras",
+              "olive": "Olijf",
+              "mugwort": "Bijvoet",
+              "ragweed": "Ambrosia",
+              "hazel": "Hazelaar",
+              "unknown": "Onbekend"
+            }
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "zone_id": "Observatiezone",
+          "var": "Pollen type",
+          "update_interval": "Update Interval (minuten, minimum 30)",
+          "forecast": "**BETA** Schakel pollen voorspelling in?",
+          "forecast_duration": "Voorspellingstermijn (36–120 u; standaard 36)"
+        },
+        "data_description": {
+          "forecast": "De voorspelling kan de responstijd van de API aanzienlijk verhogen."
+        },
+        "title": "SILAM Pollen dienst aanmaken",
+        "description": "Configureer de parameters hieronder.\nVoorspellingen zijn voor wetenschappelijk gebruik; nauwkeurigheid is niet gegarandeerd."
+      },
+      "manual_coords": {
+        "data": {
+          "zone_name": "Zone Name",
+          "location": "Locatie",
+          "altitude": "Hoogte boven zeeniveau "
+        },
+        "title": "Maak SILAM Pollen dienst aan",
+        "description": "Voer de zonenaam in en pas de coördinaten aan indien nodig.\n[Bekijk de service dekkingskaart](https://danishru.github.io/silam_pollen/)."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Update Interval (minuten, minimum 30)",
+          "var": "Pollen type",
+          "version": "Dataset",
+          "forecast": "**BETA** Schakel pollen voorspelling in?",
+          "forecast_duration": "Voorspellingstermijn (36–120 u; standaard 36)"
+        },
+        "data_description": {
+          "forecast": "De voorspelling kan de responstijd van de API aanzienlijk verhogen."
+        },
+        "title": "SILAM Pollen Opties"
+      }
+    }
+  },
+  "selector": {
+    "config_pollen": {
+      "options": {
+        "alder_m22": "Els",
+        "birch_m22": "Berk",
+        "grass_m32": "Gras",
+        "hazel_m23": "Hazelaar",
+        "mugwort_m18": "Bijvoet",
+        "olive_m28": "Olijf",
+        "ragweed_m18": "Ambrosia"
+      }
+    }
+  },
+  "services": {
+    "manual_update": {
+      "name": "Manuele Update",
+      "description": "Manueel een gegevensupdate starten voor de geselecteerde SILAM Pollen integratiedoelen.",
+      "fields": {
+        "targets": {
+          "name": "Doelen",
+          "description": "Selecteer de SILAM Pollen integratiedoelen die u wilt bijwerken."
+        }
+      }
+    }
+  }
+}
