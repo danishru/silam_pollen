@@ -3,5 +3,6 @@
   "filename": "silam_pollen.zip",
   "hide_default_branch": true,
   "render_readme": true,
+  "country": ["AL","AM","AT","AZ","BE","BG","BY","CH","CY","CZ","DE","DK","DZ","EE","EG","EH","ES","FI","FR","GB","GE","GR","HR","HU","IE","IL","IQ","IR","IS","IT","JO","KZ","LB","LI","LT","LU","LV","LY","MA","MD","ME","MK","MT","MR","NL","NO","PL","PS","PT","RO","RS","RU","SA","SE","SI","SK","SY","TN","TR","UA","UZ"],
   "zip_release": true
 }
