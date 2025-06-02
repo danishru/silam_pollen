@@ -43,6 +43,9 @@
           }
         }
       },
+      "fetch_duration": {
+        "name": "Trvanie načítania"
+      },
       "alder": {
         "name": "Jelša",
         "unit_of_measurement": "zrná/m³",
@@ -165,7 +168,8 @@
           "zone_id": "Pozorovacia zóna",
           "var": "Typ peľu",
           "update_interval": "Interval aktualizácií (minúty, minimum 30)",
-          "forecast": "**BETA** Povoliť peľovú predpoveď?"
+          "forecast": "**BETA** Povoliť peľovú predpoveď?",
+          "forecast_duration": "Trvanie predpovede (36 – 120 h; predvolená hodnota 36)"
         },
         "data_description": {
           "forecast": "Funkcia prepovedi môže až 10x zvýšiť odpoveď API."
@@ -191,12 +195,13 @@
           "update_interval": "Interval aktualizácií (minúty, minimum 30)",
           "var": "Typ peľu",
           "version": "Dataset",
-          "forecast": "**BETA** Povoliť peľovú predpoveď?"
+          "forecast": "**BETA** Povoliť peľovú predpoveď?",
+          "forecast_duration": "Trvanie predpovede (36 – 120 h; predvolená hodnota 36)"
         },
         "data_description": {
-          "forecast": "Prepoveď feature môže zvýšiť API časovú odpoveď až 10x."
+          "forecast": "Prepoveď feature môže výrazne zvýšiť API časovú odpoveď"
         },
-        "title": "SILAM Pollen Vlastnosti"
+        "title": "SILAM Peľové vlastnosti"
       }
     }
   },
