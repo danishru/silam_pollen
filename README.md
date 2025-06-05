@@ -36,6 +36,13 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 
 ## 🆕 What's New
 
+### v0.2.4
+
+- **📖 Default README in English**  
+  The README file is now presented in English by default.
+
+[![More in release v0.2.4](https://img.shields.io/badge/More--in--release-v0.2.4-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.4)
+
 ### v0.2.3
 
 - **📦 Prepared for HACS publication**  
