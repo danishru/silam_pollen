@@ -7,6 +7,8 @@
 
 # SILAM Pollen Allergy Sensor for Home Assistant
 
+[README на русском тут 👈](https://github.com/danishru/silam_pollen/blob/main/README_ru.md)
+
 Integration for Home Assistant using the dataset “Best time series obtained from the latest available run” from the SILAM Thredds server to create a service with pollen level sensors for a specific location. The forecast calculation is carried out by the Finnish Meteorological Institute taking into account aerobiological, phenological, and meteorological observations.
 
 Data source: [https://silam.fmi.fi/pollen.html](https://silam.fmi.fi/pollen.html)
