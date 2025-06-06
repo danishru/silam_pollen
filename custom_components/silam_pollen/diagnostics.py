@@ -5,7 +5,7 @@ diagnostics.py
 """
 
 import logging
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
 from .const import DOMAIN
@@ -17,6 +17,7 @@ class SilamPollenFetchDurationSensor(SensorEntity):
     """Диагностический сенсор: длительность последнего fetch (в секундах)."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_has_entity_name = True
     _attr_translation_key = "fetch_duration"
     _attr_native_unit_of_measurement = "s"

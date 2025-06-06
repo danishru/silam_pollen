@@ -18,7 +18,7 @@ import re
 from datetime import timedelta
 import xml.etree.ElementTree as ET
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
 from .const import DOMAIN, VAR_OPTIONS, INDEX_MAPPING, RESPONSIBLE_MAPPING, URL_VAR_MAPPING
 from .coordinator import SilamCoordinator  # Импорт координатора интеграции
@@ -170,6 +170,7 @@ class SilamPollenSensor(SensorEntity):
             self._attr_translation_key = "index"
             self._attr_has_entity_name = True
         elif self._sensor_type == "main":
+            self._attr_state_class = SensorStateClass.MEASUREMENT
             self._attr_translation_key = VAR_OPTIONS.get(self._var, self._var)
             self._attr_has_entity_name = True
         else:
