@@ -350,5 +350,5 @@ If you have questions or issues, create an issue in the [repository](https://git
 [downloads]: https://github.com/danishru/silam_pollen/releases
 [license-shield]: https://img.shields.io/github/license/danishru/silam_pollen.svg?style=for-the-badge
 [license]: https://github.com/danishru/silam_pollen/blob/master/LICENSE
-[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[hacsbadge]: https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge
 [hacs]: https://hacs.xyz/
