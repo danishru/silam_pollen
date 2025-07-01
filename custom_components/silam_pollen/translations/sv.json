@@ -51,7 +51,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (havsnivå)"
+            "name": "Höjd (över havet)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -63,7 +63,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (havsnivå)"
+            "name": "Höjd (över havet)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -75,7 +75,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (havsnivå)"
+            "name": "Höjd (över havet)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -87,7 +87,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (havsnivå)"
+            "name": "Höjd (över havet)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -99,7 +99,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (havsnivå)"
+            "name": "Höjd (över havet)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -111,7 +111,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (havsnivå)"
+            "name": "Höjd (över havet)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -123,7 +123,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (havsnivå)"
+            "name": "Höjd (över havet)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -209,23 +209,23 @@
     "config_pollen": {
       "options": {
         "alder_m22": "Al",
-        "birch_m22": "Bjørk",
-        "grass_m32": "Gress",
+        "birch_m22": "Björk",
+        "grass_m32": "Gräs",
         "hazel_m23": "Hassel",
-        "mugwort_m18": "Malurt",
-        "olive_m28": "Oliven",
+        "mugwort_m18": "Malört",
+        "olive_m28": "Oliv",
         "ragweed_m18": "Ambrosia"
       }
     }
   },
   "services": {
     "manual_update": {
-      "name": "Manuell oppdatering",
-      "description": "Manuell igangsetting av datoppdatering for de valgte målene for SILAM Pollen-integrasjonen.",
+      "name": "Manuell uppdatering",
+      "description": "Manuell uppdatering av data för valda allergener i SILAM Pollen-integrationen",
       "fields": {
         "targets": {
           "name": "Mål",
-          "description": "Velg ett eller flere enheter eller entiteter for oppdatering."
+          "description": "Välj ett eller flera enheter eller entiteter för uppdatering."
         }
       }
     }
