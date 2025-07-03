@@ -1,9 +1,9 @@
 
 [![GitHub Release][releases-shield]][releases]
-[![GitHub Activity][commits-shield]][commits]
 [![Downloads][download-shield]][Downloads]
-[![License][license-shield]][license]
 [![HACS Custom][hacsbadge]][hacs]
+[![GitHub Activity][commits-shield]][commits]
+[![License][license-shield]][license]
 
 # SILAM Pollen Allergy Sensor for Home Assistant
 
