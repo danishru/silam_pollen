@@ -54,8 +54,9 @@
 [![Подробнее в релизе v0.2.3](https://img.shields.io/badge/Подробнее--в--релизе-v0.2.3-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.3)  
 
 
+## Предыдущие обновления
 <details>
-<summary>Предыдущие обновления</summary>
+<summary>Показать</summary>
 
 ### v0.2.2
 
