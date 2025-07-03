@@ -146,7 +146,7 @@ Here you can set the parameters for the proper operation of the integration:
 
 After installing the integration in Home Assistant, a service named `SILAM Pollen - {Zone Name}` is created. The service description shows the observation location coordinates and the dataset version used.
 
-![image](https://github.com/user-attachments/assets/5d060b47-e758-4d4c-9325-0188d991bfee)
+![image](https://github.com/user-attachments/assets/47c28fa0-baac-4d33-9493-8c53a6592166)
 
 As part of the service, a **Pollen Index** sensor is created, whose state displays a localized value corresponding to the numerical index calculated based on hourly average values and threshold levels from Mikhail Sofiev’s table ([link](https://www.researchgate.net/profile/Mikhail-Sofiev)).
 
@@ -171,7 +171,7 @@ If one or more pollen types are selected, a separate **{Pollen Type}** sensor is
 
 **Fetch Duration (fetch_duration)** — a sensor, disabled by default, showing the total time to update data (API request, parsing, calculations).
 
-|  ![image](https://github.com/user-attachments/assets/99a5e8a3-303c-4c7c-b885-a70c5e54269b) | ![image](https://github.com/user-attachments/assets/dbc735f0-10f0-4a88-8fbb-1dbc5d98f5eb)  |
+|  ![image](https://github.com/user-attachments/assets/c497819b-8521-4a02-9891-c1936ef2a4c2) | ![image](https://github.com/user-attachments/assets/41fdd143-b74e-42fc-bddb-db3b0b33b025)  |
 | ------------- | ------------- |
 
 If the **Pollen Forecast** option is enabled, an additional **weather sensor** is created, which provides:  
@@ -180,11 +180,11 @@ If the **Pollen Forecast** option is enabled, an additional **weather sensor** i
 
 The state of the weather sensor shows the **pollen index for the first available hourly forecast interval**.
 
-![image](https://github.com/user-attachments/assets/fe9bc3ce-8d86-444a-b768-243fe3ec66fa)
+![image](https://github.com/user-attachments/assets/cb832f76-43e0-402e-9f60-b383c4131ced)
 
 This data is available via the standard `weather.get_forecasts` service.
 
-![image](https://github.com/user-attachments/assets/54f85a99-6b78-4035-a206-5f4aa64e562e)
+![image](https://github.com/user-attachments/assets/bdd37fbc-9dc7-4bf1-95b2-7f3843d106e0)
 
 <details>
 <summary>Show example “Hourly” response</summary>
