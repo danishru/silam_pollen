@@ -314,6 +314,31 @@ weather.silam_pollen_frantsiia_forecast:
 - Данные из SILAM парсятся из XML и объединяются по дате (`date`).
 - Расчёты выполняются с использованием `statistics.median`, `max`, `min`.
 - Все прогнозы кэшируются в `merged_data` и доступны через `weather.get_forecasts`.
+
+## Панель
+
+Отличная новость для любителей красивых дашбордов — теперь прогноз уровня пыльцы можно вывести в виде наглядной карточки!  
+Карточка [pollenprognos-card](https://github.com/krissen/pollenprognos-card) с версии [v2.3.0](https://github.com/krissen/pollenprognos-card/releases/tag/v2.3.0) поддерживает интеграцию **SILAM Pollen**, а в [v2.3.3](https://github.com/krissen/pollenprognos-card/releases/tag/v2.3.3) добавлены:
+
+- отображение почасовых и двухразовых прогнозов;  
+- локализация на множество языков, включая русский;  
+- другие полезные улучшения.  
+
+Огромное спасибо [@krissen](https://github.com/krissen) за его работу!
+
+Карточка доступна в **репозитории по умолчанию HACS**.  
+Для установки нажмите **Скачать** в меню карточки:
+
+[![HACS Repository Badge](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=krissen&repository=pollenprognos-card)
+
+### Взгляните, как это выглядит:
+
+![Пример отображения pollenprognos-card](https://github.com/user-attachments/assets/df4818f0-08d6-4950-8554-fa7c7710a2b1)
+
+
+Дополнительную информацию и документацию смотрите в репозитории, а если карточка вам понравилась — не забудьте отметить её звёздочкой ⭐ и оставить issue при обнаружении ошибок или пожеланий:  
+https://github.com/krissen/pollenprognos-car.
+
  
 ## Дополнительные ресурсы
 
