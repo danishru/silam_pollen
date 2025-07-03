@@ -330,7 +330,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ): bool,
             vol.Optional(
                 "forecast_duration",
-                default=self.config_entry.options.get("forecast_duration", 36)
+                default=self.config_entry.options.get(
+                    "forecast_duration",
+                    self.config_entry.data.get("forecast_duration", 36)
+                )
             ): NumberSelector(
                 NumberSelectorConfig(
                     min=36,
