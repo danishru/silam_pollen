@@ -54,6 +54,10 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 
 [![More in release v0.2.3](https://img.shields.io/badge/More--in--release-v0.2.3-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.3)
 
+
+<details>
+<summary>Previous updates</summary>
+
 ### v0.2.2
 
 - **⏱️ Forecast duration setting**  
@@ -74,7 +78,7 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 [![More in release v0.2.1](https://img.shields.io/badge/More--in--release-v0.2.1-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.1)
 
 ### v0.2.0
-
+  
 - **🌍 Support for two SILAM versions**  
   Ability to choose between `SILAM Europe (v6.0)` and `SILAM Regional (v5.9.1)` — with an automatic availability check.  
   `SILAM Regional (v5.9.1)` provides more **detailed and accurate forecasts** for Northern and Northwestern Europe.
@@ -93,6 +97,8 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
   The interface is translated into: Russian, English, Finnish, Italian, Swedish, Norwegian, Danish, and German.
 
 [![More in release v0.2.0](https://img.shields.io/badge/More--in--release-v0.2.0-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.0)
+
+</details>
 
 ## Installation  
 
