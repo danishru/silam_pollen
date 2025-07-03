@@ -54,9 +54,9 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 
 [![More in release v0.2.3](https://img.shields.io/badge/More--in--release-v0.2.3-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.3)
 
-
+## Previous updates
 <details>
-<summary>Previous updates</summary>
+<summary>Show</summary>
 
 ### v0.2.2
 
