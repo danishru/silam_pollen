@@ -313,6 +313,30 @@ The pollen forecast in the **SILAM Pollen** integration is formed based on the S
 - Calculations are performed using `statistics.median`, `max`, `min`.  
 - All forecasts are cached in `merged_data` and available via `weather.get_forecasts`.
 
+## Dashboard Card
+
+Great news for dashboard enthusiasts — you can now display the pollen forecast with a beautiful card!  
+The [pollenprognos-card](https://github.com/krissen/pollenprognos-card) has supported **SILAM Pollen** integration since [v2.3.0](https://github.com/krissen/pollenprognos-card/releases/tag/v2.3.0), and in [v2.3.3](https://github.com/krissen/pollenprognos-card/releases/tag/v2.3.3) it added:
+
+- hourly and twice-a-day forecasts;  
+- localization in multiple languages;  
+- other useful enhancements.  
+
+Huge thanks to [@krissen](https://github.com/krissen) for this work!
+
+The card is available in the **default HACS repository**.  
+To install, click **Download** in the card’s menu:
+
+[![HACS Repository Badge](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=krissen&repository=pollenprognos-card)
+
+### See it in action:
+
+![pollenprognos-card preview](https://github.com/user-attachments/assets/d9b53a99-d183-4968-80b7-8a2b25381783)
+
+
+For more information and documentation, visit the repository. If you enjoy the card, don’t forget to give it a ⭐ and open an issue for bugs or feature requests:  
+https://github.com/krissen/pollenprognos-card  
+
 ## Additional Resources
 
 For more detailed information on pollen and its distribution zones, we recommend the following projects:
