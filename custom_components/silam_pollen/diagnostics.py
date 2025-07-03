@@ -21,6 +21,7 @@ class SilamPollenFetchDurationSensor(SensorEntity):
     _attr_has_entity_name = True
     _attr_translation_key = "fetch_duration"
     _attr_native_unit_of_measurement = "s"
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: SilamCoordinator, entry_id: str, base_device_name: str):
         """Инициализация диагностического сенсора."""
