@@ -53,6 +53,10 @@
 
 [![Подробнее в релизе v0.2.3](https://img.shields.io/badge/Подробнее--в--релизе-v0.2.3-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.3)  
 
+
+<details>
+<summary>Предыдущие обновления</summary>
+
 ### v0.2.2
 
 - **⏱️ Настройка длительности прогноза**  
@@ -94,6 +98,8 @@
   Интерфейс переведён на: русский, английский, финский, итальянский, шведский, норвежский, датский и немецкий.
 
 [![Подробнее в релизе v0.2.0](https://img.shields.io/badge/Подробнее--в--релизе-v0.2.0-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.0)
+
+</details>
 
 ## Установка  
 
