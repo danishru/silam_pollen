@@ -96,44 +96,33 @@
 [![Подробнее в релизе v0.2.0](https://img.shields.io/badge/Подробнее--в--релизе-v0.2.0-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.0)
 
 ## Установка  
-### Ручная установка
 
-1. Скопируйте папку `silam_pollen` в каталог `custom_components` вашей конфигурации Home Assistant.
-2. Перезапустите Home Assistant.
-3. Добавьте интеграцию через веб-интерфейс:
-   - Перейдите в **Настройки → Интеграции**.
-   - Нажмите **Добавить интеграцию** и выберите **SILAM Pollen**.
-   - Заполните необходимые поля (например, имя, координаты, высоту, выбор типа пыльцы, интервал опроса).
-
-### Установка через HACS
+### Установка через HACS (рекомендуется)
 
 **Убедитесь, что HACS установлен:**  
 Если HACS ещё не установлен, следуйте [официальной инструкции по установке HACS](https://hacs.xyz/docs/use/).
 
 #### Установка одним кликом
 
-Для установки интеграции **SILAM Pollen** перейдите по ссылке ниже:  
+Для установки интеграции **SILAM Pollen** перейдите по ссылке ниже и нажмите **Скачать**:  
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=danishru&repository=silam_pollen&category=integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=danishru&repository=silam_pollen)
 
 #### Обычная установка через HACS
 
-1. **Откройте Home Assistant и перейдите в HACS:**  
-   На боковой панели найдите и нажмите на значок HACS.
-2. **Добавление пользовательского репозитория:**  
-   - В HACS перейдите на вкладку **Интеграции**.
-   - Нажмите кнопку **Добавить пользовательский репозиторий** (Custom Repositories).
-   - В появившемся окне введите URL репозитория:  
-     `https://github.com/danishru/silam_pollen`  
-   - Выберите тип репозитория **Integration**.
-   - Нажмите **Добавить**.
-3. **Установка интеграции:**  
-   - После добавления репозитория HACS автоматически обнаружит релиз вашей интеграции.
-   - В разделе **Интеграции** появится интеграция с именем **SILAM Pollen**.
-   - Найдите её и нажмите **Установить**.
-   - Дождитесь завершения установки.
+1. Откройте Home Assistant и перейдите в HACS. 
+2. В строке поиска введите `SILAM Pollen` и нажмите **Скачать** в меню итеграции.
 
 Теперь ваша интеграция установлена и готова к использованию через HACS!
+
+### Ручная установка
+
+1. Скопируйте папку `silam_pollen` в каталог `custom_components` вашей конфигурации Home Assistant.  
+2. Перезапустите Home Assistant.  
+3. Добавьте интеграцию через веб-интерфейс:  
+   - Перейдите в **Настройки → Интеграции**.  
+   - Нажмите **Добавить интеграцию** и выберите **SILAM Pollen**.  
+   - Заполните необходимые поля (имя, координаты, высоту, выбор типа пыльцы, интервал опроса).  
 
 ## Конфигурация
 
