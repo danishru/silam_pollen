@@ -36,6 +36,22 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 
 ## 🆕 What's New
 
+## v0.2.5 🌟
+
+This is a truly significant update for **SILAM Pollen**!
+
+- 🎉 **Default HACS integration**  
+  Congratulations to us all — the integration is now included in the official HACS repository by default, making installation easier than ever!  
+
+- 🖼️ **Beautiful dashboards**  
+  Great news for dashboard lovers: [@krissen](https://github.com/krissen) has added **SILAM Pollen** support to the [pollenprognos-card](https://github.com/krissen/pollenprognos-card) (since v2.3.0) — now current conditions and pollen forecasts are available right on your dashboard!  
+  [Learn more here 👈](#dashboard-card)  
+
+- 📈 **Long-term statistics**  
+  Pollen sensors and the new diagnostic sensor now collect and display historical data.
+
+[![More in release v0.2.5](https://img.shields.io/badge/More--in--release-v0.2.5-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.5)
+
 ## v0.2.4
 
 - **📖 Default README in English**  
