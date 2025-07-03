@@ -40,7 +40,7 @@
 - **📖 README по умолчанию на английском**  
   Теперь файл README отображается на английском языке по умолчанию.
 
-[![Подробнее в релизе v0.2.4](https://img.shields.io/badge/Подробнее--в--релизе-v0.2.4-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.4)  
+[![Подробнее в релизе v0.2.4](https://img.shields.io/badge/Подробнее--в--релизе-v0.2.4-blue?style=flat-square)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.4)
 
 ## v0.2.3
 
@@ -51,7 +51,7 @@
 - **🌐 Добавлен голландский перевод**  
   Благодарим [@rubdos](https://github.com/rubdos) за реализацию голландский локализации!
 
-[![Подробнее в релизе v0.2.3](https://img.shields.io/badge/Подробнее--в--релизе-v0.2.3-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.3)  
+[![Подробнее в релизе v0.2.3](https://img.shields.io/badge/Подробнее--в--релизе-v0.2.3-blue?style=flat-square)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.3)  
 
 
 ## Предыдущие обновления
