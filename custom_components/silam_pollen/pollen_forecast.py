@@ -28,7 +28,7 @@ except ImportError:
     SUPPORT_FORECAST_HOURLY = 2
     SUPPORT_FORECAST_TWICE_DAILY = 4
 
-from .const import DOMAIN, RESPONSIBLE_MAPPING
+from .const import DOMAIN, RESPONSIBLE_MAPPING, INDEX_MAPPING 
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -95,6 +95,7 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
         self._forecast_hourly: list[dict] = []
         self._forecast_twice_daily: list[dict] = []
         self._extra_attributes: dict = {}
+        self._current_condition: str | None = None
 
     # ---------------------------------------------------------------------
     #  Метаданные Home Assistant
@@ -116,13 +117,8 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
 
     @property
     def state(self) -> str | None:
-        """
-        Текущее состояние — `condition` из первого интервала почасового прогноза.
-        Если данных нет, возвращаем None (HA покажет «unknown»).
-        """
-        if self._forecast_hourly:
-            return self._forecast_hourly[0].get("condition")
-        return None
+        """Текущее состояние (very_low … very_high) из блока «now»."""
+        return self._current_condition
 
     # ---------------------------------------------------------------------
     #  Обработка обновлений координатора
@@ -168,9 +164,18 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
         self._forecast_hourly = merged.get("hourly_forecast", [])
         self._forecast_twice_daily = merged.get("twice_daily_forecast", [])
 
-        # Атрибут «ответственный аллерген»
+        # Текущий индекс + «ответственный аллерген» из блока now
         now_entry = merged.get("now", {})
         if now_entry:
+            # --- 1. Индекс POLI → condition ---------------------------------
+            poli_val = now_entry["data"].get("POLI", {}).get("value")
+            try:
+                idx_val = int(float(poli_val)) if poli_val is not None else None
+            except (ValueError, TypeError):
+                idx_val = None
+            self._current_condition = INDEX_MAPPING.get(idx_val, "unknown")
+
+            # --- 2. Ответственный аллерген POLISRC ---------------------------
             polisrc_val = now_entry["data"].get("POLISRC", {}).get("value")
             try:
                 re_value = int(float(polisrc_val)) if polisrc_val is not None else None

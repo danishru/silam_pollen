@@ -150,9 +150,7 @@ async def async_setup_entry(hass, entry):
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
     # Подключаем платформы
-    platforms = ["sensor"]
-    if forecast_enabled:
-        platforms.append("weather")
+    platforms = ["sensor", "weather"]
     await hass.config_entries.async_forward_entry_setups(entry, platforms)
 
     # Слушатель изменений опций
@@ -163,8 +161,7 @@ async def async_setup_entry(hass, entry):
 async def async_unload_entry(hass, entry):
     """Выключить платформы и убрать координатор при удалении записи."""
     await hass.config_entries.async_forward_entry_unload(entry, "sensor")
-    if entry.options.get("forecast", entry.data.get("forecast", False)):
-        await hass.config_entries.async_forward_entry_unload(entry, "weather")
+    await hass.config_entries.async_forward_entry_unload(entry, "weather")
     hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
     return True
 
@@ -179,9 +176,8 @@ async def update_listener(hass, entry):
     }
     var_list = entry.options.get("var", entry.data.get("var", []))
     expected_ids.update(f"{entry.entry_id}_main_{p}" for p in var_list)
+    expected_ids.add(f"{entry.entry_id}_pollen_forecast")
 
-    if entry.options.get("forecast", entry.data.get("forecast", False)):
-        expected_ids.add(f"{entry.entry_id}_pollen_forecast")
 
     for entity in list(registry.entities.values()):
         if (
