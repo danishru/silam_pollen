@@ -132,7 +132,7 @@
       }
     },
     "weather": {
-      "index_polen_weather": {
+      "forecast": {
         "name": "Previsione del polline **BETA**",
         "state": {
           "very_low": "Molto basso",

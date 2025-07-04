@@ -131,7 +131,7 @@
       }
     },
     "weather": {
-      "index_polen_weather": {
+      "forecast": {
         "name": "Прогноз пыльцы **BETA**",
         "state": {
           "very_low": "Очень низкий",

@@ -15,16 +15,35 @@ sensor.py для интеграции SILAM Pollen в Home Assistant.
 
 import logging
 import re
+from dataclasses import dataclass
 from datetime import timedelta
 import xml.etree.ElementTree as ET
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import (
+    SensorEntity,
+    SensorStateClass,
+    SensorEntityDescription,
+)
 from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
-from .const import DOMAIN, VAR_OPTIONS, INDEX_MAPPING, RESPONSIBLE_MAPPING, URL_VAR_MAPPING
+from .const import (
+    DOMAIN,
+    VAR_OPTIONS,
+    INDEX_MAPPING,
+    RESPONSIBLE_MAPPING,
+    URL_VAR_MAPPING,
+)
 from .coordinator import SilamCoordinator  # Импорт координатора интеграции
-from .diagnostics import SilamPollenFetchDurationSensor  # диагностический сенсор :contentReference[oaicite:0]{index=0}&#8203;:contentReference[oaicite:1]{index=1}
+from .diagnostics import SilamPollenFetchDurationSensor, FETCH_DURATION_DESC
 
 _LOGGER = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+#  Декларативное описание «main»-сенсора
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class SilamMainSensorEntityDescription(SensorEntityDescription):
+    """Описание числового аллерген-сенсора (µg/m³)."""
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """
@@ -170,8 +189,16 @@ class SilamPollenSensor(SensorEntity):
             self._attr_translation_key = "index"
             self._attr_has_entity_name = True
         elif self._sensor_type == "main":
-            self._attr_state_class = SensorStateClass.MEASUREMENT
-            self._attr_translation_key = VAR_OPTIONS.get(self._var, self._var)
+            # --- декларативное описание для allergen-сенсора -------------
+            translation_key = VAR_OPTIONS.get(self._var, self._var)
+            self.entity_description = SilamMainSensorEntityDescription(
+                key=translation_key.lower(),
+                translation_key=translation_key,
+                state_class=SensorStateClass.MEASUREMENT,
+            )
+            self._extra_attributes["native_name"] = self._var.lower()
+            self._attr_state_class = self.entity_description.state_class
+            self._attr_translation_key = self.entity_description.translation_key
             self._attr_has_entity_name = True
         else:
             self._attr_translation_key = None
@@ -183,6 +210,13 @@ class SilamPollenSensor(SensorEntity):
         if self._sensor_type == "index":
             return f"{self._entry_id}_index"
         return f"{self._entry_id}_main_{self._var}"
+    @property
+    def suggested_object_id(self):
+        if self._sensor_type == "index":
+            return "index"
+        if self._sensor_type == "main":
+            return self.entity_description.key
+        return None
         
     @property
     def native_value(self):

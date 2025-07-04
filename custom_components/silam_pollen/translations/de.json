@@ -132,7 +132,7 @@
       }
     },
     "weather": {
-      "index_polen_weather": {
+      "forecast": {
         "name": "Pollen-Vorhersage **BETA**",
         "state": {
           "very_low": "Sehr niedrig",

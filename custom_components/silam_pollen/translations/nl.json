@@ -132,8 +132,8 @@
       }
     },
     "weather": {
-      "index_polen_weather": {
-        "name": "Forecast",
+      "forecast": {
+        "name": "Forecast **BETA**",
         "state": {
           "very_low": "Heel Laag",
           "low": "Laag",

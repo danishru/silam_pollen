@@ -132,7 +132,7 @@
       }
     },
     "weather": {
-      "index_polen_weather": {
+      "forecast": {
         "name": "Pollenprognos **BETA**",
         "state": {
           "very_low": "Mycket låg",

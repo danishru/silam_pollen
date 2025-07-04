@@ -129,8 +129,8 @@
       }
     },
     "weather": {
-      "index_polen_weather": {
-        "name": "Předpověď",
+      "forecast": {
+        "name": "Předpověď **BETA**",
         "state": {
           "very_low": "Velmi nízký",
           "low": "Nízký",

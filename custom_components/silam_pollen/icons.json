@@ -43,7 +43,7 @@
       }
     },
     "weather": {
-      "index_polen_weather": {
+      "forecast": {
         "default": "mdi:flower-pollen-outline",
         "state": {
           "very_low": "mdi:emoticon-happy-outline",

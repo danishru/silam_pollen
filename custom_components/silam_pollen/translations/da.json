@@ -132,7 +132,7 @@
       }
     },
     "weather": {
-      "index_polen_weather": {
+      "forecast": {
         "name": "Pollenprognose **BETA**",
         "state": {
           "very_low": "Meget lav",
