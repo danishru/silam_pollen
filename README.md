@@ -36,6 +36,23 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 
 ## 🆕 What's New
 
+## v0.2.6
+
+- 🆕 **`native_name` Attribute**  
+  All allergen sensors now include a `native_name` attribute that reflects the original SILAM API key (e.g. `alder_m22`, `grass_m32`, etc.), ensuring better compatibility with external tools and visualizations.
+
+- 🔧 **Unified `entity_id` Naming**  
+  Entity IDs (including defaults and resets) now correspond exactly to the keys in the localization files. For example, `sensor.silam_pollen_{Zone Name}_grass` remains identical across all languages and for every sensor in the integration.
+
+> [!IMPORTANT]  
+> To revert your entities to the new default names, follow the [device customization guide](https://www.home-assistant.io/docs/configuration/customizing-devices/) in the Home Assistant documentation.
+
+> [!NOTE]  
+> If you’ve already created automations or scripts, remember to update the referenced `entity_id` values.  
+> > If your Home Assistant system language is English or Russian, you can ignore this notice — entity IDs will remain unchanged for these languages.
+
+[![More in release v0.2.6](https://img.shields.io/badge/More--in--release-v0.2.6-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.6)
+
 ## v0.2.5 🌟
 
 This is a truly significant update for **SILAM Pollen**!
@@ -52,14 +69,18 @@ This is a truly significant update for **SILAM Pollen**!
 
 [![More in release v0.2.5](https://img.shields.io/badge/More--in--release-v0.2.5-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.5)
 
-## v0.2.4
+## Previous updates
+<details>
+<summary>Show</summary>
+  
+### v0.2.4
 
 - **📖 Default README in English**  
   The README file is now presented in English by default.
 
 [![More in release v0.2.4](https://img.shields.io/badge/More--in--release-v0.2.4-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.4)
 
-## v0.2.3
+### v0.2.3
 
 - **📦 Prepared for HACS publication**  
   Changes made to host the integration in the default HACS catalog.
@@ -69,10 +90,6 @@ This is a truly significant update for **SILAM Pollen**!
   Thanks to [@rubdos](https://github.com/rubdos) for implementing the Dutch localization!
 
 [![More in release v0.2.3](https://img.shields.io/badge/More--in--release-v0.2.3-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.3)
-
-## Previous updates
-<details>
-<summary>Show</summary>
 
 ### v0.2.2
 
