@@ -134,9 +134,14 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
         return None  # явно — Coordinator ожидает None
 
     async def async_added_to_hass(self) -> None:
-        """Регистрирует listener и выполняет первое обновление."""
+        """Настраивает подписку на координатор и делает первое обновление."""
         await super().async_added_to_hass()
-        self.async_on_remove(self.coordinator.async_add_listener(self._update_listener))
+        if hasattr(self, "_unsub_coordinator_listener") and self._unsub_coordinator_listener:
+            self._unsub_coordinator_listener()
+            self._unsub_coordinator_listener = None
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self._update_listener)
+        )
         await self._handle_coordinator_update()
 
     async def _handle_coordinator_update(self) -> None:
