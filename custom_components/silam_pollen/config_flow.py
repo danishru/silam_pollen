@@ -35,7 +35,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
            название зоны и координаты через селектор местоположения.
            Итоговое имя интеграции формируется как "SILAM Pollen - {zone_name}".
     """
-    VERSION = 1
+    VERSION = 2
 
     async def async_step_user(self, user_input=None):
         """Шаг 1: базовые параметры (без координат)."""

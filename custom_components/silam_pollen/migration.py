@@ -69,8 +69,12 @@ async def async_migrate_entry(hass, config_entry):
     else:
         new_minor_version = config_entry.minor_version
 
+    # Поднимаем версию записи до актуальной
     hass.config_entries.async_update_entry(
-        config_entry, data=new_data, minor_version=new_minor_version, version=config_entry.version
+        config_entry,
+        data=new_data,
+        minor_version=new_minor_version,
+        version=2,                 # == CONFIG_VERSION
     )
     _LOGGER.debug("Миграция успешна, новые данные: %s", new_data)
     return True

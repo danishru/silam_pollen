@@ -10,14 +10,11 @@ from .config_flow import OptionsFlowHandler as SilamPollenOptionsFlow
 from .coordinator import SilamCoordinator
 from .migration import async_migrate_entry
 
+CONFIG_VERSION = 2
+
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry):
-    """Настраивает интеграцию SILAM Pollen через config entry."""
-    # Запускаем миграцию, если версия равна 1 и minor_version меньше 2.
-    if entry.version == 1 and entry.minor_version < 2:
-        await async_migrate_entry(hass, entry)
-
     base_device_name = entry.title
     manual_coordinates = entry.data.get("manual_coordinates", False)
     manual_latitude = entry.data.get("latitude")
