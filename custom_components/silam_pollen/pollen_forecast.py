@@ -161,13 +161,22 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
             return
 
         # Прогнозы
+        self._extra_attributes = {}
         self._forecast_hourly = merged.get("hourly_forecast", [])
         self._forecast_twice_daily = merged.get("twice_daily_forecast", [])
+
+        # --- ближайшее (next) состояние из 1-го интервала hourly -----------
+        if self._forecast_hourly:
+            self._extra_attributes["next_condition"] = (
+                self._forecast_hourly[0].get("condition")
+            )
 
         # Текущий индекс + «ответственный аллерген» из блока now
         now_entry = merged.get("now", {})
         if now_entry:
-            # --- 1. Индекс POLI → condition ---------------------------------
+            # --- 1. дата «сейчас» (как в sensor.index)
+            self._extra_attributes["date"] = now_entry.get("date")  # <--- добавлено
+            # --- 2. Индекс POLI → condition ---------------------------------
             poli_val = now_entry["data"].get("POLI", {}).get("value")
             try:
                 idx_val = int(float(poli_val)) if poli_val is not None else None
@@ -175,7 +184,7 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
                 idx_val = None
             self._current_condition = INDEX_MAPPING.get(idx_val, "unknown")
 
-            # --- 2. Ответственный аллерген POLISRC ---------------------------
+            # --- 3. Ответственный аллерген POLISRC ---------------------------
             polisrc_val = now_entry["data"].get("POLISRC", {}).get("value")
             try:
                 re_value = int(float(polisrc_val)) if polisrc_val is not None else None
