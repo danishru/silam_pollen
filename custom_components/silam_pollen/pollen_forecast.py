@@ -28,7 +28,12 @@ except ImportError:
     SUPPORT_FORECAST_HOURLY = 2
     SUPPORT_FORECAST_TWICE_DAILY = 4
 
-from .const import DOMAIN, RESPONSIBLE_MAPPING, INDEX_MAPPING 
+from .const import (
+    DOMAIN,
+    RESPONSIBLE_MAPPING,
+    INDEX_MAPPING,
+    URL_VAR_MAPPING,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -160,8 +165,10 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
             _LOGGER.warning("merged_data пуст — прогноз не обновлён")
             return
 
-        # Прогнозы
+        # ---------- начисто собираем данные --------------------------------
         self._extra_attributes = {}
+
+        # ── 1. прогнозы ────────────────────────────────────────────────────
         self._forecast_hourly = merged.get("hourly_forecast", [])
         self._forecast_twice_daily = merged.get("twice_daily_forecast", [])
 
@@ -170,22 +177,44 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
             self._extra_attributes["next_condition"] = (
                 self._forecast_hourly[0].get("condition")
             )
-
-        # Текущий индекс + «ответственный аллерген» из блока now
+        # ── 2. блок now ────────────────────────────────────────────────────
         now_entry = merged.get("now", {})
         if now_entry:
-            # --- 1. дата «сейчас» (как в sensor.index)
-            self._extra_attributes["date"] = now_entry.get("date")  # <--- добавлено
-            # --- 2. Индекс POLI → condition ---------------------------------
-            poli_val = now_entry["data"].get("POLI", {}).get("value")
+            data_now = now_entry.get("data", {})
+
+            # 2 a) текущий индекс → состояние
+            poli_raw = data_now.get("POLI", {}).get("value")
             try:
-                idx_val = int(float(poli_val)) if poli_val is not None else None
+                idx_val = int(float(poli_raw)) if poli_raw is not None else None
             except (ValueError, TypeError):
                 idx_val = None
             self._current_condition = INDEX_MAPPING.get(idx_val, "unknown")
 
-            # --- 3. Ответственный аллерген POLISRC ---------------------------
-            polisrc_val = now_entry["data"].get("POLISRC", {}).get("value")
+            # 2 b) дата измерения
+            self._extra_attributes["date"] = now_entry.get("date")
+
+            # 2 c) концентрации по выбранным аллергенам
+            for allergen in getattr(self.coordinator, "_var_list", []):
+                full_var = URL_VAR_MAPPING.get(allergen, allergen)
+                elem = data_now.get(full_var)
+
+                val = None
+                if elem:
+                    try:
+                        val = int(round(float(elem.get("value"))))
+                    except (ValueError, TypeError):
+                        val = None
+                self._extra_attributes[
+                    f"pollen_{allergen.split('_')[0].lower()}"
+                ] = val
+
+            # 2 d) высота станции (как в main-сенсоре)
+            station = now_entry.get("station", {})
+            if station and "altitude" in station:
+                self._extra_attributes["altitude"] = station["altitude"]
+
+            # 2 e) ответственный аллерген
+            polisrc_val = data_now.get("POLISRC", {}).get("value")
             try:
                 re_value = int(float(polisrc_val)) if polisrc_val is not None else None
             except (ValueError, TypeError):
@@ -193,6 +222,9 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
             self._extra_attributes["responsible_elevated"] = RESPONSIBLE_MAPPING.get(
                 re_value, "unknown"
             )
+        else:
+            # если блока now нет, состояние «unknown»
+            self._current_condition = None
 
         self.async_write_ha_state()
 
