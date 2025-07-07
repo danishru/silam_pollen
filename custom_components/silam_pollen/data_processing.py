@@ -256,13 +256,15 @@ def merge_station_features(
         rep_time = w[1]["datetime"] if len(w) >= 2 else w[0]["datetime"]
         rep_iso  = parse_iso(rep_time).replace(tzinfo=timezone.utc).isoformat()
 
+        # используем максимум вместо медианы для индекса
+        peak_idx = max(idxs) if idxs else None
+
         entry = {
             "datetime": rep_iso,
-            "condition": INDEX_MAPPING.get(
-                int(round(statistics.median(idxs))) if idxs else None, "unknown"),
+            "condition": INDEX_MAPPING.get(peak_idx, "unknown"),
             "native_temperature": max(temps) if temps else None,
             "native_temperature_unit": "°C",
-            "pollen_index": int(math.ceil(statistics.median(idxs))) if idxs else None,
+            "pollen_index": peak_idx,
             "temperature": max(temps) if temps else None,
         }
 
@@ -276,7 +278,7 @@ def merge_station_features(
                     if r["allergens"].get(key) is not None
                 ]
                 if vals:
-                    entry[key] = int(math.ceil(statistics.median(vals)))
+                    entry[key] = max(vals)
 
         hourly_forecast.append(entry)
 
