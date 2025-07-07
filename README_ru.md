@@ -404,13 +404,39 @@ https://github.com/krissen/pollenprognos-card.
   [https://yandex.ru/pogoda/allergies](https://yandex.ru/pogoda/allergies)  
   Раздел Яндекс.Погоды, где по уникальной формуле рассчитывается активность пыльцы с учётом периодов цветения, погодных условий и отзывов пользователей для оценки влияния аллергенов на самочувствие.
 
+## Публикации по модели SILAM
+
+Ниже приведены ключевые статьи, описывающие основные модули и валидацию модели распространения пыльцы SILAM, упорядоченные по дате публикации:
+
+- **A numerical model of birch pollen emission and dispersion in the atmosphere. Description of the emission module** (Mikhail Sofiev et al., 2012)  
+  Подробное описание модуля эмиссии берёзовой пыльцы в SILAM. Опубликовано 13 марта 2012.  
+  <https://link.springer.com/article/10.1007/s00484-012-0532-z>
+
+- **Variation of the group 5 grass pollen allergen content of airborne pollen in relation to geographic location and time in season** (Jeroen Buters et al., 2015)  
+  Исследование сезонной и географической изменчивости содержания аллергенов группы 5 в воздушной пыльце трав. Опубликовано онлайн 6 мая 2015.  
+  <https://www.jacionline.org/article/S0091-6749(15)00412-1/fulltext>
+
+- **On impact of transport conditions on variability of the seasonal pollen index** (Mikhail Sofiev, 2016)  
+  Анализ влияния метеорологических условий переноса на сезонный индекс пыльцы. Опубликовано 24 октября 2016.  
+  <https://link.springer.com/article/10.1007/s10453-016-9459-x>
+
+- **Bioaerosols in the atmosphere at two sites in Northern Europe in spring 2021: Outline of an experimental campaign** (Mikhail Sofiev et al., 2022)  
+  Обзор экспериментальной кампании по изучению биоаэрозолей в атмосфере на двух площадках Северной Европы весной 2021 г. Опубликовано 7 июля 2022.  
+  <https://www.sciencedirect.com/science/article/pii/S0013935122011252>
+
+- **European pollen reanalysis, 1980–2022, for alder, birch, and olive** (Mikhail Sofiev et al., 2024)  
+  Реанализ европейских данных по пыльце ольхи, берёзы и оливы за период 1980–2022 гг. Опубликовано 3 октября 2024.  
+  <https://www.nature.com/articles/s41597-024-03686-2>
+
 ## Лицензия
 
 [MIT License](LICENSE)
 
 ## Поддержка
 
-Если возникнут вопросы или проблемы, создайте issue в [репозитории](https://github.com/danishru/silam_pollen/issues).
+Если возникнут вопросы или проблемы, создайте issue в [репозитории](https://github.com/danishru/silam_pollen/issues).  
+
+![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fanalytics.home-assistant.io%2Fcustom_integrations.json&query=%24.silam_pollen.total&style=flat-square&label=use&cacheSeconds=15600)
 
 <!-- Определения ссылок для бейджей -->
 [releases-shield]: https://img.shields.io/github/release/danishru/silam_pollen.svg?style=for-the-badge

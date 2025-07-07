@@ -384,13 +384,40 @@ For more detailed information on pollen and its distribution zones, we recommend
   [https://silam.fmi.fi/pollen.html](https://silam.fmi.fi/pollen.html)  
   Official source of pollen forecasts from the Finnish Meteorological Institute. Provides 5-day pollen distribution forecasts for Europe and Northern Europe (birch, grasses, olive, ragweed) in cooperation with the European Allergy Network (EAN).
 
+## Publications on the SILAM Model
+
+Below are key papers detailing the main modules and validation of the SILAM pollen dispersion model, ordered by publication date:
+
+- **A numerical model of birch pollen emission and dispersion in the atmosphere. Description of the emission module** (Mikhail Sofiev et al., 2012)  
+  Detailed description of the SILAM birch pollen emission module. Published 13 March 2012.  
+  <https://link.springer.com/article/10.1007/s00484-012-0532-z>
+
+- **Variation of the group 5 grass pollen allergen content of airborne pollen in relation to geographic location and time in season** (Jeroen Buters et al., 2015)  
+  Study of seasonal and geographic variability in group 5 grass pollen allergen content. Published online 6 May 2015.  
+  <https://www.jacionline.org/article/S0091-6749(15)00412-1/fulltext>
+
+- **On impact of transport conditions on variability of the seasonal pollen index** (Mikhail Sofiev, 2016)  
+  Investigation of how atmospheric transport affects seasonal pollen index variability. Published 24 October 2016.  
+  <https://link.springer.com/article/10.1007/s10453-016-9459-x>
+
+- **Bioaerosols in the atmosphere at two sites in Northern Europe in spring 2021: Outline of an experimental campaign** (Mikhail Sofiev et al., 2022)  
+  Overview of an experimental campaign studying bioaerosols at two sites in Northern Europe in spring 2021. Published 7 July 2022.  
+  <https://www.sciencedirect.com/science/article/pii/S0013935122011252>
+
+- **European pollen reanalysis, 1980–2022, for alder, birch, and olive** (Mikhail Sofiev et al., 2024)  
+  A reanalysis of European pollen data for alder, birch, and olive from 1980 to 2022. Published 3 October 2024.  
+  <https://www.nature.com/articles/s41597-024-03686-2>
+
 ## License
 
 [MIT License](LICENSE)
 
 ## Support
 
-If you have questions or issues, create an issue in the [repository](https://github.com/danishru/silam_pollen/issues).
+If you have questions or issues, create an issue in the [repository](https://github.com/danishru/silam_pollen/issues).  
+
+![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fanalytics.home-assistant.io%2Fcustom_integrations.json&query=%24.silam_pollen.total&style=flat-square&label=use&cacheSeconds=15600)
+
 
 <!-- Badge link definitions -->
 [releases-shield]: https://img.shields.io/github/release/danishru/silam_pollen.svg?style=for-the-badge
