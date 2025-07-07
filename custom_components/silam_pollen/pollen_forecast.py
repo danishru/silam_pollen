@@ -4,7 +4,7 @@ pollen_forecast.py
 Сенсор прогноза уровня пыльцы для интеграции **SILAM Pollen**.
 
 • Использует координатор, читающий объединённые данные (`merged_data`)  
-• Формирует почасовой и дважды-в-день прогнозы  
+• Формирует почасовой, дважды-в-день и суточный прогнозы  
 • Возвращает стабильный entity_id вида `weather.silam_pollen_<zone>_forecast`
 """
 
@@ -23,10 +23,12 @@ try:
     from homeassistant.components.weather.const import (
         SUPPORT_FORECAST_HOURLY,
         SUPPORT_FORECAST_TWICE_DAILY,
+        SUPPORT_FORECAST_DAILY,
     )
 except ImportError:
     SUPPORT_FORECAST_HOURLY = 2
     SUPPORT_FORECAST_TWICE_DAILY = 4
+    SUPPORT_FORECAST_DAILY = 1
 
 from .const import (
     DOMAIN,
@@ -62,7 +64,11 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
 
     entity_description: SilamWeatherEntityDescription
     _attr_has_entity_name = True
-    _attr_supported_features = SUPPORT_FORECAST_HOURLY | SUPPORT_FORECAST_TWICE_DAILY
+    _attr_supported_features = (
+        SUPPORT_FORECAST_HOURLY
+        | SUPPORT_FORECAST_TWICE_DAILY
+        | SUPPORT_FORECAST_DAILY
+    )
     _attr_native_temperature_unit = "°C"
 
     def __init__(
@@ -99,6 +105,7 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
         # Кэш прогнозов и дополнительных атрибутов
         self._forecast_hourly: list[dict] = []
         self._forecast_twice_daily: list[dict] = []
+        self._forecast_daily: list[dict] = []
         self._extra_attributes: dict = {}
         self._current_condition: str | None = None
 
@@ -171,6 +178,7 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
         # ── 1. прогнозы ────────────────────────────────────────────────────
         self._forecast_hourly = merged.get("hourly_forecast", [])
         self._forecast_twice_daily = merged.get("twice_daily_forecast", [])
+        self._forecast_daily = merged.get("daily_forecast", [])
 
         # --- ближайшее (next) состояние из 1-го интервала hourly -----------
         if self._forecast_hourly:
@@ -239,3 +247,7 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
     async def async_forecast_twice_daily(self) -> list[dict] | None:
         """Возвращает прогноз «день/ночь» на несколько суток."""
         return self._forecast_twice_daily
+
+    async def async_forecast_daily(self) -> list[dict] | None:
+        """Возвращает суточный прогноз на несколько суток."""
+        return self._forecast_daily

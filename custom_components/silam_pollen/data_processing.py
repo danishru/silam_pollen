@@ -1,15 +1,39 @@
 import xml.etree.ElementTree as ET
-import statistics
-import math
+import statistics, math
 from datetime import datetime, timedelta, timezone
+from math import ceil
 from .const import INDEX_MAPPING, URL_VAR_MAPPING
 
+# -------------------------------------------------------------------------
+# 0) ВСПОМОГАТЕЛЬНАЯ «СТУПЕНЧАТАЯ» ФУНКЦИЯ ПРОЦЕНТИЛЯ ----------------------
+# -------------------------------------------------------------------------
+def obs_percentile(sorted_vals: list[float], p: float) -> float:
+    """
+    «Наблюдательный» процентиль: берёт *реальное* значение из списка,
+    без интерполяции между точками (ceil-индекс).
+
+    Аргументы:
+        • sorted_vals — ПРЕДВАРИТЕЛЬНО ОТСОРТИРОВАННЫЙ (!) список чисел
+        • p           — доля (0.0 … 1.0)
+
+    Возвращает само значение из списка.
+    """
+    if not sorted_vals:
+        raise ValueError("empty list")
+    k = ceil(p * len(sorted_vals)) - 1          # 0-based индекс
+    return sorted_vals[min(k, len(sorted_vals) - 1)]
+
+
+# =========================================================================
+# merge_station_features()
+# =========================================================================
 def merge_station_features(
     index_xml: ET.Element,
-    main_xml: ET.Element = None,
-    forecast_enabled: bool = False,
-    selected_allergens: list = None,
-    forecast_duration: int = 36,
+    main_xml:  ET.Element | None = None,
+    *,
+    forecast_enabled:   bool        = False,
+    selected_allergens: list[str]   = None,
+    forecast_duration:  int         = 36,
 ) -> dict:
     """
     Объединяет данные из XML-ответов для 'index' и 'main' по атрибуту date и формирует итоговый словарь.
@@ -19,11 +43,12 @@ def merge_station_features(
     рассчитываются агрегированные значения и сразу встраиваются в прогнозы.
     
     Итоговая структура:
-      {
-         "now": { ... },                  # Запись с самой ранней датой (текущая)
-         "hourly_forecast": [ ... ],      # Почасовой прогноз с дополнительно добавленными ключами аллергенов
-         "twice_daily_forecast": [ ... ]  # Прогноз дважды в день с дополнительно добавленными ключами аллергенов
-      }
+    {
+        "now": { ... },                  # Запись с самой ранней датой (текущая)
+        "hourly_forecast": [ ... ],      # Почасовой прогноз с дополнительно добавленными ключами аллергенов
+        "twice_daily_forecast": [ ... ]  # Прогноз дважды в день с дополнительно добавленными ключами аллергенов
+        "daily_forecast": [...]          # Суточный прогноз (+ аллергены)
+    }
     :param index_xml: XML-дерево, полученное из data["index"]
     :param main_xml: XML-дерево, полученное из data["main"] (может быть None)
     :param forecast_enabled: Флаг, указывающий, нужно ли выполнять агрегацию прогнозных данных.
@@ -31,222 +56,343 @@ def merge_station_features(
     :param forecast_duration: Длительность прогноза в часах для прогнозов (используется вместо фиксированных 36 ч).
     :return: Итоговый словарь агрегированных данных.
     """
+
+    # ---------------------------------------------------------------------
+    # 1) ПАРСИНГ XML → словари --------------------------------------------
+    # ---------------------------------------------------------------------
     def parse_features(xml_root: ET.Element) -> dict:
-        """
-        Парсит XML-дерево и формирует словарь с данными для каждой станции по дате.
-        """
         features = {}
-        for feature in xml_root.findall(".//stationFeature"):
-            date = feature.get("date")
-            # Извлекаем информацию о станции
-            station_elem = feature.find("station")
-            station_data = {}
-            if station_elem is not None:
-                station_data = {
-                    "name": station_elem.get("name"),
-                    "latitude": station_elem.get("latitude"),
-                    "longitude": station_elem.get("longitude"),
-                    "altitude": station_elem.get("altitude")
+        for feat in xml_root.findall(".//stationFeature"):
+            date = feat.get("date")
+            st   = feat.find("station")
+
+            # --- данные станции ------------------------------------------
+            st_data = {}
+            if st is not None:
+                st_data = {
+                    "name":      st.get("name"),
+                    "latitude":  st.get("latitude"),
+                    "longitude": st.get("longitude"),
+                    "altitude":  st.get("altitude"),
                 }
-            # Извлекаем все элементы <data> и их значения
-            data_elements = {}
-            for data_elem in feature.findall("data"):
-                key = data_elem.get("name")
-                data_elements[key] = {
-                    "value": data_elem.text,
-                    "units": data_elem.get("units")
-                }
-            features[date] = {
-                "station": station_data,
-                "data": data_elements
-            }
+
+            # --- данные измерений ----------------------------------------
+            data = {}
+            for d in feat.findall("data"):
+                data[d.get("name")] = {"value": d.text, "units": d.get("units")}
+
+            features[date] = {"station": st_data, "data": data}
         return features
 
-    def parse_iso(date_str: str) -> datetime:
-        """
-        Преобразует строку даты в объект datetime, удаляя завершающую "Z", если она присутствует.
-        """
-        return datetime.fromisoformat(date_str.rstrip("Z"))
-    
-    # Парсим XML-деревья для index и main (если задано)
-    index_features = parse_features(index_xml) if index_xml is not None else {}
-    main_features = parse_features(main_xml) if main_xml is not None else {}
+    def parse_iso(s: str) -> datetime:
+        """Преобразует ISO-строку (с/без 'Z') в datetime (naïve)."""
+        return datetime.fromisoformat(s.rstrip("Z"))
 
-    # Объединяем данные по датам из index и main
+    # ---------------------------------------------------------------------
+    # 2) СУТОЧНЫЙ «ПЛАВНЫЙ» POLLEN_INDEX ----------------------------------
+    # ---------------------------------------------------------------------
+    def calc_smoothed_pollen_index(indices: list[int | float | None]) -> int | None:
+        """
+        Возвращает сглаженный *pollen_index* (целое) или ``None``.
+
+        ┌────────────────────────────┬────────────────────────────┐
+        │ Кол-во точек за окно       │ Используемый показатель    │
+        ├────────────────────────────┼────────────────────────────┤
+        │ ≥ 18  (≈ 75 %)             │ 80-й процентиль (obs)      │
+        │ 12 – 17                    │ 70-й процентиль (obs)      │
+        │ < 12                       │ максимум                   │
+        └────────────────────────────┴────────────────────────────┘
+        """
+        clean = [v for v in indices if v is not None]
+        if not clean:
+            return None
+
+        vals = sorted(clean)
+        if len(vals) >= 18:
+            pct_val = obs_percentile(vals, 0.80)
+        elif len(vals) >= 12:
+            pct_val = obs_percentile(vals, 0.70)
+        else:
+            pct_val = vals[-1]                       # fallback → max
+
+        return int(math.ceil(pct_val))
+
+    # ---------------------------------------------------------------------
+    # 3) АЛЛЕРГЕНЫ: «ПЛАВНЫЙ» УРОВЕНЬ + ПИК -------------------------------
+    # ---------------------------------------------------------------------
+    def calc_allergen_summary(group: list[dict], allergens: list[str]) -> tuple[dict, dict]:
+        """
+        Для переданной группы записей возвращает
+            • levels  — сглаженный уровень (ключи pollen_*),
+            • peaks   — пики {'birch': {'peak': int, 'time': iso}, ...}.
+        """
+        levels, peaks = {}, {}
+
+        for orig in allergens:
+            key = f"pollen_{orig.split('_')[0].lower()}"
+            vals = [
+                g["allergens"][key]
+                for g in group
+                if g["allergens"].get(key) is not None
+            ]
+
+            # --- уровень --------------------------------------------------
+            if not vals:
+                levels[key] = None
+                continue
+
+            vals_sorted = sorted(vals)
+            if len(vals_sorted) >= 18:
+                pct_val = obs_percentile(vals_sorted, 0.80)
+            elif len(vals_sorted) >= 12:
+                pct_val = obs_percentile(vals_sorted, 0.70)
+            else:
+                pct_val = vals_sorted[-1]
+            levels[key] = int(math.ceil(pct_val))
+
+            # --- пик (только >0) -----------------------------------------
+            if any(v > 0 for v in vals_sorted):
+                peak_item = max(
+                    (g for g in group if g["allergens"].get(key) is not None),
+                    key=lambda x: x["allergens"][key],
+                )
+                peaks[key.split("_")[1]] = {
+                    "peak": peak_item["allergens"][key],
+                    "time": peak_item["dt_obj"]
+                            .replace(tzinfo=timezone.utc)
+                            .isoformat(),
+                }
+
+        return levels, peaks
+
+    # ---------------------------------------------------------------------
+    # 4) ОБЪЕДИНЯЕМ index + main по дате ----------------------------------
+    # ---------------------------------------------------------------------
+    idx  = parse_features(index_xml) if index_xml is not None else {}
+    main = parse_features(main_xml)  if main_xml  is not None else {}
+
     raw_merged = {}
-    all_dates = set(index_features.keys()) | set(main_features.keys())
-    for date in all_dates:
-        station_index = index_features.get(date, {}).get("station", {})
-        station_main = main_features.get(date, {}).get("station", {})
-        # Если в main указана ненулевая высота, отдаём ей предпочтение
-        station = station_main if station_main.get("altitude") not in (None, "0", 0) else station_index
-        data_index = index_features.get(date, {}).get("data", {})
-        data_main = main_features.get(date, {}).get("data", {})
-        combined_data = {**data_index, **data_main}
+    for date in set(idx) | set(main):
+        st_idx  = idx.get(date, {}).get("station", {})
+        st_main = main.get(date, {}).get("station", {})
+        # высота из main имеет приоритет, если не 0
+        station = st_main if st_main.get("altitude") not in (None, "0", 0) else st_idx
         raw_merged[date] = {
             "station": station,
-            "data": combined_data
+            "data": {**idx.get(date, {}).get("data", {}),
+                     **main.get(date, {}).get("data", {})}
         }
-    
-    # Выбираем запись "now" – с самой ранней датой
-    now_record = {}
+
+    # ---------------------------------------------------------------------
+    # 5) «NOW» — самая ранняя точка ---------------------------------------
+    # ---------------------------------------------------------------------
+    now_record, earliest = {}, None
     if raw_merged:
         try:
-            sorted_dates = sorted(raw_merged.keys(), key=lambda d: parse_iso(d))
+            earliest = min(raw_merged, key=parse_iso)
         except Exception:
-            sorted_dates = list(raw_merged.keys())
-        earliest = sorted_dates[0]
-        now_record = raw_merged[earliest]
-        now_record["date"] = earliest
-    else:
-        earliest = None
+            earliest = next(iter(raw_merged))
+        now_record = raw_merged[earliest] | {"date": earliest}
 
-    # Инициализируем списки агрегированных прогнозов
+    # ---------------------------------------------------------------------
+    # 6) Если прогноз не требуется — возвращаем только NOW ----------------
+    # ---------------------------------------------------------------------
+    if not (forecast_enabled and index_xml is not None):
+        return {"now": now_record,
+                "hourly_forecast": [],
+                "twice_daily_forecast": [],
+                "daily_forecast": []}
+
+    # ---------------------------------------------------------------------
+    # 7) PREP: превращаем сырые точки в список ----------------------------
+    # ---------------------------------------------------------------------
+    current_time = datetime.utcnow()
+    raw_all = []
+    for dt_s, entry in raw_merged.items():
+        dt = parse_iso(dt_s)
+
+        # --- температура --------------------------------------------------
+        t_val = entry["data"].get("temp_2m", {}).get("value")
+        temp  = float(t_val) - 273.15 if t_val not in (None, "") else None
+
+        # --- общий POLI ---------------------------------------------------
+        poli  = entry["data"].get("POLI", {}).get("value")
+        idx_val = int(float(poli)) if poli not in (None, "") else None
+
+        # --- аллергены ----------------------------------------------------
+        allergens = {}
+        if selected_allergens:
+            for orig in selected_allergens:
+                real = URL_VAR_MAPPING.get(orig, orig)
+                key  = f"pollen_{orig.split('_')[0].lower()}"
+                v    = entry["data"].get(real, {}).get("value")
+                allergens[key] = int(float(v)) if v not in (None, "") else None
+
+        raw_all.append({
+            "datetime": dt_s,
+            "dt_obj":  dt,
+            "temperature": round(temp, 1) if temp is not None else None,
+            "pollen_index": idx_val,
+            "allergens": allergens,
+        })
+
+    raw_all.sort(key=lambda x: x["dt_obj"])
+
+    # ---------------------------------------------------------------------
+    # 8) HOURLY FORECAST – окна по 3 ч (24 ч вперёд) ----------------------
+    # ---------------------------------------------------------------------
     hourly_forecast = []
-    twice_daily_forecast = []
+    win, step = 3, 3
+    raw_hourly = [
+        r for r in raw_all
+        if current_time < r["dt_obj"] <= current_time + timedelta(hours=24)
+    ]
 
-    if forecast_enabled and index_xml is not None:
-        current_time = datetime.utcnow()
-        # Собираем "сырые" данные из raw_merged с предварительным сохранением объекта datetime и значений аллергенов
-        raw_all = []
-        for date_str, entry in raw_merged.items():
-            dt_obj = parse_iso(date_str)
-            # Вычисляем температуру (перевод из Кельвина в Цельсий)
-            temp_value = None
-            if "temp_2m" in entry["data"] and entry["data"]["temp_2m"]["value"] is not None:
-                try:
-                    temp_value = float(entry["data"]["temp_2m"]["value"]) - 273.15
-                except (ValueError, TypeError):
-                    temp_value = None
-            # Индекс пыльцы для общего поля POLI
-            pollen_index = None
-            if "POLI" in entry["data"] and entry["data"]["POLI"]["value"] is not None:
-                try:
-                    pollen_index = int(float(entry["data"]["POLI"]["value"]))
-                except (ValueError, TypeError):
-                    pollen_index = None
-            # Если выбраны отдельные аллергены, пытаемся извлечь их значения
-            allergens_values = {}
-            if selected_allergens:
-                for orig_allergen in selected_allergens:
-                    real_key = URL_VAR_MAPPING.get(orig_allergen, orig_allergen)
-                    forecast_key = "pollen_" + orig_allergen.split('_')[0].lower()
-                    if real_key in entry["data"] and entry["data"][real_key]["value"] is not None:
-                        try:
-                            allergens_values[forecast_key] = int(float(entry["data"][real_key]["value"]))
-                        except (ValueError, TypeError):
-                            allergens_values[forecast_key] = None
-                    else:
-                        allergens_values[forecast_key] = None
+    for i in range(0, len(raw_hourly) - win + 1, step):
+        w = raw_hourly[i:i + win]
+        temps = [r["temperature"] for r in w if r["temperature"] is not None]
+        idxs  = [r["pollen_index"] for r in w if r["pollen_index"] is not None]
 
-            raw_all.append({
-                "datetime": date_str,
-                "dt_obj": dt_obj,
-                "temperature": round(temp_value, 1) if temp_value is not None else None,
-                "pollen_index": pollen_index,
-                "allergens": allergens_values  # Словарь с данными по каждому аллергену
-            })
-        try:
-            raw_all.sort(key=lambda item: item["dt_obj"])
-        except Exception:
-            pass
+        rep_time = w[1]["datetime"] if len(w) >= 2 else w[0]["datetime"]
+        rep_iso  = parse_iso(rep_time).replace(tzinfo=timezone.utc).isoformat()
 
-        # Почасовой прогноз – окна по 3 часа (на следующие 24 часа)
-        window_size = 3
-        step = 3
-        raw_hourly = [
-            item for item in raw_all
-            if item["dt_obj"] > current_time and item["dt_obj"] <= current_time + timedelta(hours=24)
+        entry = {
+            "datetime": rep_iso,
+            "condition": INDEX_MAPPING.get(
+                int(round(statistics.median(idxs))) if idxs else None, "unknown"),
+            "native_temperature": max(temps) if temps else None,
+            "native_temperature_unit": "°C",
+            "pollen_index": int(math.ceil(statistics.median(idxs))) if idxs else None,
+            "temperature": max(temps) if temps else None,
+        }
+
+        # --- сглаженные аллергены (медиана) ------------------------------
+        if selected_allergens:
+            for orig in selected_allergens:
+                key = f"pollen_{orig.split('_')[0].lower()}"
+                vals = [
+                    r["allergens"].get(key)
+                    for r in w
+                    if r["allergens"].get(key) is not None
+                ]
+                if vals:
+                    entry[key] = int(math.ceil(statistics.median(vals)))
+
+        hourly_forecast.append(entry)
+
+    # ---------------------------------------------------------------------
+    # 9) TWICE-DAILY FORECAST – интервалы по 12 ч -------------------------
+    # ---------------------------------------------------------------------
+    twice_daily_forecast, seen_twice_dt = [], set()
+    raw_twice = [
+        r for r in raw_all
+        if current_time < r["dt_obj"] <= current_time + timedelta(hours=forecast_duration)
+    ]
+
+    local_tz = datetime.now().astimezone().tzinfo
+
+    for offset in range(0, forecast_duration, 12):
+        start = current_time + timedelta(hours=offset)
+        end   = start + timedelta(hours=12)
+        group = [g for g in raw_twice if start < g["dt_obj"] <= end]
+        if not group:
+            continue
+
+        temps = [g["temperature"]  for g in group if g["temperature"]  is not None]
+        idxs  = [g["pollen_index"] for g in group if g["pollen_index"] is not None]
+        if not (temps and idxs):
+            continue
+
+        smooth_idx = calc_smoothed_pollen_index(idxs)
+
+        # --- репрезентативное время → 00 или 12 (лок) --------------------
+        rep_dt  = sorted(group, key=lambda x: x["dt_obj"])[len(group)//2]["dt_obj"]
+        local   = rep_dt.astimezone(local_tz)
+        if 6 <= local.hour < 18:                     # дневное окно
+            fixed_local = local.replace(hour=12, minute=0, second=0, microsecond=0)
+        else:                                       # ночное окно
+            fixed_local = (
+                (local if local.hour < 18 else local + timedelta(days=1))
+                .replace(hour=0, minute=0, second=0, microsecond=0)
+            )
+
+        fixed_iso = fixed_local.astimezone(timezone.utc).isoformat()
+        if fixed_iso in seen_twice_dt:              # защита от дубликатов
+            continue
+        seen_twice_dt.add(fixed_iso)
+
+        entry = {
+            "datetime": fixed_iso,
+            "is_daytime": 6 <= fixed_local.hour < 18,
+            "condition": INDEX_MAPPING.get(smooth_idx, "unknown"),
+            "native_temperature": round(max(temps), 1),
+            "native_templow":     round(min(temps), 1),
+            "pollen_index":       smooth_idx,
+            "temperature":        round(max(temps), 1),
+            "allergen_peaks": {},
+        }
+
+        # --- аллергены: уровень + пик ------------------------------------
+        if selected_allergens:
+            levels, peaks = calc_allergen_summary(group, selected_allergens)
+            entry.update(levels)
+            entry["allergen_peaks"] = peaks
+
+        twice_daily_forecast.append(entry)
+
+    twice_daily_forecast.sort(key=lambda x: x["datetime"])
+
+    # ---------------------------------------------------------------------
+    # 10) DAILY FORECAST – окна по 24 ч -----------------------------------
+    # ---------------------------------------------------------------------
+    daily_forecast = []
+    raw_daily = [
+        r for r in raw_all
+        if current_time < r["dt_obj"] <= current_time + timedelta(hours=forecast_duration)
+    ]
+
+    total_days = math.ceil(forecast_duration / 24)
+    for d in range(1, total_days + 1):               # начинаем с «завтра»
+        day_start = (current_time + timedelta(days=d)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        group = [
+            g for g in raw_daily
+            if day_start < g["dt_obj"] <= day_start + timedelta(days=1)
         ]
-        for i in range(0, len(raw_hourly) - window_size + 1, step):
-            window = raw_hourly[i:i+window_size]
-            temps = [item["temperature"] for item in window if item["temperature"] is not None]
-            indices = [item["pollen_index"] for item in window if item["pollen_index"] is not None]
-            max_temp = max(temps) if temps else None
-            median_index = statistics.median(indices) if indices else None
-            # Выбираем время репрезентативного окна
-            rep_time = window[1]["datetime"] if len(window) >= 2 else window[0]["datetime"]
-            rep_time_str = parse_iso(rep_time).replace(tzinfo=timezone.utc).isoformat()
-            condition = INDEX_MAPPING.get(int(round(median_index)) if median_index is not None else None, "unknown")
-            forecast_entry = {
-                "datetime": rep_time_str,
-                "condition": condition,
-                "native_temperature": round(max_temp, 1) if max_temp is not None else None,
-                "native_temperature_unit": "°C",
-                "pollen_index": int(math.ceil(median_index)) if median_index is not None else None,
-                "temperature": round(max_temp, 1) if max_temp is not None else None
-            }
-            # Встроенная агрегация данных по аллергенам для данного окна
-            if selected_allergens:
-                for orig_allergen in selected_allergens:
-                    forecast_key = "pollen_" + orig_allergen.split('_')[0].lower()
-                    allergen_values = [
-                        item["allergens"].get(forecast_key)
-                        for item in window
-                        if item["allergens"].get(forecast_key) is not None
-                    ]
-                    if allergen_values:
-                        forecast_entry[forecast_key] = int(math.ceil(statistics.median(allergen_values)))
-            hourly_forecast.append(forecast_entry)
+        if not group:
+            continue
 
-        # Прогноз дважды в день – интервалы по 12 часов (на следующие forecast_duration часов)
-        raw_twice = [
-            item for item in raw_all
-            if item["dt_obj"] > current_time and item["dt_obj"] <= current_time + timedelta(hours=forecast_duration)
-        ]
-        interval_hours = 12
-        aggregated_twice = []
-        local_tz = datetime.now().astimezone().tzinfo
-        for i in range(0, forecast_duration, interval_hours):
-            start = current_time + timedelta(hours=i)
-            end = current_time + timedelta(hours=i + interval_hours)
-            group = [item for item in raw_twice if start < item["dt_obj"] <= end]
-            if group:
-                temps = [item["temperature"] for item in group if item["temperature"] is not None]
-                indices = [item["pollen_index"] for item in group if item["pollen_index"] is not None]
-                if temps and indices:
-                    max_temp = max(temps)
-                    min_temp = min(temps)
-                    median_index = statistics.median(indices)
-                    group_sorted = sorted(group, key=lambda x: x["dt_obj"])
-                    rep_dt = group_sorted[len(group_sorted) // 2]["datetime"]
-                    local_rep_dt = parse_iso(rep_dt).replace(tzinfo=timezone.utc).astimezone(local_tz)
-                    if 6 <= local_rep_dt.hour < 18:
-                        fixed_local_dt = local_rep_dt.replace(hour=12, minute=0, second=0, microsecond=0)
-                    else:
-                        if local_rep_dt.hour >= 18:
-                            fixed_local_dt = (local_rep_dt + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-                        else:
-                            fixed_local_dt = local_rep_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-                    fixed_dt_str = fixed_local_dt.astimezone(timezone.utc).isoformat()
-                    condition = INDEX_MAPPING.get(int(round(median_index)), "unknown")
-                    forecast_entry = {
-                        "datetime": fixed_dt_str,
-                        "is_daytime": (6 <= fixed_local_dt.hour < 18),
-                        "condition": condition,
-                        "native_temperature": round(max_temp, 1) if max_temp is not None else None,
-                        "native_templow": round(min_temp, 1) if min_temp is not None else None,
-                        "pollen_index": int(math.ceil(median_index)) if median_index is not None else None,
-                        "temperature": round(max_temp, 1) if max_temp is not None else None
-                    }
-                    # Встроенная агрегация данных по аллергенам для данного интервала
-                    if selected_allergens:
-                        for orig_allergen in selected_allergens:
-                            forecast_key = "pollen_" + orig_allergen.split('_')[0].lower()
-                            allergen_values = [
-                                item["allergens"].get(forecast_key)
-                                for item in group
-                                if item["allergens"].get(forecast_key) is not None
-                            ]
-                            if allergen_values:
-                                forecast_entry[forecast_key] = int(math.ceil(statistics.median(allergen_values)))
-                    aggregated_twice.append(forecast_entry)
-        aggregated_twice.sort(key=lambda x: x["datetime"])
-        twice_daily_forecast = aggregated_twice
+        temps = [g["temperature"]  for g in group if g["temperature"]  is not None]
+        idxs  = [g["pollen_index"] for g in group if g["pollen_index"] is not None]
 
-    result = {
+        smooth_idx = calc_smoothed_pollen_index(idxs)
+        rep_noon   = (day_start + timedelta(hours=12)).astimezone(local_tz)
+
+        entry = {
+            "datetime":           rep_noon.astimezone(timezone.utc).isoformat(),
+            "condition":          INDEX_MAPPING.get(smooth_idx, "unknown"),
+            "native_temperature": max(temps) if temps else None,
+            "native_templow":     min(temps) if temps else None,
+            "pollen_index":       smooth_idx,
+            "temperature":        max(temps) if temps else None,
+            "allergen_peaks": {},
+        }
+
+        # --- аллергены: уровень + пик ------------------------------------
+        if selected_allergens:
+            levels, peaks = calc_allergen_summary(group, selected_allergens)
+            entry.update(levels)
+            entry["allergen_peaks"] = peaks
+
+        daily_forecast.append(entry)
+
+    # ---------------------------------------------------------------------
+    # 11) ФИНАЛЬНЫЙ ВОЗВРАТ ----------------------------------------------
+    # ---------------------------------------------------------------------
+    return {
         "now": now_record,
-        "hourly_forecast": hourly_forecast,
-        "twice_daily_forecast": twice_daily_forecast
+        "hourly_forecast":      hourly_forecast,
+        "twice_daily_forecast": twice_daily_forecast,
+        "daily_forecast":       daily_forecast,
     }
-    return result
