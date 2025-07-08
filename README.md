@@ -407,6 +407,11 @@ Below are key papers detailing the main modules and validation of the SILAM poll
 - **European pollen reanalysis, 1980–2022, for alder, birch, and olive** (Mikhail Sofiev et al., 2024)  
   A reanalysis of European pollen data for alder, birch, and olive from 1980 to 2022. Published 3 October 2024.  
   <https://www.nature.com/articles/s41597-024-03686-2>
+## Thanks
+
+Thanks to all the people who have contributed!
+
+[![contributors](https://contributors-img.web.app/image?repo=danishru/silam_pollen)](https://github.com/danishru/silam_pollen/graphs/contributors)
 
 ## License
 
