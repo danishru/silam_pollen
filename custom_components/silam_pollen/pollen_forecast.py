@@ -174,6 +174,7 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
 
         # ---------- начисто собираем данные --------------------------------
         self._extra_attributes = {}
+        self._extra_attributes["attribution"] = "Powered by silam.fmi.fi"
 
         # ── 1. прогнозы ────────────────────────────────────────────────────
         self._forecast_hourly = merged.get("hourly_forecast", [])

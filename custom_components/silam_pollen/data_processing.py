@@ -192,7 +192,8 @@ def merge_station_features(
             earliest = min(raw_merged, key=parse_iso)
         except Exception:
             earliest = next(iter(raw_merged))
-        now_record = raw_merged[earliest] | {"date": earliest}
+        dt_now = parse_iso(earliest).replace(tzinfo=timezone.utc)
+        now_record = raw_merged[earliest] | {"date": dt_now.isoformat()}
 
     # ---------------------------------------------------------------------
     # 6) Если прогноз не требуется — возвращаем только NOW ----------------
@@ -389,12 +390,30 @@ def merge_station_features(
 
         daily_forecast.append(entry)
 
+    # -----------------------------------------------------------------
+    # 11) ДОСТУПНЫЙ ГОРИЗОНТ ПРОГНОЗА ----------------------------------
+    # -----------------------------------------------------------------
+    try:
+        if raw_all:
+            # последний прогноз — из raw_all, делаем его timezone-aware
+            last_dt = raw_all[-1]["dt_obj"].replace(tzinfo=timezone.utc)
+            # dt_now уже timezone-aware из шага 5
+            forecast_horizon  = round(
+                (last_dt - dt_now).total_seconds() / 3600.0,
+                2
+            )
+        else:
+            forecast_horizon  = None
+    except Exception:
+        forecast_horizon  = None
+
     # ---------------------------------------------------------------------
-    # 11) ФИНАЛЬНЫЙ ВОЗВРАТ ----------------------------------------------
+    # 12) ФИНАЛЬНЫЙ ВОЗВРАТ ----------------------------------------------
     # ---------------------------------------------------------------------
     return {
         "now": now_record,
         "hourly_forecast":      hourly_forecast,
         "twice_daily_forecast": twice_daily_forecast,
         "daily_forecast":       daily_forecast,
+        "forecast_horizon ":   forecast_horizon,
     }
