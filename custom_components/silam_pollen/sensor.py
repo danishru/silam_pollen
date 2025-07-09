@@ -33,7 +33,10 @@ from .const import (
     URL_VAR_MAPPING,
 )
 from .coordinator import SilamCoordinator  # Импорт координатора интеграции
-from .diagnostics import SilamPollenFetchDurationSensor, FETCH_DURATION_DESC
+from .diagnostics import (
+    SilamPollenFetchDurationSensor,
+    SilamPollenForecastHorizonSensor,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,15 +53,15 @@ async def async_setup_entry(hass, entry, async_add_entities):
     Настраивает интеграцию SILAM Pollen через config entry.
 
     Из настроек извлекаются:
-      - base_device_name (entry.title) – уникальное имя службы.
-      - Координаты и высота (altitude, manual_coordinates, latitude, longitude).
-      - Список аллергенов (var).
-      - Интервал обновления (update_interval).
+        - base_device_name (entry.title) – уникальное имя службы.
+        - Координаты и высота (altitude, manual_coordinates, latitude, longitude).
+        - Список аллергенов (var).
+        - Интервал обновления (update_interval).
     
     После создания координатора создаются:
-      - Сенсор "index" – сводной сенсор, отображающий общий индекс пыльцы.
-      - При наличии выбранных аллергенов создаются дополнительные сенсоры "main".
-      - Диагностический сенсор длительности fetch (по умолчанию выключен).
+        - Сенсор "index" – сводной сенсор, отображающий общий индекс пыльцы.
+        - При наличии выбранных аллергенов создаются дополнительные сенсоры "main".
+        - Диагностический сенсор длительности fetch (по умолчанию выключен).
     """
     base_device_name = entry.title
 
@@ -114,13 +117,19 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities(sensors, True)
 
-    # Добавляем диагностический сенсор длительности fetch (disabled by default)
-    diag = SilamPollenFetchDurationSensor(
+
+    # Добавляем диагностические диагностические сенсоры (fetch + forecast_horizon)
+    fetch_diag = SilamPollenFetchDurationSensor(
         coordinator=coordinator,
         entry_id=entry.entry_id,
         base_device_name=base_device_name,
     )
-    async_add_entities([diag], True)
+    horizon_diag = SilamPollenForecastHorizonSensor(
+        coordinator=coordinator,
+        entry_id=entry.entry_id,
+        base_device_name=base_device_name,
+    )
+    async_add_entities([fetch_diag, horizon_diag], True)
 
 
 class SilamPollenSensor(SensorEntity):
@@ -132,7 +141,7 @@ class SilamPollenSensor(SensorEntity):
       - "main": отображает значение для конкретного аллергена, используя данные из ключа "now".
     """
     def __init__(self, sensor_name, base_device_name, coordinator, var, entry_id, sensor_type, desired_altitude,
-                 manual_coordinates, manual_latitude, manual_longitude):
+                manual_coordinates, manual_latitude, manual_longitude):
         self._base_device_name = base_device_name
         self.coordinator = coordinator
         self._var = var

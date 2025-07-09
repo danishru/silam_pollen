@@ -20,6 +20,9 @@
       "fetch_duration": {
         "default": "mdi:timer-refresh-outline"
       },
+      "forecast_horizon": {
+        "default": "mdi:clock-start"
+      },
       "alder": {
         "default": "mdi:tree"
       },
