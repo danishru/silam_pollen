@@ -415,5 +415,5 @@ def merge_station_features(
         "hourly_forecast":      hourly_forecast,
         "twice_daily_forecast": twice_daily_forecast,
         "daily_forecast":       daily_forecast,
-        "forecast_horizon ":   forecast_horizon,
+        "forecast_horizon":   forecast_horizon,
     }

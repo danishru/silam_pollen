@@ -46,6 +46,9 @@
       "fetch_duration": {
         "name": "Fetch Duration"
       },
+      "forecast_horizon": {
+        "name": "Forecast horizon"
+      },
       "alder": {
         "name": "Alder",
         "unit_of_measurement": "grains/m³",
