@@ -174,7 +174,7 @@
 - **Тип пыльцы** – выбор наблюдаемой пыльцы. Можно не выбирать ни один тип или выбрать несколько из списка.  
 - **Интервал обновления** – интервал загрузки данных с сервера SILAM Thredds server в минутах (по умолчанию 60, минимальное значение — 30 минут).  
 - **Прогноз пыльцы (BETA)** – включает дополнительный погодный сенсор с прогнозом уровня пыльцы. Может увеличить время ответа API.  
-- **Длительность прогноза** – задаёт, на сколько часов вперёд строится прогноз (от 36 до 120 ч, по умолчанию 36 ч).  
+- **Желаемая длительность прогноза** – желаемый горизонт прогнозирования (от 36 до 120 ч, по умолчанию 36 ч). Фактический объём данных может быть короче, если сервер SILAM возвращает менее продолжительный прогноз.    
 - **Название зоны** – по умолчанию используется название из выбранной зоны. Это имя применяется для формирования имён службы и сенсоров. Можно переопределить.  
 - **Высота над уровнем моря** – высота, используемая для выборки данных. Если выбрана зона `"Home"`, берётся значение из общих настроек (`config/general`); иначе по умолчанию 275 м. Можно переопределить.  
 - **Местоположение** – показывает на карте выбранные координаты. Зону можно изменить с помощью карты или вручную задать широту, долготу и радиус. Указанный радиус отражает примерное пространственное разрешение данных о пыльце (около 10 км).
@@ -185,7 +185,7 @@
 
 ![image](https://github.com/user-attachments/assets/5d060b47-e758-4d4c-9325-0188d991bfee)
 
-В рамках службы создаётся сенсор **Индекс пыльцы**, состояние которого отображает локализованное значение, соответствующее числовому индексу, рассчитанному на основе почасовых средних значений и пороговых уровней из таблицы Mikhail Sofiev ([ссылка](https://www.researchgate.net/profile/Mikhail-Sofiev)).  
+В рамках службы создаётся погодная сущность **Прогноз пыльцы**, состояние которой отображает значение **индекса пыльцы ближайшего прогноза**, рассчитанному на основе почасовых средних значений и пороговых уровней из таблицы Mikhail Sofiev ([ссылка](https://www.researchgate.net/profile/Mikhail-Sofiev)).  
 
 **Возможные значения индекса**:  
 - `very_low` — Очень низкий  
@@ -195,30 +195,23 @@
 - `very_high` — Очень высокий  
 - `unknown` — Неизвестно  
 
-**Атрибуты сенсора «Индекс пыльцы»**:  
-- **Дата/время прогноза** — точка времени, на которую рассчитан индекс (ISO 8601).  
-- **Основной аллерген** — аллерген, оказавший наибольшее влияние на расчёт индекса.  
-- **Прогноз на завтра** — дневной прогноз уровня пыльцы на следующий день (отображается, если включён прогноз).
+**Атрибуты сенсора «Прогноз пыльцы»**:  
+- **Следующий индекс** (`next_condition`) — ожидаемое состояние из первого 3-часового интервала (только при включённом прогнозе).  
+- **Пыльца <аллерген>** (`pollen_<allergen>`) — смоделированная числовая концентрация каждого выбранного аллергена ближайшего прогноза, зерна/м³.  
+- **Высота (уровень моря)** (`altitude`) — ближайшая доступная высота, использованная для выборки данных.  
+- **Дата/время прогноза** (`date`) — точка времени, на которую рассчитан прогноз (ISO 8601).  
+- **Основной аллерген** (`responsible_elevated`) — аллерген, оказавший наибольшее влияние на расчёт индекса.  
+- **Источник данных** (`attribution`) — `Powered by silam.fmi.fi`.  
 
-Если выбран один или несколько типов пыльцы, для каждого из них создаётся отдельный сенсор **{Название типа}**, отображающий смоделированное количество пыльцы (зерна/м³).
-
-**Атрибуты сенсоров «{Тип пыльцы}»**:  
-- **Высота (уровень моря)** — ближайшая доступная высота, использованная для выборки данных.  
-- **Прогноз на завтра** — агрегированное значение прогноза уровня пыльцы на следующий день (отображается, если включён прогноз).
-
-**Время запроса (fetch_duration)** — сенсор, по умолчанию отключённый, показывающий общее время обновления данных (API-запрос, парсинг, расчёты).
-
-
-|  ![image](https://github.com/user-attachments/assets/99a5e8a3-303c-4c7c-b885-a70c5e54269b) | ![image](https://github.com/user-attachments/assets/dbc735f0-10f0-4a88-8fbb-1dbc5d98f5eb)  |
-| ------------- | ------------- |
-
-Если включена опция **Прогноз пыльцы**, будет создан дополнительный **погодный сенсор**, который предоставляет:
+Если включена опция **Прогноз пыльцы**, будут дополнительно доступны прогнозы:
 - почасовой прогноз на 24 часа (с шагом 3 часа);
-- прогноз дважды в сутки на выбранную длительность (по умолчанию 36 ч, максимальная 120 ч).
+- прогноз дважды в сутки на выбранную длительность (по умолчанию 36 ч, максимальная до 120 ч) с индексом и пиковыми значениями по каждому аллергену;
+- ежедневный прогноз на следующие дни (по умолчанию 36 ч, максимальная до 120 ч) с индексом и пиковыми значениями по каждому аллергену.  
 
-Состояние погодного сенсора отображает **индекс пыльцы на первый доступный временной интервал почасового прогноза**.  
+> [!IMPORTANT]
+> **Важно:** фактический горизонт прогноза зависит от доступных данных на [SILAM Thredds server](https://thredds.silam.fmi.fi/thredds/catalog/catalog.html). То есть, даже если указана длительность до 120 ч, может быть доступен только более короткий интервал (например, 48 ч), в соответствии с последним выпущенным прогоном модели.  
 
-![image](https://github.com/user-attachments/assets/fe9bc3ce-8d86-444a-b768-243fe3ec66fa)
+![image](https://github.com/user-attachments/assets/99e236a0-b45e-4b51-8c80-d3cdde66d27e)
 
 Эти данные доступны через стандартный сервис `weather.get_forecasts`.
 
@@ -228,128 +221,290 @@
 <summary>Показать пример ответа "Ежечасный"</summary>
 
 ```yaml
-weather.silam_pollen_frantsiia_forecast:
+weather.silam_pollen_home_assistant_forecast:
   forecast:
-    - datetime: "2025-04-10T14:00:00+00:00"
-      condition: high
+    - datetime: "2025-07-09T16:00:00+00:00"
+      condition: low
       native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 15.2
-      pollen_alder: 0
-      pollen_birch: 260
-    - datetime: "2025-04-10T17:00:00+00:00"
-      condition: high
+      pollen_index: 2
+      temperature: 28.8
+      pollen_birch: 0
+      pollen_grass: 17
+    - datetime: "2025-07-09T19:00:00+00:00"
+      condition: low
       native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 15.3
-      pollen_alder: 0
-      pollen_birch: 308
-    - datetime: "2025-04-10T20:00:00+00:00"
-      condition: high
+      pollen_index: 2
+      temperature: 24.7
+      pollen_birch: 0
+      pollen_grass: 13
+    - datetime: "2025-07-09T22:00:00+00:00"
+      condition: low
       native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 13.7
-      pollen_alder: 0
-      pollen_birch: 340
-    - datetime: "2025-04-10T23:00:00+00:00"
-      condition: high
-      native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 10.5
-      pollen_alder: 0
-      pollen_birch: 264
-    - datetime: "2025-04-11T02:00:00+00:00"
+      pollen_index: 2
+      temperature: 23.5
+      pollen_birch: 0
+      pollen_grass: 12
+    - datetime: "2025-07-10T01:00:00+00:00"
       condition: moderate
       native_temperature_unit: °C
       pollen_index: 3
-      temperature: 7.8
-      pollen_alder: 0
-      pollen_birch: 79
-    - datetime: "2025-04-11T05:00:00+00:00"
+      temperature: 22.8
+      pollen_birch: 0
+      pollen_grass: 27
+    - datetime: "2025-07-10T04:00:00+00:00"
       condition: moderate
       native_temperature_unit: °C
       pollen_index: 3
-      temperature: 5.9
-      pollen_alder: 0
-      pollen_birch: 162
-    - datetime: "2025-04-11T08:00:00+00:00"
-      condition: high
+      temperature: 24.4
+      pollen_birch: 0
+      pollen_grass: 46
+    - datetime: "2025-07-10T07:00:00+00:00"
+      condition: moderate
       native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 10.3
-      pollen_alder: 0
-      pollen_birch: 352
-    - datetime: "2025-04-11T11:00:00+00:00"
-      condition: high
+      pollen_index: 3
+      temperature: 29.4
+      pollen_birch: 0
+      pollen_grass: 35
+    - datetime: "2025-07-10T10:00:00+00:00"
+      condition: low
       native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 16.8
-      pollen_alder: 0
-      pollen_birch: 332
+      pollen_index: 2
+      temperature: 33.4
+      pollen_birch: 0
+      pollen_grass: 19
+    - datetime: "2025-07-10T13:00:00+00:00"
+      condition: low
+      native_temperature_unit: °C
+      pollen_index: 2
+      temperature: 33.4
+      pollen_birch: 0
+      pollen_grass: 12
 ```
-</details>
+</details>  
 
 <details>
 <summary>Показать пример ответа "Два раза в день"</summary>
 
 ```yaml
-weather.silam_pollen_frantsiia_forecast:
+weather.silam_pollen_home_assistant_forecast:
   forecast:
-    - datetime: "2025-04-10T21:00:00+00:00"
+    - datetime: "2025-07-09T21:00:00+00:00"
       is_daytime: false
-      condition: high
-      pollen_index: 4
-      temperature: 15.3
-      pollen_alder: 0
-      pollen_birch: 296
-      templow: 8.6
-    - datetime: "2025-04-11T09:00:00+00:00"
+      condition: low
+      pollen_index: 2
+      temperature: 28.8
+      allergen_peaks:
+        grass:
+          peak: 27
+          time: "2025-07-10T02:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 13
+      templow: 22.5
+    - datetime: "2025-07-10T09:00:00+00:00"
       is_daytime: true
       condition: moderate
       pollen_index: 3
-      temperature: 16.8
-      pollen_alder: 0
-      pollen_birch: 278
-      templow: 5.2
-    - datetime: "2025-04-11T21:00:00+00:00"
+      temperature: 33.4
+      allergen_peaks:
+        grass:
+          peak: 46
+          time: "2025-07-10T05:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 35
+      templow: 22.6
+    - datetime: "2025-07-10T21:00:00+00:00"
       is_daytime: false
-      condition: high
-      pollen_index: 4
-      temperature: 19.7
-      pollen_alder: 0
-      pollen_birch: 416
-      templow: 12.1
+      condition: low
+      pollen_index: 2
+      temperature: 32.9
+      allergen_peaks:
+        grass:
+          peak: 21
+          time: "2025-07-10T19:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 14
+      templow: 23
+    - datetime: "2025-07-11T09:00:00+00:00"
+      is_daytime: true
+      condition: low
+      pollen_index: 2
+      temperature: 35.2
+      allergen_peaks:
+        grass:
+          peak: 20
+          time: "2025-07-11T08:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 16
+      templow: 23.3
+    - datetime: "2025-07-11T21:00:00+00:00"
+      is_daytime: false
+      condition: low
+      pollen_index: 2
+      temperature: 35.1
+      allergen_peaks:
+        grass:
+          peak: 22
+          time: "2025-07-11T19:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 15
+      templow: 23.3
+    - datetime: "2025-07-12T09:00:00+00:00"
+      is_daytime: true
+      condition: low
+      pollen_index: 2
+      temperature: 35.1
+      allergen_peaks:
+        grass:
+          peak: 16
+          time: "2025-07-12T06:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 14
+      templow: 23.3
+    - datetime: "2025-07-12T21:00:00+00:00"
+      is_daytime: false
+      condition: low
+      pollen_index: 2
+      temperature: 34.8
+      allergen_peaks:
+        grass:
+          peak: 16
+          time: "2025-07-12T20:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 15
+      templow: 24
+    - datetime: "2025-07-13T09:00:00+00:00"
+      is_daytime: true
+      condition: low
+      pollen_index: 2
+      temperature: 31.9
+      allergen_peaks:
+        grass:
+          peak: 19
+          time: "2025-07-13T09:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 14
+      templow: 23.7
+    - datetime: "2025-07-13T21:00:00+00:00"
+      is_daytime: false
+      condition: low
+      pollen_index: 2
+      temperature: 29
+      allergen_peaks:
+        grass:
+          peak: 14
+          time: "2025-07-13T18:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 14
+      templow: 21.5
+```
+</details>
+
+<details>
+<summary>Показать пример ответа "Ежедневный"</summary>
+
+```yaml
+weather.silam_pollen_home_assistant_forecast:
+  forecast:
+    - datetime: "2025-07-10T09:00:00+00:00"
+      condition: moderate
+      pollen_index: 3
+      temperature: 33.4
+      allergen_peaks:
+        grass:
+          peak: 46
+          time: "2025-07-10T05:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 34
+      templow: 22.5
+    - datetime: "2025-07-11T09:00:00+00:00"
+      condition: low
+      pollen_index: 2
+      temperature: 35.2
+      allergen_peaks:
+        grass:
+          peak: 22
+          time: "2025-07-11T19:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 18
+      templow: 23
+    - datetime: "2025-07-12T09:00:00+00:00"
+      condition: low
+      pollen_index: 2
+      temperature: 35.1
+      allergen_peaks:
+        grass:
+          peak: 16
+          time: "2025-07-12T06:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 15
+      templow: 23.3
+    - datetime: "2025-07-13T09:00:00+00:00"
+      condition: low
+      pollen_index: 2
+      temperature: 31.9
+      allergen_peaks:
+        grass:
+          peak: 19
+          time: "2025-07-13T09:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 14
+      templow: 21.5
 ```
 </details>
 
 ### Как рассчитывается прогноз
 
-Прогноз пыльцы в интеграции **SILAM Pollen** формируется на основе модели SILAM и агрегируется в два типа прогнозов:
+В интеграции **SILAM Pollen** данные модели SILAM парсятся из XML-ответов, объединяются по полю `date`, а затем агрегируются в три вида прогнозов:
 
 #### Почасовой прогноз (24 часа)
 - Строится с шагом в 3 часа.
 - Для каждого 3-часового окна рассчитываются:
   - Максимальная температура.
-  - Индекс пыльцы — медианное значение, округлённое вверх до ближайшего целого.
-  - Медианное значение для каждого выбранного аллергена.
+  - Индекс пыльцы — максимальное значение (отражает истинный пик);
+  - Максимальное значение для каждого выбранного аллергена.
+- Метка времени прогноза — середина 3-часового окна (локальное время).
 - Используется текущая дата + 24 часа вперёд.
 
-#### Прогноз дважды в сутки (36–120 часов)
-- Данные группируются в 12-часовые интервалы в пределах выбранной длительности прогноза (по умолчанию 36 ч; можно выбрать до 120 ч).  
-- Для каждого интервала рассчитываются:  
+#### Прогноз дважды в сутки (12-часовые интервалы, 36 – 120 ч)
+- Интервалы по 12 ч (06:00–18:00 и 18:00–06:00 местного времени).  
+- Для интервала рассчитываются:  
   - максимальная и минимальная температура;  
-  - медианное значение индекса пыльцы (с округлением вверх);  
-  - медианное значение каждого выбранного аллергена.  
-- Метки прогноза ставятся на 00:00 и 12:00 (локальное время) для каждого интервала.  
+  - **Индекс пыльцы** и **уровень каждого аллергена**, сглаженные «наблюдательным» процентилем:  
+    - ≥ 18 точек → 80-й перцентиль; 12 – 17 точек → 70-й; < 12 → максимум;  
+    - метод без интерполяции — берётся фактическое значение (ceil-индекс).  
+  - **Пиковые значения аллергенов** (`allergen_peaks`) — максимальная концентрация и время её наступления в интервале.  
+- Метки прогноза ставятся на 00:00 и 12:00 местного времени.
 
-#### Используемые параметры
-- `POLI` — значение индекса пыльцы.
-- `temp_2m` — температура на высоте 2 метров.
+#### Ежедневный прогноз (сутки, 36 – 120 ч)
+- Окна по 24 ч, начиная «завтра».  
+- Для каждого дня вычисляется:  
+  - максимальная и минимальная температура;  
+  - **Индекс пыльцы** и **уровень аллергенов** по той же схеме «наблюдательного» процентиля;  
+  - **Пиковые значения аллергенов** за сутки.  
+- Метка прогноза — 12:00 местного времени.
 
 #### Техника агрегации
 - Данные из SILAM парсятся из XML и объединяются по дате (`date`).
-- Расчёты выполняются с использованием `statistics.median`, `max`, `min`.
+- Агрегации выполняются через `max`, `min` и собственную функцию «observational percentile» (ceil-индекс без интерполяции).  
 - Все прогнозы кэшируются в `merged_data` и доступны через `weather.get_forecasts`.
+
+Если выбран один или несколько типов пыльцы, для каждого из них создаётся дополнительный отдельный сенсор **{Название типа}**, отображающий смоделированное количество пыльцы (зерна/м³).
+
+**Атрибуты сенсоров «{Тип пыльцы}»**:  
+- **Высота (уровень моря)** — ближайшая доступная высота, использованная для выборки данных.  
+- **Прогноз на завтра** — агрегированное значение прогноза уровня пыльцы на следующий день (отображается, если включён прогноз).
+
+**Атрибуты сенсора «Индекс пыльцы»**:  
+- **Дата/время прогноза** — точка времени, на которую рассчитан индекс (ISO 8601).  
+- **Основной аллерген** — аллерген, оказавший наибольшее влияние на расчёт индекса.  
+- **Прогноз на завтра** — дневной прогноз уровня пыльцы на следующий день (отображается, если включён прогноз).
+
+**Время запроса (fetch_duration)** — сенсор, по умолчанию отключённый, показывающий общее время обновления данных (API-запрос, парсинг, расчёты).  
+**Горизонт прогноза (forecast_horizon)** — сенсор, по умолчанию включённый, показывающий доступный горизонт прогноза в часах (разница между меткой «сейчас» из прогноза и последней доступной точкой).
+
+
+|  ![image](https://github.com/user-attachments/assets/99a5e8a3-303c-4c7c-b885-a70c5e54269b) | ![image](https://github.com/user-attachments/assets/dbc735f0-10f0-4a88-8fbb-1dbc5d98f5eb)  |
+| ------------- | ------------- |
 
 ## Панель
 
@@ -427,6 +582,12 @@ https://github.com/krissen/pollenprognos-card.
 - **European pollen reanalysis, 1980–2022, for alder, birch, and olive** (Mikhail Sofiev et al., 2024)  
   Реанализ европейских данных по пыльце ольхи, берёзы и оливы за период 1980–2022 гг. Опубликовано 3 октября 2024.  
   <https://www.nature.com/articles/s41597-024-03686-2>
+
+## Благодарности
+
+Спасибо всем, кто внёс свой вклад!
+
+[![contributors](https://contributors-img.web.app/image?repo=danishru/silam_pollen)](https://github.com/danishru/silam_pollen/graphs/contributors)
 
 ## Лицензия
 
