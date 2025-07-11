@@ -140,9 +140,3 @@ class SilamPollenForecastHorizonSensor(SensorEntity):
     def native_value(self) -> float | None:
         """Горизонт прогноза в часах."""
         return self.coordinator.merged_data.get("forecast_horizon")
-    @property
-    def extra_state_attributes(self) -> dict:
-        """Дополнительные атрибуты: длительность прогноза из настроек."""
-        return {
-            "forecast_duration": getattr(self.coordinator, "_forecast_duration", None)
-        }
