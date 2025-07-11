@@ -582,7 +582,7 @@ To install, click **Download** in the card’s menu:
 
 ### See it in action:
 
-![pollenprognos-card preview](https://github.com/user-attachments/assets/d9b53a99-d183-4968-80b7-8a2b25381783)
+![pollenprognos-card preview](https://github.com/user-attachments/assets/0bfb5c3e-7e85-474e-9aa6-fe8282a23520)
 
 For more information and documentation, visit the repository. If you enjoy the card, don’t forget to give it a ⭐ and open an issue for bugs or feature requests:  
 https://github.com/krissen/pollenprognos-card  
