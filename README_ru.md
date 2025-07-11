@@ -568,7 +568,7 @@ weather.silam_pollen_home_assistant_forecast:
 
 ### Взгляните, как это выглядит:
 
-![Пример отображения pollenprognos-card](https://github.com/user-attachments/assets/e25e5b05-5fca-49e9-a673-7932edfdc84e)
+![Пример отображения pollenprognos-card](https://github.com/user-attachments/assets/ad7b916c-fc19-48a4-adbf-6c8eb06709b0)
 
 Дополнительную информацию и документацию смотрите в репозитории, а если карточка вам понравилась — не забудьте отметить её звёздочкой ⭐ и оставить issue при обнаружении ошибок или пожеланий:  
 https://github.com/krissen/pollenprognos-card.
