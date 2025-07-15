@@ -58,11 +58,11 @@ After its beta period, the forecast sensor is heading for a stable release—bri
 - ⏱️ **Diagnostic sensor “Forecast Horizon”**  
   The new `sensor.silam_pollen_{Zone Name}_forecast_horizon` shows how many hours the current forecast (`state`) actually covers and what forecast length (`forecast_duration`) you asked for.
 
-- 🖼️ **Supported in pollenprognos-card v2.3.5+**  
+- 🖼️ **Supported in pollenprognos-card v2.4.1+**  
   The card now renders the daily forecast via `weather.get_forecasts`.  
   > **Version compatibility**  
-  > • pollenprognos-card ≥ **v2.3.5** requires **silam_pollen ≥ v0.2.7**  
-  > • Older card versions (≤ v2.3.4) remain compatible with silam_pollen ≥ v0.2.5.
+  > • pollenprognos-card ≥ **v2.4.1** requires **silam_pollen ≥ v0.2.7**  
+  > • Older card versions (≤ v2.4.0) remain compatible with silam_pollen ≥ v0.2.5.
 
 > [!IMPORTANT]  
 > These new algorithms may affect automations that relied on the old index or allergen-level values. Review your scripts and adjust thresholds or conditions if needed.
@@ -565,13 +565,13 @@ The [pollenprognos-card](https://github.com/krissen/pollenprognos-card) has supp
 - localization in multiple languages;  
 - other useful enhancements.  
 
-Starting with [v2.3.5](https://github.com/krissen/pollenprognos-card/releases/tag/v2.3.5):
+Starting with [v2.4.1](https://github.com/krissen/pollenprognos-card/releases/tag/v2.4.1):
 
 - added **daily-forecast support** (via `weather.get_forecasts`) — up to 5 days ahead.
 
 > [!IMPORTANT]  
 > **Version compatibility:**  
-> pollenprognos-card **≥ v2.3.5** requires silam_pollen **≥ v0.2.7** (older card versions work with silam_pollen ≥ v0.2.5).
+> pollenprognos-card **≥ v2.4.1** requires silam_pollen **≥ v0.2.7** (older card versions work with silam_pollen ≥ v0.2.5).
 
 Huge thanks to [@krissen](https://github.com/krissen) for this work!
 
