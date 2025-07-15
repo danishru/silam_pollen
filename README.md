@@ -34,7 +34,40 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 
 [![Interactive pollen coverage map](https://danishru.github.io/silam_pollen/pollen_area.webp)](https://danishru.github.io/silam_pollen/)
 
-## 🆕 What's New
+## 🆕 What’s new
+
+### v0.2.7 🚀 Major update of the "Pollen Forecast BETA" sensor!
+After its beta period, the forecast sensor is heading for a stable release—bringing more accuracy, data and possibilities for your dashboards.
+
+- 🔄 **Re-worked algorithms in "Pollen Forecast BETA"**  
+  - The `state` now reflects the **current** pollen index from the *now* block, not the first hourly step.  
+  - Hourly forecasts aggregate the index and allergen levels by **maximum** within each three-hour window (was median).  
+  - Daily and 12-hour values are calculated using an **observational percentile** (no interpolation):  
+    ≥ 18 points → 80th percentile · 12–17 points → 70th · < 12 points → maximum.
+
+- 🌸 **Forecast sensor is always created**  
+  Sensor `weather.silam_pollen_{Zone Name}_forecast` is present regardless of options—*now* data are always available; **hourly**, **twice-daily (12 h)** and **daily** forecasts appear **only when the forecast option is enabled**.
+
+- 🌅 **Daily forecast & allergen peaks**  
+  The sensor now includes a **daily forecast** (up to five days) based on the observational percentile.  
+  New attribute `allergen_peaks` reports **peak allergen concentrations** for both daily and twice-daily windows—shown when specific allergens are enabled.
+
+- ➕ **New attributes for "Pollen Forecast BETA"**  
+  `next_condition`, `pollen_<allergen>`, `altitude`, `date`, `responsible_elevated`—extra context for automations and dashboards.
+
+- ⏱️ **Diagnostic sensor “Forecast Horizon”**  
+  The new `sensor.silam_pollen_{Zone Name}_forecast_horizon` shows how many hours the current forecast (`state`) actually covers and what forecast length (`forecast_duration`) you asked for.
+
+- 🖼️ **Supported in pollenprognos-card v2.4.1+**  
+  The card now renders the daily forecast via `weather.get_forecasts`.  
+  > **Version compatibility**  
+  > • pollenprognos-card ≥ **v2.4.1** requires **silam_pollen ≥ v0.2.7**  
+  > • Older card versions (≤ v2.4.0) remain compatible with silam_pollen ≥ v0.2.5.
+
+> [!IMPORTANT]  
+> These new algorithms may affect automations that relied on the old index or allergen-level values. Review your scripts and adjust thresholds or conditions if needed.
+
+[![More in release v0.2.7](https://img.shields.io/badge/More--in--release-v0.2.7-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.7)
 
 ## v0.2.6
 
@@ -53,6 +86,10 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 
 [![More in release v0.2.6](https://img.shields.io/badge/More--in--release-v0.2.6-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.6)
 
+## Previous updates
+<details>
+<summary>Show</summary>
+
 ## v0.2.5 🌟
 
 This is a truly significant update for **SILAM Pollen**!
@@ -68,10 +105,6 @@ This is a truly significant update for **SILAM Pollen**!
   Pollen sensors and the new diagnostic sensor now collect and display historical data.
 
 [![More in release v0.2.5](https://img.shields.io/badge/More--in--release-v0.2.5-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.5)
-
-## Previous updates
-<details>
-<summary>Show</summary>
   
 ### v0.2.4
 
@@ -176,7 +209,8 @@ Here you can set the parameters for the proper operation of the integration:
 - **Pollen Type** – select the pollen to monitor. You can leave it empty or select multiple types from the list.  
 - **Update Interval** – the interval for loading data from the SILAM Thredds server in minutes (default is 60, minimum is 30).  
 - **Pollen Forecast (BETA)** – enables an additional weather sensor with pollen level forecasts. May increase API response time.  
-- **Forecast Duration** – sets how many hours ahead the forecast is built (from 36 to 120 h, default is 36 h).  
+- **Desired forecast duration** — the forecast horizon you’d like to retrieve (36–120 h, default 36 h).  
+  The actual horizon may be shorter if the SILAM server currently provides fewer hours of data.
 - **Zone Name** – by default, the name from the selected zone is used. This name is applied to the service and sensor names. You can override it.  
 - **Altitude above Sea Level** – the altitude used for data sampling. If the `"Home"` zone is selected, the value from the general settings (`config/general`) is used; otherwise, the default is 275 m. You can override it.  
 - **Location** – shows the selected coordinates on the map. You can change the zone using the map or manually set the latitude, longitude, and radius. The specified radius reflects the approximate spatial resolution of the pollen data (about 10 km).
@@ -187,7 +221,7 @@ After installing the integration in Home Assistant, a service named `SILAM Polle
 
 ![image](https://github.com/user-attachments/assets/47c28fa0-baac-4d33-9493-8c53a6592166)
 
-As part of the service, a **Pollen Index** sensor is created, whose state displays a localized value corresponding to the numerical index calculated based on hourly average values and threshold levels from Mikhail Sofiev’s table ([link](https://www.researchgate.net/profile/Mikhail-Sofiev)).
+Within the service a weather entity called **Pollen Forecast** is created. Its `state` shows the pollen-index value for the *nearest* forecast, calculated from hourly mean concentrations and the threshold levels defined in Mikhail Sofiev’s table ([link](https://www.researchgate.net/profile/Mikhail-Sofiev)).
 
 **Possible index values:**  
 - `very_low` — Very Low  
@@ -197,21 +231,26 @@ As part of the service, a **Pollen Index** sensor is created, whose state displa
 - `very_high` — Very High  
 - `unknown` — Unknown  
 
-**Attributes of the “Pollen Index” sensor:**  
-- **Forecast Date & Time** — the timestamp for which the index is calculated (ISO 8601).  
-- **Primary Allergen** — the allergen that had the greatest impact on the index calculation.  
-- **Forecast for Tomorrow** — the daily pollen level forecast for the next day (shown if the forecast is enabled).
+### "Pollen Forecast" sensor attributes
 
-If one or more pollen types are selected, a separate **{Pollen Type}** sensor is created for each, displaying the modeled pollen grain concentration (grains/m³).
+- **Next index** (`next_condition`) — expected condition from the first 3-hour window (shown only when forecasting is enabled).  
+- **Pollen <allergen>** (`pollen_<allergen>`) — modelled numeric concentration of each selected allergen in the nearest forecast, grains/m³.  
+- **Altitude (above sea level)** (`altitude`) — closest available grid height used for sampling.  
+- **Forecast date/time** (`date`) — ISO 8601 timestamp for which the forecast is valid.  
+- **Primary allergen** (`responsible_elevated`) — allergen that contributed most to the index value.  
+- **Data source** (`attribution`) — `Powered by silam.fmi.fi`.
 
-**Attributes of the “{Pollen Type}” sensors:**  
-- **Altitude (sea level)** — the nearest available altitude used for data sampling.  
-- **Forecast for Tomorrow** — the aggregated pollen level forecast value for the next day (shown if the forecast is enabled).
+If **Pollen Forecast** is enabled, three additional forecast types become available:
 
-**Fetch Duration (fetch_duration)** — a sensor, disabled by default, showing the total time to update data (API request, parsing, calculations).
+1. **Hourly forecast** for the next 24 h (3-hour steps).  
+2. **Twice-daily forecast** across the chosen horizon (default 36 h, up to 120 h) with the index and peak values for each allergen.  
+3. **Daily forecast** for the coming days (default 36 h, up to 120 h) with the index and peak values for each allergen.
 
-|  ![image](https://github.com/user-attachments/assets/c497819b-8521-4a02-9891-c1936ef2a4c2) | ![image](https://github.com/user-attachments/assets/41fdd143-b74e-42fc-bddb-db3b0b33b025)  |
-| ------------- | ------------- |
+> [!IMPORTANT]  
+> **Important:** the *actual* forecast horizon depends on data currently available on the SILAM Thredds server.  
+> Even if you request up to 120 hours, the model might return a shorter span (e.g. 48 hours) depending on the latest run time.  
+>  
+> The diagnostic sensor **Forecast Horizon** helps track this: it shows the real (available) horizon, while its attribute **`forecast_duration`** displays the duration you requested in the integration settings.
 
 If the **Pollen Forecast** option is enabled, an additional **weather sensor** is created, which provides:  
 - an hourly forecast for 24 hours (in 3-hour steps);  
@@ -226,131 +265,296 @@ This data is available via the standard `weather.get_forecasts` service.
 ![image](https://github.com/user-attachments/assets/bdd37fbc-9dc7-4bf1-95b2-7f3843d106e0)
 
 <details>
-<summary>Show example “Hourly” response</summary>
+<summary>Show "Hourly" response example</summary
 
 ```yaml
-weather.silam_pollen_france_forecast:
+weather.silam_pollen_home_assistant_forecast:
   forecast:
-    - datetime: "2025-04-10T14:00:00+00:00"
-      condition: high
+    - datetime: "2025-07-09T16:00:00+00:00"
+      condition: low
       native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 15.2
-      pollen_alder: 0
-      pollen_birch: 260
-    - datetime: "2025-04-10T17:00:00+00:00"
-      condition: high
+      pollen_index: 2
+      temperature: 28.8
+      pollen_birch: 0
+      pollen_grass: 17
+    - datetime: "2025-07-09T19:00:00+00:00"
+      condition: low
       native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 15.3
-      pollen_alder: 0
-      pollen_birch: 308
-    - datetime: "2025-04-10T20:00:00+00:00"
-      condition: high
+      pollen_index: 2
+      temperature: 24.7
+      pollen_birch: 0
+      pollen_grass: 13
+    - datetime: "2025-07-09T22:00:00+00:00"
+      condition: low
       native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 13.7
-      pollen_alder: 0
-      pollen_birch: 340
-    - datetime: "2025-04-10T23:00:00+00:00"
-      condition: high
-      native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 10.5
-      pollen_alder: 0
-      pollen_birch: 264
-    - datetime: "2025-04-11T02:00:00+00:00"
+      pollen_index: 2
+      temperature: 23.5
+      pollen_birch: 0
+      pollen_grass: 12
+    - datetime: "2025-07-10T01:00:00+00:00"
       condition: moderate
       native_temperature_unit: °C
       pollen_index: 3
-      temperature: 7.8
-      pollen_alder: 0
-      pollen_birch: 79
-    - datetime: "2025-04-11T05:00:00+00:00"
+      temperature: 22.8
+      pollen_birch: 0
+      pollen_grass: 27
+    - datetime: "2025-07-10T04:00:00+00:00"
       condition: moderate
       native_temperature_unit: °C
       pollen_index: 3
-      temperature: 5.9
-      pollen_alder: 0
-      pollen_birch: 162
-    - datetime: "2025-04-11T08:00:00+00:00"
-      condition: high
+      temperature: 24.4
+      pollen_birch: 0
+      pollen_grass: 46
+    - datetime: "2025-07-10T07:00:00+00:00"
+      condition: moderate
       native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 10.3
-      pollen_alder: 0
-      pollen_birch: 352
-    - datetime: "2025-04-11T11:00:00+00:00"
-      condition: high
+      pollen_index: 3
+      temperature: 29.4
+      pollen_birch: 0
+      pollen_grass: 35
+    - datetime: "2025-07-10T10:00:00+00:00"
+      condition: low
       native_temperature_unit: °C
-      pollen_index: 4
-      temperature: 16.8
-      pollen_alder: 0
-      pollen_birch: 332
+      pollen_index: 2
+      temperature: 33.4
+      pollen_birch: 0
+      pollen_grass: 19
+    - datetime: "2025-07-10T13:00:00+00:00"
+      condition: low
+      native_temperature_unit: °C
+      pollen_index: 2
+      temperature: 33.4
+      pollen_birch: 0
+      pollen_grass: 12
+```
+</details>  
+
+<details>
+<summary>Show "Twice-daily" response example</summary>
+
+```yaml
+weather.silam_pollen_home_assistant_forecast:
+  forecast:
+    - datetime: "2025-07-09T21:00:00+00:00"
+      is_daytime: false
+      condition: low
+      pollen_index: 2
+      temperature: 28.8
+      allergen_peaks:
+        grass:
+          peak: 27
+          time: "2025-07-10T02:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 13
+      templow: 22.5
+    - datetime: "2025-07-10T09:00:00+00:00"
+      is_daytime: true
+      condition: moderate
+      pollen_index: 3
+      temperature: 33.4
+      allergen_peaks:
+        grass:
+          peak: 46
+          time: "2025-07-10T05:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 35
+      templow: 22.6
+    - datetime: "2025-07-10T21:00:00+00:00"
+      is_daytime: false
+      condition: low
+      pollen_index: 2
+      temperature: 32.9
+      allergen_peaks:
+        grass:
+          peak: 21
+          time: "2025-07-10T19:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 14
+      templow: 23
+    - datetime: "2025-07-11T09:00:00+00:00"
+      is_daytime: true
+      condition: low
+      pollen_index: 2
+      temperature: 35.2
+      allergen_peaks:
+        grass:
+          peak: 20
+          time: "2025-07-11T08:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 16
+      templow: 23.3
+    - datetime: "2025-07-11T21:00:00+00:00"
+      is_daytime: false
+      condition: low
+      pollen_index: 2
+      temperature: 35.1
+      allergen_peaks:
+        grass:
+          peak: 22
+          time: "2025-07-11T19:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 15
+      templow: 23.3
+    - datetime: "2025-07-12T09:00:00+00:00"
+      is_daytime: true
+      condition: low
+      pollen_index: 2
+      temperature: 35.1
+      allergen_peaks:
+        grass:
+          peak: 16
+          time: "2025-07-12T06:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 14
+      templow: 23.3
+    - datetime: "2025-07-12T21:00:00+00:00"
+      is_daytime: false
+      condition: low
+      pollen_index: 2
+      temperature: 34.8
+      allergen_peaks:
+        grass:
+          peak: 16
+          time: "2025-07-12T20:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 15
+      templow: 24
+    - datetime: "2025-07-13T09:00:00+00:00"
+      is_daytime: true
+      condition: low
+      pollen_index: 2
+      temperature: 31.9
+      allergen_peaks:
+        grass:
+          peak: 19
+          time: "2025-07-13T09:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 14
+      templow: 23.7
+    - datetime: "2025-07-13T21:00:00+00:00"
+      is_daytime: false
+      condition: low
+      pollen_index: 2
+      temperature: 29
+      allergen_peaks:
+        grass:
+          peak: 14
+          time: "2025-07-13T18:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 14
+      templow: 21.5
 ```
 </details>
 
 <details>
-<summary>Show example “Twice Daily” response</summary>
+<summary>Show "Daily" response example</summary>
 
 ```yaml
-weather.silam_pollen_france_forecast:
+weather.silam_pollen_home_assistant_forecast:
   forecast:
-    - datetime: "2025-04-10T21:00:00+00:00"
-      is_daytime: false
-      condition: high
-      pollen_index: 4
-      temperature: 15.3
-      pollen_alder: 0
-      pollen_birch: 296
-      templow: 8.6
-    - datetime: "2025-04-11T09:00:00+00:00"
-      is_daytime: true
+    - datetime: "2025-07-10T09:00:00+00:00"
       condition: moderate
       pollen_index: 3
-      temperature: 16.8
-      pollen_alder: 0
-      pollen_birch: 278
-      templow: 5.2
-    - datetime: "2025-04-11T21:00:00+00:00"
-      is_daytime: false
-      condition: high
-      pollen_index: 4
-      temperature: 19.7
-      pollen_alder: 0
-      pollen_birch: 416
-      templow: 12.1
+      temperature: 33.4
+      allergen_peaks:
+        grass:
+          peak: 46
+          time: "2025-07-10T05:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 34
+      templow: 22.5
+    - datetime: "2025-07-11T09:00:00+00:00"
+      condition: low
+      pollen_index: 2
+      temperature: 35.2
+      allergen_peaks:
+        grass:
+          peak: 22
+          time: "2025-07-11T19:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 18
+      templow: 23
+    - datetime: "2025-07-12T09:00:00+00:00"
+      condition: low
+      pollen_index: 2
+      temperature: 35.1
+      allergen_peaks:
+        grass:
+          peak: 16
+          time: "2025-07-12T06:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 15
+      templow: 23.3
+    - datetime: "2025-07-13T09:00:00+00:00"
+      condition: low
+      pollen_index: 2
+      temperature: 31.9
+      allergen_peaks:
+        grass:
+          peak: 19
+          time: "2025-07-13T09:00:00+00:00"
+      pollen_birch: 0
+      pollen_grass: 14
+      templow: 21.5
 ```
 </details>
 
 ### How the forecast is calculated
 
-The pollen forecast in the **SILAM Pollen** integration is formed based on the SILAM model and is aggregated into two types of forecasts:
+In **SILAM Pollen**, SILAM‐model XML responses are parsed, merged by the `date` field, and then aggregated into three forecast types:
 
-#### Hourly forecast (24 hours)
-- Constructed in 3-hour steps.  
-- For each 3-hour window, the following are calculated:  
-  - Maximum temperature.  
-  - Pollen index — median value rounded up to the nearest integer.  
-  - Median value for each selected allergen.  
-- Uses the current date + 24 hours ahead.
+#### Hourly forecast (24 h)
+* Built in 3-hour steps.  
+* For each 3-hour window we compute:  
+  * Maximum temperature.  
+  * Pollen index — the maximum value (captures the true peak).  
+  * Maximum value for every selected allergen.  
+* The forecast timestamp is the midpoint of the 3-hour window (local time).  
+* Uses “today + 24 h” as the time span.
 
-#### Twice-daily forecast (36–120 hours)
-- Data are grouped into 12-hour intervals within the selected forecast duration (default 36 h; can be up to 120 h).  
-- For each interval, the following are calculated:  
-  - Maximum and minimum temperature.  
-  - Median pollen index (rounded up).  
-  - Median value for each selected allergen.  
-- Forecast labels are set at 00:00 and 12:00 (local time) for each interval.
+#### Twice-daily forecast (12-hour windows, 36 – 120 h)
+* Two windows per day: 06:00–18:00 and 18:00–06:00 local time.  
+* For each 12-hour window we calculate:  
+  * Maximum and minimum temperature.  
+  * **Pollen index** and **allergen levels**, smoothed by an *observational percentile*:  
+    * ≥ 18 points → 80th percentile  
+    * 12 – 17 points → 70th percentile  
+    * < 12 points → maximum  
+    * No interpolation is used — the actual value at the percentile (ceil-index) is taken.  
+  * **Allergen peaks** (`allergen_peaks`) — the maximum concentration and the time it occurs within the window.  
+* Forecast timestamps are placed at 00:00 and 12:00 local time.
 
-#### Parameters used
-- `POLI` — pollen index value.  
-- `temp_2m` — temperature at 2 meters height.
+#### Daily forecast (24-hour windows, 36 – 120 h)
+* 24-hour windows starting "tomorrow."  
+* For each day we compute:  
+  * Maximum and minimum temperature.  
+  * **Pollen index** and **allergen levels** using the same observational-percentile method.  
+  * **Allergen peaks** for the day.  
+* Forecast timestamp is 12:00 local time.
 
 #### Aggregation technique
-- Data from SILAM are parsed from XML and merged by `date`.  
-- Calculations are performed using `statistics.median`, `max`, `min`.  
-- All forecasts are cached in `merged_data` and available via `weather.get_forecasts`.
+* SILAM XML is parsed and merged by `date`.  
+* Aggregations use `max`, `min`, and a custom *observational percentile* function (ceil-index, no interpolation).  
+* All forecasts are cached in `merged_data` and served via `weather.get_forecasts`.
+
+If one or more pollen types are selected, a separate **{Pollen Type}** sensor is created for each, displaying the modeled pollen grain concentration (grains/m³).
+
+**Attributes of the "{Pollen Type}" sensors:**  
+- **Altitude (sea level)** — the nearest available altitude used for data sampling.  
+- **Forecast for Tomorrow** — the aggregated pollen level forecast value for the next day (shown if the forecast is enabled).
+
+**Attributes of the "Pollen Index" sensor:**  
+- **Forecast Date & Time** — the timestamp for which the index is calculated (ISO 8601).  
+- **Primary Allergen** — the allergen that had the greatest impact on the index calculation.  
+- **Forecast for Tomorrow** — the daily pollen level forecast for the next day (shown if the forecast is enabled).
+
+**Fetch duration (`fetch_duration`)** — a sensor (disabled by default) that shows the total time spent refreshing the data (API call, parsing, calculations).  
+
+**Forecast horizon (`forecast_horizon`)** — a sensor (disabled by default) that displays the *actual* forecast span in hours (the gap between the “now” timestamp and the last forecast point).  
+Its attribute **`forecast_duration`** reveals the *requested* forecast length in hours, as set in the integration options.
+
+|  ![image](https://github.com/user-attachments/assets/c497819b-8521-4a02-9891-c1936ef2a4c2) | ![image](https://github.com/user-attachments/assets/41fdd143-b74e-42fc-bddb-db3b0b33b025)  |
+| ------------- | ------------- |
 
 ## Dashboard Card
 
@@ -361,6 +565,14 @@ The [pollenprognos-card](https://github.com/krissen/pollenprognos-card) has supp
 - localization in multiple languages;  
 - other useful enhancements.  
 
+Starting with [v2.4.1](https://github.com/krissen/pollenprognos-card/releases/tag/v2.4.1):
+
+- added **daily-forecast support** (via `weather.get_forecasts`) — up to 5 days ahead.
+
+> [!IMPORTANT]  
+> **Version compatibility:**  
+> pollenprognos-card **≥ v2.4.1** requires silam_pollen **≥ v0.2.7** (older card versions work with silam_pollen ≥ v0.2.5).
+
 Huge thanks to [@krissen](https://github.com/krissen) for this work!
 
 The card is available in the **default HACS repository**.  
@@ -370,8 +582,7 @@ To install, click **Download** in the card’s menu:
 
 ### See it in action:
 
-![pollenprognos-card preview](https://github.com/user-attachments/assets/d9b53a99-d183-4968-80b7-8a2b25381783)
-
+![pollenprognos-card preview](https://github.com/user-attachments/assets/0bfb5c3e-7e85-474e-9aa6-fe8282a23520)
 
 For more information and documentation, visit the repository. If you enjoy the card, don’t forget to give it a ⭐ and open an issue for bugs or feature requests:  
 https://github.com/krissen/pollenprognos-card  
@@ -407,6 +618,7 @@ Below are key papers detailing the main modules and validation of the SILAM poll
 - **European pollen reanalysis, 1980–2022, for alder, birch, and olive** (Mikhail Sofiev et al., 2024)  
   A reanalysis of European pollen data for alder, birch, and olive from 1980 to 2022. Published 3 October 2024.  
   <https://www.nature.com/articles/s41597-024-03686-2>
+
 ## Thanks
 
 Thanks to all the people who have contributed!
