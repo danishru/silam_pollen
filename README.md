@@ -215,11 +215,14 @@ Here you can set the parameters for the proper operation of the integration:
 - **Altitude above Sea Level** – the altitude used for data sampling. If the `"Home"` zone is selected, the value from the general settings (`config/general`) is used; otherwise, the default is 275 m. You can override it.  
 - **Location** – shows the selected coordinates on the map. You can change the zone using the map or manually set the latitude, longitude, and radius. The specified radius reflects the approximate spatial resolution of the pollen data (about 10 km).
 
+![image](https://github.com/user-attachments/assets/bd8358ab-3892-417d-bfd1-fb509c0fa1a6)
+
 ## Usage
 
 After installing the integration in Home Assistant, a service named `SILAM Pollen - {Zone Name}` is created. The service description shows the observation location coordinates and the dataset version used.
 
-![image](https://github.com/user-attachments/assets/47c28fa0-baac-4d33-9493-8c53a6592166)
+![image](https://github.com/user-attachments/assets/568a723a-e9e5-4045-9e6d-a6b99e015b9b)
+
 
 Within the service a weather entity called **Pollen Forecast** is created. Its `state` shows the pollen-index value for the *nearest* forecast, calculated from hourly mean concentrations and the threshold levels defined in Mikhail Sofiev’s table ([link](https://www.researchgate.net/profile/Mikhail-Sofiev)).
 
@@ -252,17 +255,11 @@ If **Pollen Forecast** is enabled, three additional forecast types become availa
 >  
 > The diagnostic sensor **Forecast Horizon** helps track this: it shows the real (available) horizon, while its attribute **`forecast_duration`** displays the duration you requested in the integration settings.
 
-If the **Pollen Forecast** option is enabled, an additional **weather sensor** is created, which provides:  
-- an hourly forecast for 24 hours (in 3-hour steps);  
-- a twice-daily forecast for the chosen duration (default 36 h, maximum 120 h).
-
-The state of the weather sensor shows the **pollen index for the first available hourly forecast interval**.
-
-![image](https://github.com/user-attachments/assets/cb832f76-43e0-402e-9f60-b383c4131ced)
+![image](https://github.com/user-attachments/assets/b5ff0507-fe13-48eb-a891-910df2c03707)
 
 This data is available via the standard `weather.get_forecasts` service.
 
-![image](https://github.com/user-attachments/assets/bdd37fbc-9dc7-4bf1-95b2-7f3843d106e0)
+![image](https://github.com/user-attachments/assets/def0ba1d-73f9-4aec-9a3d-7bf3013c5ab8)
 
 <details>
 <summary>Show "Hourly" response example</summary>
@@ -553,8 +550,8 @@ If one or more pollen types are selected, a separate **{Pollen Type}** sensor is
 **Forecast horizon (`forecast_horizon`)** — a sensor (disabled by default) that displays the *actual* forecast span in hours (the gap between the “now” timestamp and the last forecast point).  
 Its attribute **`forecast_duration`** reveals the *requested* forecast length in hours, as set in the integration options.
 
-|  ![image](https://github.com/user-attachments/assets/c497819b-8521-4a02-9891-c1936ef2a4c2) | ![image](https://github.com/user-attachments/assets/41fdd143-b74e-42fc-bddb-db3b0b33b025)  |
-| ------------- | ------------- |
+|  ![image](https://github.com/user-attachments/assets/ae513967-6ddc-43be-8b7b-c8076f6155a5) | ![image](https://github.com/user-attachments/assets/06fc40d5-32e6-4332-8696-0e7ff970a48c)  | ![image](https://github.com/user-attachments/assets/8307c335-6de9-4517-8ded-f5923f66b6da) |
+| ------------- | ------------- | ------------- |
 
 ## Dashboard Card
 
