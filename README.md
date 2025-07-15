@@ -265,7 +265,7 @@ This data is available via the standard `weather.get_forecasts` service.
 ![image](https://github.com/user-attachments/assets/bdd37fbc-9dc7-4bf1-95b2-7f3843d106e0)
 
 <details>
-<summary>Show "Hourly" response example</summary
+<summary>Show "Hourly" response example</summary>
 
 ```yaml
 weather.silam_pollen_home_assistant_forecast:
