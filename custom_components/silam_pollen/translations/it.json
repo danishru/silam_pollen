@@ -1,9 +1,9 @@
 {
-  "title": "Monitor del Pollen SILAM",
+  "title": "SILAM Pollen Monitor",
   "entity": {
     "sensor": {
       "index": {
-        "name": "Indice",
+        "name": "Indice dei pollini",
         "state": {
           "very_low": "Molto basso",
           "low": "Basso",
@@ -46,12 +46,20 @@
       "fetch_duration": {
         "name": "Durata recupero"
       },
+      "forecast_horizon": {
+        "name": "Orizzonte di previsione",
+        "state_attributes": {
+          "forecast_duration": {
+            "name": "Durata previsione desiderata"
+          }
+        }
+      },
       "alder": {
         "name": "Ontano",
         "unit_of_measurement": "granuli/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitudine (a livello del mare)"
+            "name": "Altitudine (sopra il livello del mare)"
           },
           "tomorrow": {
             "name": "Previsione per domani"
@@ -63,7 +71,7 @@
         "unit_of_measurement": "granuli/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitudine (a livello del mare)"
+            "name": "Altitudine (sopra il livello del mare)"
           },
           "tomorrow": {
             "name": "Previsione per domani"
@@ -75,7 +83,7 @@
         "unit_of_measurement": "granuli/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitudine (a livello del mare)"
+            "name": "Altitudine (sopra il livello del mare)"
           },
           "tomorrow": {
             "name": "Previsione per domani"
@@ -87,7 +95,7 @@
         "unit_of_measurement": "granuli/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitudine (a livello del mare)"
+            "name": "Altitudine (sopra il livello del mare)"
           },
           "tomorrow": {
             "name": "Previsione per domani"
@@ -99,7 +107,7 @@
         "unit_of_measurement": "granuli/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitudine (a livello del mare)"
+            "name": "Altitudine (sopra il livello del mare)"
           },
           "tomorrow": {
             "name": "Previsione per domani"
@@ -111,7 +119,7 @@
         "unit_of_measurement": "granuli/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitudine (a livello del mare)"
+            "name": "Altitudine (sopra il livello del mare)"
           },
           "tomorrow": {
             "name": "Previsione per domani"
@@ -123,7 +131,7 @@
         "unit_of_measurement": "granuli/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitudine (a livello del mare)"
+            "name": "Altitudine (sopra il livello del mare)"
           },
           "tomorrow": {
             "name": "Previsione per domani"
@@ -156,7 +164,34 @@
               "hazel": "Nocciolo",
               "unknown": "Sconosciuto"
             }
-          }
+          },
+          "date": {
+            "name": "Data e ora della previsione"
+          },
+          "next_condition": {
+            "name": "Prossimo indice",
+            "state": {
+              "very_low": "Molto basso",
+              "low": "Basso",
+              "moderate": "Moderato",
+              "high": "Alto",
+              "very_high": "Molto alto",
+              "unknown": "Sconosciuto"
+            }
+          },
+          "altitude": {
+            "name": "Altitudine (sopra il livello del mare)"
+          },
+          "attribution": {
+            "name": "Fonte dei dati"
+          },
+          "pollen_alder": { "name": "Ontano" },
+          "pollen_birch": { "name": "Betulla" },
+          "pollen_grass": { "name": "Erba" },
+          "pollen_olive": { "name": "Oliva" },
+          "pollen_mugwort": { "name": "Artemisia" },
+          "pollen_ragweed": { "name": "Ambrosia" },
+          "pollen_hazel": { "name": "Nocciolo" }
         }
       }
     }
@@ -166,10 +201,11 @@
       "user": {
         "data": {
           "zone_id": "Zona di osservazione",
+          "altitude": "Altitudine sopra il livello del mare",
           "var": "Tipo di polline",
           "update_interval": "Intervallo di aggiornamento (minuti, minimo 30)",
           "forecast": "**BETA** Abilitare la previsione del polline?",
-          "forecast_duration": "Durata previsione (36–120 ore; predefinito 36)"
+          "forecast_duration": "Durata previsione desiderata (36–120 ore; predefinito 36)"
         },
         "data_description": {
           "forecast": "La funzionalità di previsione può aumentare significativamente i tempi di risposta dell'API."
@@ -181,7 +217,7 @@
         "data": {
           "zone_name": "Nome della zona",
           "location": "Località",
-          "altitude": "Altitudine sul livello del mare"
+          "altitude": "Altitudine sopra il livello del mare"
         },
         "title": "Crea servizio SILAM Pollen",
         "description": "Inserisci il nome della zona e regola le coordinate se necessario.\n[Consulta la mappa di copertura del servizio](https://danishru.github.io/silam_pollen/)."
@@ -196,7 +232,7 @@
           "var": "Tipo di polline",
           "version": "Dataset",
           "forecast": "**BETA** Abilita la previsione del polline?",
-          "forecast_duration": "Durata previsione (36–120 ore; predefinito 36)"
+          "forecast_duration": "Durata previsione desiderata (36–120 ore; predefinito 36)"
         },
         "data_description": {
           "forecast": "La funzionalità di previsione può aumentare significativamente i tempi di risposta dell'API."
@@ -220,7 +256,7 @@
   },
   "services": {
     "manual_update": {
-      "name": "Aggiornamento Manuale",
+      "name": "Aggiornamento manuale",
       "description": "Avvio manuale dell'aggiornamento dei dati per gli obiettivi selezionati dell'integrazione SILAM Pollen.",
       "fields": {
         "targets": {

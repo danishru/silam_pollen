@@ -3,13 +3,13 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": "Index",
+        "name": "Pollenindex",
         "state": {
-          "very_low": "Heel Laag",
+          "very_low": "Heel laag",
           "low": "Laag",
           "moderate": "Gemiddeld",
           "high": "Hoog",
-          "very_high": "Zeer Hoog",
+          "very_high": "Zeer hoog",
           "unknown": "Onbekend"
         },
         "state_attributes": {
@@ -28,16 +28,16 @@
             }
           },
           "date": {
-            "name": "Voorspellingsdatum & Tijd"
+            "name": "Voorspellingsdatum & tijd"
           },
           "index_tomorrow": {
-            "name": "Voorspelling voor Morgen",
+            "name": "Voorspelling voor morgen",
             "state": {
-              "very_low": "Heel Laag",
+              "very_low": "Heel laag",
               "low": "Laag",
               "moderate": "Gemiddeld",
               "high": "Hoog",
-              "very_high": "Zeer Hoog",
+              "very_high": "Zeer hoog",
               "unknown": "Onbekend"
             }
           }
@@ -46,12 +46,20 @@
       "fetch_duration": {
         "name": "Ophaalduur"
       },
+      "forecast_horizon": {
+        "name": "Voorspellingshorizon",
+        "state_attributes": {
+          "forecast_duration": {
+            "name": "Gewenste voorspellingstermijn"
+          }
+        }
+      },
       "alder": {
         "name": "Els",
         "unit_of_measurement": "korrels/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Hoogte (zeeniveau)"
+            "name": "Hoogte (boven zeeniveau)"
           },
           "tomorrow": {
             "name": "Voorspelling voor morgen"
@@ -63,7 +71,7 @@
         "unit_of_measurement": "korrels/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Hoogte (zeeniveau)"
+            "name": "Hoogte (boven zeeniveau)"
           },
           "tomorrow": {
             "name": "Voorspelling voor morgen"
@@ -75,7 +83,7 @@
         "unit_of_measurement": "korrels/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Hoogte (zeeniveau)"
+            "name": "Hoogte (boven zeeniveau)"
           },
           "tomorrow": {
             "name": "Voorspelling voor morgen"
@@ -87,7 +95,7 @@
         "unit_of_measurement": "korrels/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Hoogte (zeeniveau)"
+            "name": "Hoogte (boven zeeniveau)"
           },
           "tomorrow": {
             "name": "Voorspelling voor morgen"
@@ -99,7 +107,7 @@
         "unit_of_measurement": "korrels/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Hoogte (zeeniveau)"
+            "name": "Hoogte (boven zeeniveau)"
           },
           "tomorrow": {
             "name": "Voorspelling voor morgen"
@@ -111,7 +119,7 @@
         "unit_of_measurement": "korrels/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Hoogte (zeeniveau)"
+            "name": "Hoogte (boven zeeniveau)"
           },
           "tomorrow": {
             "name": "Voorspelling voor morgen"
@@ -123,7 +131,7 @@
         "unit_of_measurement": "korrels/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Hoogte (zeeniveau)"
+            "name": "Hoogte (boven zeeniveau)"
           },
           "tomorrow": {
             "name": "Voorspelling voor morgen"
@@ -133,13 +141,13 @@
     },
     "weather": {
       "forecast": {
-        "name": "Forecast **BETA**",
+        "name": "Pollenvoorspelling **BETA**",
         "state": {
-          "very_low": "Heel Laag",
+          "very_low": "Heel laag",
           "low": "Laag",
           "moderate": "Gemiddeld",
           "high": "Hoog",
-          "very_high": "Zeer Hoog",
+          "very_high": "Zeer hoog",
           "unknown": "Onbekend"
         },
         "state_attributes": {
@@ -156,7 +164,34 @@
               "hazel": "Hazelaar",
               "unknown": "Onbekend"
             }
-          }
+          },
+          "date": {
+            "name": "Voorspellingsdatum & tijd"
+          },
+          "next_condition": {
+            "name": "Volgende index",
+            "state": {
+              "very_low": "Heel laag",
+              "low": "Laag",
+              "moderate": "Gemiddeld",
+              "high": "Hoog",
+              "very_high": "Zeer hoog",
+              "unknown": "Onbekend"
+            }
+          },
+          "altitude": {
+            "name": "Hoogte (boven zeeniveau)"
+          },
+          "attribution": {
+            "name": "Databron"
+          },
+          "pollen_alder": { "name": "Els" },
+          "pollen_birch": { "name": "Berk" },
+          "pollen_grass": { "name": "Gras" },
+          "pollen_olive": { "name": "Olijf" },
+          "pollen_mugwort": { "name": "Bijvoet" },
+          "pollen_ragweed": { "name": "Ambrosia" },
+          "pollen_hazel": { "name": "Hazelaar" }
         }
       }
     }
@@ -166,25 +201,26 @@
       "user": {
         "data": {
           "zone_id": "Observatiezone",
-          "var": "Pollen type",
-          "update_interval": "Update Interval (minuten, minimum 30)",
-          "forecast": "**BETA** Schakel pollen voorspelling in?",
-          "forecast_duration": "Voorspellingstermijn (36–120 u; standaard 36)"
+          "altitude": "Hoogte boven zeeniveau",
+          "var": "Pollen­type",
+          "update_interval": "Update-interval (minuten, minimum 30)",
+          "forecast": "**BETA** Pollen­voorspelling inschakelen?",
+          "forecast_duration": "Gewenste voorspellingstermijn (36–120 u; standaard 36)"
         },
         "data_description": {
-          "forecast": "De voorspelling kan de responstijd van de API aanzienlijk verhogen."
+          "forecast": "De voorspellingsfunctie kan de API-responstijd aanzienlijk verhogen."
         },
-        "title": "SILAM Pollen dienst aanmaken",
-        "description": "Configureer de parameters hieronder.\nVoorspellingen zijn voor wetenschappelijk gebruik; nauwkeurigheid is niet gegarandeerd."
+        "title": "SILAM Pollen­dienst aanmaken",
+        "description": "Configureer de onderstaande parameters.\nVoorspellingen zijn bedoeld voor wetenschappelijk gebruik; nauwkeurigheid wordt niet gegarandeerd."
       },
       "manual_coords": {
         "data": {
-          "zone_name": "Zone Name",
+          "zone_name": "Zonenaam",
           "location": "Locatie",
-          "altitude": "Hoogte boven zeeniveau "
+          "altitude": "Hoogte boven zeeniveau"
         },
-        "title": "Maak SILAM Pollen dienst aan",
-        "description": "Voer de zonenaam in en pas de coördinaten aan indien nodig.\n[Bekijk de service dekkingskaart](https://danishru.github.io/silam_pollen/)."
+        "title": "SILAM Pollen­dienst aanmaken",
+        "description": "Voer de zonenaam in en pas de coördinaten aan indien nodig.\n[Bekijk de dekkingskaart](https://danishru.github.io/silam_pollen/)."
       }
     }
   },
@@ -192,16 +228,16 @@
     "step": {
       "init": {
         "data": {
-          "update_interval": "Update Interval (minuten, minimum 30)",
-          "var": "Pollen type",
+          "update_interval": "Update-interval (minuten, minimum 30)",
+          "var": "Pollen­type",
           "version": "Dataset",
-          "forecast": "**BETA** Schakel pollen voorspelling in?",
-          "forecast_duration": "Voorspellingstermijn (36–120 u; standaard 36)"
+          "forecast": "**BETA** Pollen­voorspelling inschakelen?",
+          "forecast_duration": "Gewenste voorspellingstermijn (36–120 u; standaard 36)"
         },
         "data_description": {
-          "forecast": "De voorspelling kan de responstijd van de API aanzienlijk verhogen."
+          "forecast": "De voorspellingsfunctie kan de API-responstijd aanzienlijk verhogen."
         },
-        "title": "SILAM Pollen Opties"
+        "title": "SILAM Pollen­opties"
       }
     }
   },
@@ -220,12 +256,12 @@
   },
   "services": {
     "manual_update": {
-      "name": "Manuele Update",
-      "description": "Manueel een gegevensupdate starten voor de geselecteerde SILAM Pollen integratiedoelen.",
+      "name": "Handmatige update",
+      "description": "Handmatig een gegevensupdate starten voor de geselecteerde SILAM Pollen-doelen.",
       "fields": {
         "targets": {
           "name": "Doelen",
-          "description": "Selecteer de SILAM Pollen integratiedoelen die u wilt bijwerken."
+          "description": "Selecteer één of meer apparaten of entiteiten om bij te werken."
         }
       }
     }

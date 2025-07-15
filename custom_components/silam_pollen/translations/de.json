@@ -1,9 +1,9 @@
 {
-  "title": "SILAM Pollenmonitor",
+  "title": "SILAM Pollen Monitor",
   "entity": {
     "sensor": {
       "index": {
-        "name": "Index",
+        "name": "Pollenindex",
         "state": {
           "very_low": "Sehr niedrig",
           "low": "Niedrig",
@@ -46,12 +46,20 @@
       "fetch_duration": {
         "name": "Abrufdauer"
       },
+      "forecast_horizon": {
+        "name": "Prognosehorizont",
+        "state_attributes": {
+          "forecast_duration": {
+            "name": "Gewünschte Prognosedauer"
+          }
+        }
+      },
       "alder": {
         "name": "Erle",
         "unit_of_measurement": "Körner/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höhe (Meeresspiegel)"
+            "name": "Höhe (über dem Meeresspiegel)"
           },
           "tomorrow": {
             "name": "Vorhersage für morgen"
@@ -63,7 +71,7 @@
         "unit_of_measurement": "Körner/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höhe (Meeresspiegel)"
+            "name": "Höhe (über dem Meeresspiegel)"
           },
           "tomorrow": {
             "name": "Vorhersage für morgen"
@@ -75,7 +83,7 @@
         "unit_of_measurement": "Körner/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höhe (Meeresspiegel)"
+            "name": "Höhe (über dem Meeresspiegel)"
           },
           "tomorrow": {
             "name": "Vorhersage für morgen"
@@ -87,7 +95,7 @@
         "unit_of_measurement": "Körner/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höhe (Meeresspiegel)"
+            "name": "Höhe (über dem Meeresspiegel)"
           },
           "tomorrow": {
             "name": "Vorhersage für morgen"
@@ -99,7 +107,7 @@
         "unit_of_measurement": "Körner/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höhe (Meeresspiegel)"
+            "name": "Höhe (über dem Meeresspiegel)"
           },
           "tomorrow": {
             "name": "Vorhersage für morgen"
@@ -111,7 +119,7 @@
         "unit_of_measurement": "Körner/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höhe (Meeresspiegel)"
+            "name": "Höhe (über dem Meeresspiegel)"
           },
           "tomorrow": {
             "name": "Vorhersage für morgen"
@@ -123,7 +131,7 @@
         "unit_of_measurement": "Körner/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höhe (Meeresspiegel)"
+            "name": "Höhe (über dem Meeresspiegel)"
           },
           "tomorrow": {
             "name": "Vorhersage für morgen"
@@ -156,7 +164,34 @@
               "hazel": "Hasel",
               "unknown": "Unbekannt"
             }
-          }
+          },
+          "date": {
+            "name": "Vorhersagedatum & Uhrzeit"
+          },
+          "next_condition": {
+            "name": "Nächster Index",
+            "state": {
+              "very_low": "Sehr niedrig",
+              "low": "Niedrig",
+              "moderate": "Mäßig",
+              "high": "Hoch",
+              "very_high": "Sehr hoch",
+              "unknown": "Unbekannt"
+            }
+          },
+          "altitude": {
+            "name": "Höhe (über dem Meeresspiegel)"
+          },
+          "attribution": {
+            "name": "Datenquelle"
+          },
+          "pollen_alder": { "name": "Erle" },
+          "pollen_birch": { "name": "Birke" },
+          "pollen_grass": { "name": "Gras" },
+          "pollen_olive": { "name": "Olive" },
+          "pollen_mugwort": { "name": "Beifuß" },
+          "pollen_ragweed": { "name": "Ambrosia" },
+          "pollen_hazel": { "name": "Hasel" }
         }
       }
     }
@@ -166,6 +201,7 @@
       "user": {
         "data": {
           "zone_id": "Beobachtungszone",
+          "altitude": "Höhe über dem Meeresspiegel",
           "var": "Pollenart",
           "update_interval": "Aktualisierungsintervall (Minuten, mindestens 30)",
           "forecast": "**BETA** Pollenprognose aktivieren?",
@@ -174,17 +210,17 @@
         "data_description": {
           "forecast": "Die Prognosefunktion kann die API-Antwortzeit erheblich erhöhen."
         },
-        "title": "SILAM Pollen-Service erstellen",
+        "title": "SILAM Pollen Service erstellen",
         "description": "Konfigurieren Sie die unten aufgeführten Parameter.\nPrognosen dienen wissenschaftlichen Zwecken; ihre Genauigkeit ist nicht garantiert."
       },
       "manual_coords": {
         "data": {
-          "zone_name": "Zonename",
+          "zone_name": "Zonenname",
           "location": "Standort",
           "altitude": "Höhe über dem Meeresspiegel"
         },
-        "title": "SILAM Pollen-Service erstellen",
-        "description": "Geben Sie den Zonennamen ein und passen Sie bei Bedarf die Koordinaten an.\n[Siehe Service-Abdeckungsplan](https://danishru.github.io/silam_pollen/)."
+        "title": "SILAM-Pollen-Service erstellen",
+        "description": "Geben Sie den Zonen­namen ein und passen Sie bei Bedarf die Koordinaten an.\n[Service-Abdeckungskarte anzeigen](https://danishru.github.io/silam_pollen/)."
       }
     }
   },
@@ -201,7 +237,7 @@
         "data_description": {
           "forecast": "Die Prognosefunktion kann die API-Antwortzeit erheblich erhöhen."
         },
-        "title": "SILAM Pollen-Optionen"
+        "title": "SILAM Pollen Optionen"
       }
     }
   },
@@ -221,7 +257,7 @@
   "services": {
     "manual_update": {
       "name": "Manuelle Aktualisierung",
-      "description": "Manueller Start der Datenaktualisierung für die ausgewählten Ziele der SILAM Pollen-Integration.",
+      "description": "Manueller Start der Datenaktualisierung für die ausgewählten Ziele der SILAM Pollen Integration.",
       "fields": {
         "targets": {
           "name": "Ziele",

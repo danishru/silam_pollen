@@ -1,9 +1,9 @@
 {
-  "title": "SILAM Siitepölymonitori",
+  "title": "SILAM Pollen Monitor",
   "entity": {
     "sensor": {
       "index": {
-        "name": "Indeksi",
+        "name": "Siitepölyindeksi",
         "state": {
           "very_low": "Erittäin alhainen",
           "low": "Alhainen",
@@ -14,7 +14,7 @@
         },
         "state_attributes": {
           "responsible_elevated": {
-            "name": "Pääallergeni",
+            "name": "Pääallergeeni",
             "state": {
               "missing": "Ei tietoja",
               "alder": "Leppä",
@@ -46,12 +46,20 @@
       "fetch_duration": {
         "name": "Hakukesto"
       },
+      "forecast_horizon": {
+        "name": "Ennustehorisontti",
+        "state_attributes": {
+          "forecast_duration": {
+            "name": "Haluttu ennusteen kesto"
+          }
+        }
+      },
       "alder": {
         "name": "Leppä",
         "unit_of_measurement": "jyvää/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Korkeus (meritasolla)"
+            "name": "Korkeus (merenpinnasta)"
           },
           "tomorrow": {
             "name": "Ennuste huomiselle"
@@ -63,7 +71,7 @@
         "unit_of_measurement": "jyvää/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Korkeus (meritasolla)"
+            "name": "Korkeus (merenpinnasta)"
           },
           "tomorrow": {
             "name": "Ennuste huomiselle"
@@ -75,7 +83,7 @@
         "unit_of_measurement": "jyvää/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Korkeus (meritasolla)"
+            "name": "Korkeus (merenpinnasta)"
           },
           "tomorrow": {
             "name": "Ennuste huomiselle"
@@ -87,7 +95,7 @@
         "unit_of_measurement": "jyvää/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Korkeus (meritasolla)"
+            "name": "Korkeus (merenpinnasta)"
           },
           "tomorrow": {
             "name": "Ennuste huomiselle"
@@ -99,7 +107,7 @@
         "unit_of_measurement": "jyvää/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Korkeus (meritasolla)"
+            "name": "Korkeus (merenpinnasta)"
           },
           "tomorrow": {
             "name": "Ennuste huomiselle"
@@ -111,7 +119,7 @@
         "unit_of_measurement": "jyvää/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Korkeus (meritasolla)"
+            "name": "Korkeus (merenpinnasta)"
           },
           "tomorrow": {
             "name": "Ennuste huomiselle"
@@ -123,7 +131,7 @@
         "unit_of_measurement": "jyvää/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Korkeus (meritasolla)"
+            "name": "Korkeus (merenpinnasta)"
           },
           "tomorrow": {
             "name": "Ennuste huomiselle"
@@ -144,7 +152,7 @@
         },
         "state_attributes": {
           "responsible_elevated": {
-            "name": "Pääallergeni",
+            "name": "Pääallergeeni",
             "state": {
               "missing": "Ei tietoja",
               "alder": "Leppä",
@@ -156,7 +164,34 @@
               "hazel": "Pähkinäleppä",
               "unknown": "Tuntematon"
             }
-          }
+          },
+          "date": {
+            "name": "Ennusteen päivämäärä ja kellonaika"
+          },
+          "next_condition": {
+            "name": "Seuraava indeksi",
+            "state": {
+              "very_low": "Erittäin alhainen",
+              "low": "Alhainen",
+              "moderate": "Kohtalainen",
+              "high": "Korkea",
+              "very_high": "Erittäin korkea",
+              "unknown": "Tuntematon"
+            }
+          },
+          "altitude": {
+            "name": "Korkeus (merenpinnasta)"
+          },
+          "attribution": {
+            "name": "Tietolähde"
+          },
+          "pollen_alder": { "name": "Leppä" },
+          "pollen_birch": { "name": "Koivu" },
+          "pollen_grass": { "name": "Heinä" },
+          "pollen_olive": { "name": "Oliivi" },
+          "pollen_mugwort": { "name": "Siankärsämö" },
+          "pollen_ragweed": { "name": "Ambrosia" },
+          "pollen_hazel": { "name": "Pähkinäleppä" }
         }
       }
     }
@@ -166,15 +201,16 @@
       "user": {
         "data": {
           "zone_id": "Havainnointivyöhyke",
+          "altitude": "Korkeus merenpinnasta",
           "var": "Siitepölyn laji",
           "update_interval": "Päivitysväli (minuutteina, vähintään 30)",
           "forecast": "**BETA** Ota siitepölyennuste käyttöön?",
-          "forecast_duration": "Ennusteen kesto (36–120 tuntia; oletus 36)"
+          "forecast_duration": "Haluttu ennusteen kesto (36–120 h; oletus 36)"
         },
         "data_description": {
           "forecast": "Ennusteominaisuus voi merkittävästi pidentää API-vastausaikaa."
         },
-        "title": "Luo SILAM Pölypalvelu",
+        "title": "Luo SILAM Siitepölypalvelu",
         "description": "Määritä alla olevat parametrit.\nEnnusteet on tarkoitettu tieteelliseen käyttöön; tarkkuutta ei taata."
       },
       "manual_coords": {
@@ -183,8 +219,8 @@
           "location": "Sijainti",
           "altitude": "Korkeus merenpinnasta"
         },
-        "title": "Luo SILAM Pölypalvelu",
-        "description": "Anna vyöhykkeen nimi ja säädä koordinaatteja tarvittaessa.\n[Tarkastele palvelun peittoaluetta kartalta](https://danishru.github.io/silam_pollen/)."
+        "title": "Luo SILAM Siitepölypalvelu",
+        "description": "Anna vyöhykkeen nimi ja säädä koordinaatteja tarvittaessa.\n[Tarkastele palvelun peittoaluetta kartalla](https://danishru.github.io/silam_pollen/)."
       }
     }
   },
@@ -196,12 +232,12 @@
           "var": "Siitepölyn laji",
           "version": "Aineisto",
           "forecast": "**BETA** Ota siitepölyennuste käyttöön?",
-          "forecast_duration": "Ennusteen kesto (36–120 tuntia; oletus 36)"
+          "forecast_duration": "Haluttu ennusteen kesto (36–120 h; oletus 36)"
         },
         "data_description": {
           "forecast": "Ennusteominaisuus voi merkittävästi pidentää API-vastausaikaa."
         },
-        "title": "SILAM Pölyasetukset"
+        "title": "SILAM Siitepölyasetukset"
       }
     }
   },
@@ -221,7 +257,7 @@
   "services": {
     "manual_update": {
       "name": "Manuaalinen päivitys",
-      "description": "Manuaalinen tiedon päivityksen käynnistys valituille SILAM Pollen -integraation kohteille.",
+      "description": "Manuaalinen tiedon päivityksen käynnistys valituille SILAM Siitepöly integraation kohteille.",
       "fields": {
         "targets": {
           "name": "Kohteet",

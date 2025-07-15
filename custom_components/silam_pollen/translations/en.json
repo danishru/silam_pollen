@@ -3,7 +3,7 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": "Index",
+        "name": "Pollen index",
         "state": {
           "very_low": "Very Low",
           "low": "Low",
@@ -47,14 +47,19 @@
         "name": "Fetch Duration"
       },
       "forecast_horizon": {
-        "name": "Forecast horizon"
+        "name": "Forecast horizon",
+        "state_attributes": {
+          "forecast_duration": {
+            "name": "Desired forecast duration"
+          }
+        }
       },
       "alder": {
         "name": "Alder",
         "unit_of_measurement": "grains/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitude (sea level)"
+            "name": "Altitude (above sea level)"
           },
           "tomorrow": {
             "name": "Forecast for Tomorrow"
@@ -66,7 +71,7 @@
         "unit_of_measurement": "grains/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitude (sea level)"
+            "name": "Altitude (above sea level)"
           },
           "tomorrow": {
             "name": "Forecast for Tomorrow"
@@ -78,7 +83,7 @@
         "unit_of_measurement": "grains/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitude (sea level)"
+            "name": "Altitude (above sea level)"
           },
           "tomorrow": {
             "name": "Forecast for Tomorrow"
@@ -90,7 +95,7 @@
         "unit_of_measurement": "grains/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitude (sea level)"
+            "name": "Altitude (above sea level)"
           },
           "tomorrow": {
             "name": "Forecast for Tomorrow"
@@ -102,7 +107,7 @@
         "unit_of_measurement": "grains/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitude (sea level)"
+            "name": "Altitude (above sea level)"
           },
           "tomorrow": {
             "name": "Forecast for Tomorrow"
@@ -114,7 +119,7 @@
         "unit_of_measurement": "grains/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitude (sea level)"
+            "name": "Altitude (above sea level)"
           },
           "tomorrow": {
             "name": "Forecast for Tomorrow"
@@ -126,7 +131,7 @@
         "unit_of_measurement": "grains/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Altitude (sea level)"
+            "name": "Altitude (above sea level)"
           },
           "tomorrow": {
             "name": "Forecast for Tomorrow"
@@ -159,6 +164,47 @@
               "hazel": "Hazel",
               "unknown": "Unknown"
             }
+          },
+          "date": {
+            "name": "Forecast Date & Time"
+          },
+          "next_condition": {
+            "name": "Next index",
+            "state": {
+              "very_low": "Very Low",
+              "low": "Low",
+              "moderate": "Moderate",
+              "high": "High",
+              "very_high": "Very High",
+              "unknown": "Unknown"
+            }
+          },
+          "altitude": {
+            "name": "Altitude (above sea level)"
+          },
+          "attribution": {
+            "name": "Data source"
+          },
+          "pollen_alder": {
+            "name": "Alder"
+          },
+          "pollen_birch": {
+            "name": "Birch"
+          },
+          "pollen_grass": {
+            "name": "Grass"
+          },
+          "pollen_olive": {
+            "name": "Olive"
+          },
+          "pollen_mugwort": {
+            "name": "Mugwort"
+          },
+          "pollen_ragweed": {
+            "name": "Ragweed"
+          },
+          "pollen_hazel": {
+            "name": "Hazel"
           }
         }
       }
@@ -169,10 +215,11 @@
       "user": {
         "data": {
           "zone_id": "Observation zone",
+          "altitude": "Altitude above sea level",
           "var": "Pollen type",
           "update_interval": "Update Interval (minutes, minimum 30)",
           "forecast": "**BETA** Enable pollen forecast?",
-          "forecast_duration": "Forecast duration (36–120 h; default 36)"
+          "forecast_duration": "Desired forecast duration (36–120 h; default 36)"
         },
         "data_description": {
           "forecast": "The forecast feature may significantly increase API response time."
@@ -199,7 +246,7 @@
           "var": "Pollen type",
           "version": "Dataset",
           "forecast": "**BETA** Enable pollen forecast?",
-          "forecast_duration": "Forecast duration (36–120 h; default 36)"
+          "forecast_duration": "Desired forecast duration (36–120 h; default 36)"
         },
         "data_description": {
           "forecast": "The forecast feature may significantly increase API response time."

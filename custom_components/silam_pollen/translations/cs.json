@@ -3,134 +3,7 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": "Index",
-        "state": {
-          "very_low": "Velmi nízký",
-          "low": "Nízký",
-          "moderate": "Mírný",
-          "high": "Vysoký",
-          "very_high": "Velmi vysoký",
-          "unknown": "Neznámý"
-        },
-        "state_attributes": {
-          "responsible_elevated": {
-            "name": "Hlavní alergen",
-            "state": {
-              "missing": "Žádná data",
-              "alder": "Alder",
-              "birch": "Birch",
-              "grass": "Grass",
-              "olive": "Olive",
-              "mugwort": "Mugwort",
-              "ragweed": "Ragweed",
-              "hazel": "Hazel",
-              "unknown": "Neznámý"
-            }
-          },
-          "date": {
-            "name": "Předpověď datum a čas"
-          },
-          "index_tomorrow": {
-            "name": "Předpověď na zítra",
-            "state": {
-              "very_low": "Velmi nízký",
-              "low": "Nízký",
-              "moderate": "Mírný",
-              "high": "Vysoký",
-              "very_high": "Velmi vysoký",
-              "unknown": "Neznámý"
-            }
-          }
-        }
-      },
-      "alder": {
-        "name": "Olše",
-        "unit_of_measurement": "zrna/m³",
-        "state_attributes": {
-          "altitude": {
-            "name": "Nadmořská výška (hladina moře)"
-          },
-          "tomorrow": {
-            "name": "Předpověď na zítra"
-          }
-        }
-      },
-      "birch": {
-        "name": "Bříza",
-        "unit_of_measurement": "zrna/m³",
-        "state_attributes": {
-          "altitude": {
-            "name": "Nadmořská výška (hladina moře)"
-          },
-          "tomorrow": {
-            "name": "Předpověď na zítra"
-          }
-        }
-      },
-      "grass": {
-        "name": "Tráva",
-        "unit_of_measurement": "zrna/m³",
-        "state_attributes": {
-          "altitude": {
-            "name": "Nadmořská výška (hladina moře)"
-          },
-          "tomorrow": {
-            "name": "Předpověď na zítra"
-          }
-        }
-      },
-      "hazel": {
-        "name": "Líska",
-        "unit_of_measurement": "zrna/m³",
-        "state_attributes": {
-          "altitude": {
-            "name": "Nadmořská výška (hladina moře)"
-          },
-          "tomorrow": {
-            "name": "Předpověď na zítra"
-          }
-        }
-      },
-      "mugwort": {
-        "name": "Pelyněk",
-        "unit_of_measurement": "zrna/m³",
-        "state_attributes": {
-          "altitude": {
-            "name": "Nadmořská výška (hladina moře)"
-          },
-          "tomorrow": {
-            "name": "Předpověď na zítra"
-          }
-        }
-      },
-      "olive": {
-        "name": "Olivovník",
-        "unit_of_measurement": "zrna/m³",
-        "state_attributes": {
-          "altitude": {
-            "name": "Nadmořská výška (hladina moře)"
-          },
-          "tomorrow": {
-            "name": "Předpověď na zítra"
-          }
-        }
-      },
-      "ragweed": {
-        "name": "Ambrózie",
-        "unit_of_measurement": "zrna/m³",
-        "state_attributes": {
-          "altitude": {
-            "name": "Nadmořská výška (hladina moře)"
-          },
-          "tomorrow": {
-            "name": "Předpověď na zítra"
-          }
-        }
-      }
-    },
-    "weather": {
-      "forecast": {
-        "name": "Předpověď **BETA**",
+        "name": "Pylový index",
         "state": {
           "very_low": "Velmi nízký",
           "low": "Nízký",
@@ -153,7 +26,162 @@
               "hazel": "Líska",
               "unknown": "Neznámý"
             }
+          },
+				   
+          "date": { "name": "Datum a čas předpovědi" },
+			
+          "index_tomorrow": {
+            "name": "Předpověď na zítra",
+            "state": {
+              "very_low": "Velmi nízký",
+              "low": "Nízký",
+              "moderate": "Mírný",
+              "high": "Vysoký",
+              "very_high": "Velmi vysoký",
+              "unknown": "Neznámý"
+            }
           }
+        }
+      },
+      "fetch_duration": { "name": "Doba načítání" },
+      "forecast_horizon": {
+        "name": "Horizont předpovědi",
+        "state_attributes": {
+          "forecast_duration": { "name": "Požadovaná délka předpovědi" }
+        }
+      },
+      "alder": {
+        "name": "Olše",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+					   
+          "altitude": { "name": "Nadmořská výška (nad mořem)" },
+			
+					   
+          "tomorrow": { "name": "Předpověď na zítra" }
+		   
+        }
+      },
+      "birch": {
+        "name": "Bříza",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+					   
+          "altitude": { "name": "Nadmořská výška (nad mořem)" },
+			
+					   
+          "tomorrow": { "name": "Předpověď na zítra" }
+		   
+        }
+      },
+      "grass": {
+        "name": "Tráva",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+					   
+          "altitude": { "name": "Nadmořská výška (nad mořem)" },
+			
+					   
+          "tomorrow": { "name": "Předpověď na zítra" }
+		   
+        }
+      },
+      "hazel": {
+        "name": "Líska",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+					   
+          "altitude": { "name": "Nadmořská výška (nad mořem)" },
+			
+					   
+          "tomorrow": { "name": "Předpověď na zítra" }
+		   
+        }
+      },
+      "mugwort": {
+        "name": "Pelyněk",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+					   
+          "altitude": { "name": "Nadmořská výška (nad mořem)" },
+			
+					   
+          "tomorrow": { "name": "Předpověď na zítra" }
+		   
+        }
+      },
+      "olive": {
+        "name": "Olivovník",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+					   
+          "altitude": { "name": "Nadmořská výška (nad mořem)" },
+			
+					   
+          "tomorrow": { "name": "Předpověď na zítra" }
+		   
+        }
+      },
+      "ragweed": {
+        "name": "Ambrózie",
+        "unit_of_measurement": "zrna/m³",
+        "state_attributes": {
+					   
+          "altitude": { "name": "Nadmořská výška (nad mořem)" },
+			
+					   
+          "tomorrow": { "name": "Předpověď na zítra" }
+		   
+        }
+      }
+    },
+    "weather": {
+      "forecast": {
+        "name": "Pylová předpověď **BETA**",
+        "state": {
+          "very_low": "Velmi nízký",
+          "low": "Nízký",
+          "moderate": "Mírný",
+          "high": "Vysoký",
+          "very_high": "Velmi vysoký",
+          "unknown": "Neznámý"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Hlavní alergen",
+            "state": {
+              "missing": "Žádná data",
+              "alder": "Olše",
+              "birch": "Bříza",
+              "grass": "Tráva",
+              "olive": "Olivovník",
+              "mugwort": "Pelyněk",
+              "ragweed": "Ambrózie",
+              "hazel": "Líska",
+              "unknown": "Neznámý"
+            }
+          },
+          "date": { "name": "Datum a čas předpovědi" },
+          "next_condition": {
+            "name": "Další index",
+            "state": {
+              "very_low": "Velmi nízký",
+              "low": "Nízký",
+              "moderate": "Mírný",
+              "high": "Vysoký",
+              "very_high": "Velmi vysoký",
+              "unknown": "Neznámý"
+            }
+          },
+          "altitude": { "name": "Nadmořská výška (nad mořem)" },
+          "attribution": { "name": "Zdroj dat" },
+          "pollen_alder": { "name": "Olše" },
+          "pollen_birch": { "name": "Bříza" },
+          "pollen_grass": { "name": "Tráva" },
+          "pollen_olive": { "name": "Olivovník" },
+          "pollen_mugwort": { "name": "Pelyněk" },
+          "pollen_ragweed": { "name": "Ambrózie" },
+          "pollen_hazel": { "name": "Líska" }
         }
       }
     }
@@ -163,24 +191,26 @@
       "user": {
         "data": {
           "zone_id": "Pozorovací zóna",
+          "altitude": "Nadmořská výška",
           "var": "Typ pylu",
-          "update_interval": "Interval aktualizaqcí (minuty, minimum 30)",
-          "forecast": "**BETA** Povolit pylovou předpověď?"
+          "update_interval": "Interval aktualizací (minuty, minimálně 30)",
+          "forecast": "**BETA** Povolit pylovou předpověď?",
+          "forecast_duration": "Požadovaná délka předpovědi (36–120 h; výchozí 36)"
         },
         "data_description": {
-          "forecast": "Funkce přepovědi může až 10x zvýšit odpověď API."
+          "forecast": "Funkce předpovědi může výrazně zvýšit dobu odezvy API."
         },
-        "title": "Vytvoření SILAM pylové služby",
-        "description": "Konfigurujte níže uvedené parametry.\nPřepovědi jsou určeny pro vědecké použití; přesnost není garantovaná."
+        "title": "Vytvoření služby SILAM Pyl",
+        "description": "Nakonfigurujte níže uvedené parametry.\nPředpovědi jsou určeny pro vědecké účely; přesnost není garantována."
       },
       "manual_coords": {
         "data": {
-          "zone_name": "Jméno zóny",
+          "zone_name": "Název zóny",
           "location": "Poloha",
           "altitude": "Nadmořská výška"
         },
-        "title": "Vytvoření SILAM pylové služby",
-        "description": "Zadejte jméno zóny a upřesněte souřadnice, je-li potřeba.\n[Zhlédněte mapu pokrytí.](https://danishru.github.io/silam_pollen/)."
+        "title": "Vytvoření služby SILAM Pyl",
+        "description": "Zadejte název zóny a případně upravte souřadnice.\n[Zobrazit mapu pokrytí služby](https://danishru.github.io/silam_pollen/)."
       }
     }
   },
@@ -188,15 +218,16 @@
     "step": {
       "init": {
         "data": {
-          "update_interval": "Interval aktualizaqcí (minuty, minimum 30)",
+          "update_interval": "Interval aktualizací (minuty, minimálně 30)",
           "var": "Typ pylu",
-          "version": "Dataset",
-          "forecast": "**BETA** Povolit pylovou předpověď?"
+          "version": "Datová sada",
+          "forecast": "**BETA** Povolit pylovou předpověď?",
+          "forecast_duration": "Požadovaná délka předpovědi (36–120 h; výchozí 36)"
         },
         "data_description": {
-          "forecast": "The forecast feature may increase API response time up to 10x."
+          "forecast": "Funkce předpovědi může výrazně zvýšit dobu odezvy API."
         },
-        "title": "SILAM Pollen Options"
+        "title": "Možnosti SILAM Pyl"
       }
     }
   },
@@ -216,7 +247,7 @@
   "services": {
     "manual_update": {
       "name": "Ruční aktualizace",
-      "description": "Spustit ručně aktualizaci dat pro vybrané cíle SILAM Pollen integration.",
+      "description": "Ručně spustit aktualizaci dat pro vybrané cíle integrace SILAM Pyl.",
       "fields": {
         "targets": {
           "name": "Cíle",

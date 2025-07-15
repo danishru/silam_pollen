@@ -1,9 +1,9 @@
 {
-  "title": "SILAM Pollenmonitor",
+  "title": "SILAM Pollen Monitor",
   "entity": {
     "sensor": {
       "index": {
-        "name": "Indeks",
+        "name": "Pollenindeks",
         "state": {
           "very_low": "Meget lav",
           "low": "Lav",
@@ -46,88 +46,68 @@
       "fetch_duration": {
         "name": "Hentetid"
       },
+      "forecast_horizon": {
+        "name": "Prognosehorisont",
+        "state_attributes": {
+          "forecast_duration": {
+            "name": "Ønsket prognosevarighed"
+          }
+        }
+      },
       "alder": {
         "name": "Al",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": {
-            "name": "Højde (ved havniveau)"
-          },
-          "tomorrow": {
-            "name": "Prognose for i morgen"
-          }
+          "altitude": { "name": "Højde (over havets overflade)" },
+          "tomorrow": { "name": "Prognose for i morgen" }
         }
       },
       "birch": {
         "name": "Birk",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": {
-            "name": "Højde (ved havniveau)"
-          },
-          "tomorrow": {
-            "name": "Prognose for i morgen"
-          }
+          "altitude": { "name": "Højde (over havets overflade)" },
+          "tomorrow": { "name": "Prognose for i morgen" }
         }
       },
       "grass": {
         "name": "Græs",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": {
-            "name": "Højde (ved havniveau)"
-          },
-          "tomorrow": {
-            "name": "Prognose for i morgen"
-          }
+          "altitude": { "name": "Højde (over havets overflade)" },
+          "tomorrow": { "name": "Prognose for i morgen" }
         }
       },
       "hazel": {
         "name": "Hassel",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": {
-            "name": "Højde (ved havniveau)"
-          },
-          "tomorrow": {
-            "name": "Prognose for i morgen"
-          }
+          "altitude": { "name": "Højde (over havets overflade)" },
+          "tomorrow": { "name": "Prognose for i morgen" }
         }
       },
       "mugwort": {
         "name": "Malurt",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": {
-            "name": "Højde (ved havniveau)"
-          },
-          "tomorrow": {
-            "name": "Prognose for i morgen"
-          }
+          "altitude": { "name": "Højde (over havets overflade)" },
+          "tomorrow": { "name": "Prognose for i morgen" }
         }
       },
       "olive": {
         "name": "Oliven",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": {
-            "name": "Højde (ved havniveau)"
-          },
-          "tomorrow": {
-            "name": "Prognose for i morgen"
-          }
+          "altitude": { "name": "Højde (over havets overflade)" },
+          "tomorrow": { "name": "Prognose for i morgen" }
         }
       },
       "ragweed": {
         "name": "Ambrosia",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": {
-            "name": "Højde (ved havniveau)"
-          },
-          "tomorrow": {
-            "name": "Prognose for i morgen"
-          }
+          "altitude": { "name": "Højde (over havets overflade)" },
+          "tomorrow": { "name": "Prognose for i morgen" }
         }
       }
     },
@@ -156,7 +136,28 @@
               "hazel": "Hassel",
               "unknown": "Ukendt"
             }
-          }
+          },
+          "date": { "name": "Prognosedato & tid" },
+          "next_condition": {
+            "name": "Næste indeks",
+            "state": {
+              "very_low": "Meget lav",
+              "low": "Lav",
+              "moderate": "Moderat",
+              "high": "Høj",
+              "very_high": "Meget høj",
+              "unknown": "Ukendt"
+            }
+          },
+          "altitude": { "name": "Højde (over havets overflade)" },
+          "attribution": { "name": "Datakilde" },
+          "pollen_alder": { "name": "Al" },
+          "pollen_birch": { "name": "Birk" },
+          "pollen_grass": { "name": "Græs" },
+          "pollen_olive": { "name": "Oliven" },
+          "pollen_mugwort": { "name": "Malurt" },
+          "pollen_ragweed": { "name": "Ambrosia" },
+          "pollen_hazel": { "name": "Hassel" }
         }
       }
     }
@@ -166,10 +167,11 @@
       "user": {
         "data": {
           "zone_id": "Observationszone",
+          "altitude": "Højde over havets overflade",
           "var": "Pollentype",
           "update_interval": "Opdateringsinterval (minutter, minimum 30)",
           "forecast": "**BETA** Aktiver pollenprognose?",
-          "forecast_duration": "Prognosens varighed (36–120 timer; standard 36)"
+          "forecast_duration": "Ønsket prognosevarighed (36–120 timer; standard 36)"
         },
         "data_description": {
           "forecast": "Prognosefunktionen kan betydeligt øge API-responstiden."
@@ -179,12 +181,12 @@
       },
       "manual_coords": {
         "data": {
-          "zone_name": "Zones navn",
+          "zone_name": "Zonens navn",
           "location": "Placering",
           "altitude": "Højde over havets overflade"
         },
         "title": "Opret SILAM Pollen-tjeneste",
-        "description": "Indtast zones navnet og juster koordinaterne om nødvendigt.\n[Tjek tjenestens dækningskort](https://danishru.github.io/silam_pollen/)."
+        "description": "Indtast zonens navn og juster koordinaterne om nødvendigt.\n[Tjek dækningskortet](https://danishru.github.io/silam_pollen/)."
       }
     }
   },
@@ -196,7 +198,7 @@
           "var": "Pollentype",
           "version": "Datasæt",
           "forecast": "**BETA** Aktiver pollenprognose?",
-          "forecast_duration": "Prognosens varighed (36–120 timer; standard 36)"
+          "forecast_duration": "Ønsket prognosevarighed (36–120 timer; standard 36)"
         },
         "data_description": {
           "forecast": "Prognosefunktionen kan betydeligt øge API-responstiden."
@@ -221,7 +223,7 @@
   "services": {
     "manual_update": {
       "name": "Manuel opdatering",
-      "description": "Manuel start af dataopdatering for de valgte mål for SILAM Pollen-integrationen.",
+      "description": "Start manuelt en dataopdatering for de valgte mål i SILAM Pollen-integrationen.",
       "fields": {
         "targets": {
           "name": "Mål",

@@ -1,4 +1,5 @@
 {
+  "title": "SILAM Pollen Monitor",
   "entity": {
     "sensor": {
       "index": {
@@ -45,17 +46,25 @@
       "fetch_duration": {
         "name": "Время запроса"
       },
+      "forecast_horizon": {
+        "name": "Горизонт прогноза",
+        "state_attributes": {
+          "forecast_duration": {
+            "name": "Желаемая длительность прогноза"
+          }
+        }
+      },
       "alder": {
         "name": "Ольха",
         "unit_of_measurement": "зерна/м³",
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
-            },
+          },
           "tomorrow": {
             "name": "Прогноз на завтра"
-            }
-         }
+          }
+        }
       },
       "birch": {
         "name": "Берёза",
@@ -63,11 +72,11 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
-            },
+          },
           "tomorrow": {
             "name": "Прогноз на завтра"
-            }
-         }
+          }
+        }
       },
       "grass": {
         "name": "Трава",
@@ -75,11 +84,11 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
-            },
+          },
           "tomorrow": {
             "name": "Прогноз на завтра"
-            }
-         }
+          }
+        }
       },
       "hazel": {
         "name": "Лещина",
@@ -87,11 +96,11 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
-            },
+          },
           "tomorrow": {
             "name": "Прогноз на завтра"
-            }
-         }
+          }
+        }
       },
       "mugwort": {
         "name": "Полынь",
@@ -99,11 +108,11 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
-            },
+          },
           "tomorrow": {
             "name": "Прогноз на завтра"
-            }
-         }
+          }
+        }
       },
       "olive": {
         "name": "Олива",
@@ -111,11 +120,11 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
-            },
+          },
           "tomorrow": {
             "name": "Прогноз на завтра"
-            }
-         }
+          }
+        }
       },
       "ragweed": {
         "name": "Амброзия",
@@ -123,11 +132,11 @@
         "state_attributes": {
           "altitude": {
             "name": "Высота (уровень моря)"
-            },
+          },
           "tomorrow": {
             "name": "Прогноз на завтра"
-            }
-         }
+          }
+        }
       }
     },
     "weather": {
@@ -155,6 +164,47 @@
               "hazel": "Лещина",
               "unknown": "Неизвестно"
             }
+          },
+          "date": {
+            "name": "Дата и время прогноза"
+          },
+          "next_condition": {
+            "name": "Следующий индекс",
+            "state": {
+              "very_low": "Очень низкий",
+              "low": "Низкий",
+              "moderate": "Средний",
+              "high": "Высокий",
+              "very_high": "Очень высокий",
+              "unknown": "Неизвестно"
+            }
+          },
+          "altitude": {
+            "name": "Высота (уровень моря)"
+          },
+          "attribution": {
+            "name": "Источник данных"
+          },
+          "pollen_alder": {
+            "name": "Ольха"
+          },
+          "pollen_birch": {
+            "name": "Берёза"
+          },
+          "pollen_grass": {
+            "name": "Трава"
+          },
+          "pollen_olive": {
+            "name": "Олива"
+          },
+          "pollen_mugwort": {
+            "name": "Полынь"
+          },
+          "pollen_ragweed": {
+            "name": "Амброзия"
+          },
+          "pollen_hazel": {
+            "name": "Лещина"
           }
         }
       }
@@ -169,7 +219,7 @@
           "var": "Тип пыльцы",
           "update_interval": "Интервал обновления (в минутах, минимум 30)",
           "forecast": "**BETA** Включить прогноз пыльцы?",
-          "forecast_duration": "Длительность прогноза (36–120 ч; по умолчанию 36)"
+          "forecast_duration": "Желаемая длительность прогноза (36–120 ч; по умолчанию 36)"
         },
         "data_description": {
           "forecast": "Функция прогноза может значительно увеличить время ответа API."
@@ -196,7 +246,7 @@
           "var": "Тип пыльцы",
           "version": "Набор данных",
           "forecast": "**BETA** Включить прогноз пыльцы?",
-          "forecast_duration": "Длительность прогноза (36–120 ч; по умолчанию 36)"
+          "forecast_duration": "Желаемая длительность прогноза (36–120 ч; по умолчанию 36)"
         },
         "data_description": {
           "forecast": "Функция прогноза может значительно увеличить время ответа API."

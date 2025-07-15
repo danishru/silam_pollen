@@ -1,9 +1,9 @@
 {
-  "title": "SILAM Pollenövervakare",
+  "title": "SILAM Pollen Monitor",
   "entity": {
     "sensor": {
       "index": {
-        "name": "Index",
+        "name": "Pollenindex",
         "state": {
           "very_low": "Mycket låg",
           "low": "Låg",
@@ -46,12 +46,20 @@
       "fetch_duration": {
         "name": "Hämtningstid"
       },
+      "forecast_horizon": {
+        "name": "Prognoshorisont",
+        "state_attributes": {
+          "forecast_duration": {
+            "name": "Önskad prognoslängd"
+          }
+        }
+      },
       "alder": {
         "name": "Al",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (över havet)"
+            "name": "Höjd (över havsnivån)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -63,7 +71,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (över havet)"
+            "name": "Höjd (över havsnivån)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -75,7 +83,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (över havet)"
+            "name": "Höjd (över havsnivån)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -87,7 +95,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (över havet)"
+            "name": "Höjd (över havsnivån)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -99,7 +107,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (över havet)"
+            "name": "Höjd (över havsnivån)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -111,7 +119,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (över havet)"
+            "name": "Höjd (över havsnivån)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -123,7 +131,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Höjd (över havet)"
+            "name": "Höjd (över havsnivån)"
           },
           "tomorrow": {
             "name": "Pollenprognos för imorgon"
@@ -156,6 +164,47 @@
               "hazel": "Hassel",
               "unknown": "Okänd"
             }
+          },
+          "date": {
+            "name": "Prognosdatum & tid"
+          },
+          "next_condition": {
+            "name": "Nästa index",
+            "state": {
+              "very_low": "Mycket låg",
+              "low": "Låg",
+              "moderate": "Moderat",
+              "high": "Hög",
+              "very_high": "Mycket hög",
+              "unknown": "Okänd"
+            }
+          },
+          "altitude": {
+            "name": "Höjd (över havsnivån)"
+          },
+          "attribution": {
+            "name": "Datakälla"
+          },
+          "pollen_alder": {
+            "name": "Al"
+          },
+          "pollen_birch": {
+            "name": "Björk"
+          },
+          "pollen_grass": {
+            "name": "Gräs"
+          },
+          "pollen_olive": {
+            "name": "Oliv"
+          },
+          "pollen_mugwort": {
+            "name": "Malört"
+          },
+          "pollen_ragweed": {
+            "name": "Ambrosia"
+          },
+          "pollen_hazel": {
+            "name": "Hassel"
           }
         }
       }
@@ -166,10 +215,11 @@
       "user": {
         "data": {
           "zone_id": "Observationszon",
+          "altitude": "Höjd (över havet)",
           "var": "Pollentyp",
           "update_interval": "Uppdateringsintervall (minuter, minst 30)",
           "forecast": "**BETA** Aktivera pollenprognos?",
-          "forecast_duration": "Prognosens längd (36–120 timmar; standard 36)"
+          "forecast_duration": "Önskad prognoslängd (36–120 timmar; standard 36)"
         },
         "data_description": {
           "forecast": "Prognosfunktionen kan avsevärt öka API-svarstiden."
@@ -181,7 +231,7 @@
         "data": {
           "zone_name": "Zonnamn",
           "location": "Plats",
-          "altitude": "Höjd över havsnivå"
+          "altitude": "Höjd (över havet)"
         },
         "title": "Skapa SILAM Pollen-tjänst",
         "description": "Ange zonnamnet och justera koordinaterna vid behov.\n[Kolla in tjänstens täckningskarta](https://danishru.github.io/silam_pollen/)."
@@ -196,7 +246,7 @@
           "var": "Pollentyp",
           "version": "Datamängd",
           "forecast": "**BETA** Aktivera pollenprognos?",
-          "forecast_duration": "Prognosens längd (36–120 timmar; standard 36)"
+          "forecast_duration": "Önskad prognoslängd (36–120 timmar; standard 36)"
         },
         "data_description": {
           "forecast": "Prognosfunktionen kan avsevärt öka API-svarstiden."

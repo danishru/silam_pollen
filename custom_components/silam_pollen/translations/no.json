@@ -1,9 +1,9 @@
 {
-  "title": "SILAM Pollenmonitor",
+  "title": "SILAM Pollen Monitor",
   "entity": {
     "sensor": {
       "index": {
-        "name": "Indeks",
+        "name": "Pollenindeks",
         "state": {
           "very_low": "Svært lav",
           "low": "Lav",
@@ -46,12 +46,20 @@
       "fetch_duration": {
         "name": "Hentetid"
       },
+      "forecast_horizon": {
+        "name": "Prognosehorisont",
+        "state_attributes": {
+          "forecast_duration": {
+            "name": "Ønsket prognosevarighet"
+          }
+        }
+      },
       "alder": {
         "name": "Al",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Høyde (sjønivå)"
+            "name": "Høyde (over havnivået)"
           },
           "tomorrow": {
             "name": "Prognose for i morgen"
@@ -63,7 +71,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Høyde (sjønivå)"
+            "name": "Høyde (over havnivået)"
           },
           "tomorrow": {
             "name": "Prognose for i morgen"
@@ -75,7 +83,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Høyde (sjønivå)"
+            "name": "Høyde (over havnivået)"
           },
           "tomorrow": {
             "name": "Prognose for i morgen"
@@ -87,7 +95,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Høyde (sjønivå)"
+            "name": "Høyde (over havnivået)"
           },
           "tomorrow": {
             "name": "Prognose for i morgen"
@@ -99,7 +107,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Høyde (sjønivå)"
+            "name": "Høyde (over havnivået)"
           },
           "tomorrow": {
             "name": "Prognose for i morgen"
@@ -111,7 +119,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Høyde (sjønivå)"
+            "name": "Høyde (over havnivået)"
           },
           "tomorrow": {
             "name": "Prognose for i morgen"
@@ -123,7 +131,7 @@
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Høyde (sjønivå)"
+            "name": "Høyde (over havnivået)"
           },
           "tomorrow": {
             "name": "Prognose for i morgen"
@@ -156,6 +164,47 @@
               "hazel": "Hassel",
               "unknown": "Ukjent"
             }
+          },
+          "date": {
+            "name": "Prognosedato og tid"
+          },
+          "next_condition": {
+            "name": "Neste indeks",
+            "state": {
+              "very_low": "Svært lav",
+              "low": "Lav",
+              "moderate": "Moderat",
+              "high": "Høy",
+              "very_high": "Svært høy",
+              "unknown": "Ukjent"
+            }
+          },
+          "altitude": {
+            "name": "Høyde (over havnivået)"
+          },
+          "attribution": {
+            "name": "Datakilde"
+          },
+          "pollen_alder": {
+            "name": "Al"
+          },
+          "pollen_birch": {
+            "name": "Bjørk"
+          },
+          "pollen_grass": {
+            "name": "Gress"
+          },
+          "pollen_olive": {
+            "name": "Oliven"
+          },
+          "pollen_mugwort": {
+            "name": "Malurt"
+          },
+          "pollen_ragweed": {
+            "name": "Ambrosia"
+          },
+          "pollen_hazel": {
+            "name": "Hassel"
           }
         }
       }
@@ -166,13 +215,14 @@
       "user": {
         "data": {
           "zone_id": "Observasjonssone",
+          "altitude": "Høyde over havnivået",
           "var": "Pollentype",
           "update_interval": "Oppdateringsintervall (minutter, minst 30)",
           "forecast": "**BETA** Aktiver pollenprognose?",
-          "forecast_duration": "Varighet for prognose (36–120 timer; standard 36)"
+          "forecast_duration": "Ønsket prognosevarighet (36–120 timer; standard 36)"
         },
         "data_description": {
-          "forecast": "Prognosefunksjonen kan betydelig øke API-svarstiden."
+          "forecast": "Prognosefunksjonen kan betydelig øke API-svartiden."
         },
         "title": "Opprett SILAM Pollen-tjeneste",
         "description": "Konfigurer parametrene nedenfor.\nPrognoser er for vitenskapelig bruk; nøyaktighet garanteres ikke."
@@ -181,10 +231,10 @@
         "data": {
           "zone_name": "Sonenavn",
           "location": "Plassering",
-          "altitude": "Høyde over havet"
+          "altitude": "Høyde over havnivået"
         },
         "title": "Opprett SILAM Pollen-tjeneste",
-        "description": "Angi sonenavnet og juster koordinatene om nødvendig.\n[Sjekk tjenestekartet](https://danishru.github.io/silam_pollen/)."
+        "description": "Angi sonenavn og juster koordinatene om nødvendig.\n[Se dekningskartet](https://danishru.github.io/silam_pollen/)."
       }
     }
   },
@@ -196,10 +246,10 @@
           "var": "Pollentype",
           "version": "Datasett",
           "forecast": "**BETA** Aktiver pollenprognose?",
-          "forecast_duration": "Varighet for prognose (36–120 timer; standard 36)"
+          "forecast_duration": "Ønsket prognosevarighet (36–120 timer; standard 36)"
         },
         "data_description": {
-          "forecast": "Prognosefunksjonen kan betydelig øke API-svarstiden."
+          "forecast": "Prognosefunksjonen kan betydelig øke API-svartiden."
         },
         "title": "SILAM Pollen-alternativer"
       }
@@ -221,11 +271,11 @@
   "services": {
     "manual_update": {
       "name": "Manuell oppdatering",
-      "description": "Manuell igangsetting av datoppdatering for de valgte målene for SILAM Pollen-integrasjonen.",
+      "description": "Manuell igangsetting av dataoppdatering for valgte mål i SILAM Pollen-integrasjonen.",
       "fields": {
         "targets": {
           "name": "Mål",
-          "description": "Velg ett eller flere enheter eller entiteter for oppdatering."
+          "description": "Velg en eller flere enheter eller entiteter som skal oppdateres."
         }
       }
     }
