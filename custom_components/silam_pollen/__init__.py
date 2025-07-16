@@ -8,6 +8,7 @@ import voluptuous as vol
 from homeassistant.components.persistent_notification import (
     async_create as persistent_notification_async_create,
 )
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import SupportsResponse
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 
@@ -30,6 +31,16 @@ async def async_setup(hass, _config):
     # Если сервис уже существует (hot-reload custom_component) — повторно не создаём
     if hass.services.has_service(DOMAIN, "manual_update"):
         return True
+
+    if not hass.data.get("silam_pollen_card_registered"):
+        await hass.http.async_register_static_paths([
+            StaticPathConfig(
+                "/local/silam-forecast-card.js",
+                hass.config.path("custom_components", DOMAIN, "silam-forecast-card.js"),
+                False,
+            )
+        ])
+        hass.data["silam_pollen_card_registered"] = True
 
     # Импорт внутри функции, чтобы не тащить зависимость при unit-тестах без HA
     from homeassistant.helpers.device_registry import async_get as async_get_device_registry
