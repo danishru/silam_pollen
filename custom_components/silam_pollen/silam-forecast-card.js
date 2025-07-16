@@ -19,7 +19,13 @@ class SilamForecastCard extends HTMLElement {
   setConfig(cfg) {
     if (!cfg || !cfg.entity)
       throw new Error("silam-forecast-card: 'entity' is required");
-    this._cfg = { forecast_type: "hourly", ...cfg };
+    // добавили display_attribute
+    this._cfg = {
+      forecast_type: "hourly",
+      only_silam: true,
+      display_attribute: "",
+      ...cfg
+    };
     this._initDom();
   }
 
@@ -39,9 +45,13 @@ class SilamForecastCard extends HTMLElement {
   _initDom() {
     if (this.shadowRoot) return;
     this.attachShadow({ mode: "open" });
-    this.shadowRoot.innerHTML =
-      `<ha-card><div id="body" style="padding:16px">Loading…</div></ha-card>`;
-    this._body = this.shadowRoot.getElementById("body");
+    this.shadowRoot.innerHTML = `
+      <ha-card>
+        <div id="attr" style="padding:8px 16px; font-size: 0.85em; color: var(--secondary-text-color)"></div>
+        <div id="body" style="padding:16px">Loading…</div>
+      </ha-card>`;
+    this._attrEl = this.shadowRoot.getElementById("attr");
+    this._body   = this.shadowRoot.getElementById("body");
   }
 
   /* ---------- локализация ---------- */
@@ -85,20 +95,138 @@ class SilamForecastCard extends HTMLElement {
 
   /* ---------- рендер ---------- */
   _renderList(arr) {
+    // Inject CSS с clamp() один раз
+    if (!this._clampStyleInjected) {
+      const style = document.createElement("style");
+      style.textContent = `
+        .status-text {
+          font-size: clamp(1em, 5vw, 2em);
+          margin: 0;
+          line-height: 1.2;    /* плотный межстрочный интервал */
+        }
+        .value-text {
+          font-size: clamp(0.9em, 4vw, 1.6em);
+          margin: 0;
+          line-height: 1.2;
+        }
+      `;
+      this.shadowRoot.appendChild(style);
+      this._clampStyleInjected = true;
+    }
+  
+    // Очистка
+    this._body.innerHTML = "";
+    const stateObj = this._hass.states[this._cfg.entity];
+    if (!stateObj) return;
+  
+    // HEADER
+    const header = document.createElement("div");
+    header.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--divider-color);
+    `;
+  
+    // GRID: 3 колонки (64px, 1fr, auto), только горизонтальный gap
+    const grid = document.createElement("div");
+    grid.style.cssText = `
+      display: grid;
+      width: 100%;
+      grid-template-columns: 64px 1fr auto;
+      column-gap: 8px;
+      row-gap: 0;
+      align-items: center;
+    `;
+  
+    // 1) Иконка 64px
+    const iconEl = document.createElement("ha-state-icon");
+    iconEl.hass     = this._hass;
+    iconEl.stateObj = stateObj;
+    iconEl.style.setProperty("--mdc-icon-size", "64px");
+    grid.appendChild(iconEl);
+  
+    // 2) Имя состояния + friendly_name без лишних отступов
+    const col2 = document.createElement("div");
+    col2.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      /* никакие gap/margin здесь не нужны */
+    `;
+  
+    const stateNameEl = document.createElement("span");
+    stateNameEl.classList.add("status-text");
+    stateNameEl.textContent = this._hass.formatEntityState(stateObj);
+    col2.appendChild(stateNameEl);
+  
+    const friendlyEl = document.createElement("span");
+    friendlyEl.style.cssText = `
+      font-size: 0.9em;
+      color: var(--secondary-text-color);
+      margin: 0;
+      line-height: 1.2;
+    `;
+    friendlyEl.textContent = stateObj.attributes.friendly_name || "";
+    col2.appendChild(friendlyEl);
+  
+    grid.appendChild(col2);
+  
+    // 3) value_attribute справа
+    const col3 = document.createElement("div");
+    col3.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    `;
+    const key = this._cfg.value_attribute;
+    if (key) {
+      const valEl = document.createElement("span");
+      valEl.classList.add("value-text");
+      valEl.textContent = this._hass.formatEntityAttributeValue(stateObj, key) || "";
+      col3.appendChild(valEl);
+    }
+    // placeholder для равной высоты
+    const placeholder = document.createElement("span");
+    placeholder.innerHTML = "&nbsp;";
+    placeholder.style.height = "0";
+    col3.appendChild(placeholder);
+  
+    grid.appendChild(col3);
+    header.appendChild(grid);
+  
+    // 4) display_attribute под гридом
+    const disp = this._cfg.display_attribute;
+    if (disp) {
+      const dispEl = document.createElement("div");
+      dispEl.style.cssText = `
+        padding: 4px 8px 16px 8px;
+        font-size: 0.9em;
+        color: var(--secondary-text-color);
+      `;
+      dispEl.textContent = this._hass.formatEntityAttributeValue(stateObj, disp) || "";
+      header.appendChild(dispEl);
+    }
+  
+    this._body.appendChild(header);
+  
+    // 5) Прогноз
     if (!Array.isArray(arr) || !arr.length) {
       this._body.textContent = "No forecast data";
       return;
     }
     const lang = this._hass.language || "en";
-    this._body.innerHTML = `
+    const ul = document.createElement("ul");
+    ul.style.cssText = "list-style:none;padding:0;margin:0";
+    ul.innerHTML = `
       <style>
-        .pollen{color:var(--secondary-text-color);font-size:.9em}
-        .pollen span{margin-right:6px}
+        .pollen { color: var(--secondary-text-color); font-size: .9em }
+        .pollen span { margin-right: 6px }
       </style>
-      <ul style="list-style:none;padding:0;margin:0">
-        ${arr.map(i=>this._rowHTML(i,lang)).join("")}
-      </ul>`;
+      ${arr.map(i => this._rowHTML(i, lang)).join("")}
+    `;
+    this._body.appendChild(ul);
   }
+                          
   _rowHTML(i,lang) {
     const dt   = new Date(i.datetime);
     const date = dt.toLocaleDateString(lang,{weekday:"short",month:"short",day:"numeric"});
@@ -134,17 +262,16 @@ class SilamForecastCard extends HTMLElement {
    * подходящую weather-сущность silam_pollen_*_forecast
    */
   static getStubConfig(hass) {
-    // найдём все weather-сущности нашей интеграции
-    const ent = Object.keys(hass.states).filter((id) =>
-      id.startsWith("weather.silam_pollen") &&
-      id.endsWith("_forecast")
-    );
+    const ent = Object.keys(hass.states)
+      .filter(id=> id.startsWith("weather.silam_pollen") && id.endsWith("_forecast"));
     return {
-      type: "custom:silam-forecast-card",
-      entity: ent.length ? ent[0] : "",
-      forecast_type: "hourly",
+      type:           "custom:silam-forecast-card",
+      only_silam:     true,
+      entity:         ent.length ? ent[0] : "",
+      forecast_type:  "hourly",
+      display_attribute: "",
     };
-  }
+  }  
 
   /**
    * UI просит создать элемент-редактор
@@ -171,52 +298,78 @@ class SilamForecastCardEditor extends LitElement {
 
   constructor() {
     super();
-    this._config = {};
+    // по-умолчанию показываем только нашу интеграцию
+    this._config = { only_silam: true };
   }
 
   setConfig(config) {
-    this._config = { ...config };
+    this._config = { only_silam: true, ...config };
   }
 
   firstUpdated() {
-    // чтобы <ha-form> и <ha-entity-picker> работали
     window.loadCardHelpers().then(h => (this._helpers = h));
   }
 
-  // Возвращаем все weather.silam_pollen_*_forecast
-  _getEntities() {
+  // все weather.silam_pollen_*_forecast
+  _getSilamEntities() {
     return Object.keys(this.hass.states)
-      .filter((eid) =>
+      .filter(eid =>
         eid.startsWith("weather.silam_pollen") &&
         eid.endsWith("_forecast")
       )
       .sort();
   }
 
-  // Универсальный диспатч изменений
   _valueChanged(ev) {
-    this._config = { ...this._config, ...ev.detail.value };
+    const cfg = { ...this._config, ...ev.detail.value };
+    this._config = cfg;
     this.dispatchEvent(new CustomEvent("config-changed", {
-      detail: { config: this._config },
+      detail: { config: cfg },
       bubbles: true,
       composed: true,
     }));
   }
 
+  // возвращаем список атрибутов выбранной weather-сущности
+  _getAttributes() {
+    const ent = this._config.entity;
+    if (!ent || !this.hass.states[ent]) return [];
+    return Object.keys(this.hass.states[ent].attributes).sort();
+  }
+  
   render() {
-    if (!this._helpers || !this.hass) {
-      return html``;
-    }
-    const entities = this._getEntities();
+    if (!this._helpers || !this.hass) return html``;
+
+    const silam = this._config.only_silam !== false;
+    const silamEntities = silam ? this._getSilamEntities() : [];
+    const attrs = this._getAttributes().map(a => ({ value: a, label: a }));
 
     const schema = [
+      {
+        name: "only_silam",
+        selector: { boolean: {} },
+        default: true,
+      },
       {
         name: "entity",
         required: true,
         selector: {
-          entity: {
-            domain: "weather",
-            include_entities: entities,
+          entity: silam
+            ? { include_entities: silamEntities }
+            : { domain: "weather" },
+        },
+      },
+      {
+        name: "value_attribute",           // ← новый селектор
+        selector: {
+          select: { options: attrs },
+        },
+      },
+      {
+        name: "display_attribute",
+        selector: {
+          select: {
+            options: attrs,
           },
         },
       },
@@ -241,19 +394,29 @@ class SilamForecastCardEditor extends LitElement {
     ];
 
     return html`
-      <div style="padding: 16px">
+      <div style="padding:16px">
         <ha-form
           .hass=${this.hass}
           .data=${this._config}
           .schema=${schema}
-          @value-changed=${this._valueChanged}
+          @value-changed=${e => {
+            this._config = { ...this._config, ...e.detail.value };
+            this.dispatchEvent(new CustomEvent("config-changed", {
+              detail: { config: this._config },
+              bubbles: true,
+              composed: true,
+            }));
+          }}
         ></ha-form>
       </div>
     `;
   }
 }
 
-customElements.define("silam-forecast-card-editor", SilamForecastCardEditor);
+customElements.define(
+  "silam-forecast-card-editor",
+  SilamForecastCardEditor
+);
 
 // ======================================================================
 //  Регистрируем карточку в списке Custom Cards
