@@ -5,7 +5,9 @@
     "@danishru"
   ],
   "config_flow": true,
-  "dependencies": [],
+  "after_dependencies": [
+    "http"
+  ],
   "documentation": "https://github.com/danishru/silam_pollen#readme",
   "integration_type": "service",
   "iot_class": "cloud_polling",
