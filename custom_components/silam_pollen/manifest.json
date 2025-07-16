@@ -1,13 +1,13 @@
 {
   "domain": "silam_pollen",
   "name": "SILAM Pollen monitor",
+  "after_dependencies": [
+    "http"
+  ],
   "codeowners": [
     "@danishru"
   ],
   "config_flow": true,
-  "after_dependencies": [
-    "http"
-  ],
   "documentation": "https://github.com/danishru/silam_pollen#readme",
   "integration_type": "service",
   "iot_class": "cloud_polling",
