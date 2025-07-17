@@ -49,7 +49,6 @@ const weatherAttrIcons = {
   wind_gust_speed: "mdi:weather-dust",
 };
 
-
 class SilamForecastCard extends HTMLElement {
   /* ---------- конфигурация ---------- */
   setConfig(cfg) {
@@ -188,137 +187,257 @@ class SilamForecastCard extends HTMLElement {
       this.shadowRoot.appendChild(style);
       this._clampStyleInjected = true;
     }
-  
+
     // Очистка
     this._body.innerHTML = "";
     const stateObj = this._hass.states[this._cfg.entity];
     if (!stateObj) return;
-    
+    const mode = this._cfg.forecast; // "show_current" | "show_forecast" | "show_both"
     // Есть ли прогноз?
     const hasForecast = Array.isArray(arr) && arr.length > 0;
-  
-    // HEADER
-    const header = document.createElement("div");
-    // рисуем разделитель только если есть прогноз
-    header.style.cssText = `
-      display: flex;
-      flex-direction: column;
-      padding-bottom: 8px;
-      ${ hasForecast
-        ? "border-bottom: 1px solid var(--divider-color);"
-        : ""
-      }
-    `;
-  
-    // GRID: 3 колонки (64px, 1fr, auto), только горизонтальный gap
-    const grid = document.createElement("div");
-    grid.style.cssText = `
-      display: grid;
-      width: 100%;
-      grid-template-columns: 64px 1fr auto;
-      column-gap: 8px;
-      align-items: center;
-    `;
 
-    // 1) Иконка 64px
-    const iconEl = document.createElement("ha-state-icon");
-    iconEl.hass     = this._hass;
-    iconEl.stateObj = stateObj;
-    iconEl.style.setProperty("--mdc-icon-size", "64px");
-    grid.appendChild(iconEl);
-  
-    // 2) Имя состояния + friendly_name без лишних отступов
-    const col2 = document.createElement("div");
-    col2.style.cssText = `
-      display: flex;
-      flex-direction: column;
-      /* никакие gap/margin здесь не нужны */
-    `;
-  
-    const stateNameEl = document.createElement("span");
-    stateNameEl.classList.add("status-text");
-    stateNameEl.textContent = this._hass.formatEntityState(stateObj);
-    col2.appendChild(stateNameEl);
-  
-    const friendlyEl = document.createElement("span");
-    friendlyEl.style.cssText = `
-      font-size: 0.9em;
-      color: var(--secondary-text-color);
-      margin: 0;
-      line-height: 1.2;
-    `;
-    friendlyEl.textContent = stateObj.attributes.friendly_name || "";
-    col2.appendChild(friendlyEl);
-  
-    grid.appendChild(col2);
-  
-    // 3) display_attribute справа
-    const col3 = document.createElement("div");
-    col3.style.cssText = `
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      font-size: 1.6em;
-    `;
-    const key = this._cfg.display_attribute;
-    if (key) {
-      const el = this._createAttributeValueEl(key, stateObj);
-      // только цвет и отступы (font-size уже в .value-text)
-      el.style.cssText += `
-        color: var(--text-color);
-        margin: 0 0 4px 0;
+  // --------------------
+  // 1) HEADER (текущая погода)
+  // --------------------
+    if (mode !== "show_forecast") {
+      const header = document.createElement("div");
+      header.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 8px;
+        ${ hasForecast
+          ? "border-bottom: 1px solid var(--divider-color);"
+          : ""
+        }
       `;
-      col3.appendChild(el);
-    }
 
-    // placeholder для равной высоты
-    const placeholder = document.createElement("span");
-    placeholder.innerHTML = "&nbsp;";
-    placeholder.style.height = "0";
-    col3.appendChild(placeholder);  
-    grid.appendChild(col3);
-    header.appendChild(grid);
-  
-    // 4) value_attribute — теперь в виде грида 2×4
-    const valueGrid = document.createElement("div");
-    valueGrid.style.cssText = `
-      display: grid;
-      grid-template-columns: 1fr auto;
-      grid-template-rows: repeat(4, auto);
-    `;
+      // GRID: 3 колонки (64px, 1fr, auto), только горизонтальный gap
+      const grid = document.createElement("div");
+      grid.style.cssText = `
+        display: grid;
+        width: 100%;
+        grid-template-columns: 64px 1fr auto;
+        column-gap: 8px;
+        align-items: center;
+      `;
 
-    // Перебираем 1…8, но 1–4 влево, 5–8 вправо
-    for (let i = 1; i <= 8; i++) {
-      const cfgKey = `value_attribute_${i}`;
-      const attr = this._cfg[cfgKey];
-      if (!attr) {
-        continue;
-      }
+      // 1) Иконка 64px
+      const iconEl = document.createElement("ha-state-icon");
+      iconEl.hass     = this._hass;
+      iconEl.stateObj = stateObj;
+      iconEl.style.setProperty("--mdc-icon-size", "64px");
+      grid.appendChild(iconEl);
 
-      const el = this._createAttributeValueEl(attr, stateObj);
-      // сохраняем цвет
-      el.style.cssText += `
+      // 2) Имя состояния + friendly_name
+      const col2 = document.createElement("div");
+      col2.style.cssText = `
+        display: flex;
+        flex-direction: column;
+      `;
+      const stateNameEl = document.createElement("span");
+      stateNameEl.classList.add("status-text");
+      stateNameEl.textContent = this._hass.formatEntityState(stateObj);
+      col2.appendChild(stateNameEl);
+      const friendlyEl = document.createElement("span");
+      friendlyEl.style.cssText = `
+        font-size: 0.9em;
         color: var(--secondary-text-color);
+        margin: 0;
+        line-height: 1.2;
+      `;
+      friendlyEl.textContent = stateObj.attributes.friendly_name || "";
+      col2.appendChild(friendlyEl);
+      grid.appendChild(col2);
+
+      // 3) display_attribute справа
+      const col3 = document.createElement("div");
+      col3.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        font-size: 1.6em;
+      `;
+      const key = this._cfg.display_attribute;
+      if (key) {
+        const el = this._createAttributeValueEl(key, stateObj);
+        el.style.cssText += `
+          color: var(--text-color);
+          margin: 0 0 4px 0;
+        `;
+        col3.appendChild(el);
+      }
+      const placeholder = document.createElement("span");
+      placeholder.innerHTML = "&nbsp;";
+      placeholder.style.height = "0";
+      col3.appendChild(placeholder);
+      grid.appendChild(col3);
+      header.appendChild(grid);
+
+      // 4) value_attribute — grid 2×4
+      const valueGrid = document.createElement("div");
+      valueGrid.style.cssText = `
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: repeat(4, auto);
+      `;
+      for (let i = 1; i <= 8; i++) {
+        const cfgKey = `value_attribute_${i}`;
+        const attr = this._cfg[cfgKey];
+        if (!attr) continue;
+        const el = this._createAttributeValueEl(attr, stateObj);
+        el.style.cssText += `color: var(--secondary-text-color);`;
+        const col = i <= 4 ? 1 : 2;
+        const row = i <= 4 ? i : i - 4;
+        el.style.gridColumn = String(col);
+        el.style.gridRow    = String(row);
+        valueGrid.appendChild(el);
+      }
+      header.appendChild(valueGrid);
+
+      // Вставляем header
+      this._body.appendChild(header);
+    }
+  // --------------------
+  // 2) ГРАФИЧЕСКИЙ БЛОК (прогноз)
+  // --------------------
+  if ((mode !== "show_current") && hasForecast) {
+    // === Блок с иконками через ha-state-icon и кастомной подписью ===
+    if (["hourly", "twice_daily", "daily"].includes(this._cfg.forecast_type)
+        && Array.isArray(arr) && arr.length) {
+      const lang = this._hass.language || "en";
+      const isSilamSource = stateObj.attributes.attribution === "Powered by silam.fmi.fi";
+
+      // Ограничиваем по forecast_slots
+      const slots = this._cfg.forecast_slots ?? arr.length;
+      const items = arr.slice(0, slots);
+
+      // Ваши иконки
+      const forecastIcons = {
+        default: "mdi:flower-pollen-outline",
+        state: {
+          very_low:  "mdi:emoticon-happy-outline",
+          low:       "mdi:emoticon-neutral-outline",
+          moderate:  "mdi:emoticon-sad-outline",
+          high:      "mdi:emoticon-cry-outline",
+          very_high: "mdi:emoticon-dead-outline",
+          unknown:   "mdi:progress-question"
+        }
+      };
+
+      // Контейнер для столбцов
+      const chart = document.createElement("div");
+      chart.style.cssText = `
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
       `;
 
-      // столбец 1 для i=1..4, столбец 2 для i=5..8
-      const col = i <= 4 ? 1 : 2;
-      // строка —  i для 1..4, и (i-4) для 5..8
-      const row = i <= 4 ? i : i - 4;
+      items.forEach(i => {
+        const dt = new Date(i.datetime);
+        let topLabel;
+        if (this._cfg.forecast_type === "hourly") {
+          topLabel = dt.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
+        } else if (this._cfg.forecast_type === "twice_daily") {
+          const weekday = dt.toLocaleDateString(lang, { weekday: "short" });
+          const part = i.is_daytime === false
+            ? this._hass.localize("ui.card.weather.night") || "Night"
+            : this._hass.localize("ui.card.weather.day")   || "Day";
+          topLabel = `${weekday}\n${part}`;
+        } else {
+          topLabel = dt.toLocaleDateString(lang, { weekday: "short" });
+        }
 
-      el.style.gridColumn = String(col);
-      el.style.gridRow    = String(row);
+        const iconName = isSilamSource
+          ? (forecastIcons.state[i.condition] || forecastIcons.default)
+          : null;
 
-      valueGrid.appendChild(el);
+        const fakeState = {
+          entity_id: "weather.forecast",
+          state:      i.condition,
+          attributes: {}
+        };
+
+        const col = document.createElement("div");
+        col.style.cssText = `
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          white-space: pre-wrap;
+          overflow-wrap: break-word;
+          flex: 1 1 0;
+          width: 0;
+          min-width: 36px;
+          box-sizing: border-box;
+        `;
+
+        // Время / день
+        const topEl = document.createElement("div");
+        topEl.textContent = topLabel;
+        topEl.style.cssText = `
+          font-size: 1em;
+          font-weight: 400;
+          text-align: center;
+          margin-bottom: 2px;
+          color: var(--primary-text-color);
+          line-height: 1.2;
+        `;
+        col.appendChild(topEl);
+
+        // Иконка
+        if (iconName) {
+          const iconEl = document.createElement("ha-icon");
+          iconEl.icon = iconName;
+          iconEl.style.cssText = `
+            --mdc-icon-size: 2.2em;
+            margin: 4px 0;
+          `;
+          col.appendChild(iconEl);
+        } else {
+          const iconEl = document.createElement("ha-state-icon");
+          iconEl.hass     = this._hass;
+          iconEl.stateObj = fakeState;
+          iconEl.style.cssText = `
+            --mdc-icon-size: 2.2em;
+            margin: 4px 0;
+          `;
+          col.appendChild(iconEl);
+        }
+
+        // Подпись
+        const labelEl = document.createElement("div");
+        if (isSilamSource) {
+          const condKey = `component.silam_pollen.entity.sensor.index.state.${i.condition}`;
+          labelEl.textContent = this._t(condKey) || this._cond[i.condition] || i.condition;
+          labelEl.style.cssText = `
+            font-size: 0.75em;
+            text-align: center;
+            color: var(--secondary-text-color);
+            margin-top: 4px;
+          `;
+        } else {
+          const temp = i.temperature != null ? `${i.temperature}°` : '—';
+          labelEl.textContent = temp;
+          labelEl.style.cssText = `
+            font-size: 1em;
+            text-align: center;
+            margin-top: 4px;
+          `;
+        }
+        col.appendChild(labelEl);
+
+        chart.appendChild(col);
+      });
+
+      // Добавляем графический блок
+      this._body.appendChild(chart);
     }
-
-    header.appendChild(valueGrid);
-  
-    this._body.appendChild(header);
-  
-    // 5) Прогноз
+  }
+    // 5) Текстовый список прогноза
     if (!Array.isArray(arr) || !arr.length) {
-      // Нет данных прогноза — оставляем только заголовок (icon + state + display_attribute)
       return;
     }
     const lang = this._hass.language || "en";
@@ -405,12 +524,14 @@ class SilamForecastCardEditor extends LitElement {
 
   constructor() {
     super();
-    // по-умолчанию показываем только нашу интеграцию
-    this._config = { only_silam: true };
+    this._config = {
+      only_silam:     true, // по-умолчанию показываем только нашу интеграцию
+      forecast:  "show_both",  // по умолчанию только прогноз
+    };
   }
 
   setConfig(config) {
-    this._config = { only_silam: true, ...config };
+    this._config = { only_silam: true, forecast: "show_both", ...config };
   }
 
   firstUpdated() {
@@ -454,6 +575,10 @@ class SilamForecastCardEditor extends LitElement {
       case "forecast_slots":
         return this.hass.localize(
           "ui.panel.lovelace.editor.card.weather-forecast.forecast_slots"
+        );
+      case "forecast":
+        return this.hass.localize(
+          "ui.panel.lovelace.editor.card.weather-forecast.weather_to_show"
         );
 
       // Поле "name"
@@ -545,6 +670,19 @@ class SilamForecastCardEditor extends LitElement {
         iconPath: "mdi:text-short",
         flatten:  true,
         schema:   advancedSchema,
+      },
+      {
+        name: "forecast",
+        selector: {
+          select: {
+            options: [
+              { value: "show_current",  label: this.hass.localize("ui.panel.lovelace.editor.card.weather-forecast.show_only_current")},
+              { value: "show_forecast", label: this.hass.localize("ui.panel.lovelace.editor.card.weather-forecast.show_only_forecast")},
+              { value: "show_both",     label: this.hass.localize("ui.panel.lovelace.editor.card.weather-forecast.show_both")},
+            ]
+          }
+        },
+        default: this._config.forecast,
       },
       {
         name: "forecast_type",
