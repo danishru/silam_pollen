@@ -240,6 +240,7 @@ class SilamForecastCard extends HTMLElement {
     // Есть ли прогноз?
     const hasForecast = Array.isArray(arr) && arr.length > 0;
 
+
   // --------------------
   // 1) HEADER (текущая погода)
   // --------------------
@@ -501,73 +502,111 @@ class SilamForecastCard extends HTMLElement {
 
       // === Дополнительный блок: столбчатые графики по пыльце ===
       if (Array.isArray(this._cfg.pollen_attributes) && this._cfg.pollen_attributes.length) {
-        const lang = this._hass.language || "en";
-        // те же слоты, что и в основном прогнозе
+        const stateObj = this._hass.states[this._cfg.entity];
+        const availableAttrs = this._cfg.pollen_attributes.filter(
+          attr => stateObj.attributes[attr] != null
+        );
+        if (!availableAttrs.length) {
+          return;
+        }
         const items = arr.slice(0, this._cfg.forecast_slots ?? arr.length);
 
-        this._cfg.pollen_attributes.forEach(attr => {
+        availableAttrs.forEach(attr => {
           const pollenType = attr.replace("pollen_", "");
-          const scale = POLLEN_SCALES[pollenType];
+          const scale      = POLLEN_SCALES[pollenType];
           if (!scale) return;
 
-          // 1) Заголовок: иконка + имя + текущее значение
+          // общий контейнер
+          const block = document.createElement("div");
+          block.style.cssText = `
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 8px 0;
+          `;
+
+          // фиксированный header
           const header = document.createElement("div");
           header.style.cssText = `
             display: flex;
+            flex-direction: column;
             align-items: center;
-            padding: 8px 0;
+            flex-shrink: 0;
+            min-width: 80px;
           `;
-          const icon = document.createElement("ha-icon");
-          icon.icon = weatherAttrIcons[attr] || "mdi:flower-pollen";
-          icon.style.cssText = `
-            --mdc-icon-size: 1.5em;
-            margin-right: 6px;
-          `;
-          header.appendChild(icon);
+          // название
           const nameEl = document.createElement("span");
           nameEl.textContent = this._labels[attr] || pollenType;
           nameEl.style.cssText = `
             font-size: 1em;
             font-weight: 500;
+            margin-bottom: 4px;
           `;
           header.appendChild(nameEl);
-          const curr = this._hass.formatEntityAttributeValue(this._hass.states[this._cfg.entity], attr);
-          if (curr) {
-            const valEl = document.createElement("span");
-            valEl.textContent = curr;
-            valEl.style.cssText = `
-              margin-left: auto;
-              font-size: 1em;
-            `;
-            header.appendChild(valEl);
-          }
-          this._body.appendChild(header);
+          // иконка
+          const currVal = stateObj.attributes[attr] || 0;
+          let iconIdx = scale.thresholds.findLastIndex(th => currVal >= th);
+          if (iconIdx < 0) iconIdx = 0;
+          const iconColor = scale.colors[iconIdx];
+          const icon = document.createElement("ha-icon");
+          icon.icon = weatherAttrIcons[attr] || "mdi:flower-pollen";
+          icon.style.cssText = `
+            --mdc-icon-size: 3em;
+            color: ${iconColor};
+            margin-bottom: 4px;
+          `;
+          header.appendChild(icon);
+          // текущее значение
+          const valEl = document.createElement("span");
+          valEl.textContent = this._hass.formatEntityAttributeValue(stateObj, attr) || "–";
+          valEl.style.cssText = `
+            font-size: 0.9em;
+            margin-top: 2px;
+          `;
+          header.appendChild(valEl);
 
-          // 2) Контейнер со столбиками
+          block.appendChild(header);
+
+          // скроллимый контейнер столбиков
           const bars = document.createElement("div");
           bars.style.cssText = `
             display: flex;
-            gap: 4px;
+            align-items: flex-end;
+            gap: clamp(2px, 0.5vw, 8px);    /* минимальный gap = 2px */
             overflow-x: auto;
-            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+            flex: 1 1 auto;                  /* растягиваем bars на всё оставшееся место */
+            width: 100%;
+            box-sizing: border-box;
+            padding-bottom: 4px;
           `;
+          const segHeight = BAR_CHART_HEIGHT / POLLEN_SEGMENTS;
 
           items.forEach(i => {
             const concentration = i[attr] != null ? i[attr] : 0;
-            let idx = scale.thresholds.findLastIndex(th => concentration >= th);
-            if (idx === -1) idx = 0;
-            const fillCount = idx;  // число залитых сегментов
-            const color     = scale.colors[idx];            
+            // для нуля — ничего не заливаем
+            let fillCount = 0;
+            let color     = "transparent";
+            if (concentration > 0) {
+              let idx = scale.thresholds.findLastIndex(th => concentration >= th);
+              if (idx < 0) idx = 0;
+              fillCount = Math.min(idx + 1, POLLEN_SEGMENTS);
+              color     = scale.colors[idx];
+            }
 
-            // ячейка одного столбика
             const cell = document.createElement("div");
             cell.style.cssText = `
+              flex: 1 1 clamp(20px, 10%, 48px);  
+              /* 
+                базовая ширина от 20px до 48px или 10%,
+                растём ровно вместе с bars, но не меньше и не больше 
+              */
               display: flex;
               flex-direction: column;
               align-items: center;
-              min-width: 24px;
+              box-sizing: border-box;
             `;
-
+            cell.title = `${concentration}`;
             // подпись времени/даты
             const lbl = document.createElement("div");
             lbl.textContent = this._cfg.forecast_type === "hourly"
@@ -581,7 +620,7 @@ class SilamForecastCard extends HTMLElement {
             `;
             cell.appendChild(lbl);
 
-            // контейнер сегментов
+            // контейнер и сегменты
             const segContainer = document.createElement("div");
             segContainer.style.cssText = `
               width: 100%;
@@ -589,8 +628,6 @@ class SilamForecastCard extends HTMLElement {
               display: flex;
               flex-direction: column-reverse;
             `;
-
-            const segHeight = BAR_CHART_HEIGHT / POLLEN_SEGMENTS;
             for (let s = 0; s < POLLEN_SEGMENTS; s++) {
               const seg = document.createElement("div");
               seg.style.cssText = `
@@ -601,12 +638,12 @@ class SilamForecastCard extends HTMLElement {
               `;
               segContainer.appendChild(seg);
             }
-
             cell.appendChild(segContainer);
             bars.appendChild(cell);
           });
 
-          this._body.appendChild(bars);
+          block.appendChild(bars);
+          this._body.appendChild(block);
         });
       }
     }
