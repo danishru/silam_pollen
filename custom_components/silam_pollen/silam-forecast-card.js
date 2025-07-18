@@ -134,40 +134,34 @@ class SilamForecastCard extends HTMLElement {
   _computeAttributeIcon(attr) {
     return weatherAttrIcons[attr] || null;
   }
-
+  
   /**
-   * Возвращает <span> с классом .value-text,
-   * внутри inline-flex-элемент:
-   *   [ha-icon (1em)] [текст]
+   * Возвращает <span class="value-flex">,
+   * внутри двух элементов:
+   *   [ha-icon] [текст]
    */
   _createAttributeValueEl(key, stateObj) {
     const value = this._hass.formatEntityAttributeValue(stateObj, key) || "";
-    const iconName = this._computeAttributeIcon(key);
-
-    // span сразу получает класс .value-text (font-size и line-height уже там)
+    const iconName = this._computeAttributeIcon(key); 
+    // общий контейнер с flex-классом
     const wrapper = document.createElement("span");
-    wrapper.classList.add("value-text");
-    wrapper.style.cssText = `
-      display: inline-flex;
-      align-items: center;
-    `;
-
+    wrapper.classList.add("value-flex");
+    // иконка (если есть)
     if (iconName) {
       const iconEl = document.createElement("ha-icon");
       iconEl.icon = iconName;
-      // 1em = font-size из .value-text
+      // вот здесь сразу всё вместе
       iconEl.style.cssText = `
         display: inline-flex;
-        --mdc-icon-size: 1.2em;
+        --mdc-icon-size: 1.35em;
         margin-right: 6px;
       `;
       wrapper.appendChild(iconEl);
     }
-
+    // текст  
     wrapper.appendChild(document.createTextNode(value));
     return wrapper;
   }
-
 
   /* ---------- рендер ---------- */
   _renderList(arr) {
@@ -180,7 +174,9 @@ class SilamForecastCard extends HTMLElement {
           margin: 0;
           line-height: 1.2;    /* плотный межстрочный интервал */
         }
-        .value-text {
+        .value-flex {
+          display: inline-flex;
+          align-items: center;
           line-height: 1.2;
         }
       `;
