@@ -49,6 +49,54 @@ const weatherAttrIcons = {
   wind_gust_speed: "mdi:weather-dust",
 };
 
+// ======================================================================
+//  Шкалы пыльцы и соответствующие цвета
+// ======================================================================
+// Общие цвета для всех видов
+const POLLEN_COLORS = [
+  "rgb(222,222,222)",
+  "rgb(0,222,0)",
+  "rgb(171,239,48)",
+  "rgb(239,222,48)",
+  "rgb(239,172,28)",
+  "rgb(255,137,28)",
+  "rgb(255,48,48)",
+  "rgb(255,0,137)",
+  "rgb(171,0,205)",
+];
+
+// Матрица: каждая запись — список видов + их пороги
+const SCALE_DEFS = [
+  {
+    species: ["birch", "grass", "hazel"],
+    thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000],
+  },
+  {
+    species: ["alder", "olive", "mugwort", "ragweed"],
+    thresholds: [0.1, 1, 5, 10, 25, 50, 100, 500, 1000],
+  },
+];
+
+// Собираем финальную константу автоматически
+const POLLEN_SCALES = Object.fromEntries(
+  SCALE_DEFS.flatMap(({ species, thresholds }) =>
+    species.map(sp => [
+      sp,
+      { thresholds, colors: POLLEN_COLORS }
+    ])
+  )
+);
+
+const BAR_CHART_HEIGHT = 80;      // общая высота “столбика” в пикселях
+const POLLEN_SEGMENTS = POLLEN_COLORS.length - 1; // =8
+
+// Пример результата:
+// {
+//   birch: { thresholds: [...], colors: [...] },
+//   grass: { thresholds: [...], colors: [...] },
+//   ...
+// }
+
 class SilamForecastCard extends HTMLElement {
   /* ---------- конфигурация ---------- */
   setConfig(cfg) {
@@ -297,17 +345,14 @@ class SilamForecastCard extends HTMLElement {
   // 2) ГРАФИЧЕСКИЙ БЛОК (прогноз)
   // --------------------
   if ((mode !== "show_current") && hasForecast) {
-    // === Блок с иконками через ha-state-icon и кастомной подписью ===
+    // === Существующий блок с иконками ===
     if (["hourly", "twice_daily", "daily"].includes(this._cfg.forecast_type)
         && Array.isArray(arr) && arr.length) {
       const lang = this._hass.language || "en";
       const isSilamSource = stateObj.attributes.attribution === "Powered by silam.fmi.fi";
-
-      // Ограничиваем по forecast_slots
       const slots = this._cfg.forecast_slots ?? arr.length;
       const items = arr.slice(0, slots);
 
-      // Ваши иконки
       const forecastIcons = {
         default: "mdi:flower-pollen-outline",
         state: {
@@ -320,7 +365,6 @@ class SilamForecastCard extends HTMLElement {
         }
       };
 
-      // Контейнер для столбцов
       const chart = document.createElement("div");
       chart.style.cssText = `
         display: flex;
@@ -334,29 +378,6 @@ class SilamForecastCard extends HTMLElement {
 
       items.forEach(i => {
         const dt = new Date(i.datetime);
-        let topLabel;
-        if (this._cfg.forecast_type === "hourly") {
-          topLabel = dt.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
-        } else if (this._cfg.forecast_type === "twice_daily") {
-          const weekday = dt.toLocaleDateString(lang, { weekday: "short" });
-          const part = i.is_daytime === false
-            ? this._hass.localize("ui.card.weather.night") || "Night"
-            : this._hass.localize("ui.card.weather.day")   || "Day";
-          topLabel = `${weekday}\n${part}`;
-        } else {
-          topLabel = dt.toLocaleDateString(lang, { weekday: "short" });
-        }
-
-        const iconName = isSilamSource
-          ? (forecastIcons.state[i.condition] || forecastIcons.default)
-          : null;
-
-        const fakeState = {
-          entity_id: "weather.forecast",
-          state:      i.condition,
-          attributes: {}
-        };
-
         const col = document.createElement("div");
         col.style.cssText = `
           display: flex;
@@ -370,20 +391,67 @@ class SilamForecastCard extends HTMLElement {
           box-sizing: border-box;
         `;
 
-        // Время / день
-        const topEl = document.createElement("div");
-        topEl.textContent = topLabel;
-        topEl.style.cssText = `
-          font-size: 1em;
-          font-weight: 400;
-          text-align: center;
-          margin-bottom: 2px;
-          color: var(--primary-text-color);
-          line-height: 1.2;
-        `;
-        col.appendChild(topEl);
+        // Время / День / Ночь (с разделением шрифтов)
+        if (this._cfg.forecast_type === "hourly") {
+          const topEl = document.createElement("div");
+          topEl.textContent = dt.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
+          topEl.style.cssText = `
+            font-size: 1em;
+            font-weight: 400;
+            text-align: center;
+            margin-bottom: 2px;
+            color: var(--primary-text-color);
+            line-height: 1.2;
+          `;
+          col.appendChild(topEl);
 
-        // Иконка
+        } else if (this._cfg.forecast_type === "daily") {
+          const topEl = document.createElement("div");
+          topEl.textContent = dt.toLocaleDateString(lang, { weekday: "short" });
+          topEl.style.cssText = `
+            font-size: 1em;
+            font-weight: 400;
+            text-align: center;
+            margin-bottom: 2px;
+            color: var(--primary-text-color);
+            line-height: 1.2;
+          `;
+          col.appendChild(topEl);
+
+        } else { // twice_daily
+          const weekday = dt.toLocaleDateString(lang, { weekday: "short" });
+          const part = i.is_daytime === false
+            ? this._hass.localize("ui.card.weather.night") || "Night"
+            : this._hass.localize("ui.card.weather.day")   || "Day";
+
+          const weekdayEl = document.createElement("div");
+          weekdayEl.textContent = weekday;
+          weekdayEl.style.cssText = `
+            font-size: 1em;
+            font-weight: 400;
+            text-align: center;
+            margin-bottom: 2px;
+            color: var(--primary-text-color);
+            line-height: 1.2;
+          `;
+          col.appendChild(weekdayEl);
+
+          const partEl = document.createElement("div");
+          partEl.textContent = part;
+          partEl.style.cssText = `
+            font-size: 0.75em;
+            color: var(--secondary-text-color);
+            text-align: center;
+            margin-top: 2px;
+            line-height: 1.2;
+          `;
+          col.appendChild(partEl);
+        }
+
+        // Иконка прогноза
+        const iconName = isSilamSource
+          ? (forecastIcons.state[i.condition] || forecastIcons.default)
+          : null;
         if (iconName) {
           const iconEl = document.createElement("ha-icon");
           iconEl.icon = iconName;
@@ -395,7 +463,7 @@ class SilamForecastCard extends HTMLElement {
         } else {
           const iconEl = document.createElement("ha-state-icon");
           iconEl.hass     = this._hass;
-          iconEl.stateObj = fakeState;
+          iconEl.stateObj = { entity_id: "weather.forecast", state: i.condition, attributes: {} };
           iconEl.style.cssText = `
             --mdc-icon-size: 2.2em;
             margin: 4px 0;
@@ -403,7 +471,7 @@ class SilamForecastCard extends HTMLElement {
           col.appendChild(iconEl);
         }
 
-        // Подпись
+        // Подпись ниже
         const labelEl = document.createElement("div");
         if (isSilamSource) {
           const condKey = `component.silam_pollen.entity.sensor.index.state.${i.condition}`;
@@ -428,25 +496,145 @@ class SilamForecastCard extends HTMLElement {
         chart.appendChild(col);
       });
 
-      // Добавляем графический блок
+      // Вставляем основной график
       this._body.appendChild(chart);
+
+      // === Дополнительный блок: столбчатые графики по пыльце ===
+      if (Array.isArray(this._cfg.pollen_attributes) && this._cfg.pollen_attributes.length) {
+        const lang = this._hass.language || "en";
+        // те же слоты, что и в основном прогнозе
+        const items = arr.slice(0, this._cfg.forecast_slots ?? arr.length);
+
+        this._cfg.pollen_attributes.forEach(attr => {
+          const pollenType = attr.replace("pollen_", "");
+          const scale = POLLEN_SCALES[pollenType];
+          if (!scale) return;
+
+          // 1) Заголовок: иконка + имя + текущее значение
+          const header = document.createElement("div");
+          header.style.cssText = `
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+          `;
+          const icon = document.createElement("ha-icon");
+          icon.icon = weatherAttrIcons[attr] || "mdi:flower-pollen";
+          icon.style.cssText = `
+            --mdc-icon-size: 1.5em;
+            margin-right: 6px;
+          `;
+          header.appendChild(icon);
+          const nameEl = document.createElement("span");
+          nameEl.textContent = this._labels[attr] || pollenType;
+          nameEl.style.cssText = `
+            font-size: 1em;
+            font-weight: 500;
+          `;
+          header.appendChild(nameEl);
+          const curr = this._hass.formatEntityAttributeValue(this._hass.states[this._cfg.entity], attr);
+          if (curr) {
+            const valEl = document.createElement("span");
+            valEl.textContent = curr;
+            valEl.style.cssText = `
+              margin-left: auto;
+              font-size: 1em;
+            `;
+            header.appendChild(valEl);
+          }
+          this._body.appendChild(header);
+
+          // 2) Контейнер со столбиками
+          const bars = document.createElement("div");
+          bars.style.cssText = `
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+          `;
+
+          items.forEach(i => {
+            const concentration = i[attr] != null ? i[attr] : 0;
+            let idx = scale.thresholds.findLastIndex(th => concentration >= th);
+            if (idx === -1) idx = 0;
+            const fillCount = idx;  // число залитых сегментов
+            const color     = scale.colors[idx];            
+
+            // ячейка одного столбика
+            const cell = document.createElement("div");
+            cell.style.cssText = `
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              min-width: 24px;
+            `;
+
+            // подпись времени/даты
+            const lbl = document.createElement("div");
+            lbl.textContent = this._cfg.forecast_type === "hourly"
+              ? new Date(i.datetime).toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" })
+              : new Date(i.datetime).toLocaleDateString(lang, { weekday: "short", day: "numeric" });
+            lbl.style.cssText = `
+              font-size: 0.75em;
+              color: var(--secondary-text-color);
+              margin-bottom: 2px;
+              text-align: center;
+            `;
+            cell.appendChild(lbl);
+
+            // контейнер сегментов
+            const segContainer = document.createElement("div");
+            segContainer.style.cssText = `
+              width: 100%;
+              height: ${BAR_CHART_HEIGHT}px;
+              display: flex;
+              flex-direction: column-reverse;
+            `;
+
+            const segHeight = BAR_CHART_HEIGHT / POLLEN_SEGMENTS;
+            for (let s = 0; s < POLLEN_SEGMENTS; s++) {
+              const seg = document.createElement("div");
+              seg.style.cssText = `
+                flex: 0 0 ${segHeight}px;
+                width: 100%;
+                background: ${s < fillCount ? color : "transparent"};
+                border-top: 1px solid var(--divider-color);
+              `;
+              segContainer.appendChild(seg);
+            }
+
+            cell.appendChild(segContainer);
+            bars.appendChild(cell);
+          });
+
+          this._body.appendChild(bars);
+        });
+      }
     }
   }
-    // 5) Текстовый список прогноза
-    if (!Array.isArray(arr) || !arr.length) {
-      return;
-    }
-    const lang = this._hass.language || "en";
-    const ul = document.createElement("ul");
-    ul.style.cssText = "list-style:none;padding:0;margin:0";
-    ul.innerHTML = `
-      <style>
-        .pollen { color: var(--secondary-text-color); font-size: .9em }
-        .pollen span { margin-right: 6px }
-      </style>
-      ${arr.map(i => this._rowHTML(i, lang)).join("")}
-    `;
-    this._body.appendChild(ul);
+  // 3) Текстовый список прогноза — только если debug_forecast = true
+  if (!this._cfg.debug_forecast) {
+    return;
+  }
+  if (!Array.isArray(arr) || !arr.length) {
+    // в режиме debug, но данных нет — можем вывести заглушку
+    const msg = document.createElement("div");
+    msg.style.cssText = "padding:8px;color:var(--secondary-text-color);";
+    msg.textContent = this._t("no_forecast_data") || "No forecast data";
+    this._body.appendChild(msg);
+    return;
+  }
+
+  const lang = this._hass.language || "en";
+  const ul = document.createElement("ul");
+  ul.style.cssText = "list-style:none;padding:0;margin:0";
+  ul.innerHTML = `
+    <style>
+      .pollen { color: var(--secondary-text-color); font-size: .9em }
+      .pollen span { margin-right: 6px }
+    </style>
+    ${arr.map(i => this._rowHTML(i, lang)).join("")}
+  `;
+  this._body.appendChild(ul);
   }
                           
   _rowHTML(i,lang) {
@@ -523,11 +711,17 @@ class SilamForecastCardEditor extends LitElement {
     this._config = {
       only_silam:     true, // по-умолчанию показываем только нашу интеграцию
       forecast:  "show_both",  // по умолчанию только прогноз
+      pollen_attributes: [],            // по умолчанию пусто
     };
   }
 
   setConfig(config) {
-    this._config = { only_silam: true, forecast: "show_both", ...config };
+    this._config = {
+      only_silam:        true,
+      forecast:         "show_both",
+      pollen_attributes: [],
+      ...config
+    };
   }
 
   firstUpdated() {
@@ -597,6 +791,18 @@ class SilamForecastCardEditor extends LitElement {
 
     const silam = this._config.only_silam !== false;
     const silamEntities = silam ? this._getSilamEntities() : [];
+
+    // сбор списка всех pollen_* атрибутов из weather-сущности
+    const polAttrs = Object.keys(this.hass.states)
+      .find(id => id === this._config.entity)
+      ? Object.keys(this.hass.states[this._config.entity].attributes)
+          .filter(a => a.startsWith("pollen_"))
+      : ["pollen_alder","pollen_birch","pollen_grass","pollen_hazel","pollen_mugwort","pollen_olive","pollen_ragweed"];
+
+    const options = polAttrs.map(a => ({
+      value: a,
+      label: this.hass.localize(`component.silam_pollen.entity.sensor.${a.slice(7)}.name`) || a.slice(7)
+    }));
 
     // 1) базовые поля
     const baseSchema = [
@@ -668,6 +874,16 @@ class SilamForecastCardEditor extends LitElement {
         schema:   advancedSchema,
       },
       {
+        name: "pollen_attributes",
+        selector: {
+          select: {
+            multiple: true,
+            options
+          }
+        },
+        default: this._config.pollen_attributes
+      },
+      {
         name: "forecast",
         selector: {
           select: {
@@ -692,11 +908,16 @@ class SilamForecastCardEditor extends LitElement {
           },
         },
       },
-      { name: "name", selector: { text: {} } },
       {
         name: "forecast_slots",
         selector: { number: { min: 1, max: 12 } },
         default: this._config.forecast_slots ?? 5,
+      },
+      {
+        name: "debug_forecast",
+        label: this.hass.localize("component.silam_pollen.editor.debug_forecast"),
+        selector: { boolean: {} },
+        default: false,
       },
     ];
 
