@@ -229,7 +229,7 @@ class SilamForecastCard extends HTMLElement {
         .value-flex {
           display: inline-flex;
           align-items: center;
-          line-height: 1.2;
+          line-height: 0.9;
         }
       `;
       this.shadowRoot.appendChild(style);
