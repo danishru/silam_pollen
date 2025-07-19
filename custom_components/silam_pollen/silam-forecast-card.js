@@ -109,6 +109,8 @@ class SilamForecastCard extends HTMLElement {
       display_attribute: "",
       ...cfg
     };
+    // новый переключатель: показывать только дополнительный блок
+    this._cfg.additional_only = this._cfg.additional_only || false;
     this._initDom();
   }
 
@@ -130,10 +132,8 @@ class SilamForecastCard extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this.shadowRoot.innerHTML = `
       <ha-card>
-        <div id="attr" style="padding:8px 16px; font-size: 0.85em; color: var(--secondary-text-color)"></div>
         <div id="body" style="padding:16px">Loading…</div>
       </ha-card>`;
-    this._attrEl = this.shadowRoot.getElementById("attr");
     this._body   = this.shadowRoot.getElementById("body");
   }
 
@@ -183,6 +183,10 @@ class SilamForecastCard extends HTMLElement {
     return weatherAttrIcons[attr] || null;
   }
   
+  _computeAttributeIcon(attr) {
+    return weatherAttrIcons[attr] || null;
+  }
+  
   /**
    * Возвращает <span class="value-flex">,
    * внутри двух элементов:
@@ -220,7 +224,7 @@ class SilamForecastCard extends HTMLElement {
         .status-text {
           font-size: clamp(1em, 5vw, 2em);
           margin: 0;
-          line-height: 1.2;    /* плотный межстрочный интервал */
+          line-height: 0.9;    /* плотный межстрочный интервал */
         }
         .value-flex {
           display: inline-flex;
@@ -239,7 +243,7 @@ class SilamForecastCard extends HTMLElement {
     const mode = this._cfg.forecast; // "show_current" | "show_forecast" | "show_both"
     // Есть ли прогноз?
     const hasForecast = Array.isArray(arr) && arr.length > 0;
-
+    const additionalOnly = Boolean(this._cfg.additional_only);
 
   // --------------------
   // 1) HEADER (текущая погода)
@@ -249,20 +253,16 @@ class SilamForecastCard extends HTMLElement {
       header.style.cssText = `
         display: flex;
         flex-direction: column;
-        padding-bottom: 8px;
-        ${ hasForecast
-          ? "border-bottom: 1px solid var(--divider-color);"
-          : ""
-        }
+      }
       `;
 
-      // GRID: 3 колонки (64px, 1fr, auto), только горизонтальный gap
+      // GRID: 3 колонки (64px auto 1fr), только горизонтальный gap
       const grid = document.createElement("div");
       grid.style.cssText = `
         display: grid;
         width: 100%;
-        grid-template-columns: 64px 1fr auto;
-        column-gap: 8px;
+        grid-template-columns: 64px auto 1fr;
+        column-gap: 16px;
         align-items: center;
       `;
 
@@ -285,6 +285,7 @@ class SilamForecastCard extends HTMLElement {
       col2.appendChild(stateNameEl);
       const friendlyEl = document.createElement("span");
       friendlyEl.style.cssText = `
+        padding: 3px 0 8px;
         font-size: 0.9em;
         color: var(--secondary-text-color);
         margin: 0;
@@ -322,8 +323,10 @@ class SilamForecastCard extends HTMLElement {
       const valueGrid = document.createElement("div");
       valueGrid.style.cssText = `
         display: grid;
+        width: 100%;
         grid-template-columns: 1fr auto;
         grid-template-rows: repeat(4, auto);
+        align-items: center;
       `;
       for (let i = 1; i <= 8; i++) {
         const cfgKey = `value_attribute_${i}`;
@@ -335,12 +338,24 @@ class SilamForecastCard extends HTMLElement {
         const row = i <= 4 ? i : i - 4;
         el.style.gridColumn = String(col);
         el.style.gridRow    = String(row);
+        el.style.justifySelf  = 'start';
+        el.style.whiteSpace = 'nowrap';
         valueGrid.appendChild(el);
       }
       header.appendChild(valueGrid);
 
       // Вставляем header
       this._body.appendChild(header);
+      // Отдельный divider вместо border-bottom у header
+      if (hasForecast && mode === "show_both") {
+        const divider = document.createElement("div");
+        divider.style.cssText = `
+          width: 100%;
+          border-bottom: 1px solid var(--divider-color);
+          margin: 12px 0; /* отступ сверху/снизу */
+        `;
+        this._body.appendChild(divider);
+      }
     }
   // --------------------
   // 2) ГРАФИЧЕСКИЙ БЛОК (прогноз)
@@ -372,7 +387,6 @@ class SilamForecastCard extends HTMLElement {
         gap: 8px;
         width: 100%;
         box-sizing: border-box;
-        padding: 8px 0;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
       `;
@@ -400,7 +414,6 @@ class SilamForecastCard extends HTMLElement {
             font-size: 1em;
             font-weight: 400;
             text-align: center;
-            margin-bottom: 2px;
             color: var(--primary-text-color);
             line-height: 1.2;
           `;
@@ -413,9 +426,9 @@ class SilamForecastCard extends HTMLElement {
             font-size: 1em;
             font-weight: 400;
             text-align: center;
-            margin-bottom: 2px;
             color: var(--primary-text-color);
-            line-height: 1.2;
+            margin-top: 2px;
+            line-height: 1;
           `;
           col.appendChild(topEl);
 
@@ -431,20 +444,20 @@ class SilamForecastCard extends HTMLElement {
             font-size: 1em;
             font-weight: 400;
             text-align: center;
-            margin-bottom: 2px;
             color: var(--primary-text-color);
-            line-height: 1.2;
+            margin-top: 2px;
+            line-height: 1;
           `;
           col.appendChild(weekdayEl);
 
           const partEl = document.createElement("div");
           partEl.textContent = part;
           partEl.style.cssText = `
-            font-size: 0.75em;
+            font-size: 0.85em;
             color: var(--secondary-text-color);
             text-align: center;
             margin-top: 2px;
-            line-height: 1.2;
+            line-height: 1;
           `;
           col.appendChild(partEl);
         }
@@ -481,7 +494,8 @@ class SilamForecastCard extends HTMLElement {
             font-size: 0.75em;
             text-align: center;
             color: var(--secondary-text-color);
-            margin-top: 4px;
+            line-height: 1.3;
+            margin-top: 2px;
           `;
         } else {
           const temp = i.temperature != null ? `${i.temperature}°` : '—';
@@ -489,7 +503,7 @@ class SilamForecastCard extends HTMLElement {
           labelEl.style.cssText = `
             font-size: 1em;
             text-align: center;
-            margin-top: 4px;
+            margin-top: 2px;
           `;
         }
         col.appendChild(labelEl);
@@ -497,8 +511,20 @@ class SilamForecastCard extends HTMLElement {
         chart.appendChild(col);
       });
 
-      // Вставляем основной график
-      this._body.appendChild(chart);
+      // Вставляем основной график (если не режим “только доп. блок”)
+      if (!additionalOnly) {
+        this._body.appendChild(chart);
+        // И сразу под ним – divider, но только если есть дополнительный блок
+        if (Array.isArray(this._cfg.pollen_attributes) && this._cfg.pollen_attributes.length) {
+          const forecastDivider = document.createElement("div");
+          forecastDivider.style.cssText = `
+            width: 100%;
+            border-bottom: 1px solid var(--divider-color);
+            margin: 12px 0 4px; /* отступ сверху/снизу */
+          `;
+          this._body.appendChild(forecastDivider);
+        }
+      }
 
       // === Дополнительный блок: столбчатые графики по пыльце ===
       if (Array.isArray(this._cfg.pollen_attributes) && this._cfg.pollen_attributes.length) {
@@ -520,8 +546,10 @@ class SilamForecastCard extends HTMLElement {
           const block = document.createElement("div");
           block.style.cssText = `
             display: flex;
-            align-items: flex-start;
-            gap: 12px;
+            align-items: center;
+            gap: 16px;
+            width: 100%;               /* растягиваем block */
+            box-sizing: border-box;
             padding: 8px 0;
           `;
 
@@ -532,7 +560,7 @@ class SilamForecastCard extends HTMLElement {
             flex-direction: column;
             align-items: center;
             flex-shrink: 0;
-            min-width: 80px;
+            min-width: 64px;
           `;
           // название
           const nameEl = document.createElement("span");
@@ -551,7 +579,7 @@ class SilamForecastCard extends HTMLElement {
           const icon = document.createElement("ha-icon");
           icon.icon = weatherAttrIcons[attr] || "mdi:flower-pollen";
           icon.style.cssText = `
-            --mdc-icon-size: 3em;
+            --mdc-icon-size: 3.5em;
             color: ${iconColor};
             margin-bottom: 4px;
           `;
@@ -572,11 +600,12 @@ class SilamForecastCard extends HTMLElement {
           bars.style.cssText = `
             display: flex;
             align-items: flex-end;
-            gap: clamp(2px, 0.5vw, 8px);    /* минимальный gap = 2px */
+            /* gap от 1px до 10px, идеал — 2% ширины контейнера */
+            gap: clamp(1px, 2%, 10px);
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            flex: 1 1 auto;                  /* растягиваем bars на всё оставшееся место */
-            width: 100%;
+            flex: 1 1 auto;      /* растягиваем bars на всё доступное место */
+            min-width: 0;        /* важно, чтобы не вылезал за границы */
             box-sizing: border-box;
             padding-bottom: 4px;
           `;
@@ -595,31 +624,82 @@ class SilamForecastCard extends HTMLElement {
             }
 
             const cell = document.createElement("div");
+            // Задаём минимальную ширину столбика в зависимости от типа прогноза
+            let minW;
+            switch (this._cfg.forecast_type) {
+              case "hourly":      minW = "3px";  break;
+              case "daily":       minW = "24px"; break;
+              case "twice_daily": minW = "12px"; break;
+              default:            minW = "0";
+            }
             cell.style.cssText = `
-              flex: 1 1 clamp(20px, 10%, 48px);  
-              /* 
-                базовая ширина от 20px до 48px или 10%,
-                растём ровно вместе с bars, но не меньше и не больше 
-              */
+              flex: 1 1 0;
+              min-width: ${minW};
+              width: 0;
               display: flex;
               flex-direction: column;
               align-items: center;
               box-sizing: border-box;
             `;
             cell.title = `${concentration}`;
-            // подпись времени/даты
-            const lbl = document.createElement("div");
-            lbl.textContent = this._cfg.forecast_type === "hourly"
-              ? new Date(i.datetime).toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" })
-              : new Date(i.datetime).toLocaleDateString(lang, { weekday: "short", day: "numeric" });
-            lbl.style.cssText = `
-              font-size: 0.75em;
-              color: var(--secondary-text-color);
-              margin-bottom: 2px;
-              text-align: center;
-            `;
-            cell.appendChild(lbl);
+            // подпись времени/даты (как в основном прогнозе, но с исходным размером шрифта)
+            const dt = new Date(i.datetime);
+            if (this._cfg.forecast_type === "hourly") {
+              const timeEl = document.createElement("div");
+              timeEl.textContent = dt.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
+              timeEl.style.cssText = `
+                font-size: 0.75em;
+                font-weight: 400;
+                text-align: center;
+                margin-bottom: 2px;
+                color: var(--primary-text-color);
+                line-height: 1;
+              `;
+              cell.appendChild(timeEl);
 
+            } else if (this._cfg.forecast_type === "daily") {
+              const dayEl = document.createElement("div");
+              dayEl.textContent = dt.toLocaleDateString(lang, { weekday: "short" });
+              dayEl.style.cssText = `
+                font-size: 0.85em;
+                font-weight: 500;
+                text-align: center;
+                margin-bottom: 2px;
+                color: var(--primary-text-color);
+                line-height: 1;
+              `;
+              cell.appendChild(dayEl);
+
+            } else { // twice_daily
+              const weekday = dt.toLocaleDateString(lang, { weekday: "short" });
+              const part = i.is_daytime === false
+                ? this._hass.localize("ui.card.weather.night") || "Night"
+                : this._hass.localize("ui.card.weather.day")   || "Day";
+
+              const weekdayEl = document.createElement("div");
+              weekdayEl.textContent = weekday;
+              weekdayEl.style.cssText = `
+                font-size: 0.85em;
+                font-weight: 500;
+                text-align: center;
+                margin-bottom: 1px;
+                color: var(--primary-text-color);
+                line-height: 1;
+              `;
+              cell.appendChild(weekdayEl);
+
+              const partEl = document.createElement("div");
+              partEl.textContent = part;
+              partEl.style.cssText = `
+                font-size: 0.65em;
+                color: var(--secondary-text-color);
+                text-align: center;
+                margin-top: 1px;
+                margin-bottom: 2px;
+                line-height: 1;
+              `;
+              cell.appendChild(partEl);
+            }
             // контейнер и сегменты
             const segContainer = document.createElement("div");
             segContainer.style.cssText = `
@@ -627,6 +707,7 @@ class SilamForecastCard extends HTMLElement {
               height: ${BAR_CHART_HEIGHT}px;
               display: flex;
               flex-direction: column-reverse;
+              padding-top: 8px;
             `;
             for (let s = 0; s < POLLEN_SEGMENTS; s++) {
               const seg = document.createElement("div");
@@ -911,16 +992,6 @@ class SilamForecastCardEditor extends LitElement {
         schema:   advancedSchema,
       },
       {
-        name: "pollen_attributes",
-        selector: {
-          select: {
-            multiple: true,
-            options
-          }
-        },
-        default: this._config.pollen_attributes
-      },
-      {
         name: "forecast",
         selector: {
           select: {
@@ -944,6 +1015,24 @@ class SilamForecastCardEditor extends LitElement {
             ],
           },
         },
+      },
+      {
+        name: "additional_only",
+        label: "Показывать только дополнительный блок",
+        selector: { boolean: {} },
+        default: this._config.additional_only,
+      },
+      {
+        name: "pollen_attributes",
+        selector: {
+          select: {
+            reorder: true,        // разрешить менять порядок
+            multiple: true,
+            custom_value: true,   // позволить вводить свои значения
+            options               // ваши варианты из переменной options
+          }
+        },
+        default: this._config.pollen_attributes
       },
       {
         name: "forecast_slots",
