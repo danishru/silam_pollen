@@ -32,15 +32,15 @@ async def async_setup(hass, _config):
     if hass.services.has_service(DOMAIN, "manual_update"):
         return True
 
-    if not hass.data.get("silam_pollen_card_registered"):
+    if not hass.data.get("absolute_forecast_card_registered"):
         await hass.http.async_register_static_paths([
             StaticPathConfig(
-                "/local/silam-forecast-card.js",
-                hass.config.path("custom_components", DOMAIN, "silam-forecast-card.js"),
+                "/local/absolute-forecast-card.js",
+                hass.config.path("custom_components", DOMAIN, "absolute-forecast-card.js"),
                 False,
             )
         ])
-        hass.data["silam_pollen_card_registered"] = True
+        hass.data["absolute_forecast_card_registered"] = True
 
     # Импорт внутри функции, чтобы не тащить зависимость при unit-тестах без HA
     from homeassistant.helpers.device_registry import async_get as async_get_device_registry
