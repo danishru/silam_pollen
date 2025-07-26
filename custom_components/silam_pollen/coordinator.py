@@ -201,6 +201,7 @@ class SilamCoordinator(DataUpdateCoordinator):
             merged = merge_station_features(
                 data.get("index"),
                 data.get("main"),
+                hass=self.hass,
                 forecast_enabled=self._forecast_enabled,
                 selected_allergens=self._var_list,
                 forecast_duration=self._forecast_duration,

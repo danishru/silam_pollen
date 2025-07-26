@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import statistics, math
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from math import ceil
 from .const import INDEX_MAPPING, URL_VAR_MAPPING
 
@@ -31,6 +32,7 @@ def merge_station_features(
     index_xml: ET.Element,
     main_xml:  ET.Element | None = None,
     *,
+    hass,
     forecast_enabled:   bool        = False,
     selected_allergens: list[str]   = None,
     forecast_duration:  int         = 36,
@@ -207,10 +209,10 @@ def merge_station_features(
     # ---------------------------------------------------------------------
     # 7) PREP: превращаем сырые точки в список ----------------------------
     # ---------------------------------------------------------------------
-    current_time = datetime.utcnow()
+    current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
     raw_all = []
     for dt_s, entry in raw_merged.items():
-        dt = parse_iso(dt_s)
+        dt = parse_iso(dt_s).replace(tzinfo=timezone.utc)
 
         # --- температура --------------------------------------------------
         t_val = entry["data"].get("temp_2m", {}).get("value")
@@ -291,12 +293,37 @@ def merge_station_features(
         r for r in raw_all
         if current_time < r["dt_obj"] <= current_time + timedelta(hours=forecast_duration)
     ]
-
-    local_tz = datetime.now().astimezone().tzinfo
+    # -----------------------------------------------------------------
+    # Берём системный часовой пояс из настроек Home Assistant,
+    # а если что-то пошло не так — падаем назад на TZ хоста/контейнера.
+    # -----------------------------------------------------------------
+    try:
+        local_tz = ZoneInfo(hass.config.time_zone)     # например, "Europe/Moscow"  ← то же, что {{ now().tzinfo }}
+    except Exception:
+        # fallback как раньше
+        local_tz = datetime.now().astimezone().tzinfo  # TZ процесса/контейнера
+    # -----------------------------------------------------------------
+    # Базовая точка «начала окна» в локальной зоне:
+    #   06:00 → дневной блок  (06-18 лок)
+    #   18:00 → ночной блок  (18-06 лок)
+    # -----------------------------------------------------------------
+    now_local = current_time.astimezone(local_tz)
+    if 6 <= now_local.hour < 18:         # день
+        base_start_local = now_local.replace(hour=6,  minute=0, second=0, microsecond=0)
+    elif now_local.hour >= 18:           # вечер
+        base_start_local = now_local.replace(hour=18, minute=0, second=0, microsecond=0)
+    else:                                # 00-06
+        base_start_local = (now_local - timedelta(days=1)).replace(
+            hour=18, minute=0, second=0, microsecond=0
+        )
 
     for offset in range(0, forecast_duration, 12):
-        start = current_time + timedelta(hours=offset)
-        end   = start + timedelta(hours=12)
+        start_local = base_start_local + timedelta(hours=offset)
+        end_local   = start_local + timedelta(hours=12)
+
+        # перевод границ окна в UTC, т.к. raw_twice хранится в UTC
+        start = start_local.astimezone(timezone.utc)
+        end   = end_local  .astimezone(timezone.utc)
         group = [g for g in raw_twice if start < g["dt_obj"] <= end]
         if not group:
             continue
@@ -370,10 +397,10 @@ def merge_station_features(
         idxs  = [g["pollen_index"] for g in group if g["pollen_index"] is not None]
 
         smooth_idx = calc_smoothed_pollen_index(idxs)
-        rep_noon   = (day_start + timedelta(hours=12)).astimezone(local_tz)
+        rep_midnight = day_start.astimezone(local_tz)        # 00:00 локально
 
         entry = {
-            "datetime":           rep_noon.astimezone(timezone.utc).isoformat(),
+            "datetime":           rep_midnight.astimezone(timezone.utc).isoformat(),
             "condition":          INDEX_MAPPING.get(smooth_idx, "unknown"),
             "native_temperature": max(temps) if temps else None,
             "native_templow":     min(temps) if temps else None,
@@ -416,4 +443,5 @@ def merge_station_features(
         "twice_daily_forecast": twice_daily_forecast,
         "daily_forecast":       daily_forecast,
         "forecast_horizon":   forecast_horizon,
+        "raw_merged": raw_merged,
     }

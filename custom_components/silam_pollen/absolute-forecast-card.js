@@ -97,6 +97,27 @@ const POLLEN_SEGMENTS = POLLEN_COLORS.length - 1; // =8
 //   ...
 // }
 
+// Функция маппинга температуры в цвет от холодного к тёплому
+/**
+ * -40..0 → 280°→180° (фиолетовый→циан) — линейно
+ *  0..+40 → 180°→0° (циан→красный) — с экспонентой 0.5
+ */
+function mapTempToColor(temp) {
+  const t = Math.max(-40, Math.min(40, temp));
+  if (t <= 0) {
+    // холодный диапазон: линейно
+    const ratio = (t + 40) / 40;      // 0..1
+    const hue   = 280 - ratio * 100;  // 280→180
+    return `hsl(${hue},100%,50%)`;
+  } else {
+    // тёплый диапазон: быстрее сбрасываем к красному
+    const ratio = t / 40;       
+    const adj   = Math.pow(ratio, 0.6);   // экспонента <1 → резче в начале
+    const hue   = 180 - adj * 180;        // 180→0, но «зелёная» зона очень узкая
+    return `hsl(${hue},100%,50%)`;
+  }
+}
+
 /* ---------- флаги supported_features из core/data/weather.ts ---------- */
 const FORECAST_DAILY       = 1;  // WeatherEntityFeature.FORECAST_DAILY
 const FORECAST_HOURLY      = 2;  // WeatherEntityFeature.FORECAST_HOURLY
@@ -111,6 +132,31 @@ function forecastSupported(stateObj, type) {
     case "twice_daily": return (flags & FORECAST_TWICE_DAILY) !== 0;
     default:            return false;
   }
+}
+
+// -------------------------------------------------------------
+//  Мини-реализация resolveTimeZone + кэш браузерного пояса
+// -------------------------------------------------------------
+const BROWSER_TZ =
+  Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+/**
+ * option : "local" | "server"
+ * serverTZ : строка-IANA из configuration.yaml
+ *
+ *  • "local"  → возвращаем TZ браузера
+ *  • иначе    → возвращаем serverTZ
+ */
+function resolveTimeZone(option, serverTZ) {
+  return option === "local" ? BROWSER_TZ : serverTZ;
+}
+
+/** Обёртка: добавляем корректный timeZone, если он есть */
+function withUserTimeZone(hass, opts = {}) {
+  const option   = hass.locale?.time_zone;   // "local" | "server" | undefined
+  const serverTZ = hass.config?.time_zone;   // строка-IANA
+  const tz       = resolveTimeZone(option, serverTZ);
+  return tz ? { ...opts, timeZone: tz } : opts;
 }
 
 class AbsoluteForecastCard extends HTMLElement {
@@ -471,6 +517,7 @@ class AbsoluteForecastCard extends HTMLElement {
       const isSilamSource = stateObj.attributes.attribution === "Powered by silam.fmi.fi";
       const slots = this._cfg.forecast_slots ?? arr.length;
       const items = arr.slice(0, slots);
+      
 
       const forecastIcons = {
         default: "mdi:flower-pollen-outline",
@@ -512,7 +559,7 @@ class AbsoluteForecastCard extends HTMLElement {
         // Время / День / Ночь (с разделением шрифтов)
         if (this._cfg.forecast_type === "hourly") {
           const topEl = document.createElement("div");
-          topEl.textContent = dt.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
+          topEl.textContent = dt.toLocaleTimeString(lang,withUserTimeZone(this.hass, { hour: "2-digit", minute: "2-digit" }));
           topEl.style.cssText = `
             font-size: 1em;
             font-weight: 400;
@@ -524,7 +571,7 @@ class AbsoluteForecastCard extends HTMLElement {
 
         } else if (this._cfg.forecast_type === "daily") {
           const topEl = document.createElement("div");
-          topEl.textContent = dt.toLocaleDateString(lang, { weekday: "short" });
+          topEl.textContent = dt.toLocaleDateString(lang,withUserTimeZone(this.hass, { weekday: "short" }));
           topEl.style.cssText = `
             font-size: 1em;
             font-weight: 400;
@@ -536,7 +583,7 @@ class AbsoluteForecastCard extends HTMLElement {
           col.appendChild(topEl);
 
         } else { // twice_daily
-          const weekday = dt.toLocaleDateString(lang, { weekday: "short" });
+          const weekday = dt.toLocaleDateString(lang,withUserTimeZone(this.hass, { weekday: "short" }));
           const part = i.is_daytime === false
             ? this._hass.localize("ui.card.weather.night") || "Night"
             : this._hass.localize("ui.card.weather.day")   || "Day";
@@ -650,11 +697,14 @@ class AbsoluteForecastCard extends HTMLElement {
         }
       }
 
-      // === Дополнительный блок: столбчатые графики по пыльце ===
+      // === Дополнительный блок: столбчатые графики по пыльце и другим атрибутам ===
       if (Array.isArray(this._cfg.additional_forecast) && this._cfg.additional_forecast.length) {
         const stateObj = this._hass.states[this._cfg.entity];
+        // Отбираем атрибуты, которые есть либо в атрибутах сущности, либо в первом элементе прогноза
         const availableAttrs = this._cfg.additional_forecast.filter(
-          attr => stateObj.attributes[attr] != null
+          attr =>
+            (stateObj.attributes[attr] != null) ||
+            (Array.isArray(arr) && arr.length > 0 && arr[0][attr] != null)
         );
         if (!availableAttrs.length) {
           return;
@@ -664,193 +714,693 @@ class AbsoluteForecastCard extends HTMLElement {
         availableAttrs.forEach(attr => {
           const pollenType = attr.replace("pollen_", "");
           const scale      = POLLEN_SCALES[pollenType];
-          if (!scale) return;
 
-          // общий контейнер
-          const block = document.createElement("div");
-          block.style.cssText = `
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            width: 100%;               /* растягиваем block */
-            box-sizing: border-box;
-            padding: 8px 0;
-          `;
+          // 1) P O L L E N  (рендерим каждый аллерген: заголовок + иконка + мини-гистограмма)
+          if (scale) {
+            /* -----------------------------------------------------------
+             *  Контейнер всего блока пыльцы: иконка + значение + гистограмма
+             * --------------------------------------------------------- */
+            const block = document.createElement("div");
+            block.style.cssText = `
+              display: flex;
+              align-items: center;
+              gap: 16px;
+              width: 100%;
+              box-sizing: border-box;
+              padding: 8px 0;
+            `;
 
-          // фиксированный header
-          const header = document.createElement("div");
-          header.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex-shrink: 0;
-            min-width: 64px;
-          `;
-          // название
-          const nameEl = document.createElement("span");
-          nameEl.textContent = this._labels[attr] || pollenType;
-          nameEl.style.cssText = `
-            font-size: 1em;
-            font-weight: 500;
-            margin-bottom: 4px;
-          `;
-          header.appendChild(nameEl);
-          // иконка
-          const currVal = stateObj.attributes[attr] || 0;
-          let iconIdx = scale.thresholds.findLastIndex(th => currVal >= th);
-          if (iconIdx < 0) iconIdx = 0;
-          const iconColor = scale.colors[iconIdx];
-          const icon = document.createElement("ha-icon");
-          icon.icon = weatherAttrIcons[attr] || "mdi:flower-pollen";
-          icon.style.cssText = `
-            --mdc-icon-size: 3.5em;
-            color: ${iconColor};
-            margin-bottom: 4px;
-          `;
-          header.appendChild(icon);
-          // текущее значение
-          const valEl = document.createElement("span");
-          valEl.textContent = this._hass.formatEntityAttributeValue(stateObj, attr) || "–";
-          valEl.style.cssText = `
-            font-size: 0.9em;
-            margin-top: 2px;
-          `;
-          header.appendChild(valEl);
-
-          block.appendChild(header);
-
-          // скроллимый контейнер столбиков
-          const bars = document.createElement("div");
-          bars.style.cssText = `
-            display: flex;
-            align-items: flex-end;
-            /* gap от 1px до 10px, идеал — 2% ширины контейнера */
-            gap: clamp(1px, 2%, 10px);
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            flex: 1 1 auto;      /* растягиваем bars на всё доступное место */
-            min-width: 0;        /* важно, чтобы не вылезал за границы */
-            box-sizing: border-box;
-            padding-bottom: 4px;
-          `;
-          const segHeight = BAR_CHART_HEIGHT / POLLEN_SEGMENTS;
-
-          items.forEach(i => {
-            const concentration = i[attr] != null ? i[attr] : 0;
-            // для нуля — ничего не заливаем
-            let fillCount = 0;
-            let color     = "transparent";
-            if (concentration > 0) {
-              let idx = scale.thresholds.findLastIndex(th => concentration >= th);
-              if (idx < 0) idx = 0;
-              fillCount = Math.min(idx + 1, POLLEN_SEGMENTS);
-              color     = scale.colors[idx];
-            }
-
-            const cell = document.createElement("div");
-            // Задаём минимальную ширину столбика в зависимости от типа прогноза
-            let minW;
-            switch (this._cfg.forecast_type) {
-              case "hourly":      minW = "3px";  break;
-              case "daily":       minW = "24px"; break;
-              case "twice_daily": minW = "12px"; break;
-              default:            minW = "0";
-            }
-            cell.style.cssText = `
-              flex: 1 1 0;
-              min-width: ${minW};
-              width: 0;
+            /* -----------------------------------------------------------
+             *  Заголовок: имя аллергена, цветная иконка, текущее значение
+             * --------------------------------------------------------- */
+            const header = document.createElement("div");
+            header.style.cssText = `
               display: flex;
               flex-direction: column;
               align-items: center;
-              box-sizing: border-box;
+              flex-shrink: 0;
+              min-width: 64px;
             `;
-            cell.title = `${concentration}`;
-            // подпись времени/даты (как в основном прогнозе, но с исходным размером шрифта)
-            const dt = new Date(i.datetime);
-            if (this._cfg.forecast_type === "hourly") {
-              const timeEl = document.createElement("div");
-              timeEl.textContent = dt.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
-              timeEl.style.cssText = `
-                font-size: 0.75em;
-                font-weight: 400;
-                text-align: center;
-                margin-bottom: 2px;
-                color: var(--primary-text-color);
-                line-height: 1;
-              `;
-              cell.appendChild(timeEl);
+            // имя аллергена (локализация или сырой ключ)
+            const nameEl = document.createElement("span");
+            nameEl.textContent = this._labels[attr] || pollenType;
+            nameEl.style.cssText = `
+              font-size: 1em;
+              font-weight: 500;
+              margin-bottom: 4px;
+            `;
+            header.appendChild(nameEl);
 
-            } else if (this._cfg.forecast_type === "daily") {
-              const dayEl = document.createElement("div");
-              dayEl.textContent = dt.toLocaleDateString(lang, { weekday: "short" });
-              dayEl.style.cssText = `
-                font-size: 0.85em;
-                font-weight: 500;
-                text-align: center;
-                margin-bottom: 2px;
-                color: var(--primary-text-color);
-                line-height: 1;
-              `;
-              cell.appendChild(dayEl);
+            // цвет иконки по текущему значению
+            const currVal = stateObj.attributes[attr] || 0;
+            let iconIdx = scale.thresholds.findLastIndex(th => currVal >= th);
+            if (iconIdx < 0) iconIdx = 0;
+            const iconColor = scale.colors[iconIdx];
+            const icon = document.createElement("ha-icon");
+            icon.icon = weatherAttrIcons[attr] || "mdi:flower-pollen";
+            icon.style.cssText = `
+              --mdc-icon-size: 3.5em;
+              color: ${iconColor};
+              margin-bottom: 4px;
+            `;
+            header.appendChild(icon);
 
-            } else { // twice_daily
-              const weekday = dt.toLocaleDateString(lang, { weekday: "short" });
-              const part = i.is_daytime === false
-                ? this._hass.localize("ui.card.weather.night") || "Night"
-                : this._hass.localize("ui.card.weather.day")   || "Day";
+            // текстовое значение пыльцы
+            const valEl = document.createElement("span");
+            valEl.textContent = this._hass.formatEntityAttributeValue(stateObj, attr) || "–";
+            valEl.style.cssText = `
+              font-size: 0.9em;
+              margin-top: 2px;
+            `;
+            header.appendChild(valEl);
 
-              const weekdayEl = document.createElement("div");
-              weekdayEl.textContent = weekday;
-              weekdayEl.style.cssText = `
-                font-size: 0.85em;
-                font-weight: 500;
-                text-align: center;
-                margin-bottom: 1px;
-                color: var(--primary-text-color);
-                line-height: 1;
-              `;
-              cell.appendChild(weekdayEl);
+            block.appendChild(header);
 
-              const partEl = document.createElement("div");
-              partEl.textContent = part;
-              partEl.style.cssText = `
-                font-size: 0.65em;
-                color: var(--secondary-text-color);
-                text-align: center;
-                margin-top: 1px;
-                margin-bottom: 2px;
-                line-height: 1;
-              `;
-              cell.appendChild(partEl);
-            }
-            // контейнер и сегменты
-            const segContainer = document.createElement("div");
-            segContainer.style.cssText = `
-              width: 100%;
-              height: ${BAR_CHART_HEIGHT}px;
+            /* -----------------------------------------------------------
+             *  Контейнер мини-гистограммы (bars)
+             * --------------------------------------------------------- */
+            const bars = document.createElement("div");
+            bars.style.cssText = `
               display: flex;
-              flex-direction: column-reverse;
-              padding-top: 8px;
+              align-items: flex-end;
+              gap: clamp(1px, 2%, 10px);
+              overflow-x: auto;
+              overflow-y: visible;
+              -webkit-overflow-scrolling: touch;
+              flex: 1 1 auto;
+              min-width: 0;
+              box-sizing: border-box;
+              padding-bottom: 4px;
             `;
-            for (let s = 0; s < POLLEN_SEGMENTS; s++) {
-              const seg = document.createElement("div");
-              seg.style.cssText = `
-                flex: 0 0 ${segHeight}px;
-                width: 100%;
-                background: ${s < fillCount ? color : "transparent"};
-                border-top: 1px solid var(--divider-color);
-              `;
-              segContainer.appendChild(seg);
-            }
-            cell.appendChild(segContainer);
-            bars.appendChild(cell);
-          });
+            const segHeight = BAR_CHART_HEIGHT / POLLEN_SEGMENTS;
 
-          block.appendChild(bars);
-          this._body.appendChild(block);
+            /* -----------------------------------------------------------
+             *  Предварительный расчёт числа sub-столбиков (colCount)
+             * --------------------------------------------------------- */
+            const colCount = (() => {
+              switch (this._cfg.forecast_type) {
+                case "hourly":      return 3;   // 3 sub-столбика на час
+                case "daily":       return 8;  // 8 sub-столбика на день
+                case "twice_daily": return 6;  // 6 sub-столбиков на ночь/день
+                default:            return 1;
+              }
+            })();
+
+            /* -----------------------------------------------------------
+             *  Проход по каждой точке прогноза и формирование группы столбиков
+             * --------------------------------------------------------- */
+            items.forEach(i => {
+              // расчёт fillCount и цвета для основного столбца
+              const concentration = i[attr] != null ? i[attr] : 0;
+              let fillCount = 0;
+              let color     = "transparent";
+              if (concentration > 0) {
+                let idx = scale.thresholds.findLastIndex(th => concentration >= th);
+                if (idx < 0) idx = 0;
+                fillCount = Math.min(idx + 1, POLLEN_SEGMENTS);
+                color     = scale.colors[idx];
+              }
+
+              /* ---------------------------------------------------------
+               *  Расчёт peakIndex и свой fillCount/color для текущего аллергена
+               * ------------------------------------------------------- */
+              let peakIndex     = null;
+              let peakFillCount = 0;
+              let peakColor     = "transparent";
+              let peakTimeText  = "";
+              let peakValue     = null;
+
+                if (i.allergen_peaks && i.allergen_peaks[pollenType]) {
+                const peakInfo = i.allergen_peaks[pollenType];
+                const peakDt   = new Date(peakInfo.time);
+
+                /* 1. длительность всего интервала */
+                const intervalHours =
+                  this._cfg.forecast_type === "hourly"      ? 1  :
+                  this._cfg.forecast_type === "twice_daily" ? 12 : 24;
+
+                /* 2. «реальное» начало окна */
+                let intervalStart = new Date(i.datetime);   // hourly / daily
+
+                if (this._cfg.forecast_type === "twice_daily") {
+                  intervalStart = new Date(i.datetime);     // копия
+                  if (i.is_daytime) {
+                    intervalStart.setHours(6, 0, 0, 0);     // 06:00 локально
+                  } else {
+                    intervalStart.setHours(18, 0, 0, 0);    // 18:00
+                    /* если пик < 18:00 лок, уходим днём назад                */
+                    if (peakDt < intervalStart) {
+                      intervalStart.setDate(intervalStart.getDate() - 1);
+                    }
+                  }
+                }
+
+                /* 3. разница в часах от НАЧАЛА окна */
+                const diffH = (peakDt - intervalStart) / 3_600_000;
+
+                /* 4. индекс sub-столбца */
+                const idx = Math.floor((diffH / intervalHours) * colCount);
+
+                if (idx >= 0 && idx < colCount) {
+                  peakIndex  = idx;
+                  peakValue  = peakInfo.peak;
+
+                  let pIdx = scale.thresholds.findLastIndex(th => peakValue >= th);
+                  if (pIdx < 0) pIdx = 0;
+                  peakFillCount = Math.min(pIdx + 1, POLLEN_SEGMENTS);
+                  peakColor     = scale.colors[pIdx];
+                  peakTimeText  = peakDt.toLocaleTimeString(lang,withUserTimeZone(this.hass, { hour: "2-digit", minute: "2-digit" }));
+                }
+              }
+              /* ---------------------------------------------------------
+               *  Создание контейнера-группы для данного интервала
+               * ------------------------------------------------------- */
+              const group = document.createElement("div");
+              group.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                flex: 1 1 0;
+                min-width: ${colCount}px;
+                box-sizing: border-box;
+                position: relative;
+              `;
+              /* единый тултип для всего интервала */
+              const tooltipText = peakIndex !== null
+                ? `${concentration} (peak ${peakValue} @ ${peakTimeText})`
+                : `${concentration}`;
+            
+              /* --- браузерный тултип для мыши --- */
+              group.title = tooltipText;
+              
+              /* --- кастомный тултип для тач-экрана --- */
+              group.addEventListener("pointerdown", (evt) => {
+                if (evt.pointerType !== "touch") return;  // только тач
+                evt.stopPropagation();
+              
+                const tip = document.createElement("div");
+                tip.textContent = tooltipText;
+                tip.style.cssText = `
+                  position: fixed;
+                  left: ${evt.clientX}px;
+                  top:  ${evt.clientY}px;
+                  transform: translate(-50%, -120%);
+                  background: var(--primary-background-color);
+                  color: var(--primary-text-color);
+                  padding: 3px 8px;
+                  border-radius: 4px;
+                  box-shadow: 0 2px 6px rgba(0,0,0,.35);
+                  font-size: 0.75em;
+                  white-space: nowrap;
+                  pointer-events: none;
+                  z-index: 2147483647;
+                `;
+                document.body.appendChild(tip);
+              
+                const removeTip = () => tip.remove();
+                setTimeout(removeTip, 1500);
+                document.addEventListener("pointerdown", removeTip, { once: true });
+              });
+
+
+              /* ---------------------------------------------------------
+               *  Единая подпись (дата/время) для всей группы столбиков
+               * ------------------------------------------------------- */
+              const dt = new Date(i.datetime);
+              if (this._cfg.forecast_type === "hourly") {
+                const timeEl = document.createElement("div");
+                timeEl.textContent = dt.toLocaleTimeString(lang,withUserTimeZone(this.hass, { hour: "2-digit", minute: "2-digit" }));
+                timeEl.style.cssText = `
+                  font-size: 0.75em;
+                  font-weight: 400;
+                  text-align: center;
+                  margin-bottom: 14px;
+                  color: var(--primary-text-color);
+                  line-height: 1;
+                `;
+                group.appendChild(timeEl);
+              } else if (this._cfg.forecast_type === "daily") {
+                const dayEl = document.createElement("div");
+                dayEl.textContent = dt.toLocaleDateString(lang,withUserTimeZone(this.hass, { weekday: "short" }));
+                dayEl.style.cssText = `
+                  font-size: 0.85em;
+                  font-weight: 500;
+                  text-align: center;
+                  margin-bottom: 14px;
+                  color: var(--primary-text-color);
+                  line-height: 1;
+                `;
+                group.appendChild(dayEl);
+              } else {
+                const weekday = dt.toLocaleDateString(lang,withUserTimeZone(this.hass, { weekday: "short" }));
+                const part = i.is_daytime === false
+                  ? this._hass.localize("ui.card.weather.night") || "Night"
+                  : this._hass.localize("ui.card.weather.day")   || "Day";
+
+                const weekdayEl = document.createElement("div");
+                weekdayEl.textContent = weekday;
+                weekdayEl.style.cssText = `
+                  font-size: 0.85em;
+                  font-weight: 500;
+                  text-align: center;
+                  margin-bottom: 1px;
+                  color: var(--primary-text-color);
+                  line-height: 1;
+                `;
+                group.appendChild(weekdayEl);
+
+                const partEl = document.createElement("div");
+                partEl.textContent = part;
+                partEl.style.cssText = `
+                  font-size: 0.65em;
+                  color: var(--secondary-text-color);
+                  text-align: center;
+                  margin-bottom: 14px;
+                  line-height: 1;
+                `;
+                group.appendChild(partEl);
+              }
+
+              /* ---------------------------------------------------------
+               *  Контейнер горизонтальных «термометрных» сегментов
+               * ------------------------------------------------------- */
+              const segContainer = document.createElement("div");
+              segContainer.style.cssText = `
+                display: flex;
+                align-items: flex-end;
+                width: 100%;
+                height: ${BAR_CHART_HEIGHT}px;
+                box-sizing: border-box;
+                padding-top: 8px;
+              `;
+
+              /* ---------------------------------------------------------
+               *  Отрисовка sub-столбиков, закраска пик-субстолбца особым цветом и тултип
+               * ------------------------------------------------------- */
+              for (let col = 0; col < colCount; col++) {
+                const cell = document.createElement("div");
+                cell.style.cssText = `
+                  flex: 1 1 0;
+                  width: 0;
+                  display: flex;
+                  flex-direction: column-reverse;
+                  position: relative;
+                  box-sizing: border-box;
+                `;
+
+                // для пика: используем свой fillCount/color и добавляем обработчик тача/клика
+                const isPeakCol     = col === peakIndex;
+                const thisFillCount = isPeakCol ? peakFillCount : fillCount;
+                const thisColor     = isPeakCol ? peakColor     : color;
+                // ← цвет обводки (можно заменить на secondary- или divider-color)
+                const borderClr = "var(--primary-text-color)";
+
+                for (let s = 0; s < POLLEN_SEGMENTS; s++) {
+                  const filled = s < thisFillCount;               // закрашен ли сегмент
+
+                  /* базовый стиль: фон + базовый «divider» */
+                  let segCss = `
+                    flex: 0 0 ${segHeight}px;
+                    width: 100%;
+                    background: ${filled ? thisColor : "transparent"};
+                    border-top: 1px solid var(--divider-color);
+                  `;
+
+                  /* ── делаем пик темнее (≈ 80 % яркости) ── */
+                  if (isPeakCol && filled) {
+                    /* color-mix берёт 80 % исходного + 20 % black → на 20 % темнее */
+                    const darker = `color-mix(in srgb, ${thisColor} 85%, black)`;
+                  
+                    segCss += `
+                      /* слегка «утопим» сам фон */
+                      background: ${darker};
+                    `;
+                  
+                    /* добавим верхнюю линию только для последнего закрашенного сегмента */
+                    if (s === thisFillCount - 1) {
+                    }
+                  }
+
+                  const seg = document.createElement("div");
+                  seg.style.cssText = segCss;
+                  cell.appendChild(seg);
+                }
+
+                segContainer.appendChild(cell);
+              }
+
+              /* ---------------------------------------------------------
+               *  Добавляем группу столбиков в общий контейнер bars
+               * ------------------------------------------------------- */
+              group.appendChild(segContainer);
+              bars.appendChild(group);
+            });
+
+            /* -----------------------------------------------------------
+             *  Вставляем готовый блок пыльцы в DOM
+             * --------------------------------------------------------- */
+            block.appendChild(bars);
+            this._body.appendChild(block);
+            return;
+          }
+
+
+          // 2) TIME + TEMP FLEX OVERLAY + MIN/MAX/ZERO LINES
+          if (["temperature", "temperature_low", "temperature_high"].includes(attr)) {
+            
+            // берём ВСЕ templow (если есть) как кандидатов на минимум
+            const highs = items.map(i => i[attr]).filter(v => v != null);
+            const lows  = items.map(i => i.templow).filter(v => v != null);
+            // tMin: если есть хоть одно templow — минимальный templow, иначе — минимальная temperature
+            const tMin = lows.length
+              ? Math.min(...lows)
+              : Math.min(...highs);
+            const tMax = Math.max(...highs);
+            // флаг, что минимумы берём из templow
+            const useLowExtremes = lows.length > 0;
+            const range = tMax - tMin || 1;   // новый диапазон
+            const chartH = 90;
+            const markerH = 12;
+            // допустим, markerH = 12
+            const labelMargin = 8; // отступ поверх/под маркером
+            const offset = markerH / 2 + labelMargin;
+            /* ---------------- высота time-Flex ---------------- */
+            // базовая высота (одна строка)
+            const baseTFH = 30;          // px
+            // если forecast_type == "twice_daily" → две строки → +40 %
+            const tfh = this._cfg.forecast_type === "twice_daily"
+              ? Math.round(baseTFH * 1.4)
+              : baseTFH;
+            const labelPadding  = 14;   // запас под подписи min/max/zero
+            
+            // общий контейнер
+            const block = document.createElement("div");
+            block.style.cssText = `
+              display: flex;
+              gap: 16px;
+              width: 100%;
+              box-sizing: border-box;
+              padding: 8px 0;
+            `;
+
+            // header
+            const header = document.createElement("div");
+            header.style.cssText = `
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+              flex-shrink: 0;
+              width: 64px;
+            `;
+            const nameEl = document.createElement("span");
+            nameEl.textContent = this.hass.formatEntityAttributeName(stateObj, attr);
+            nameEl.style.cssText = `font-size:1em; font-weight:500; margin-bottom:4px; text-align:center;`;
+            header.appendChild(nameEl);
+            const icon = document.createElement("ha-icon");
+            icon.icon = "mdi:thermometer";
+            icon.style.cssText = `--mdc-icon-size:2.5em; margin-bottom:4px;`;
+            header.appendChild(icon);
+            block.appendChild(header);
+
+            // overlay
+            const overlay = document.createElement("div");
+            overlay.style.cssText = `
+              position: relative; flex:1 1 auto; min-width:0;
+              height: ${tfh + chartH + labelPadding}px;
+              box-sizing:border-box; overflow:hidden;
+            `;
+
+            /* ---------- 1) timeFlex с теми же стилями, что использовались раньше ---------- */
+            const timeFlex = document.createElement("div");
+            timeFlex.style.cssText = `
+              position:absolute; top:0; left:0; right:0;
+              display:flex; align-items:flex-end;
+              gap:clamp(1px,2%,10px);
+              overflow-x:auto; -webkit-overflow-scrolling:touch;
+              flex:1 1 auto; min-width:0; box-sizing:border-box;
+              padding-bottom:4px; pointer-events:none;
+            `;
+
+            items.forEach((i) => {
+              const cell = document.createElement("div");
+              cell.style.cssText = `
+                flex:1 1 0; min-width:16px; width:0;
+                display:flex; flex-direction:column;
+                align-items:center; text-align:center;
+                color:var(--secondary-text-color);
+                line-height:1;           /* базовая высота строки */
+              `;
+
+              const dt = new Date(i.datetime);
+
+              /* ----- HOURLY ----- */
+              if (this._cfg.forecast_type === "hourly") {
+                const timeEl = document.createElement("div");
+                timeEl.textContent = dt.toLocaleTimeString(lang,withUserTimeZone(this.hass, { hour: "2-digit", minute: "2-digit" }));
+                timeEl.style.cssText = `
+                  font-size:.75em;
+                  font-weight:400;
+                  text-align:center;
+                  margin-bottom:2px;
+                  color:var(--primary-text-color);
+                  line-height:1;
+                `;
+                cell.appendChild(timeEl);
+
+              /* ----- DAILY ----- */
+              } else if (this._cfg.forecast_type === "daily") {
+                const dayEl = document.createElement("div");
+                dayEl.textContent = dt.toLocaleDateString(lang,withUserTimeZone(this.hass, { weekday: "short" }));
+                dayEl.style.cssText = `
+                  font-size:.85em;
+                  font-weight:500;
+                  text-align:center;
+                  margin-bottom:2px;
+                  color:var(--primary-text-color);
+                  line-height:1;
+                `;
+                cell.appendChild(dayEl);
+
+              /* ----- TWICE_DAILY ----- */
+              } else {  // twice_daily
+                const weekday = dt.toLocaleDateString(lang,withUserTimeZone(this.hass, { weekday: "short" }));
+                const part = i.is_daytime === false
+                  ? this._hass.localize("ui.card.weather.night") || "Night"
+                  : this._hass.localize("ui.card.weather.day")   || "Day";
+
+                const weekdayEl = document.createElement("div");
+                weekdayEl.textContent = weekday;
+                weekdayEl.style.cssText = `
+                  font-size:.85em;
+                  font-weight:500;
+                  text-align:center;
+                  margin-bottom:1px;
+                  color:var(--primary-text-color);
+                  line-height:1;
+                `;
+                cell.appendChild(weekdayEl);
+
+                const partEl = document.createElement("div");
+                partEl.textContent = part;
+                partEl.style.cssText = `
+                  font-size:.65em;
+                  color:var(--secondary-text-color);
+                  text-align:center;
+                  margin-top:1px;
+                  margin-bottom:2px;
+                  line-height:1;
+                `;
+                cell.appendChild(partEl);
+              }
+
+              timeFlex.appendChild(cell);
+            });
+
+            overlay.appendChild(timeFlex);
+
+            // 2) tempFlex
+            const tempFlex = document.createElement("div");
+            tempFlex.style.cssText = `
+              position:absolute; top:${tfh}px; left:0; right:0;
+              display:flex; align-items:flex-start;
+              gap:clamp(1px,2%,10px);
+              flex:1 1 auto; min-width:0; box-sizing:border-box;
+              pointer-events:none;
+            `;
+            const BAR_W = "clamp(60%, 65%, 70%)";
+            items.forEach((i) => {
+              // верхняя и нижняя температуры
+              const vHigh = i[attr] != null ? i[attr] : tMin;           // temperature
+              const hasLow = i.templow != null;
+              const vLow  = hasLow ? i.templow : vHigh;                 // templow или то же самое
+            
+              // нормировка 0-1
+              const normHigh = (vHigh - tMin) / range;
+              const normLow  = (vLow  - tMin) / range;
+            
+              // «верх» прямоугольников
+              const offHigh = Math.round((1 - normHigh) * (chartH - markerH));
+              const offLow  = Math.round((1 - normLow ) * (chartH - markerH));
+            
+              // центры маркеров
+              const centerHigh = offHigh + markerH / 2;
+              const centerLow  = offLow  + markerH / 2;
+            
+              // параметры соединяющего столбца
+              const barTop    = Math.min(centerHigh, centerLow);
+              const barHeight = Math.abs(centerLow - centerHigh);
+
+              // --- флаги подсветки ---
+              const highlightMax = vHigh === tMax;                    // глобальный максимум
+              const highlightMin = useLowExtremes                     // глобальный минимум:
+                ? (vLow  === tMin)                                    //   • templow, если есть templow
+                : (vHigh === tMin);                                   //   • иначе — temperature
+            
+              /* --- DOM --- */
+              const cell = document.createElement("div");
+              cell.style.cssText = `
+                position: relative;
+                flex: 1 1 0;
+                min-width: 16px;
+                width: 0;
+                height: ${chartH}px;
+                box-sizing: border-box;
+              `;
+
+              // Цвета для high/low
+              const colorHigh = mapTempToColor(vHigh);
+              const colorLow  = mapTempToColor(vLow);    
+              
+              /* соединяющий bar */
+              const bar = document.createElement("div");
+              bar.style.cssText = `
+                position: absolute;
+                top: ${barTop}px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: ${BAR_W};
+                height: ${barHeight}px;
+                background: linear-gradient(to bottom, ${colorHigh}, ${colorLow});
+              `;
+              cell.appendChild(bar);
+            
+              /* верхний маркер */
+              const markerHigh = document.createElement("div");
+              markerHigh.style.cssText = `
+                position: absolute;
+                top: ${offHigh}px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: ${BAR_W};
+                height: ${markerH}px;
+                background: ${colorHigh};
+                border-radius: 3px;
+              `;
+              cell.appendChild(markerHigh);
+            
+              /* нижний маркер (если templow есть) */
+              if (hasLow) {
+                const markerLow = document.createElement("div");
+                markerLow.style.cssText = `
+                  position: absolute;
+                  top: ${offLow}px;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  width: ${BAR_W};
+                  height: ${markerH}px;
+                  background: ${colorLow};
+                  border-radius: 3px;
+                `;
+                cell.appendChild(markerLow);
+              }
+            
+              /* подпись верхней температуры */
+              const lblHigh = document.createElement("div");
+              lblHigh.textContent = `${vHigh.toFixed(1)}°`;
+              lblHigh.style.cssText = `
+                position: absolute;
+                top: ${centerHigh - offset}px; 
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: ${(highlightMax || (!hasLow && highlightMin)) ? '0.95em' : '0.75em'};
+                font-weight: ${(highlightMax || (!hasLow && highlightMin)) ? '700'   : '400'};
+                color: var(--primary-text-color);
+                white-space: nowrap;
+                text-align: center;
+              `;
+              cell.appendChild(lblHigh);
+            
+              /* подпись templow */
+              if (hasLow) {
+                const lblLow = document.createElement("div");
+                lblLow.textContent = `${vLow.toFixed(1)}°`;
+                lblLow.style.cssText = `
+                  position: absolute;
+                  top: ${centerLow + offset}px;
+                  left: 50%;
+                  transform: translate(-50%, -50%);
+                  font-size: ${highlightMin ? '0.95em' : '0.75em'};
+                  font-weight: ${highlightMin ? '700'   : '400'};
+                  color: var(--primary-text-color);
+                  white-space: nowrap;
+                  text-align: center;
+                `;
+                cell.appendChild(lblLow);
+              }
+            
+              tempFlex.appendChild(cell);
+            });
+            
+            overlay.appendChild(tempFlex);
+
+            // 3) линии min/max и zero
+            // max line & label
+            const maxLine = document.createElement("div");
+            maxLine.style.cssText = `
+              position:absolute;
+              top:${tfh + markerH/2}px;
+              left:0; right:0;
+              border-top:1px solid var(--divider-color);
+              pointer-events:none;
+            `;
+            overlay.appendChild(maxLine);
+
+            // min line & label
+            const minLine = document.createElement("div");
+            minLine.style.cssText = `
+              position:absolute;
+              top:${tfh + chartH - markerH/2}px;
+              left:0; right:0;
+              border-top:1px solid var(--divider-color);
+              pointer-events:none;
+            `;
+            overlay.appendChild(minLine);
+
+            // zero line if in range
+            if (tMin < 0 && tMax > 0) {
+              const zeroNorm = (0 - tMin)/range;
+              const zeroOff = Math.round((1 - zeroNorm)*(chartH - markerH));
+              const zeroLine = document.createElement("div");
+              zeroLine.style.cssText = `
+                position:absolute;
+                top:${tfh + zeroOff}px;
+                left:0; right:0;
+                border-top:1px dashed var(--divider-color);
+                pointer-events:none;
+              `;
+              overlay.appendChild(zeroLine);
+            }
+
+            block.appendChild(overlay);
+            this._body.appendChild(block);
+            return;
+          }
+
+          // 3) TODO: добавить другие графики по другим атрибутам
         });
       }
+
     }
   }
   // 3) Текстовый список прогноза — только если debug_forecast = true
@@ -881,12 +1431,12 @@ class AbsoluteForecastCard extends HTMLElement {
                           
   _rowHTML(i,lang) {
     const dt   = new Date(i.datetime);
-    const date = dt.toLocaleDateString(lang,{weekday:"short",month:"short",day:"numeric"});
+    const date = dt.toLocaleDateString(lang,withUserTimeZone(this.hass, {weekday:"short",month:"short",day:"numeric"}));
     const part = this._cfg.forecast_type==="twice_daily"
       ? (i.is_daytime===false
           ? this._hass.localize("ui.card.weather.night") || "Night"
           : this._hass.localize("ui.card.weather.day")   || "Day")
-      : dt.toLocaleTimeString(lang,{hour:"2-digit",minute:"2-digit"});
+      : dt.toLocaleTimeString(lang,withUserTimeZone(this.hass, { hour: "2-digit", minute: "2-digit" }));
     const cond = this._cond[i.condition] || i.condition || "";
 
     const spans = [];
