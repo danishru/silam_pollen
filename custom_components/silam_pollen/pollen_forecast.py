@@ -102,6 +102,9 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
             name=base_device_name,
         )
 
+        # Температура (°C)
+        self._attr_native_temperature = None
+
         # Кэш прогнозов и дополнительных атрибутов
         self._forecast_hourly: list[dict] = []
         self._forecast_twice_daily: list[dict] = []
@@ -231,6 +234,13 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
             self._extra_attributes["responsible_elevated"] = RESPONSIBLE_MAPPING.get(
                 re_value, "unknown"
             )
+            # 2 f) температура воздуха (°C)
+            temp_val = data_now.get("temp_2m", {}).get("value")
+            try:
+                kelvin = float(temp_val) if temp_val not in (None, "") else None
+                self._attr_native_temperature = round(kelvin - 273.15, 1) if kelvin is not None else None
+            except (ValueError, TypeError):
+                self._attr_native_temperature = None
         else:
             # если блока now нет, состояние «unknown»
             self._current_condition = None
