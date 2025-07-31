@@ -87,8 +87,8 @@ const POLLEN_SCALES = Object.fromEntries(
   )
 );
 
-const BAR_CHART_HEIGHT = 80;      // общая высота “столбика” в пикселях
-const POLLEN_SEGMENTS = POLLEN_COLORS.length - 1; // =8
+const BAR_CHART_HEIGHT = 70;      // общая высота “столбика” в пикселях
+const POLLEN_SEGMENTS = SCALE_DEFS[0].thresholds.length;
 
 // Пример результата:
 // {
@@ -333,10 +333,6 @@ class AbsoluteForecastCard extends HTMLElement {
     return weatherAttrIcons[attr] || null;
   }
   
-  _computeAttributeIcon(attr) {
-    return weatherAttrIcons[attr] || null;
-  }
-  
   /**
    * Возвращает <span class="value-flex">,
    * внутри двух элементов:
@@ -416,7 +412,7 @@ class AbsoluteForecastCard extends HTMLElement {
       areas = includeTitle
         ? `"title bars" "header bars"`
         : `"header bars"`;
-      colGap = "column-gap: 3%;";
+      colGap = "column-gap: 3%; align-items: center;";
     }
 
     wrapper.style.cssText = `
@@ -469,7 +465,7 @@ class AbsoluteForecastCard extends HTMLElement {
     header.style.cssText = `
       display: flex;
       flex-direction: ${mode === "focus" ? "row"    : "column"};
-      align-items: ${mode === "focus" ? "flex-end"    : ""};
+      align-items: ${mode === "focus" ? "": ""};
       gap:           ${mode === "focus" ? "4px"    : "4px"};
       ${mode === "focus"
         ? `width: 100%; margin-bottom: 2px;`
@@ -487,10 +483,12 @@ class AbsoluteForecastCard extends HTMLElement {
   _createValueContainer(mode) {
     const container = document.createElement("div");
     container.style.cssText = `
-      display: flex;
-      flex-direction: ${mode === "focus" ? "row"    : "column"};
-      align-items: ${mode === "focus" ? "baseline"    : "flex-end"};
-      gap: 2px;
+        display: inline-flex;
+        flex-direction: ${mode === "focus" ? "row" : "column"};
+        line-height: ${mode === "focus" ? "1" : ""};
+        gap: ${mode === "focus" ? "2px" : "1px"};
+        align-items: ${mode === "focus" ? "flex-end" : "flex-end"};
+        justify-content: center;
     `;
     return container;
   }
@@ -507,7 +505,7 @@ class AbsoluteForecastCard extends HTMLElement {
     container.classList.add(className);
     container.style.cssText = `
       display: flex;
-      align-items: ${mode === "focus" ? "baseline" : "center"};
+      align-items: ${mode === "focus" ? "flex-end" : "center"};
       gap: ${mode === "focus"
         ? "4px"
         : "clamp(2px, 4%, 8px)"
@@ -680,6 +678,66 @@ class AbsoluteForecastCard extends HTMLElement {
           display: block;
           height: 6px;                  /* толщина полосы */
         }
+        
+        /* Базовые стили */
+        .header-container .state-name {
+          font-size: clamp(1em, 5vw, 2em);
+          white-space: nowrap;           /* пока не переносим */
+          overflow-wrap: normal;
+        }
+
+        /* Даем право flex-рядкам внутри header контейнеру переноситься, но только когда уж слишком узко */
+        .header-container .header-row {
+          display: flex;
+          flex-direction: row;             /* по умолчанию все в одном ряду */
+          gap: 16px;
+          align-items: center;
+          }
+        .header-container .display-info  {
+          display: flex;
+          flex-direction: row-reverse;
+          align-items: center;
+          gap: 4px;
+          }
+
+        /* Когда контейнер < 600px, разрешаем переносить слова в state-name */
+        @container (max-width: 600px) {
+          .header-container .state-name {
+            white-space: normal;         /* теперь можно переносить */
+            overflow-wrap: break-word;
+          }
+        }
+
+        /* Когда контейнер ещё уже — делаем из flex-ряда колонку */
+        @container (max-width: 320px) {
+          .header-container .header-row {
+            flex-direction: column;
+            gap: 4px;
+            align-items: flex-start;
+            margin-bottom: 4px;
+          }
+        }
+        @container (max-width: 250px) {
+          .header-container .header-row-250 {
+            flex-direction: column;
+            gap: 4px;
+          }
+        }
+        @container (max-width: 320px) {
+          .header-container .display-info {
+            flex-direction: row;
+          }
+        }
+      .header-container .display-info-text  {
+          text-align: right;
+          align-items: flex-end;
+        }
+        @container (max-width: 320px) {
+          .header-container .display-info-text {
+            text-align: left;
+            align-items: flex-start;
+          }
+        }
       `;
       this.shadowRoot.appendChild(style);
       this._clampStyleInjected = true;
@@ -699,73 +757,184 @@ class AbsoluteForecastCard extends HTMLElement {
   // --------------------
     if (mode !== "show_forecast") {
       const header = document.createElement("div");
+      header.classList.add("header-container");    // <-- добавили класс
       header.style.cssText = `
         display: flex;
         flex-direction: column;
-      }
+        /* объявляем контейнер по inline-size (ширине) */
+        gap: 8px;
+        container-type: inline-size;
       `;
 
-      // GRID: 3 колонки (64px auto 1fr), только горизонтальный gap
+      // GRID: 2 колонки (64px auto 1fr), только горизонтальный gap
       const grid = document.createElement("div");
+      grid.classList.add("header-row");
       grid.style.cssText = `
-        display: grid;
+        display: flex;
         width: 100%;
-        grid-template-columns: 64px auto 1fr;
-        column-gap: 16px;
-        align-items: center;
+        justify-content: space-between;
       `;
 
-      // 1) Иконка 64px
+      // 1) Иконка + Имя состояния + friendly_name
+      const col1 = document.createElement("div");
+      col1.classList.add("header-row-250");
+      col1.style.cssText = `
+        display: flex;
+        gap: 4px;
+        min-width: 0;
+      `;
+      // Иконка 64px
       const iconEl = document.createElement("ha-state-icon");
       iconEl.hass     = this._hass;
       iconEl.stateObj = stateObj;
-      iconEl.style.setProperty("--mdc-icon-size", "64px");
-      grid.appendChild(iconEl);
+      iconEl.style.cssText = `
+        display: flex;
+        --mdc-icon-size: 64px;
+        flex: 0 0 64px;
+      `;
+      // контейнер для Имя состояния + friendly_name
+      const col1a = document.createElement("div");
+      col1a.style.cssText = `
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        gap: 4px;
+        align-items: baseline;
+      `;
+      // stateNameEl
+      const stateNameEl = document.createElement("div");
+      stateNameEl.textContent = this._hass.formatEntityState(stateObj);
+      stateNameEl.style.cssText = `
+        display: inline-flex;
+        white-space: normal;
+        font-size: clamp(1em, 5vw, 2em);
+        line-height: 0.75;
+      `;
 
-      // 2) Имя состояния + friendly_name
+      // friendlyEl
+      const friendlyEl = document.createElement("div");
+      friendlyEl.textContent = stateObj.attributes.friendly_name || "";
+      friendlyEl.style.cssText = `
+        display: inline-flex;
+        font-size: 0.9em;
+        color: var(--secondary-text-color);
+        line-height: 1;
+      `;
+      col1a.append(stateNameEl, friendlyEl);
+      col1.append(iconEl, col1a);
+
+      grid.appendChild(col1);
+
+      // 3) display_attribute справа
       const col2 = document.createElement("div");
       col2.style.cssText = `
         display: flex;
         flex-direction: column;
-      `;
-      const stateNameEl = document.createElement("span");
-      stateNameEl.classList.add("status-text");
-      stateNameEl.textContent = this._hass.formatEntityState(stateObj);
-      col2.appendChild(stateNameEl);
-      const friendlyEl = document.createElement("span");
-      friendlyEl.style.cssText = `
-        padding: 3px 0 8px;
-        font-size: 0.9em;
-        color: var(--secondary-text-color);
-        margin: 0;
-        line-height: 1.2;
-      `;
-      friendlyEl.textContent = stateObj.attributes.friendly_name || "";
-      col2.appendChild(friendlyEl);
-      grid.appendChild(col2);
-
-      // 3) display_attribute справа
-      const col3 = document.createElement("div");
-      col3.style.cssText = `
-        display: flex;
-        flex-direction: column;
         align-items: flex-end;
-        font-size: 2em;
+        flex: 0 0 1;
+        font-size: 1.8em;
       `;
+
       const key = this._cfg.display_attribute;
       if (key) {
-        const el = this._createAttributeValueEl(key, stateObj);
-        el.style.cssText += `
-          color: var(--text-color);
-          margin: 0 0 4px 0;
+        // 1) создаём display-info как flex-контейнер
+        const displayInfo = document.createElement("div");
+        displayInfo.classList.add("display-info");
+
+        // 2) пробуем получить имя иконки
+        const iconName = this._computeAttributeIcon(key);
+        // только если иконка есть — создаём и вставляем её
+        if (iconName) {
+          const iconEl = document.createElement("ha-icon");
+          iconEl.icon = iconName;
+          iconEl.style.cssText = `
+            display: flex;
+            --mdc-icon-size: 1.6em;
+            flex: 0 0 1.6em;
+          `;
+          displayInfo.append(iconEl);
+        }
+
+        // 3) создаём текстовый контейнер
+        const textWrapper = document.createElement("div");
+        textWrapper.classList.add("display-info-text");
+        textWrapper.style.cssText = `
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
         `;
-        col3.appendChild(el);
+
+        // 3a) текущее значение
+        const value = this._hass.formatEntityAttributeValue(stateObj, key) || "–";
+        const valueDiv = document.createElement("div");
+        valueDiv.textContent = value;
+        valueDiv.style.cssText = `
+          display: inline-flex;
+          line-height: 0.8;
+          font-size: 0.9em;
+          color: var(--text-color);
+        `;
+        textWrapper.append(valueDiv);
+
+        // 3b) строка-placeholder с динамическим контентом
+        // вычисляем текст для placeholder
+        let placeholderText = "";
+        const forecastType = this._cfg.forecast_type;
+        // используем те же items, что и для графика:
+        const items = arr.slice(0, this._cfg.forecast_slots ?? arr.length);
+        const localeOptions = this.hass.locale || {};
+        const fmtOpts = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
+        // достаём unit из атрибутов сущности
+        const unitAttr = `${key}_unit`;
+        const unit     = stateObj.attributes[unitAttr] || "";
+        if (forecastType === "hourly") {
+          // min/max за все hourly-слоты
+          const vals = items.map(i => i[key]).filter(v => v != null);
+          if (vals.length) {
+            const mn = Math.min(...vals);
+            const mx = Math.max(...vals);
+            const mnFmt = this._formatNumberInternal(mn,  localeOptions, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+            const mxFmt = this._formatNumberInternal(mx, localeOptions, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+            // берём юнит один раз
+            placeholderText = `${mnFmt}\u00A0/\u00A0${mxFmt}${unit ? `\u00A0${unit}` : ""}`;
+          }
+        } else {
+          // daily или twice_daily: берём только первый элемент
+          const first = items[0] || {};
+          if (["temperature","temperature_low","temperature_high"].includes(key)) {
+            // для температуры — templow и temperature
+            const low  = first.templow ?? first.temperature  ?? 0;
+            const high = first.temperature ?? low;
+            const lowFormatted  = this._formatNumberInternal(low,  localeOptions, fmtOpts);
+            const highFormatted = this._formatNumberInternal(high, localeOptions, fmtOpts) + "°";
+            placeholderText = `${lowFormatted}\u00A0/\u00A0${highFormatted}${unit ? `\u00A0${unit}` : ""}`;
+          } else if (first[key] != null) {
+            // для любых других атрибутов — его значение
+            placeholderText = `${first[key]}${unit ? `\u00A0${unit}` : ""}`;
+          }
+        }
+
+        // создаём и добавляем placeholderDiv только если placeholderText непустой
+        if (placeholderText) {
+          const placeholderDiv = document.createElement("div");
+          placeholderDiv.style.cssText = `
+            display: inline-flex;
+            line-height: 0.8;
+            font-size: 0.5em;
+            color: var(--secondary-text-color);
+          `;
+          placeholderDiv.textContent = placeholderText;
+          textWrapper.appendChild(placeholderDiv);
+        }
+
+        // 4) собираем всё вместе
+        displayInfo.append(textWrapper);
+
+        // 5) вставляем в col3
+        col2.appendChild(displayInfo);
       }
-      const placeholder = document.createElement("span");
-      placeholder.innerHTML = "&nbsp;";
-      placeholder.style.height = "0";
-      col3.appendChild(placeholder);
-      grid.appendChild(col3);
+
+      grid.appendChild(col2);
       header.appendChild(grid);
 
       // 4) value_attribute — grid 2×4
@@ -1138,8 +1307,10 @@ class AbsoluteForecastCard extends HTMLElement {
             const icon = document.createElement("ha-icon");
             icon.icon = weatherAttrIcons[attr] || "mdi:flower-pollen";
             icon.style.cssText = `
-              --mdc-icon-size: ${mode === "focus" ? "1.2em" : "3.0em"};
+              display: inline-flex;
+              --mdc-icon-size: ${mode === "focus" ? "1.1em" : "3.0em"};
               color: ${iconColor};
+              flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 3.0em"};
             `;
 
             // 1) контейнер для всех значений и статистики
@@ -1150,13 +1321,14 @@ class AbsoluteForecastCard extends HTMLElement {
               const currentEl = document.createElement("div");
               currentEl.textContent = this._hass.formatEntityAttributeValue(stateObj, attr);
               currentEl.style.cssText = `
-                display: ${mode === "focus" ? "flex" : "inline-flex"};
-                align-items: center;
-                font-size: ${mode === "focus" ? "0.8em" : "1.6em"};
+                display: inline-flex;
+                align-items: ${mode === "focus" ? "baseline" : "center"};
+                line-height: 1;
+                font-size: ${mode === "focus" ? "0.95em" : "1.6em"};
                 font-weight: ${mode === "focus" ? "400" : "600"};
                 ${mode === "focus"
                   ? `padding-right: 2px;`
-                  : `line-height: 1;`
+                  : ``
                 }
               `;
               valueContainer.appendChild(currentEl);
@@ -1288,8 +1460,10 @@ class AbsoluteForecastCard extends HTMLElement {
                   peakTimeText  = new Date(peakInfo.time)
                     .toLocaleTimeString(lang, withUserTimeZone(this.hass, { hour: "2-digit", minute: "2-digit" }));
                 }
-                // ── дополнительно: запоминаем ближайший будущий пик ──
-                if (peakDt > now && peakDt.getTime() < nextPeakTime) {
+                  // ── запоминаем ближайший будущий пик, который строго > baseVal ──
+                  if (peakDt > now
+                    && peakVal > baseVal
+                    && peakDt.getTime() < nextPeakTime) {
                   nextPeakTime  = peakDt.getTime();
                   nextPeakValue = peakVal;
                 }
@@ -1455,29 +1629,28 @@ class AbsoluteForecastCard extends HTMLElement {
               const peakIcon = document.createElement("ha-icon");
               peakIcon.icon = "mdi:clock-alert-outline";
               peakIcon.style.cssText = `
-                --mdc-icon-size: ${mode === "focus" ? "1.2em" : "2.0em"};
+                display: inline-flex;
+                --mdc-icon-size: ${mode === "focus" ? "1.1em" : "2.0em"};
                 color: ${nextPeakColor};
-              `;
-              
-              // создаём wrapper иконки
-              const peakIconWrapper = document.createElement("div");
-              peakIconWrapper.classList.add("peak-icon-wrapper");
-              peakIconWrapper.style.cssText = `
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: ${mode === "focus" ? "0" : "4px"};
+                flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 2.0em"};
               `;
 
-              // вкладываем иконку в wrapper и добавляем в контейнер
-              peakIconWrapper.appendChild(peakIcon);
+              // 2) Значение пика
+              const valEl = document.createElement("div");
+              valEl.textContent = `${nextPeakValue}`;
+              valEl.style.cssText = `
+                display: inline-flex;
+                line-height: 1; 
+                font-size: ${mode === "focus" ? "0.95em" : "1.2em"};
+                font-weight: ${mode === "focus" ? "400" : "600"};
+              `;
 
-              // 2) День («сегодня», «завтра» или короткий weekday)
+              // 3) День («сегодня», «завтра» или короткий weekday)
               const dt = new Date(nextPeakTime);
               const rawDay = this._formatRelativeDay(dt);
               const dayLabel = this._capitalize(rawDay);
 
-              const dayEl = document.createElement("span");
+              const dayEl = document.createElement("div");
               dayEl.textContent = dayLabel;
               dayEl.style.cssText = `
                 display: inline-flex;
@@ -1494,12 +1667,12 @@ class AbsoluteForecastCard extends HTMLElement {
                   }
               `;
 
-              // 3) Время (локализованное, выделяем часы)
+              // 4) Время (локализованное, выделяем часы)
               const time = dt.toLocaleTimeString(this.hass.language, {
                 hour:   "2-digit",
                 minute: "2-digit",
               });
-              const timeEl = document.createElement("span");
+              const timeEl = document.createElement("div");
               timeEl.textContent = time;
               timeEl.style.cssText = `
                 display: inline-flex;
@@ -1514,34 +1687,16 @@ class AbsoluteForecastCard extends HTMLElement {
                     : ``
                   }
               `;
-
-              // 4) Значение пика
-              const valEl = document.createElement("span");
-              valEl.textContent = `${nextPeakValue}`;
-              valEl.style.cssText = `
-                display: inline-flex;
-                line-height: 1; 
-                font-size: ${mode === "focus" ? "0.8em" : "1em"};
-                font-weight: ${mode === "focus" ? "400" : "600"};
-              `;
               // создаём wrapper значение\время
-              const peakvalWrapper = document.createElement("div");
-              peakvalWrapper.classList.add("peak-val-wrapper");
-              peakvalWrapper.style.cssText = `
-                display: inline-flex;
-                flex-direction: ${mode === "focus" ? "row" : "column"};
-                line-height: 1; 
-                gap: 2px;
-                align-items: ${mode === "focus" ? "center" : "flex-end"};
-                justify-content: center;
-              `;
+              const peakvalueContainer = this._createValueContainer(mode);
+              peakvalueContainer.classList.add("peak-val-wrapper");
 
-              peakvalWrapper.append(valEl, dayEl, timeEl);
+              peakvalueContainer.append(valEl, dayEl, timeEl);
 
               // — добавляем все в baseInfo в нужном порядке—
               const peakElems = mode === "focus"
-                ? [ peakIconWrapper, peakvalWrapper]
-                : [ peakIconWrapper, peakvalWrapper];
+                ? [ peakIcon, peakvalueContainer]
+                : [ peakIcon, peakvalueContainer];
               peakContainer.append(...peakElems);
               // Добавляем готовый контейнер в header
               header.appendChild(peakContainer);
@@ -1605,10 +1760,13 @@ class AbsoluteForecastCard extends HTMLElement {
             const iconEl = document.createElement("ha-icon");
             iconEl.icon = "mdi:thermometer";
             iconEl.style.cssText = `
-              --mdc-icon-size: ${mode === "focus" ? "1.2em" : "3.0em"};
+              display: inline-flex;
+              --mdc-icon-size: ${mode === "focus" ? "1.1em" : "3.0em"};
+              flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 3.0em"};
             `;
             // 1) контейнер для всех значений и статистики
             const valueContainer = this._createValueContainer(mode);
+
             // Получаем опции локали (у вас могут быть в slightly другом поле)
             const localeOptions = this.hass.locale || {};
             // Аргументы для форматирования — одна дробная цифра
@@ -1616,15 +1774,18 @@ class AbsoluteForecastCard extends HTMLElement {
             // 2) Первый flex-контейнер: текущее значение
             if (stateObj.attributes[attr] != null) {
               const currentEl = document.createElement("div");
-              currentEl.textContent = `${this._formatNumberInternal(stateObj.attributes[attr], localeOptions, fmtOpts)}°`;
+              const unitAttr = `${attr}_unit`;
+              const unit     = stateObj.attributes[unitAttr] || "";
+              currentEl.textContent = `${this._formatNumberInternal(stateObj.attributes[attr], localeOptions, fmtOpts)}${unit ? `\u00A0${unit}` : ""}`;
               currentEl.style.cssText = `
-                display: ${mode === "focus" ? "flex" : "inline-flex"};
-                align-items: center;
-                font-size: ${mode === "focus" ? "0.8em" : "1.6em"};
+                display: inline-flex;
+                align-items: ${mode === "focus" ? "baseline" : "center"};
+                line-height: 1;
+                font-size: ${mode === "focus" ? "0.95em" : "1.6em"};
                 font-weight: ${mode === "focus" ? "400" : "600"};
                 ${mode === "focus"
                   ? `padding-right: 2px;`
-                  : `line-height: 1;`
+                  : ``
                 }
               `;
               valueContainer.appendChild(currentEl);
@@ -1960,7 +2121,17 @@ class AbsoluteForecastCard extends HTMLElement {
               ${i.temperature ?? "—"}° ${cond} ${pollen}
             </li>`;
   }
-
+  /**
+   * Правила размера карточки в секциях (sections view).
+   * По умолчанию сетка делится на 12 колонок и ряды высотой 56px + 8px gap.
+   * Здесь мы говорим: займём 2 ряда и 6 колонок, не меньше 1 ряда и не больше 3.
+   */
+  getGridOptions() {
+    return {
+      columns:    12,    // сколько колонок занять по-умолчанию (из 12)
+      min_columns:   6,    // минимальное число рядов
+    };
+  }
   /* ====================================================================
    * required stubs
    * ==================================================================== */
