@@ -23,7 +23,7 @@ const weatherAttrIcons = {
   cloud_coverage:            "mdi:cloud-percent-outline",
   dew_point:                 "mdi:water-thermometer-outline",
   humidity:                  "mdi:water-percent",
-  wind_bearing:              "mdi:compass",
+  wind_bearing:              "mdi:compass-rose",
   wind_speed:                "mdi:weather-windy",
   pressure:                  "mdi:gauge",
   temperature:               "mdi:thermometer",
@@ -371,6 +371,84 @@ const snowSVG = [
   </svg>`
 ];
 
+// 16-рюмбовая роза ветров (для преобразования градусов → румб)
+const CARDINAL_DIRECTIONS = [
+  "N","NNE","NE","ENE","E","ESE","SE","SSE",
+  "S","SSW","SW","WSW","W","WNW","NW","NNW","N"
+];
+
+// Румб → градусы (для парсинга строкового bearing)
+const CARDINAL_TO_DEG = {
+  N:0, NNE:22.5, NE:45, ENE:67.5, E:90, ESE:112.5, SE:135, SSE:157.5,
+  S:180, SSW:202.5, SW:225, WSW:247.5, W:270, WNW:292.5, NW:315, NNW:337.5
+};
+
+const normalizeDeg = (x) => ((x % 360) + 360) % 360;
+
+// Универсальный парсер bearing → градусы [0..360)
+// Принимает: число, "45", "NE", "ssw", и т.п.
+const parseBearing = (raw) => {
+  if (raw == null) return NaN;
+
+  // 1) число
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    return normalizeDeg(raw);
+  }
+
+  // 2) строка → число?
+  const s = String(raw).trim().toUpperCase();
+  if (!s) return NaN;
+  const n = Number(s);
+  if (Number.isFinite(n)) return normalizeDeg(n);
+
+  // 3) строка → румб?
+  if (s in CARDINAL_TO_DEG) return CARDINAL_TO_DEG[s];
+
+  return NaN;
+};
+
+// Градусы → краткий румб (N/NE/.../NNW)
+const bearingToCardinal = (deg) => {
+  const n = Number(deg);
+  if (!Number.isFinite(n)) return "";
+  const a = normalizeDeg(n);
+  // eslint-disable-next-line no-bitwise
+  const idx = (((a + 11.25) / 22.5) | 0) % 16;
+  return CARDINAL_DIRECTIONS[idx];
+};
+
+// Универсально: любой bearing (число/строка) → краткий румб
+const toCardinal = (bearing) => {
+  const deg = parseBearing(bearing);
+  return Number.isFinite(deg) ? bearingToCardinal(deg) : "";
+};
+
+// Локализация румба (если нет перевода — вернёт краткий)
+const localizeCardinal = (hass, short) =>
+  hass?.localize?.(`ui.card.weather.cardinal_direction.${short.toLowerCase()}`) || short;
+
+// ЕДИНАЯ функция отрисовки стрелки направления ветра.
+// toDirection=true — стрелка указывает КУДА дует (bearing + 180), false — ОТКУДА дует.
+const createWindDirIcon = (bearing, mode, { toDirection = true } = {}) => {
+  const deg = parseBearing(bearing);
+  if (!Number.isFinite(deg)) return null;
+
+  const rot = toDirection ? (deg + 180) % 360 : deg;
+
+  const dirEl = document.createElement("ha-icon");
+  dirEl.icon = "mdi:navigation";
+  dirEl.style.cssText = `
+    display: inline-flex;
+    --mdc-icon-size: ${mode === "focus" ? ".8em" : "1em"};
+    transform: rotate(${rot}deg);
+    transform-origin: 50% 50%;
+    transition: transform 200ms ease;
+  `;
+  dirEl.setAttribute("title", toDirection ? "Wind →" : "Wind ←");
+  return dirEl;
+};
+
+
 /* хелпер: проставить width/height */
 function sized(svgStr, em = 1.0) {
   return svgStr.replace('<svg ', `<svg width="${em}em" height="${em}em" `);
@@ -456,28 +534,41 @@ const POLLEN_SEGMENTS = SCALE_DEFS[0].thresholds.length;
 //   ...
 // }
 
-// Функция маппинга температуры в цвет от холодного к тёплому с поддержкой прозрачности
+// Нормализация юнита HA: "°C"/"°F" → "C"/"F" (поддержит и "celsius"/"fahrenheit")
+function _normTempUnit(unit) {
+  const u = String(unit || "").trim().toUpperCase();
+  if (u.includes("F")) return "F";
+  if (u.includes("K")) return "K"; // на всякий случай
+  return "C";
+}
+
 /**
+ * Маппинг температуры в цвет (hsla) с учётом юнита HA.
  * -40..0 → 280°→180° (фиолетовый→циан) — линейно
- *  0..+40 → 180°→0° (циан→красный) — с экспонентой 0.6
- * @param {number} temp — температура
- * @param {number} [alpha=1] — непрозрачность (0…1)
- * @returns {string} — цвет в формате hsla(...)
+ *  0..+40 → 180°→0° (циан→красный) — экспонента 0.6
+ * @param {number} temp  — температура (в юните unit)
+ * @param {number} [alpha=1] — непрозрачность 0..1
+ * @param {string} [unit="°C"|"°F"] — юнит из HA, можно "°C"/"°F"/"C"/"F"/"celsius"/"fahrenheit"
+ * @returns {string} hsla(...)
  */
-function mapTempToColor(temp, alpha = 1) {
-  const t = Math.max(-40, Math.min(40, temp));
+function mapTempToColor(temp, alpha = 1, unit = "°C") {
+  if (!Number.isFinite(temp)) return `hsla(0, 0%, 50%, ${alpha})`;
+
+  const u = _normTempUnit(unit);
+  let tC = temp;
+  if (u === "F") tC = (temp - 32) * (5 / 9);
+  else if (u === "K") tC = temp - 273.15;
+
+  const t = Math.max(-40, Math.min(40, tC));
   let hue;
   if (t <= 0) {
-    // холодный диапазон: линейно
-    const ratio = (t + 40) / 40;       // 0..1
-    hue = 280 - ratio * 100;           // 280→180
+    const ratio = (t + 40) / 40; // 0..1
+    hue = 280 - ratio * 100;     // 280→180
   } else {
-    // тёплый диапазон: быстрее сбрасываем к красному
     const ratio = t / 40;
-    const adj   = Math.pow(ratio, 0.6); // экспонента <1 → резче в начале
-    hue = 180 - adj * 180;              // 180→0
+    const adj   = Math.pow(ratio, 0.6);
+    hue = 180 - adj * 180;       // 180→0
   }
-  // Возвращаем с альфа-каналом
   return `hsla(${hue.toFixed(1)}, 100%, 50%, ${alpha})`;
 }
 
@@ -530,7 +621,7 @@ class AbsoluteForecastCard extends HTMLElement {
     // добавили display_attribute
     this._cfg = {
       forecast_type: "hourly",
-      only_silam: true,
+      only_silam: "",
       display_attribute: "",
       additional_forecast_mode: "standard",
       value_attributes_left:    [],
@@ -784,7 +875,7 @@ class AbsoluteForecastCard extends HTMLElement {
         : `"header vdiv  bars"`;
     
       // равные отступы до разделителя, растущие с шириной контейнера
-      colGap = "column-gap: clamp(4px, 1.8vw, 14px); align-items: center;";
+      colGap = "column-gap: clamp(2px, 3cqw, 38px); align-items: center;";
     }      
 
     wrapper.style.cssText = `
@@ -879,7 +970,7 @@ class AbsoluteForecastCard extends HTMLElement {
     container.classList.add(className);
     container.style.cssText = `
       display: flex;
-      align-items: ${mode === "focus" ? "flex-end" : "center"};
+      align-items: ${mode === "focus" ? "" : "center"};
       gap: ${mode === "focus"
         ? "4px"
         : "clamp(2px, 4%, 8px)"
@@ -897,7 +988,7 @@ class AbsoluteForecastCard extends HTMLElement {
    * @returns {HTMLElement} — оборачивающий div с иконкой внутри
    */
   _createIconContainer(iconName, mode, customStyles = "") {
-    const size = mode === "focus" ? "1.1em" : "1.4em";
+    const size = mode === "focus" ? "1.1em" : "1.9em";
     const container = document.createElement("div");
     container.classList.add("icon-container");
     container.style.cssText = `
@@ -924,14 +1015,14 @@ class AbsoluteForecastCard extends HTMLElement {
    * @returns {HTMLElement} — оборачивающий div с span внутри
    */
   _createTextContainer(text, mode, customStyles = "") {
-    const fontSize   = mode === "focus" ? "0.9em" : "1.4em";
-    const fontWeight = mode === "focus" ? "300"   : "300";
+    const fontSize   = mode === "focus" ? "0.9em" : "1em";
+    const fontWeight = mode === "focus" ? "300"   : "400";
     const container = document.createElement("div");
     container.classList.add("text-container");
     container.style.cssText = `
       display: inline-flex;
       align-items: ${mode === "focus" ? "baseline" : "center"};
-      line-height: 1;
+      line-height: 1.25;
       font-size: ${fontSize};
       font-weight: ${fontWeight};
       ${customStyles}
@@ -955,12 +1046,13 @@ class AbsoluteForecastCard extends HTMLElement {
     // В фокусе: компактная строка "min / max"
     if (mode === "focus") {
       return this._createTextContainer(
-        `${minText} / ${maxText}`,
+        `(${minText}/${maxText})`,
         mode,
         `
-          border-left: 1px solid var(--divider-color);
-          padding-left: 3px;
-          font-size: .70em;
+          display: inline-flex;
+          padding-left: 1px;
+          font-size: .75em;
+          line-height: 1;
           color: var(--secondary-text-color);
           ${customStyles}
         `
@@ -972,11 +1064,7 @@ class AbsoluteForecastCard extends HTMLElement {
     wrap.classList.add("minmax-stack");
     wrap.style.cssText = `
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: flex-start;
-      line-height: 1;
-      margin-left: 1px;
+
       ${customStyles}
     `;
 
@@ -984,14 +1072,16 @@ class AbsoluteForecastCard extends HTMLElement {
       const el = document.createElement("div");
       el.textContent = txt;
       el.style.cssText = `
+        display: inline-flex;
         font-size: .70em;
+        line-height: 1;
         color: var(--secondary-text-color);
         white-space: nowrap;
       `;
       return el;
     };
 
-    wrap.append(mk(minText), mk(maxText));
+    wrap.append(mk(`(${minText}/${maxText})`));
     return wrap;
   }
   /**    
@@ -1304,6 +1394,10 @@ class AbsoluteForecastCard extends HTMLElement {
     const additionalOnly = Boolean(this._cfg.additional_only);
     const isSilamSource = stateObj.attributes.attribution === "Powered by silam.fmi.fi";
     const digits = this._cfg.show_decimals ? 1 : 0;
+    const entityTemperatureUnit =
+      stateObj.attributes.temperature_unit
+      || this.hass.config.unit_system.temperature
+      || "°C";
 
   // --------------------
   // 1) HEADER (текущая погода)
@@ -1475,7 +1569,8 @@ class AbsoluteForecastCard extends HTMLElement {
         `;
 
         // 3a) текущее значение
-        const value = this._hass.formatEntityAttributeValue(stateObj, key) || "–";
+        const val = this._hass.formatEntityAttributeValue(stateObj, key);
+        const value = (val == null || val === "unknown") ? "?" : val;
         const valueDiv = document.createElement("div");
         valueDiv.textContent = value;
         valueDiv.style.cssText = `
@@ -1924,26 +2019,50 @@ class AbsoluteForecastCard extends HTMLElement {
 
         // — режим «minimal»: только заголовки, без гистограмм —
         if (mode === "minimal") {
+          const hassObj = this._hass || this.hass;
+          const digitsCommon = Number(this._cfg?.pollen_digits ?? this._cfg?.digits ?? 0);
+
           const minimalRow = document.createElement("div");
           minimalRow.style.cssText = `
             display: flex;
             flex-wrap: wrap;
+            justify-content: space-evenly;
             gap: 16px;
             padding: 8px 0;
           `;
+
+          // безопасно берём первый слот прогноза (arr у вас уже используется выше)
+          const fcst0 = (Array.isArray(arr) && arr.length) ? arr[0] : null;
+
           availableAttrs.forEach(attr => {
-            const pollenType = attr.replace("pollen_", "");
-            const scale      = POLLEN_SCALES[pollenType];
-            const currVal    = stateObj.attributes[attr] ?? 0;
-            const iconName   = weatherAttrIcons[attr] || "mdi:flower-pollen";
-            let iconColor    = "var(--primary-text-color)";
-            if (scale) {
-              let idx = scale.thresholds.findLastIndex(th => currVal >= th);
-              if (idx < 0) idx = 0;
-              iconColor = scale.colors[idx];
+            const stateVal    = stateObj?.attributes?.[attr];
+            const forecastVal = fcst0 && fcst0[attr] != null ? fcst0[attr] : null;
+            const rawVal      = (stateVal != null) ? stateVal : forecastVal;
+            const fromForecast = (stateVal == null && forecastVal != null);
+
+            // Числовое значение (если возможно)
+            const numVal = rawVal == null ? null : Number(rawVal);
+            const hasNum = Number.isFinite(numVal);
+
+            // Пыльца: шкала и цвет
+            const pollenType = attr.startsWith("pollen_") ? attr.slice(7) : attr;
+            const scale      = (typeof POLLEN_SCALES !== "undefined") ? POLLEN_SCALES[pollenType] : undefined;
+
+            const iconName = (
+              (typeof weatherAttrIcons !== "undefined" && weatherAttrIcons && weatherAttrIcons[attr]) ||
+              "mdi:flower-pollen"
+            );
+
+            let iconColor = "var(--primary-text-color)";
+            if (scale && hasNum) {
+              let idx = 0;
+              for (let i = scale.thresholds.length - 1; i >= 0; i--) {
+                if (numVal >= scale.thresholds[i]) { idx = i; break; }
+              }
+              iconColor = scale.colors[idx] ?? iconColor;
             }
 
-            /* ---- контейнер header ---- */
+            /* ---- карточка атрибута ---- */
             const hdr = document.createElement("div");
             hdr.style.cssText = `
               display: flex;
@@ -1952,7 +2071,7 @@ class AbsoluteForecastCard extends HTMLElement {
               width: 64px;
             `;
 
-            /* ---- иконка ---- */
+            /* иконка */
             const iconEl = document.createElement("ha-icon");
             iconEl.icon = iconName;
             iconEl.style.cssText = `
@@ -1962,9 +2081,9 @@ class AbsoluteForecastCard extends HTMLElement {
             `;
             hdr.appendChild(iconEl);
 
-            /* ---- локализованное имя ---- */
+            /* локализованное имя */
             const nameEl = document.createElement("span");
-            nameEl.textContent = this._hass.formatEntityAttributeName(stateObj, attr);
+            nameEl.textContent = hassObj.formatEntityAttributeName(stateObj, attr);
             nameEl.style.cssText = `
               font-size: 0.8em;
               text-align: center;
@@ -1972,9 +2091,63 @@ class AbsoluteForecastCard extends HTMLElement {
             `;
             hdr.appendChild(nameEl);
 
-            /* ---- значение ---- */
+            /* значение */
             const valEl = document.createElement("span");
-            valEl.textContent = this._hass.formatEntityAttributeValue(stateObj, attr) || "–";
+
+            // 1) пробуем штатный форматтер HA (только для state-значения)
+            let valText = (stateVal != null)
+              ? hassObj.formatEntityAttributeValue(stateObj, attr)
+              : "";
+
+            // 2) если пусто — форматируем значение из прогноза / сырое значение
+            if (valText == null || valText === "") {
+              if (rawVal == null) {
+                valText = "–";
+              } else if (attr === "precipitation_probability" || attr === "humidity" || attr === "cloud_coverage") {
+                // проценты: округляем
+                valText = hasNum ? `${Math.round(numVal)}%` : `${rawVal}%`;
+              } else if (attr === "precipitation") {
+                // осадки: 1 десятая + юнит
+                const unit = stateObj?.attributes?.precipitation_unit || "";
+                const v = hasNum ? numVal : Number(rawVal);
+                valText = Number.isFinite(v)
+                  ? `${this._formatNumberInternal(v, hassObj.locale || {}, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}${unit ? ` ${unit}` : ""}`
+                  : String(rawVal);
+              } else if (attr === "wind_bearing") {
+                // bearing: румб без градусов (если есть наши хелперы)
+                try {
+                  const short = (typeof toCardinal === "function") ? toCardinal(rawVal) : "";
+                  valText = short
+                    ? ((typeof localizeCardinal === "function") ? localizeCardinal(hassObj, short) : short)
+                    : String(rawVal);
+                } catch (_) {
+                  valText = String(rawVal);
+                }
+              } else {
+                // прочее: число с общими digits + юнит если есть
+                if (hasNum) {
+                  valText = this._formatNumberInternal(numVal, hassObj.locale || {}, {
+                    minimumFractionDigits: digitsCommon,
+                    maximumFractionDigits: digitsCommon
+                  });
+                  const unit = stateObj?.attributes?.[`${attr}_unit`];
+                  if (unit) valText += ` ${unit}`;
+                } else {
+                  valText = String(rawVal);
+                }
+              }
+            }
+
+            valEl.textContent = valText;
+            if (fromForecast) {
+              valEl.title = this._labels?.from_forecast || "Из прогноза";
+              valEl.style.opacity = "0.85";
+              // маленькая точка-индикатор
+              const dot = document.createElement("span");
+              dot.textContent = "•";
+              dot.style.cssText = "margin-left:4px; font-size:0.9em; opacity:.7;";
+              valEl.appendChild(dot);
+            }
             valEl.style.cssText = `
               font-size: 0.9em;
               font-weight: 500;
@@ -1983,6 +2156,7 @@ class AbsoluteForecastCard extends HTMLElement {
 
             minimalRow.appendChild(hdr);
           });
+
           this._body.appendChild(minimalRow);
           return;
         }
@@ -2019,7 +2193,11 @@ class AbsoluteForecastCard extends HTMLElement {
           "dew_point",
           "wind_bearing",
           "wind_speed",
-          "wind_gust_speed"
+          "wind_gust_speed",
+          "ozone",
+          "apparent_temperature",
+          "cloud_coverage",
+          "pressure"
         ];
         availableAttrs.forEach(attr => {
           // пропускаем осадки в ветке "других графиков"        
@@ -2657,7 +2835,7 @@ class AbsoluteForecastCard extends HTMLElement {
             const hasAmount = showAmount;
 
             // 2) Динамические «весы» по типу
-            const TEMP_H   = hasTemp   ?  90 : 0;
+            const TEMP_H   = hasTemp   ?  70 : 0;
             const PROB_H   = maxProb   > 0 ?  50 : 0;
             const AMOUNT_H = maxAmount > 0 ?  0 : 0;
 
@@ -2694,9 +2872,9 @@ class AbsoluteForecastCard extends HTMLElement {
             
               useLowExtremes = lows.length > 0;
             }              
-            const colortMax = mapTempToColor(tMax, 0.4);
-            const colortMin  = mapTempToColor(tMin, 0.4);
-            const colorZero  = mapTempToColor(0, 0.4);
+            const colortMax = mapTempToColor(tMax, 0.4, entityTemperatureUnit);
+            const colortMin  = mapTempToColor(tMin, 0.4, entityTemperatureUnit);
+            const colorZero  = mapTempToColor(0, 0.4, entityTemperatureUnit);
             const labelPadding  = 14;   // запас под подписи min/max/zero
             
             // — создаём контейнер для базовой информации —
@@ -2711,72 +2889,140 @@ class AbsoluteForecastCard extends HTMLElement {
               `
             );
 
-            // — иконка термометра —
-            const iconEl = document.createElement("ha-icon");
-            iconEl.icon = "mdi:thermometer";
-            iconEl.style.cssText = `
-              display: inline-flex;
-              --mdc-icon-size: ${mode === "focus" ? "1.1em" : "3.0em"};
-              flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 3.0em"};
-            `;
-            // 1) контейнер для всех значений и статистики
-            const valueContainer = this._createValueContainer(mode);
+// — иконка термометра —
+const iconEl = document.createElement("ha-icon");
+iconEl.icon = "mdi:thermometer";
+iconEl.style.cssText = `
+  display: inline-flex;
+  --mdc-icon-size: ${mode === "focus" ? "1.1em" : "3.0em"};
+  flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 3.0em"};
+`;
 
-            // Получаем опции локали (у вас могут быть в slightly другом поле)
-            const localeOptions = this.hass.locale || {};
-            // Аргументы для форматирования — одна дробная цифра
-            const fmtOpts = { minimumFractionDigits: digits, maximumFractionDigits: digits };
-            // 2) Первый flex-контейнер — текущее значение (только если выбрана температура)
-            if (showTemp && tempAttr && stateObj.attributes[tempAttr] != null) {
-              const currentEl = document.createElement("div");
-              const unitAttr  = `${tempAttr}_unit`;
-              const unit      = stateObj.attributes[unitAttr] || "";
-              currentEl.textContent =
-                `${this._formatNumberInternal(stateObj.attributes[tempAttr], localeOptions, fmtOpts)}${unit ? `\u00A0${unit}` : ""}`;
-              currentEl.style.cssText = `
-                display: inline-flex;
-                align-items: ${mode === "focus" ? "baseline" : "center"};
-                line-height: 1;
-                font-size: ${mode === "focus" ? "0.95em" : "1.8em"};
-                font-weight: ${mode === "focus" ? "400" : "600"};
-                ${mode === "focus"
-                  ? `padding-right: 2px;`
-                  : ``
-                }
-              `;
-              valueContainer.appendChild(currentEl);
-            }
+// 1) контейнер для всех значений и статистики
+const valueContainer = document.createElement("div");
+valueContainer.style.cssText = `
+  display: inline-flex;
+  flex-direction: ${mode === "focus" ? "row" : "column"};
+  align-items: ${mode === "focus" ? "baseline" : ""};
+  gap: ${mode === "focus" ? "2px" : ""};
+  flex-wrap: nowrap;
+`;
 
-            // 3) Второй flex-контейнер: min/max через слэш
-            const formattedMin = this._formatNumberInternal(tMin, localeOptions, fmtOpts);
-            const formattedMax = this._formatNumberInternal(tMax, localeOptions, fmtOpts);
-            const minMaxEl = document.createElement("div");
-            minMaxEl.textContent = `${formattedMin}° / ${formattedMax}°`;
-            minMaxEl.style.cssText = `
-              display: inline-flex;
-              line-height: 1; 
-              font-size: ${mode === "focus" ? "0.7em" : "1em"};
-              color: var(--secondary-text-color);
-              ${mode === "focus"
-                ? `border-left: 1px solid var(--divider-color);
-                  padding-left: 3px;`
-                : ``
-              }
-            `;
-            valueContainer.appendChild(minMaxEl);
+// локаль и число знаков
+const localeOptions = this.hass?.locale || {};
+const digits = Number(this._cfg?.temperature_digits ?? this._cfg?.digits ?? 0);
+const fmtOpts = { minimumFractionDigits: digits, maximumFractionDigits: digits };
 
-            // — добавляем все в baseInfo в нужном порядке—
-            const baseElems = mode === "focus"
-              ? [ iconEl, valueContainer ]
-              : [ iconEl, valueContainer ];
-            baseInfo.append(...baseElems);
+// --- ЮНИТЫ ДЛЯ СВЯЗАННЫХ ПОЛЕЙ ---
+const pickUnit = (attr) => {
+  // проценты
+  if (attr === "precipitation_probability" || attr === "humidity" || attr === "cloud_coverage") return "%";
+  // осадки
+  if (attr === "precipitation") return stateObj.attributes.precipitation_unit || "";
 
-            // — вешаем baseInfo в header —
-            header.appendChild(baseInfo);
+  // температура и «родственные»
+  if (attr === "apparent_temperature" || attr === "dew_point" || attr === "temperature") {
+    return stateObj.attributes.temperature_unit
+        || this.hass?.config?.unit_system?.temperature
+        || "°C";
+  }
+
+  // ветер и «родственные»
+  if (attr === "wind_speed" || attr === "wind_gust_speed") {
+    return stateObj.attributes.wind_speed_unit
+        || stateObj.attributes[`${attr}_unit`]
+        || "m/s"; // безопасный дефолт
+  }
+  if (attr === "wind_bearing") return "°";
+
+  // прочие поля пробуем взять из `${attr}_unit`
+  return stateObj.attributes[`${attr}_unit`] || "";
+};
+
+// === ТЕКУЩЕЕ ЗНАЧЕНИЕ ТЕМПЕРАТУРЫ — ВСЕГДА ===
+let currentVal =
+  stateObj.attributes.temperature != null
+    ? stateObj.attributes.temperature
+    : (Array.isArray(items) && items.length ? items[0].temperature : null);
+
+const currentUnit = pickUnit("temperature");
+
+if (currentVal != null && Number.isFinite(Number(currentVal))) {
+  const currentEl = document.createElement("div");
+  currentEl.textContent =
+    `${this._formatNumberInternal(currentVal, localeOptions, fmtOpts)}\u00A0${currentUnit}`;
+  currentEl.style.cssText = `
+    display: inline-flex;
+    align-items: ${mode === "focus" ? "baseline" : "center"};
+    line-height: 1.25;
+    font-size: ${mode === "focus" ? "0.9em" : "1.8em"};
+    font-weight: ${mode === "focus" ? "500" : "600"};
+  `;
+  valueContainer.appendChild(currentEl);
+}
+
+// === MIN/MAX ПО ТИПУ ПРОГНОЗА ===
+let baseMin = null, baseMax = null;
+if (Array.isArray(items) && items.length) {
+  const isHourly = this._cfg?.forecast_type === "hourly";
+  const toNum = (v) => (typeof v === "number" ? v : NaN);
+  const filt = (arr) => arr.map(toNum).filter(Number.isFinite);
+
+  if (isHourly) {
+    // часовой: min/max по temperature
+    const temps = filt(items.map(i => i.temperature));
+    if (temps.length) {
+      baseMin = Math.min(...temps);
+      baseMax = Math.max(...temps);
+    }
+  } else {
+    // дневной: max из temperature, min из templow (если нет templow — берём temperature)
+    const highs = filt(items.map(i => i.temperature));
+    const lows  = filt(items.map(i => (i.templow ?? i.temperature)));
+    if (highs.length) baseMax = Math.max(...highs);
+    if (lows.length)  baseMin = Math.min(...lows);
+  }
+}
+
+if (baseMin != null && baseMax != null) {
+  const minMaxEl = document.createElement("div");
+  minMaxEl.textContent =
+    `(${this._formatNumberInternal(baseMin, localeOptions, fmtOpts)}/` +
+    `${this._formatNumberInternal(baseMax, localeOptions, fmtOpts)})`;
+  minMaxEl.style.cssText = `
+    display: inline-flex;
+    padding-left: 1px;
+    line-height: 1; 
+    font-size: ${mode === "focus" ? "0.75em" : "1em"};
+    color: var(--secondary-text-color);
+  `;
+  valueContainer.appendChild(minMaxEl);
+}
+
+// — добавляем всё в baseInfo —
+const baseElems = [ iconEl, valueContainer ];
+baseInfo.append(...baseElems);
 
 // === AttrInfo для выбранных атрибутов: группируем осадки и ветер, остальные по-отдельности ===
 let precipContainer;
 let windContainer;
+// === Новый общий контейнер для ВСЕХ атрибутов ===
+const attrContainer = document.createElement("div");
+attrContainer.classList.add("all-attrs");
+attrContainer.style.cssText = `
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${mode === "focus" ? "" : "4px"};
+  width:100%;
+  box-sizing:border-box;
+`;
+
+// — если фокус: baseInfo идёт в attrContainer; иначе — сразу в header
+if (mode === "focus") {
+  attrContainer.appendChild(baseInfo);
+} else {
+  header.appendChild(baseInfo);
+}
 
 // availableAttrs приходит из this._cfg.additional_forecast, в порядке, заданном пользователем
 availableAttrs.forEach(attr => {
@@ -2812,14 +3058,16 @@ availableAttrs.forEach(attr => {
 
   // формат текущего значения
   let text;
-  if (attr === "precipitation_probability" || attr === "humidity") {
+  if (attr === "precipitation_probability" || attr === "humidity" || attr === "cloud_coverage") {
     text = `${rawVal}%`;
+  } else if (attr === "wind_bearing") {
+    text = `${rawVal}°`;
   } else if (attr === "precipitation") {
-    const unit    = stateObj.attributes.precipitation_unit || "";
+    const unit    = pickUnit(attr);
     const fmtOpts = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
     text = `${this._formatNumberInternal(rawVal, this.hass.locale, fmtOpts)}${unit ? ` ${unit}` : ""}`;
   } else {
-    const unit    = stateObj.attributes[`${attr}_unit`] || "";
+    const unit    = pickUnit(attr);
     const fmtOpts = { minimumFractionDigits: digits, maximumFractionDigits: digits };
     text = `${this._formatNumberInternal(rawVal, this.hass.locale, fmtOpts)}${unit ? ` ${unit}` : ""}`;
   }
@@ -2837,7 +3085,7 @@ availableAttrs.forEach(attr => {
 
       // локальный форматтер БЕЗ единиц
       const fmt = (v) => {
-        if (attr === "precipitation_probability" || attr === "humidity") {
+        if (attr === "precipitation_probability" || attr === "humidity" || attr === "cloud_coverage") {
           return String(Math.round(v));                          // проценты: целое число
         }
         if (attr === "precipitation") {
@@ -2871,8 +3119,8 @@ availableAttrs.forEach(attr => {
         mode,
         `
           ${mode === "focus"
-            ? ``
-            : `justify-content: flex-start; flex-wrap: wrap; gap: 2px;`
+            ? `padding-left: 4px;`
+            : `justify-content: flex-start;flex-wrap: wrap; gap: 4px;`
           }
         `
       );
@@ -2883,14 +3131,15 @@ availableAttrs.forEach(attr => {
         `${mode === "focus" ? `` : `padding-right: 2px;`}`
       );
       precipContainer.appendChild(commonIcon);
-      header.appendChild(precipContainer);
+      attrContainer.appendChild(precipContainer);
     }
     // value + min/max в одном контейнере
     const valueWrap = document.createElement("div");
     valueWrap.style.cssText = `
       display: inline-flex;
-      align-items: ${mode === "focus" ? "baseline" : "center"};
-      gap: 2px;
+      flex-direction: ${mode === "focus" ? "row" : "column"};
+      align-items: ${mode === "focus" ? "baseline" : ""};
+      gap: ${mode === "focus" ? "2px" : ""};
       flex-wrap: nowrap;
     `;
     const valEl = this._createTextContainer(text, mode);
@@ -2907,48 +3156,71 @@ availableAttrs.forEach(attr => {
         mode,
         `
           ${mode === "focus"
-            ? ``
-            : `justify-content: flex-start; flex-wrap: wrap; gap: 2px;`
+            ? `padding-left: 4px;`
+            : `justify-content: flex-start; flex-wrap: wrap; gap: 4px;`
           }
         `
       );
-      header.appendChild(windContainer);
+      attrContainer.appendChild(windContainer);
     }
 
     // элемент для конкретного ветрового атрибута
     const item = document.createElement("div");
     item.style.cssText = `
       display: flex;
-      align-items: flex-end;
+      align-items: ${mode === "focus" ? "" : "center"};
       gap: 2px;
     `;
 
-    // иконка
-    const iconName = this._computeAttributeIcon(attr);
-    if (iconName) {
-      const iconEl = document.createElement("ha-icon");
-      iconEl.icon = iconName;
-      iconEl.style.cssText = `
-        display: inline-flex;
-        --mdc-icon-size: ${mode === "focus" ? "1.1em" : "1.4em"};
-        flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 1.4em"};
-        ${mode === "focus" ? `` : `padding-right: 2px;`}
-      `;
-      item.appendChild(iconEl);
+    // === ИКОНКА ===
+    let iconEl = null;
+    if (attr === "wind_bearing") {
+      // стрелка как иконка: КУДА дует (bearing + 180°)
+      iconEl = createWindDirIcon(rawVal, mode, { toDirection: true }) || document.createElement("ha-icon");
+      if (!iconEl.icon) iconEl.icon = "mdi:compass"; // фолбэк
+      // приводим размеры/отступы к стилю остальных иконок ветра
+      iconEl.style.setProperty("--mdc-icon-size", (mode === "focus" ? "1.1em" : "1.9em"));
+      iconEl.style.flex = (mode === "focus" ? "0 0 1.1em" : "0 0 1.9em");
+      if (mode !== "focus") iconEl.style.paddingRight = "2px";
+    } else {
+      const iconName = this._computeAttributeIcon(attr);
+      if (iconName) {
+        iconEl = document.createElement("ha-icon");
+        iconEl.icon = iconName;
+        iconEl.style.cssText = `
+          display: inline-flex;
+          --mdc-icon-size: ${mode === "focus" ? "1.1em" : "1.9em"};
+          flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 1.9em"};
+          ${mode === "focus" ? `` : `padding-right: 2px;`}
+        `;
+      }
     }
+    if (iconEl) item.appendChild(iconEl);
 
-    // текущее значение + min/max в одном контейнере
+    // === ЗНАЧЕНИЕ (текст + min/max) ===
     const valueWrap = document.createElement("div");
     valueWrap.style.cssText = `
       display: inline-flex;
-      align-items: ${mode === "focus" ? "baseline" : "center"};
-      gap: 2px;
+      flex-direction: ${mode === "focus" ? "row" : "column"};
+      align-items: ${mode === "focus" ? "baseline" : ""};
+      gap: ${mode === "focus" ? "2px" : ""};
       flex-wrap: nowrap;
     `;
-    const valEl = this._createTextContainer(text, mode);
-    valueWrap.appendChild(valEl);
-    if (minMaxStack) valueWrap.appendChild(minMaxStack);
-  
+
+    if (attr === "wind_bearing") {
+      // только локализованный румб, без градусов
+      const short = toCardinal(rawVal);
+      const label = short ? localizeCardinal(this.hass, short) : (rawVal ?? "") + "";
+      const valEl = this._createTextContainer(label, mode);
+      valueWrap.appendChild(valEl);
+      // min/max для bearing не показываем
+    } else {
+      // speed / gust: как раньше
+      const valEl = this._createTextContainer(text, mode);
+      valueWrap.appendChild(valEl);
+      if (minMaxStack) valueWrap.appendChild(minMaxStack);
+    }
+
     item.appendChild(valueWrap);
     windContainer.appendChild(item);
 
@@ -2959,8 +3231,8 @@ availableAttrs.forEach(attr => {
       mode,
       `
         ${mode === "focus"
-          ? ``
-          : `justify-content: flex-start; gap: 2px;`
+          ? `padding-left: 4px;`
+          : `justify-content: flex-start; gap: 4px;`
         }
       `
     );
@@ -2972,19 +3244,19 @@ availableAttrs.forEach(attr => {
       iconEl.icon = iconName;
       iconEl.style.cssText = `
         display: inline-flex;
-        --mdc-icon-size: ${mode === "focus" ? "1.1em" : "1.4em"};
-        flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 1.4em"};
-        ${mode === "focus" ? `` : `padding-right: 2px;`}
+        --mdc-icon-size: ${mode === "focus" ? "1.1em" : "1.9em"};
+        flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 1.9em"};
+        ${mode === "focus" ? `` : `padding-right: 1px;`}
       `;
       container.appendChild(iconEl);
     }
-
     // текущее значение
     const valueWrap = document.createElement("div");
     valueWrap.style.cssText = `
       display: inline-flex;
-      align-items: ${mode === "focus" ? "baseline" : "center"};
-      gap: 2px;
+      flex-direction: ${mode === "focus" ? "row" : "column"};
+      align-items: ${mode === "focus" ? "baseline" : ""};
+      gap: ${mode === "focus" ? "2px" : ""};
       flex-wrap: nowrap;
     `;
     const valEl = this._createTextContainer(text, mode);
@@ -2993,10 +3265,11 @@ availableAttrs.forEach(attr => {
   
     container.appendChild(valueWrap);
 
-    header.appendChild(container);
+    attrContainer.appendChild(container);
   }
 });
-
+// === Итог: добавляем весь attrContainer в header ===
+header.appendChild(attrContainer);
             /* -----------------------------------------------------------
              *  Оверлей: timeFlex + tempFlex + линии min/max/zero
              * --------------------------------------------------------- */
@@ -3145,8 +3418,8 @@ availableAttrs.forEach(attr => {
                   ? (vLow === tMin)
                   : (vHigh === tMin);
 
-                const colorHigh = mapTempToColor(vHigh);
-                const colorLow  = mapTempToColor(vLow);
+                const colorHigh = mapTempToColor(vHigh,1,entityTemperatureUnit);
+                const colorLow  = mapTempToColor(vLow,1,entityTemperatureUnit);
 
                 const bar = document.createElement("div");
                 bar.style.cssText = `
@@ -3526,22 +3799,32 @@ availableAttrs.forEach(attr => {
   getCardSize() {
     return 4;
   }
-
+  // Включаем превью в UI
+  static getPreview() {
+    return true;
+  }
   /**
    * При создании новой карточки из UI подставляем первую
    * подходящую weather-сущность silam_pollen_*_forecast
    */
   static getStubConfig(hass) {
     const ent = Object.keys(hass.states)
-      .filter(id=> id.startsWith("weather.silam_pollen") && id.endsWith("_forecast"));
+      .filter(id => id.startsWith("weather."));
+    const randomEntity = ent.length
+    ? ent[Math.floor(Math.random() * ent.length)]
+    : "";
     return {
-      type:           "custom:absolute-forecast-card",
-      only_silam:     true,
-      entity:         ent.length ? ent[0] : "",
-      forecast_type:  "hourly",
+      type: "custom:absolute-forecast-card",
+      only_silam: false,
+      entity: randomEntity,
+      forecast_type: "hourly",
+      forecast_slots: 5,
       display_attribute: "",
+      additional_forecast: ["temperature"],   // ← сразу с температурой
+      additional_forecast_mode: "focus",      // ← режим блока
     };
-  }  
+  }
+  
 
   /**
    * UI просит создать элемент-редактор
@@ -3569,7 +3852,7 @@ class AbsoluteForecastCardEditor extends LitElement {
   constructor() {
     super();
     this._config = {
-      only_silam:     true, // по-умолчанию показываем только нашу интеграцию
+      only_silam:     false, // по-умолчанию показываем только нашу интеграцию
       forecast:  "show_both",  // по умолчанию только прогноз
       additional_forecast: [],            // по умолчанию пусто
       additional_forecast_mode: "standard", // режим дополнительного блока
@@ -3585,8 +3868,9 @@ class AbsoluteForecastCardEditor extends LitElement {
 
   setConfig(config) {
     this._config = {
-      only_silam:        true,
+      only_silam:        false,
       forecast:         "show_both",
+      forecast_slots: 5,
       additional_forecast: [],
       additional_forecast_mode: "standard",
       value_attributes_left: [],
@@ -3822,11 +4106,6 @@ class AbsoluteForecastCardEditor extends LitElement {
     // 1) базовые поля
     const baseSchema = [
       {
-        name: "only_silam",
-        selector: { boolean: {} },
-        default: true,
-      },
-      {
         name: "entity",
         required: true,
         selector: {
@@ -3952,6 +4231,11 @@ class AbsoluteForecastCardEditor extends LitElement {
         flatten:  true,
         schema: [
           {
+            name: "only_silam",
+            selector: { boolean: {} },
+            default: this._config.only_silam,
+          },
+          {
             name:  "debug_forecast",
             label: this.hass.localize("component.silam_pollen.editor.debug_forecast"),
             selector: { boolean: {} },
@@ -3993,5 +4277,7 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "absolute-forecast-card",
   name: "Absolute Forecast Card",
-  description: "Absolute forecast card (uses native weather selector)"
+  description: "Absolute forecast card (uses native weather selector)",
+  preview: true,                    // ⬅⬅ ВКЛЮЧАЕТ превью в каталоге
+  documentationURL: "https://github.com/danishru/silam_pollen"     // (необязательно, но полезно)
 });
