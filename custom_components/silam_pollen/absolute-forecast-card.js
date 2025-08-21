@@ -448,6 +448,149 @@ const createWindDirIcon = (bearing, mode, { toDirection = true } = {}) => {
   return dirEl;
 };
 
+/**
+ * Универсальная стрелка направления ветра.
+ * - bearing: число/строка/румб (например, 270, "270", "WSW")
+ * - options:
+ *    toDirection: bool — true: «КУДА» (deg + 180), false: «ОТКУДА»
+ *    prefer: "auto" | "mdi" | "svg" — способ отрисовки
+ *    mode: "focus" | "standard" | "minimal" — влияет на размер для MDI
+ *    size: number — размер для SVG (px), для MDI используется --mdc-icon-size
+ *    color: CSS color — цвет стрелки
+ *    hass: объект hass для локализации румба (опционально)
+ *    aria: bool — добавить aria-атрибуты
+ */
+const createWindDir = (
+  bearing,
+  {
+    toDirection = true,
+    prefer = "auto",
+    mode = undefined,
+    size = 14,
+    color = "currentColor",
+    hass = null,
+    aria = true,
+  } = {}
+) => {
+  const deg = parseBearing(bearing);
+  if (!Number.isFinite(deg)) return null;
+
+  const rot = toDirection ? (deg + 180) % 360 : deg;
+  const short = toCardinal(deg);                           // "N", "NE", ...
+  const localized = short ? localizeCardinal(hass, short) : "";
+  const title = `${Math.round(deg)}°${localized ? ` ${localized}` : ""}`;
+
+  // Выбираем рендер: MDI (ha-icon) или SVG
+  const canUseMdi = typeof customElements !== "undefined" && !!customElements.get("ha-icon");
+  const useMdi = prefer === "mdi" || (prefer === "auto" && canUseMdi);
+
+  if (useMdi) {
+    const el = document.createElement("ha-icon");
+    el.icon = "mdi:navigation";
+    // Если mode не задан — используем size как px для --mdc-icon-size
+    const iconSize = mode ? (mode === "focus" ? ".8em" : "1em") : `${size}px`;
+    el.style.cssText = `
+      display:inline-flex;
+      --mdc-icon-size:${iconSize};
+      transform: rotate(${rot}deg);
+      transform-origin: 50% 50%;
+      transition: transform 200ms ease;
+      color:${color};
+    `;
+    el.setAttribute("title", title);
+    if (aria) {
+      el.setAttribute("role", "img");
+      el.setAttribute("aria-label", title);
+    }
+    return el;
+  }
+
+  // SVG-отрисовка (без зависимостей)
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("width", String(size));
+  svg.setAttribute("height", String(size));
+  svg.style.cssText = `
+    display:inline-block;
+    transform: rotate(${rot}deg);
+    transform-origin: 50% 50%;
+    color:${color};
+    opacity:.8;
+  `;
+  // форма стрелки в стиле mdi:navigation
+  svg.innerHTML = `<path d="M12 2l4 6h-3v14h-2V8H8l4-6z" fill="currentColor"/>`;
+
+  const t = document.createElementNS("http://www.w3.org/2000/svg", "title");
+  t.textContent = title;
+  svg.appendChild(t);
+
+  if (aria) {
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", title);
+  }
+
+  return svg;
+};
+
+// 1) Юнит скорости → м/с
+const toMS = (val, unitRaw) => {
+  const v = Number(val);
+  if (!Number.isFinite(v)) return NaN;
+  const u = String(unitRaw || "m/s").toLowerCase().trim();
+  switch (u) {
+    case "m/s": case "mps": return v;
+    case "km/h": case "kmh": return v / 3.6;
+    case "mi/h": case "mph": return v * 0.44704;
+    case "ft/s": case "fts": return v * 0.3048;
+    case "kn": case "kt": case "kts": case "knot": case "knots": return v * 0.514444;
+    default: return v; // считаем как м/с, если пришло что-то экзотичное
+  }
+};
+
+// 2) Границы Бофорта (м/с) — из таблицы «Modern scale»
+const BEAUFORT_MPS_BOUNDS = [0.2, 1.5, 3.3, 5.4, 7.9, 10.7, 13.8, 17.1, 20.7, 24.4, 28.4, 32.6];
+const beaufortFromMS = (ms) => {
+  const v = Math.max(0, Number(ms) || 0);
+  for (let b = 0; b < BEAUFORT_MPS_BOUNDS.length; b++) {
+    if (v <= BEAUFORT_MPS_BOUNDS[b]) return b;
+  }
+  return 12;
+};
+
+// 3) Палитра цветов «как на Википедии» (цвет фона в ячейке Beaufort number 0..12)
+const BEAUFORT_COLORS_HEX = [
+  "#FFFFFF", // 0
+  "#AEF1F9", // 1
+  "#96F7DC", // 2
+  "#96F7B4", // 3
+  "#6FF46F", // 4
+  "#73ED12", // 5
+  "#A4ED12", // 6
+  "#DAED12", // 7
+  "#EDC212", // 8
+  "#ED8F12", // 9
+  "#ED6312", // 10
+  "#ED2912", // 11
+  "#D5102D", // 12
+];
+
+// 4) HEX → rgba(...) с нужной прозрачностью
+const hexToRgba = (hex, alpha = 1) => {
+  const h = String(hex).replace("#", "").trim();
+  const m = h.length === 3
+    ? h.split("").map(x => parseInt(x + x, 16))
+    : h.length === 6
+      ? [h.slice(0,2),h.slice(2,4),h.slice(4,6)].map(x => parseInt(x,16))
+      : [255,255,255];
+  return `rgba(${m[0]}, ${m[1]}, ${m[2]}, ${alpha})`;
+};
+
+// 5) Цвет по Бофорту «как у Википедии»
+const beaufortColorWiki = (b, alpha = 0.9) => {
+  const idx = Math.max(0, Math.min(12, b|0));
+  return hexToRgba(BEAUFORT_COLORS_HEX[idx], alpha);
+};
+
 
 /* хелпер: проставить width/height */
 function sized(svgStr, em = 1.0) {
@@ -861,7 +1004,7 @@ class AbsoluteForecastCard extends HTMLElement {
 
     if (mode === "focus") {
       // focus — одна колонка
-      cols  = "1fr";
+      cols  = "minmax(0, 1fr)";
       rows  = includeTitle ? "auto auto 1fr" : "auto 1fr";
       areas = includeTitle
         ? `"title" "header" "bars"`
@@ -1577,7 +1720,7 @@ class AbsoluteForecastCard extends HTMLElement {
           display: inline-flex;
           line-height: 0.9;
           font-size: 0.9em;
-          color: var(--text-color);
+          color: var(--primary-text-color);
         `;
         textWrapper.append(valueDiv);
 
@@ -1677,7 +1820,7 @@ class AbsoluteForecastCard extends HTMLElement {
             `;
             left.forEach(attr => {
               const el = this._createAttributeValueEl(attr, stateObj);
-              el.style.color = 'var(--text-color)';
+              el.style.color = 'var(--primary-text-color)';
               // Если есть иконка — перекрашиваем её в свой цвет
               const iconEl = el.querySelector('ha-icon');
               if (iconEl) {
@@ -1699,7 +1842,7 @@ class AbsoluteForecastCard extends HTMLElement {
             `;
             right.forEach(attr => {
               const el = this._createAttributeValueEl(attr, stateObj);
-              el.style.color = 'var(--text-color)';
+              el.style.color = 'var(--primary-text-color)';
               // Если есть иконка — перекрашиваем её в свой цвет
               const iconEl = el.querySelector('ha-icon');
               if (iconEl) {
@@ -1732,7 +1875,7 @@ class AbsoluteForecastCard extends HTMLElement {
           left.forEach(attr => {
             const el = this._createAttributeValueEl(attr, stateObj);
             el.style.cssText += `
-              color: var(--text-color);
+              color: var(--primary-text-color);
               white-space: nowrap;
             `;
             const iconEl = el.querySelector('ha-icon');
@@ -1754,7 +1897,7 @@ class AbsoluteForecastCard extends HTMLElement {
           right.forEach(attr => {
             const el = this._createAttributeValueEl(attr, stateObj);
             el.style.cssText += `
-              color: var(--text-color);
+              color: var(--primary-text-color);
               white-space: nowrap;
             `;
             const iconEl = el.querySelector('ha-icon');
@@ -2249,7 +2392,7 @@ class AbsoluteForecastCard extends HTMLElement {
           const cellMinWidth = 16; 
           const padStr  = `${sidePad}px`;
           // Размеры для полоски времени
-          const baseTFH = !isSilamSource ? 60 : 35;
+          const baseTFH = !isSilamSource ? 46 : 35;
           // если forecast_type == "twice_daily" → две строки → +40 %
           const tfh = this._cfg.forecast_type === "twice_daily"
             ? Math.round(baseTFH * (!isSilamSource ? 1.2 : 1.35))
@@ -2811,72 +2954,119 @@ class AbsoluteForecastCard extends HTMLElement {
           else if (isWeather) {
             if (weatherOverlayDrawn) return;           // выходим из forEach
             weatherOverlayDrawn = true;                // помечаем, что уже нарисовали
-            /* —— какие под-блоки реально нужны —— */
-            const showTemp = ["temperature", "temperature_low", "temperature_high"].some(a => availableAttrs.includes(a));
-            const tempAttr = ["temperature", "temperature_high", "temperature_low"].find(a => availableAttrs.includes(a));
-            const showProb = availableAttrs.includes("precipitation_probability");
+            /* —— что реально выбрано пользователем —— */
+            const showTemp   = ["temperature", "temperature_low", "temperature_high"].some(a => availableAttrs.includes(a));
+            const tempAttr   = ["temperature", "temperature_high", "temperature_low"].find(a => availableAttrs.includes(a)) || null;
+            const showProb   = availableAttrs.includes("precipitation_probability");
             const showAmount = availableAttrs.includes("precipitation");
+
+            // ветровые выборы — как просил
+            const showWindSpeed = availableAttrs.includes("wind_speed");
+            const showWindGust  = availableAttrs.includes("wind_gust_speed");
+            const showWindDir   = availableAttrs.includes("wind_bearing");
+
             const precipBarW = 0.12;        // ширина бара (18 % от ширины температурного)
             const precipColor = "rgba(33,150,243,.55)"; // полупрозрачный синий
             // размеры сегментов гистограммы
 
-            /* ── динамическая высота “термометра” ──────────────── */
-            // 1) Собираем все вероятности (0 если не задана)
-            const allProbs = items.map(i => typeof i.precipitation_probability === 'number' ? i.precipitation_probability : 0);
-            // 2) Ищем максимум
-            const maxProb = Math.max(...allProbs, 0);
-            // 3) Собираем все объёмы осадков
-            const allAmounts = items.map(i =>typeof i.precipitation ==="number" ? i.precipitation : 0);
-            const maxAmount = Math.max(...allAmounts, 0);
+            /* —— подготовка рядов/максимумов —— */
+            // осадки
+            const allProbs   = items.map(i => (showProb   && typeof i.precipitation_probability === "number") ? i.precipitation_probability : 0);
+            const maxProb    = showProb ? Math.max(...allProbs, 0) : 0;
 
-            // флаги наличия данных
+            const allAmounts = items.map(i => (showAmount && typeof i.precipitation === "number") ? i.precipitation : 0);
+            const maxAmount  = showAmount ? Math.max(...allAmounts, 0) : 0;
+
+            // ветер
+            const speeds = showWindSpeed ? items.map(i => Number(i?.wind_speed ?? 0)) : [];
+            const gusts  = showWindGust  ? items.map(i => Number(i?.wind_gust_speed ?? (showWindSpeed ? i?.wind_speed : 0))) : [];
+            const hasDir = showWindDir && items.some(i => Number.isFinite(Number(i?.wind_bearing)));
+            const maxWind = Math.max(0, ...(speeds.length ? speeds : [0]), ...(gusts.length ? gusts : [0]));
+            const windUnit = stateObj.attributes.wind_speed_unit || "m/s";
+
+            /* —— флаги наличия данных (после max’ов) —— */
             const hasTemp   = showTemp;
-            const hasProb   = showProb;
-            const hasAmount = showAmount;
+            const hasProb   = showProb && maxProb   > 0;
+            const hasAmount = showAmount && maxAmount > 0;
+            const hasAnyAmount = showAmount && items.some(i => typeof i.precipitation === "number" && i.precipitation > 0);
+            const hasWindData = (showWindSpeed || showWindGust) && maxWind > 0;
+            const hasWind     = (showWindSpeed || showWindGust || showWindDir) && (hasWindData || showWindDir) && maxWind > 0;
 
-            // 2) Динамические «весы» по типу
-            const TEMP_H   = hasTemp   ?  70 : 0;
-            const PROB_H   = maxProb   > 0 ?  50 : 0;
-            const AMOUNT_H = maxAmount > 0 ?  0 : 0;
+            /* —— высоты сегментов (px) —— */
+            const TEMP_H   = hasTemp   ?  80 : 0;
+            const PROB_H   = hasProb   ?  50 : 0;
+            const AMOUNT_H = hasAmount ?  15 : 0;   // было 0 — теперь реально резервирует место
 
-            // начинаем с нуля
+            // режимы
+            const hasSpeedBars = showWindSpeed && maxWind > 0;
+            const hasGustBars  = showWindGust  && maxWind > 0;
+            const hasBars      = hasSpeedBars || hasGustBars;
+
+            // низ под числовую подпись скорости
+            const VAL_LABEL_H = hasSpeedBars ? 10 : 0;  // высота текста
+            const VAL_GAP     = hasSpeedBars ? 4  : 0;  // зазор над текстом                        
+            const capBottom = hasBars ? (VAL_LABEL_H + VAL_GAP) : 0;
+
+            // адаптивная высота
+            let WIND_H = 0;
+
+            if (hasSpeedBars && hasGustBars && showWindDir) {
+              WIND_H = 56; // оба бара + стрелка/лейбл (чуть выше, чтобы уместилась подпись порыва сверху и скорость снизу)
+            } else if (hasSpeedBars && hasGustBars && !showWindDir) {
+              WIND_H = 32; // оба бара, без стрелки
+            } else if (hasBars && showWindDir) {
+              WIND_H = 50; // ваш случай: один бар (speed или gust) + стрелка/лейбл
+            } else if (hasBars && !showWindDir) {
+              WIND_H = 20; // ваш случай: только один бар (speed или gust), компактно
+            } else if (!hasBars && showWindDir) {
+              WIND_H = 30; // ваш случай: только стрелка/лейбл
+            } else {
+              WIND_H = 0;  // ничего не выбрано или нет данных
+            }
+
+            /* —— сводная высота «температурно-осадочной» части (без ветра!) —— */
             let chartH = 0;
-
-            // добавляем соответствующие участки
-            if (hasTemp)   chartH += TEMP_H;
+            if (hasTemp)      chartH += TEMP_H;
             else if (hasProb) chartH += PROB_H;
+            if (hasAmount)    chartH += AMOUNT_H;
 
-            // если есть количество осадков — прибавляем его высоту
-            if (hasAmount) chartH += AMOUNT_H;
+            const AMOUNT_OVERHANG = hasAnyAmount ? Math.round(chartH * 0.25) /* + 8 */ : 0;
 
-            // если ничего не выбрано — останется 0
-            const markerH = 12;
-            const labelMargin = 8; // отступ над и под маркером
-            const offset = markerH / 2 + labelMargin;
-
-            let tMin = 0, tMax = 0, range = 1;
-            let useLowExtremes = false;
-            
-            if (showTemp && tempAttr) {            // ← проверяем tempAttr
-              const highs = items
-                .map(i => i[tempAttr])             // ← tempAttr вместо attr
-                .filter(v => v != null);
-            
-              const lows  = items
-                .map(i => i.templow)
-                .filter(v => v != null);
-            
+            /* —— температура: диапазон для окраски/нулевой линии —— */
+            let tMin = 0, tMax = 0, range = 1, useLowExtremes = false;
+            if (showTemp && tempAttr) {
+              const highs = items.map(i => i[tempAttr]).filter(v => v != null);
+              const lows  = items.map(i => i.templow).filter(v => v != null);
               tMin  = lows.length ? Math.min(...lows) : Math.min(...highs);
               tMax  = Math.max(...highs);
               range = tMax - tMin || 1;
-            
               useLowExtremes = lows.length > 0;
-            }              
+            }
+
+            // цвета и отступы
             const colortMax = mapTempToColor(tMax, 0.4, entityTemperatureUnit);
-            const colortMin  = mapTempToColor(tMin, 0.4, entityTemperatureUnit);
-            const colorZero  = mapTempToColor(0, 0.4, entityTemperatureUnit);
-            const labelPadding  = 14;   // запас под подписи min/max/zero
-            
+            const colortMin = mapTempToColor(tMin, 0.4, entityTemperatureUnit);
+            const colorZero = mapTempToColor(0,   0.4, entityTemperatureUnit);
+            const markerH = 12;
+            const labelMargin = 8;
+            const offset = markerH / 2 + labelMargin;
+            const labelPadding = showTemp ? 20 : 6; // запас под подписи min/max/zero
+
+            const TIME_PB = 4;                 // timeFlex: padding-bottom: 4px
+            const WIND_PB = hasWind  ? 4 : 0;   // windFlex: padding-bottom: 4px (а не labelPadding)
+            const WIND_DIR_PB = showWindDir  ? 2 : 0;
+            const TEMP_PT = labelPadding;      // tempFlex: padding-top: labelPadding            
+
+            const OVERLAY_H =
+              tfh +                 // высота timeFlex
+              TIME_PB +             // его нижний паддинг
+              (hasWind ? (WIND_H + WIND_PB + WIND_DIR_PB) : 0) +  // ветрослой + его паддинг
+              capBottom +
+              chartH +              // температура/осадки
+              TEMP_PT +            // верхний запас под подписи температур
+              labelPadding +                  // ваш сервисный зазор
+              AMOUNT_OVERHANG;      // доп. запас только если рисуем amount с bottom:-25%
+
             // — создаём контейнер для базовой информации —
             const baseInfo = this._createSectionContainer(
               "base-info",
@@ -2889,406 +3079,405 @@ class AbsoluteForecastCard extends HTMLElement {
               `
             );
 
-// — иконка термометра —
-const iconEl = document.createElement("ha-icon");
-iconEl.icon = "mdi:thermometer";
-iconEl.style.cssText = `
-  display: inline-flex;
-  --mdc-icon-size: ${mode === "focus" ? "1.1em" : "3.0em"};
-  flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 3.0em"};
-`;
+            // — иконка термометра —
+            const iconEl = document.createElement("ha-icon");
+            iconEl.icon = "mdi:thermometer";
+            iconEl.style.cssText = `
+              display: inline-flex;
+              --mdc-icon-size: ${mode === "focus" ? "1.1em" : "3.0em"};
+              flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 3.0em"};
+            `;
 
-// 1) контейнер для всех значений и статистики
-const valueContainer = document.createElement("div");
-valueContainer.style.cssText = `
-  display: inline-flex;
-  flex-direction: ${mode === "focus" ? "row" : "column"};
-  align-items: ${mode === "focus" ? "baseline" : ""};
-  gap: ${mode === "focus" ? "2px" : ""};
-  flex-wrap: nowrap;
-`;
+            // 1) контейнер для всех значений и статистики
+            const valueContainer = document.createElement("div");
+            valueContainer.style.cssText = `
+              display: inline-flex;
+              flex-direction: ${mode === "focus" ? "row" : "column"};
+              align-items: ${mode === "focus" ? "baseline" : ""};
+              gap: ${mode === "focus" ? "2px" : ""};
+              flex-wrap: nowrap;
+            `;
 
-// локаль и число знаков
-const localeOptions = this.hass?.locale || {};
-const digits = Number(this._cfg?.temperature_digits ?? this._cfg?.digits ?? 0);
-const fmtOpts = { minimumFractionDigits: digits, maximumFractionDigits: digits };
+            // локаль и число знаков
+            const localeOptions = this.hass?.locale || {};
+            const digits = Number(this._cfg?.temperature_digits ?? this._cfg?.digits ?? 0);
+            const fmtOpts = { minimumFractionDigits: digits, maximumFractionDigits: digits };
 
-// --- ЮНИТЫ ДЛЯ СВЯЗАННЫХ ПОЛЕЙ ---
-const pickUnit = (attr) => {
-  // проценты
-  if (attr === "precipitation_probability" || attr === "humidity" || attr === "cloud_coverage") return "%";
-  // осадки
-  if (attr === "precipitation") return stateObj.attributes.precipitation_unit || "";
+            // --- ЮНИТЫ ДЛЯ СВЯЗАННЫХ ПОЛЕЙ ---
+            const pickUnit = (attr) => {
+              // проценты
+              if (attr === "precipitation_probability" || attr === "humidity" || attr === "cloud_coverage") return "%";
+              // осадки
+              if (attr === "precipitation") return stateObj.attributes.precipitation_unit || "";
 
-  // температура и «родственные»
-  if (attr === "apparent_temperature" || attr === "dew_point" || attr === "temperature") {
-    return stateObj.attributes.temperature_unit
-        || this.hass?.config?.unit_system?.temperature
-        || "°C";
-  }
+              // температура и «родственные»
+              if (attr === "apparent_temperature" || attr === "dew_point" || attr === "temperature") {
+                return stateObj.attributes.temperature_unit
+                    || this.hass?.config?.unit_system?.temperature
+                    || "°C";
+              }
 
-  // ветер и «родственные»
-  if (attr === "wind_speed" || attr === "wind_gust_speed") {
-    return stateObj.attributes.wind_speed_unit
-        || stateObj.attributes[`${attr}_unit`]
-        || "m/s"; // безопасный дефолт
-  }
-  if (attr === "wind_bearing") return "°";
+              // ветер и «родственные»
+              if (attr === "wind_speed" || attr === "wind_gust_speed") {
+                return stateObj.attributes.wind_speed_unit
+                    || stateObj.attributes[`${attr}_unit`]
+                    || "m/s"; // безопасный дефолт
+              }
+              if (attr === "wind_bearing") return "°";
 
-  // прочие поля пробуем взять из `${attr}_unit`
-  return stateObj.attributes[`${attr}_unit`] || "";
-};
+              // прочие поля пробуем взять из `${attr}_unit`
+              return stateObj.attributes[`${attr}_unit`] || "";
+            };
 
-// === ТЕКУЩЕЕ ЗНАЧЕНИЕ ТЕМПЕРАТУРЫ — ВСЕГДА ===
-let currentVal =
-  stateObj.attributes.temperature != null
-    ? stateObj.attributes.temperature
-    : (Array.isArray(items) && items.length ? items[0].temperature : null);
+            // === ТЕКУЩЕЕ ЗНАЧЕНИЕ ТЕМПЕРАТУРЫ — ВСЕГДА ===
+            let currentVal =
+              stateObj.attributes.temperature != null
+                ? stateObj.attributes.temperature
+                : (Array.isArray(items) && items.length ? items[0].temperature : null);
 
-const currentUnit = pickUnit("temperature");
+            const currentUnit = pickUnit("temperature");
 
-if (currentVal != null && Number.isFinite(Number(currentVal))) {
-  const currentEl = document.createElement("div");
-  currentEl.textContent =
-    `${this._formatNumberInternal(currentVal, localeOptions, fmtOpts)}\u00A0${currentUnit}`;
-  currentEl.style.cssText = `
-    display: inline-flex;
-    align-items: ${mode === "focus" ? "baseline" : "center"};
-    line-height: 1.25;
-    font-size: ${mode === "focus" ? "0.9em" : "1.8em"};
-    font-weight: ${mode === "focus" ? "500" : "600"};
-  `;
-  valueContainer.appendChild(currentEl);
-}
+            if (currentVal != null && Number.isFinite(Number(currentVal))) {
+              const currentEl = document.createElement("div");
+              currentEl.textContent =
+                `${this._formatNumberInternal(currentVal, localeOptions, fmtOpts)}\u00A0${currentUnit}`;
+              currentEl.style.cssText = `
+                display: inline-flex;
+                align-items: ${mode === "focus" ? "baseline" : "center"};
+                line-height: 1.25;
+                font-size: ${mode === "focus" ? "0.9em" : "1.8em"};
+                font-weight: ${mode === "focus" ? "500" : "600"};
+              `;
+              valueContainer.appendChild(currentEl);
+            }
 
-// === MIN/MAX ПО ТИПУ ПРОГНОЗА ===
-let baseMin = null, baseMax = null;
-if (Array.isArray(items) && items.length) {
-  const isHourly = this._cfg?.forecast_type === "hourly";
-  const toNum = (v) => (typeof v === "number" ? v : NaN);
-  const filt = (arr) => arr.map(toNum).filter(Number.isFinite);
+            // === MIN/MAX ПО ТИПУ ПРОГНОЗА ===
+            let baseMin = null, baseMax = null;
+            if (Array.isArray(items) && items.length) {
+              const isHourly = this._cfg?.forecast_type === "hourly";
+              const toNum = (v) => (typeof v === "number" ? v : NaN);
+              const filt = (arr) => arr.map(toNum).filter(Number.isFinite);
 
-  if (isHourly) {
-    // часовой: min/max по temperature
-    const temps = filt(items.map(i => i.temperature));
-    if (temps.length) {
-      baseMin = Math.min(...temps);
-      baseMax = Math.max(...temps);
-    }
-  } else {
-    // дневной: max из temperature, min из templow (если нет templow — берём temperature)
-    const highs = filt(items.map(i => i.temperature));
-    const lows  = filt(items.map(i => (i.templow ?? i.temperature)));
-    if (highs.length) baseMax = Math.max(...highs);
-    if (lows.length)  baseMin = Math.min(...lows);
-  }
-}
+              if (isHourly) {
+                // часовой: min/max по temperature
+                const temps = filt(items.map(i => i.temperature));
+                if (temps.length) {
+                  baseMin = Math.min(...temps);
+                  baseMax = Math.max(...temps);
+                }
+              } else {
+                // дневной: max из temperature, min из templow (если нет templow — берём temperature)
+                const highs = filt(items.map(i => i.temperature));
+                const lows  = filt(items.map(i => (i.templow ?? i.temperature)));
+                if (highs.length) baseMax = Math.max(...highs);
+                if (lows.length)  baseMin = Math.min(...lows);
+              }
+            }
 
-if (baseMin != null && baseMax != null) {
-  const minMaxEl = document.createElement("div");
-  minMaxEl.textContent =
-    `(${this._formatNumberInternal(baseMin, localeOptions, fmtOpts)}/` +
-    `${this._formatNumberInternal(baseMax, localeOptions, fmtOpts)})`;
-  minMaxEl.style.cssText = `
-    display: inline-flex;
-    padding-left: 1px;
-    line-height: 1; 
-    font-size: ${mode === "focus" ? "0.75em" : "1em"};
-    color: var(--secondary-text-color);
-  `;
-  valueContainer.appendChild(minMaxEl);
-}
+            if (baseMin != null && baseMax != null) {
+              const minMaxEl = document.createElement("div");
+              minMaxEl.textContent =
+                `(${this._formatNumberInternal(baseMin, localeOptions, fmtOpts)}/` +
+                `${this._formatNumberInternal(baseMax, localeOptions, fmtOpts)})`;
+              minMaxEl.style.cssText = `
+                display: inline-flex;
+                padding-left: 1px;
+                line-height: 1; 
+                font-size: ${mode === "focus" ? "0.75em" : "1em"};
+                color: var(--secondary-text-color);
+              `;
+              valueContainer.appendChild(minMaxEl);
+            }
 
-// — добавляем всё в baseInfo —
-const baseElems = [ iconEl, valueContainer ];
-baseInfo.append(...baseElems);
+            // — добавляем всё в baseInfo —
+            const baseElems = [ iconEl, valueContainer ];
+            baseInfo.append(...baseElems);
 
-// === AttrInfo для выбранных атрибутов: группируем осадки и ветер, остальные по-отдельности ===
-let precipContainer;
-let windContainer;
-// === Новый общий контейнер для ВСЕХ атрибутов ===
-const attrContainer = document.createElement("div");
-attrContainer.classList.add("all-attrs");
-attrContainer.style.cssText = `
-  display: flex;
-  flex-wrap: wrap;
-  gap: ${mode === "focus" ? "" : "4px"};
-  width:100%;
-  box-sizing:border-box;
-`;
+            // === AttrInfo для выбранных атрибутов: группируем осадки и ветер, остальные по-отдельности ===
+            let precipContainer;
+            let windContainer;
+            // === Новый общий контейнер для ВСЕХ атрибутов ===
+            const attrContainer = document.createElement("div");
+            attrContainer.classList.add("all-attrs");
+            attrContainer.style.cssText = `
+              display: flex;
+              flex-wrap: wrap;
+              gap: ${mode === "focus" ? "" : "4px"};
+              width:100%;
+              box-sizing:border-box;
+            `;
 
-// — если фокус: baseInfo идёт в attrContainer; иначе — сразу в header
-if (mode === "focus") {
-  attrContainer.appendChild(baseInfo);
-} else {
-  header.appendChild(baseInfo);
-}
+            // — если фокус: baseInfo идёт в attrContainer; иначе — сразу в header
+            if (mode === "focus") {
+              attrContainer.appendChild(baseInfo);
+            } else {
+              header.appendChild(baseInfo);
+            }
 
-// availableAttrs приходит из this._cfg.additional_forecast, в порядке, заданном пользователем
-availableAttrs.forEach(attr => {
-  if (attr === tempAttr) return;                 // пропускаем температуру
-  if (!weatherAttrs.includes(attr)) return;      // только штатные метео-поля
+            // availableAttrs приходит из this._cfg.additional_forecast, в порядке, заданном пользователем
+            availableAttrs.forEach(attr => {
+              if (attr === tempAttr) return;                 // пропускаем температуру
+              if (!weatherAttrs.includes(attr)) return;      // только штатные метео-поля
 
-  // есть ли данные?
-  const hasInState    = stateObj.attributes[attr] != null;
-  const hasInForecast = items.some(i => i[attr] != null);
-  if (!hasInState && !hasInForecast) return;
+              // есть ли данные?
+              const hasInState    = stateObj.attributes[attr] != null;
+              const hasInForecast = items.some(i => i[attr] != null);
+              if (!hasInState && !hasInForecast) return;
 
-  // текущее значение
-  const rawVal = hasInState ? stateObj.attributes[attr] : items[0][attr];
+              // текущее значение
+              const rawVal = hasInState ? stateObj.attributes[attr] : items[0][attr];
 
-  // === NEW: если и текущее, и весь прогноз — нули/пусто, то атрибут не рисуем,
-  //           КРОМЕ исключений (например, wind_bearing: 0° — валидно)
-  const zeroSkipExceptions = new Set(["wind_bearing"]);     // <-- добавили
-  const applyZeroSkip = !zeroSkipExceptions.has(attr);      // <-- добавили
+              // === NEW: если и текущее, и весь прогноз — нули/пусто, то атрибут не рисуем,
+              //           КРОМЕ исключений (например, wind_bearing: 0° — валидно)
+              const zeroSkipExceptions = new Set(["wind_bearing"]);     // <-- добавили
+              const applyZeroSkip = !zeroSkipExceptions.has(attr);      // <-- добавили
 
-  const toNum = (v) => (typeof v === "number" ? v : (v != null ? Number(v) : NaN));
-  const currentNum = toNum(rawVal);
-  const seriesNums = items
-    .map(i => toNum(i?.[attr]))
-    .filter(n => Number.isFinite(n)); // только числа
+              const toNum = (v) => (typeof v === "number" ? v : (v != null ? Number(v) : NaN));
+              const currentNum = toNum(rawVal);
+              const seriesNums = items
+                .map(i => toNum(i?.[attr]))
+                .filter(n => Number.isFinite(n)); // только числа
 
-  const currentNonZero  = Number.isFinite(currentNum) && currentNum !== 0;
-  const forecastNonZero = seriesNums.some(n => n !== 0);
+              const currentNonZero  = Number.isFinite(currentNum) && currentNum !== 0;
+              const forecastNonZero = seriesNums.some(n => n !== 0);
 
-  // если правило применяется (не исключение) И всё равно нули/пусто — выходим
-  if (applyZeroSkip && !currentNonZero && !forecastNonZero) {
-    return;
-  }
+              // если правило применяется (не исключение) И всё равно нули/пусто — выходим
+              if (applyZeroSkip && !currentNonZero && !forecastNonZero) {
+                return;
+              }
 
-  // формат текущего значения
-  let text;
-  if (attr === "precipitation_probability" || attr === "humidity" || attr === "cloud_coverage") {
-    text = `${rawVal}%`;
-  } else if (attr === "wind_bearing") {
-    text = `${rawVal}°`;
-  } else if (attr === "precipitation") {
-    const unit    = pickUnit(attr);
-    const fmtOpts = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
-    text = `${this._formatNumberInternal(rawVal, this.hass.locale, fmtOpts)}${unit ? ` ${unit}` : ""}`;
-  } else {
-    const unit    = pickUnit(attr);
-    const fmtOpts = { minimumFractionDigits: digits, maximumFractionDigits: digits };
-    text = `${this._formatNumberInternal(rawVal, this.hass.locale, fmtOpts)}${unit ? ` ${unit}` : ""}`;
-  }
+              // формат текущего значения
+              let text;
+              if (attr === "precipitation_probability" || attr === "humidity" || attr === "cloud_coverage") {
+                text = `${rawVal}%`;
+              } else if (attr === "wind_bearing") {
+                text = `${rawVal}°`;
+              } else if (attr === "precipitation") {
+                const unit    = pickUnit(attr);
+                const fmtOpts = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
+                text = `${this._formatNumberInternal(rawVal, this.hass.locale, fmtOpts)}${unit ? ` ${unit}` : ""}`;
+              } else {
+                const unit    = pickUnit(attr);
+                const fmtOpts = { minimumFractionDigits: digits, maximumFractionDigits: digits };
+                text = `${this._formatNumberInternal(rawVal, this.hass.locale, fmtOpts)}${unit ? ` ${unit}` : ""}`;
+              }
 
-  // === NEW: min/max по выбранному диапазону items (только значения, без юнитов) ===
-  let minText = "", maxText = "";
-  {
-    const series = items
-      .map(i => i?.[attr])
-      .filter(v => typeof v === "number" && !Number.isNaN(v));
+              // === NEW: min/max по выбранному диапазону items (только значения, без юнитов) ===
+              let minText = "", maxText = "";
+              {
+                const series = items
+                  .map(i => i?.[attr])
+                  .filter(v => typeof v === "number" && !Number.isNaN(v));
 
-    if (series.length) {
-      const mn = Math.min(...series);
-      const mx = Math.max(...series);
+                if (series.length) {
+                  const mn = Math.min(...series);
+                  const mx = Math.max(...series);
 
-      // локальный форматтер БЕЗ единиц
-      const fmt = (v) => {
-        if (attr === "precipitation_probability" || attr === "humidity" || attr === "cloud_coverage") {
-          return String(Math.round(v));                          // проценты: целое число
-        }
-        if (attr === "precipitation") {
-          return this._formatNumberInternal(                     // осадки: 1 десятая
-            v,
-            this.hass.locale,
-            { minimumFractionDigits: 1, maximumFractionDigits: 1 }
-          );
-        }
-        return this._formatNumberInternal(                       // прочее: по digits
-          v,
-          this.hass.locale,
-          { minimumFractionDigits: digits, maximumFractionDigits: digits }
-        );
-      };
+                  // локальный форматтер БЕЗ единиц
+                  const fmt = (v) => {
+                    if (attr === "precipitation_probability" || attr === "humidity" || attr === "cloud_coverage") {
+                      return String(Math.round(v));                          // проценты: целое число
+                    }
+                    if (attr === "precipitation") {
+                      return this._formatNumberInternal(                     // осадки: 1 десятая
+                        v,
+                        this.hass.locale,
+                        { minimumFractionDigits: 1, maximumFractionDigits: 1 }
+                      );
+                    }
+                    return this._formatNumberInternal(                       // прочее: по digits
+                      v,
+                      this.hass.locale,
+                      { minimumFractionDigits: digits, maximumFractionDigits: digits }
+                    );
+                  };
 
-      minText = fmt(mn);
-      maxText = fmt(mx);
-    }
-  }
-  const minMaxStack = (minText && maxText)
-    ? this._createMinMaxStack(minText, maxText, mode)
-    : null;
+                  minText = fmt(mn);
+                  maxText = fmt(mx);
+                }
+              }
+              const minMaxStack = (minText && maxText)
+                ? this._createMinMaxStack(minText, maxText, mode)
+                : null;
 
 
-  // 1) Группируем осадки
-  if (attr === "precipitation" || attr === "precipitation_probability") {
-    if (!precipContainer) {
-      precipContainer = this._createSectionContainer(
-        "precip-info",
-        mode,
-        `
-          ${mode === "focus"
-            ? `padding-left: 4px;`
-            : `justify-content: flex-start;flex-wrap: wrap; gap: 4px;`
-          }
-        `
-      );
-      // общая иконка осадков
-      const commonIcon = this._createIconContainer(
-        "mdi:weather-rainy",
-        mode,
-        `${mode === "focus" ? `` : `padding-right: 2px;`}`
-      );
-      precipContainer.appendChild(commonIcon);
-      attrContainer.appendChild(precipContainer);
-    }
-    // value + min/max в одном контейнере
-    const valueWrap = document.createElement("div");
-    valueWrap.style.cssText = `
-      display: inline-flex;
-      flex-direction: ${mode === "focus" ? "row" : "column"};
-      align-items: ${mode === "focus" ? "baseline" : ""};
-      gap: ${mode === "focus" ? "2px" : ""};
-      flex-wrap: nowrap;
-    `;
-    const valEl = this._createTextContainer(text, mode);
-    valueWrap.appendChild(valEl);
-    if (minMaxStack) valueWrap.appendChild(minMaxStack);
+              // 1) Группируем осадки
+              if (attr === "precipitation" || attr === "precipitation_probability") {
+                if (!precipContainer) {
+                  precipContainer = this._createSectionContainer(
+                    "precip-info",
+                    mode,
+                    `
+                      ${mode === "focus"
+                        ? `padding-left: 4px;`
+                        : `justify-content: flex-start;flex-wrap: wrap; gap: 4px;`
+                      }
+                    `
+                  );
+                  // общая иконка осадков
+                  const commonIcon = this._createIconContainer(
+                    "mdi:weather-rainy",
+                    mode,
+                    `${mode === "focus" ? `` : `padding-right: 2px;`}`
+                  );
+                  precipContainer.appendChild(commonIcon);
+                  attrContainer.appendChild(precipContainer);
+                }
+                // value + min/max в одном контейнере
+                const valueWrap = document.createElement("div");
+                valueWrap.style.cssText = `
+                  display: inline-flex;
+                  flex-direction: ${mode === "focus" ? "row" : "column"};
+                  align-items: ${mode === "focus" ? "baseline" : ""};
+                  gap: ${mode === "focus" ? "2px" : ""};
+                  flex-wrap: nowrap;
+                `;
+                const valEl = this._createTextContainer(text, mode);
+                valueWrap.appendChild(valEl);
+                if (minMaxStack) valueWrap.appendChild(minMaxStack);
 
-    precipContainer.appendChild(valueWrap);
+                precipContainer.appendChild(valueWrap);
 
-  // 2) Группируем ветер: wind_bearing, wind_speed, wind_gust_speed
-  } else if (["wind_bearing", "wind_speed", "wind_gust_speed"].includes(attr)) {
-    if (!windContainer) {
-      windContainer = this._createSectionContainer(
-        "wind-info",
-        mode,
-        `
-          ${mode === "focus"
-            ? `padding-left: 4px;`
-            : `justify-content: flex-start; flex-wrap: wrap; gap: 4px;`
-          }
-        `
-      );
-      attrContainer.appendChild(windContainer);
-    }
+              // 2) Группируем ветер: wind_bearing, wind_speed, wind_gust_speed
+              } else if (["wind_bearing", "wind_speed", "wind_gust_speed"].includes(attr)) {
+                if (!windContainer) {
+                  windContainer = this._createSectionContainer(
+                    "wind-info",
+                    mode,
+                    `
+                      ${mode === "focus"
+                        ? `padding-left: 4px;`
+                        : `justify-content: flex-start; flex-wrap: wrap; gap: 4px;`
+                      }
+                    `
+                  );
+                  attrContainer.appendChild(windContainer);
+                }
 
-    // элемент для конкретного ветрового атрибута
-    const item = document.createElement("div");
-    item.style.cssText = `
-      display: flex;
-      align-items: ${mode === "focus" ? "" : "center"};
-      gap: 2px;
-    `;
+                // элемент для конкретного ветрового атрибута
+                const item = document.createElement("div");
+                item.style.cssText = `
+                  display: flex;
+                  align-items: ${mode === "focus" ? "" : "center"};
+                  gap: 2px;
+                `;
 
-    // === ИКОНКА ===
-    let iconEl = null;
-    if (attr === "wind_bearing") {
-      // стрелка как иконка: КУДА дует (bearing + 180°)
-      iconEl = createWindDirIcon(rawVal, mode, { toDirection: true }) || document.createElement("ha-icon");
-      if (!iconEl.icon) iconEl.icon = "mdi:compass"; // фолбэк
-      // приводим размеры/отступы к стилю остальных иконок ветра
-      iconEl.style.setProperty("--mdc-icon-size", (mode === "focus" ? "1.1em" : "1.9em"));
-      iconEl.style.flex = (mode === "focus" ? "0 0 1.1em" : "0 0 1.9em");
-      if (mode !== "focus") iconEl.style.paddingRight = "2px";
-    } else {
-      const iconName = this._computeAttributeIcon(attr);
-      if (iconName) {
-        iconEl = document.createElement("ha-icon");
-        iconEl.icon = iconName;
-        iconEl.style.cssText = `
-          display: inline-flex;
-          --mdc-icon-size: ${mode === "focus" ? "1.1em" : "1.9em"};
-          flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 1.9em"};
-          ${mode === "focus" ? `` : `padding-right: 2px;`}
-        `;
-      }
-    }
-    if (iconEl) item.appendChild(iconEl);
+                // === ИКОНКА ===
+                let iconEl = null;
+                if (attr === "wind_bearing") {
+                  // стрелка как иконка: КУДА дует (bearing + 180°)
+                  iconEl = createWindDirIcon(rawVal, mode, { toDirection: true }) || document.createElement("ha-icon");
+                  if (!iconEl.icon) iconEl.icon = "mdi:compass"; // фолбэк
+                  // приводим размеры/отступы к стилю остальных иконок ветра
+                  iconEl.style.setProperty("--mdc-icon-size", (mode === "focus" ? "1.1em" : "1.9em"));
+                  iconEl.style.flex = (mode === "focus" ? "0 0 1.1em" : "0 0 1.9em");
+                  if (mode !== "focus") iconEl.style.paddingRight = "2px";
+                } else {
+                  const iconName = this._computeAttributeIcon(attr);
+                  if (iconName) {
+                    iconEl = document.createElement("ha-icon");
+                    iconEl.icon = iconName;
+                    iconEl.style.cssText = `
+                      display: inline-flex;
+                      --mdc-icon-size: ${mode === "focus" ? "1.1em" : "1.9em"};
+                      flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 1.9em"};
+                      ${mode === "focus" ? `` : `padding-right: 2px;`}
+                    `;
+                  }
+                }
+                if (iconEl) item.appendChild(iconEl);
 
-    // === ЗНАЧЕНИЕ (текст + min/max) ===
-    const valueWrap = document.createElement("div");
-    valueWrap.style.cssText = `
-      display: inline-flex;
-      flex-direction: ${mode === "focus" ? "row" : "column"};
-      align-items: ${mode === "focus" ? "baseline" : ""};
-      gap: ${mode === "focus" ? "2px" : ""};
-      flex-wrap: nowrap;
-    `;
+                // === ЗНАЧЕНИЕ (текст + min/max) ===
+                const valueWrap = document.createElement("div");
+                valueWrap.style.cssText = `
+                  display: inline-flex;
+                  flex-direction: ${mode === "focus" ? "row" : "column"};
+                  align-items: ${mode === "focus" ? "baseline" : ""};
+                  gap: ${mode === "focus" ? "2px" : ""};
+                  flex-wrap: nowrap;
+                `;
 
-    if (attr === "wind_bearing") {
-      // только локализованный румб, без градусов
-      const short = toCardinal(rawVal);
-      const label = short ? localizeCardinal(this.hass, short) : (rawVal ?? "") + "";
-      const valEl = this._createTextContainer(label, mode);
-      valueWrap.appendChild(valEl);
-      // min/max для bearing не показываем
-    } else {
-      // speed / gust: как раньше
-      const valEl = this._createTextContainer(text, mode);
-      valueWrap.appendChild(valEl);
-      if (minMaxStack) valueWrap.appendChild(minMaxStack);
-    }
+                if (attr === "wind_bearing") {
+                  // только локализованный румб, без градусов
+                  const short = toCardinal(rawVal);
+                  const label = short ? localizeCardinal(this.hass, short) : (rawVal ?? "") + "";
+                  const valEl = this._createTextContainer(label, mode);
+                  valueWrap.appendChild(valEl);
+                  // min/max для bearing не показываем
+                } else {
+                  // speed / gust: как раньше
+                  const valEl = this._createTextContainer(text, mode);
+                  valueWrap.appendChild(valEl);
+                  if (minMaxStack) valueWrap.appendChild(minMaxStack);
+                }
 
-    item.appendChild(valueWrap);
-    windContainer.appendChild(item);
+                item.appendChild(valueWrap);
+                windContainer.appendChild(item);
 
-  // 3) Все остальные атрибуты — по-отдельности
-  } else {
-    const container = this._createSectionContainer(
-      "attr-info",
-      mode,
-      `
-        ${mode === "focus"
-          ? `padding-left: 4px;`
-          : `justify-content: flex-start; gap: 4px;`
-        }
-      `
-    );
+              // 3) Все остальные атрибуты — по-отдельности
+              } else {
+                const container = this._createSectionContainer(
+                  "attr-info",
+                  mode,
+                  `
+                    ${mode === "focus"
+                      ? `padding-left: 4px;`
+                      : `justify-content: flex-start; gap: 4px;`
+                    }
+                  `
+                );
 
-    // иконка
-    const iconName = this._computeAttributeIcon(attr);
-    if (iconName) {
-      const iconEl = document.createElement("ha-icon");
-      iconEl.icon = iconName;
-      iconEl.style.cssText = `
-        display: inline-flex;
-        --mdc-icon-size: ${mode === "focus" ? "1.1em" : "1.9em"};
-        flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 1.9em"};
-        ${mode === "focus" ? `` : `padding-right: 1px;`}
-      `;
-      container.appendChild(iconEl);
-    }
-    // текущее значение
-    const valueWrap = document.createElement("div");
-    valueWrap.style.cssText = `
-      display: inline-flex;
-      flex-direction: ${mode === "focus" ? "row" : "column"};
-      align-items: ${mode === "focus" ? "baseline" : ""};
-      gap: ${mode === "focus" ? "2px" : ""};
-      flex-wrap: nowrap;
-    `;
-    const valEl = this._createTextContainer(text, mode);
-    valueWrap.appendChild(valEl);
-    if (minMaxStack) valueWrap.appendChild(minMaxStack);
-  
-    container.appendChild(valueWrap);
+                // иконка
+                const iconName = this._computeAttributeIcon(attr);
+                if (iconName) {
+                  const iconEl = document.createElement("ha-icon");
+                  iconEl.icon = iconName;
+                  iconEl.style.cssText = `
+                    display: inline-flex;
+                    --mdc-icon-size: ${mode === "focus" ? "1.1em" : "1.9em"};
+                    flex: ${mode === "focus" ? "0 0 1.1em" : "0 0 1.9em"};
+                    ${mode === "focus" ? `` : `padding-right: 1px;`}
+                  `;
+                  container.appendChild(iconEl);
+                }
+                // текущее значение
+                const valueWrap = document.createElement("div");
+                valueWrap.style.cssText = `
+                  display: inline-flex;
+                  flex-direction: ${mode === "focus" ? "row" : "column"};
+                  align-items: ${mode === "focus" ? "baseline" : ""};
+                  gap: ${mode === "focus" ? "2px" : ""};
+                  flex-wrap: nowrap;
+                `;
+                const valEl = this._createTextContainer(text, mode);
+                valueWrap.appendChild(valEl);
+                if (minMaxStack) valueWrap.appendChild(minMaxStack);
+              
+                container.appendChild(valueWrap);
 
-    attrContainer.appendChild(container);
-  }
-});
-// === Итог: добавляем весь attrContainer в header ===
-header.appendChild(attrContainer);
+                attrContainer.appendChild(container);
+              }
+            });
+            // === Итог: добавляем весь attrContainer в header ===
+            header.appendChild(attrContainer);
             /* -----------------------------------------------------------
              *  Оверлей: timeFlex + tempFlex + линии min/max/zero
              * --------------------------------------------------------- */
+            
             const overlay = document.createElement("div");
             overlay.classList.add("hover-scroll");
             overlay.style.cssText = `
               position: relative;
               flex: 1 1 auto;
               min-width: 0;
-              height: ${tfh + chartH + labelPadding + 15}px;
+              height: ${OVERLAY_H}px;
               box-sizing: border-box;
             `;
 
             // 1) timeFlex с теми же стилями, что использовались раньше
             const timeFlex = document.createElement("div");
             timeFlex.style.cssText = `
-              position:absolute; top:0; left:0; right:0;
               display:flex;
-              /* gap:clamp(1px,2%,10px); */
               flex:1 1 auto; min-width:0; box-sizing:border-box;
               padding-bottom:4px; pointer-events:none;
               padding-inline: 0 ${padStr};
@@ -3372,15 +3561,206 @@ header.appendChild(attrContainer);
             });
             overlay.appendChild(timeFlex);
 
+// 1.1) windFlex — между timeFlex и tempFlex (только если пользователь выбрал и есть данные)
+if ((hasWind && maxWind > 0) || showWindDir) {
+  const windFlex = document.createElement("div");
+  windFlex.style.cssText = `
+    display:flex;
+    align-items:flex-end;
+    padding-bottom:4px;
+    padding-inline: 0 ${padStr};
+    pointer-events:none;
+    z-index:3;
+  `;
+
+  // по слотам: мини-бар (если выбран speed) + стрелка (если выбран bearing)
+  items.forEach((i) => {
+
+    const cell = document.createElement("div");
+    cell.style.cssText = `
+      flex:1 1 0;
+      min-width:${cellMinWidth}px;
+      width:0;
+      display:flex; flex-direction:column;
+      align-items:center; text-align:center;
+      color:var(--secondary-text-color);
+      padding-inline: clamp(1px,2%,5px);
+      /* box-sizing:border-box; */
+      line-height:1;
+    `;
+
+    // --- STACK контейнер под столбики (нормируем к высоте слоя ветра) ---
+    const capTop     = showWindDir ? 15  : -15;
+    const usableH  = Math.max(0, WIND_H - capTop);
+    // резерв под подпись порыва (только если показываем порывы)
+    const GUST_LABEL_H = 10;
+    const GUST_GAP     = 2;
+
+    // barsAreaH — реальная высота под столбики (без верхней зоны под подпись порыва)
+    const barsAreaH = hasGustBars
+      ? Math.max(0, usableH - (GUST_LABEL_H + GUST_GAP))
+      : usableH;
+
+    // пересчёт высот
+    const speedVal = showWindSpeed ? Math.max(0, Number(i?.wind_speed ?? 0)) : 0;
+    const gustVal  = showWindGust  ? Math.max(0, Number(i?.wind_gust_speed ?? (showWindSpeed ? i?.wind_speed : 0))) : 0;
+
+    // конвертация значений в м/с для цвета
+    const speedMS = toMS(speedVal, windUnit);
+    const gustMS  = toMS(gustVal,  windUnit);
+
+    // номера по Бофорту
+    const bSpeed = Number.isFinite(speedMS) ? beaufortFromMS(speedMS) : 0;
+    const bGust  = Number.isFinite(gustMS)  ? beaufortFromMS(gustMS)  : bSpeed;
+
+    // цвета: порывы более прозрачные
+    const speedColor = beaufortColorWiki(bSpeed, 0.85);
+    const gustColor  = beaufortColorWiki(bGust,  0.28);
+
+    // высоты считаем ТОЛЬКО если есть бары
+    let hGustRaw = 0, hSpeedRaw = 0;
+    if (hasBars && maxWind > 0) {
+      hGustRaw  = Math.round((Math.max(speedVal, gustVal) / maxWind) * barsAreaH);
+      hSpeedRaw = Math.round((Math.min(speedVal, gustVal || speedVal) / maxWind) * barsAreaH);
+    }
+
+// 2) stack с барами — только если есть что рисовать
+if (hasBars) {
+  const stack = document.createElement("div");
+  stack.style.cssText = `
+    position: relative; width: 100%; height: ${usableH}px;
+  `;
+  cell.appendChild(stack);
+
+  // порывы
+  if (hasGustBars && hGustRaw > 0) {
+    const gustBand = document.createElement("div");
+    gustBand.style.cssText = `
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      bottom: 0;
+      width: clamp(12px,40%,42px); height: ${hGustRaw}px;
+      background: ${gustColor};
+      border-radius: 3px;
+    `;
+    stack.appendChild(gustBand);
+
+    // значение порыва на вершине столбца (в выбранных единицах, без юнитов)
+    const windDigits = Number(this._cfg?.wind_digits ?? 0);
+    const gustText = this._formatNumberInternal(
+      gustVal,
+      this.hass?.locale || {},
+      { minimumFractionDigits: windDigits, maximumFractionDigits: windDigits }
+    );
+    
+    const gustDiff = (this._cfg?.gust_label_threshold ?? 0.5); // м/с или в юнитах источника
+    const showGustValue = hasGustBars && (Math.abs(gustVal - speedVal) >= gustDiff);
+    
+    // аккуратно держим подпись внутри stack
+    const approxLblH = 10;                         // примерная высота текста в px
+    const topOffset  = 2;                          // зазор над верхом столбца
+    const gustBottom = Math.min(
+      Math.max(0, usableH - approxLblH),           // не выше верха stack
+      hGustRaw + topOffset                         // на уровне верха столбца + зазор
+    );
+
+    if (showGustValue) { 
+      const gustLabel = document.createElement("div");
+      gustLabel.textContent = gustText;              // только число, без юнитов
+      gustLabel.style.cssText = `
+        position: absolute;
+        left: 50%; transform: translateX(-50%);
+        bottom: ${gustBottom}px;
+        font-size: .60em; line-height: 1;
+        text-shadow: 0 1px 1px rgba(0,0,0,.10);
+        color: var(--secondary-text-color);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        pointer-events: none; user-select: none;
+      `;
+      stack.appendChild(gustLabel);
+    }
+  }
+
+  // скорость
+  if (hasSpeedBars && hSpeedRaw > 0) {
+    const speedBar = document.createElement("div");
+    speedBar.style.cssText = `
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      bottom: 0;
+      width: clamp(8px,30%,34px); height: ${hSpeedRaw}px;
+      background: ${speedColor};
+      border-radius: 2px;
+    `;
+    stack.appendChild(speedBar);
+  }
+
+  // 3) число скорости под барами (в выбранных единицах, без юнитов)
+  if (hasSpeedBars) {
+    const windDigits = Number(this._cfg?.wind_digits ?? 0);
+    const numText = this._formatNumberInternal(
+      speedVal,
+      this.hass?.locale || {},
+      { minimumFractionDigits: windDigits, maximumFractionDigits: windDigits }
+    );
+    const vLabel = document.createElement("div");
+    vLabel.textContent = numText;
+    vLabel.style.cssText = `
+      margin-top:${VAL_GAP}px;
+      font-size:.72em; line-height:1;
+      color: var(--primary-text-color);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      pointer-events:none; user-select:none;
+    `;
+    cell.appendChild(vLabel);
+  }
+}
+
+    if (hasDir) {
+      const arrow = createWindDir(i?.wind_bearing, {
+        toDirection: true,             // «куда дует»
+        prefer: "svg",                 // или "mdi" | "auto"
+        size: 16,                      // для SVG; для MDI см. mode
+        color: "currentColor",
+        hass: this._hass || this.hass, // для локализации румба в title
+        mode,                          // если выберешь prefer:"mdi"
+      });
+      if (arrow) {
+        // при необходимости можно добавить доп. стили позиционирования
+        arrow.style.cssText += 
+          `flex:0 0 16px;
+          margin-top:2px;
+          `;
+        cell.appendChild(arrow);
+        const deg = parseBearing(i?.wind_bearing);
+        if (Number.isFinite(deg)) {
+          const short = toCardinal(deg);
+          const label = document.createElement("div");
+          label.textContent = localizeCardinal(this._hass || this.hass, short);
+          label.style.cssText = `
+            font-size:.7em; line-height:1;
+            margin-top:2px; opacity:.75;
+            pointer-events:none; user-select:none;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+            max-width:100%;
+          `;
+          cell.appendChild(label);
+        }
+      }
+    }
+
+    windFlex.appendChild(cell);
+  });
+  overlay.appendChild(windFlex);
+}
+
             // 2) tempFlex
             const tempFlex = document.createElement("div");
             tempFlex.style.cssText = `
-              position:absolute;
-              top:${tfh}px;
-              left:0; right:0;
               display:flex;
               /* gap:clamp(1px,2%,10px);  */
               flex:1 1 auto; min-width:0; box-sizing:border-box;
+              padding-top: ${labelPadding}px;
               padding-inline: 0 ${padStr};
               pointer-events:none;
             `;
