@@ -591,6 +591,22 @@ const beaufortColorWiki = (b, alpha = 0.9) => {
   return hexToRgba(BEAUFORT_COLORS_HEX[idx], alpha);
 };
 
+// бакет по стандартным порогам, но сначала округляем к целому
+const uvBucket = (u) => {
+  const n = Math.round(Number(u) || 0);   // <-- ключ
+  if (n >= 11) return 4;                  // Extreme (purple)
+  if (n >= 8)  return 3;                  // Very high (red)
+  if (n >= 6)  return 2;                  // High (orange)
+  if (n >= 3)  return 1;                  // Moderate (yellow)
+  return 0;                               // Low (green)
+};
+
+// цвет по бакету
+const UV_COLORS = ["#3EA72D","#F7E400","#F85900","#D80010","#6B49C8"];
+const uvColorForIndex = (u, alpha = 0.55) =>
+  hexToRgba(UV_COLORS[uvBucket(u)], alpha);
+
+
 
 /* хелпер: проставить width/height */
 function sized(svgStr, em = 1.0) {
@@ -2959,6 +2975,8 @@ class AbsoluteForecastCard extends HTMLElement {
             const tempAttr   = ["temperature", "temperature_high", "temperature_low"].find(a => availableAttrs.includes(a)) || null;
             const showProb   = availableAttrs.includes("precipitation_probability");
             const showAmount = availableAttrs.includes("precipitation");
+            // выбран ли UV
+            const showUV = availableAttrs.includes("uv_index");
 
             // ветровые выборы — как просил
             const showWindSpeed = availableAttrs.includes("wind_speed");
@@ -2968,7 +2986,15 @@ class AbsoluteForecastCard extends HTMLElement {
             const precipBarW = 0.12;        // ширина бара (18 % от ширины температурного)
             const precipColor = "rgba(33,150,243,.55)"; // полупрозрачный синий
             // размеры сегментов гистограммы
+            // подготовка рядов
+            const allUV  = items.map(i => (showUV && typeof i.uv_index === "number") ? i.uv_index : 0);
+            const maxUV  = showUV ? Math.max(...allUV, 0) : 0;
+            const hasUV  = showUV && maxUV > 0;
 
+            // параметры UV-столбика
+            
+            const UV_REF     = maxUV > 11 ? Math.ceil(maxUV) : 11;    // «11+» по шкале UV
+            const uvBarW     = 0.12;                            // как у precipBarW
             /* —— подготовка рядов/максимумов —— */
             // осадки
             const allProbs   = items.map(i => (showProb   && typeof i.precipitation_probability === "number") ? i.precipitation_probability : 0);
@@ -2991,10 +3017,11 @@ class AbsoluteForecastCard extends HTMLElement {
             const hasAnyAmount = showAmount && items.some(i => typeof i.precipitation === "number" && i.precipitation > 0);
             const hasWindData = (showWindSpeed || showWindGust) && maxWind > 0;
             const hasWind     = (showWindSpeed || showWindGust || showWindDir) && (hasWindData || showWindDir) && maxWind > 0;
+            const bothNoTemp = (!showTemp) && hasProb && hasUV;
 
             /* —— высоты сегментов (px) —— */
             const TEMP_H   = hasTemp   ?  80 : 0;
-            const PROB_H   = hasProb   ?  50 : 0;
+            const PROB_H   = (hasProb || hasUV)   ?  50 : 0;
             const AMOUNT_H = hasAmount ?  15 : 0;   // было 0 — теперь реально резервирует место
 
             // режимы
@@ -3027,7 +3054,7 @@ class AbsoluteForecastCard extends HTMLElement {
             /* —— сводная высота «температурно-осадочной» части (без ветра!) —— */
             let chartH = 0;
             if (hasTemp)      chartH += TEMP_H;
-            else if (hasProb) chartH += PROB_H;
+            else if (hasProb || hasUV) chartH += PROB_H;
             if (hasAmount)    chartH += AMOUNT_H;
 
             const AMOUNT_OVERHANG = hasAnyAmount ? Math.round(chartH * 0.25) /* + 8 */ : 0;
@@ -3561,198 +3588,198 @@ class AbsoluteForecastCard extends HTMLElement {
             });
             overlay.appendChild(timeFlex);
 
-// 1.1) windFlex — между timeFlex и tempFlex (только если пользователь выбрал и есть данные)
-if ((hasWind && maxWind > 0) || showWindDir) {
-  const windFlex = document.createElement("div");
-  windFlex.style.cssText = `
-    display:flex;
-    align-items:flex-end;
-    padding-bottom:4px;
-    padding-inline: 0 ${padStr};
-    pointer-events:none;
-    z-index:3;
-  `;
+            // 1.1) windFlex — между timeFlex и tempFlex (только если пользователь выбрал и есть данные)
+            if ((hasWind && maxWind > 0) || showWindDir) {
+              const windFlex = document.createElement("div");
+              windFlex.style.cssText = `
+                display:flex;
+                align-items:flex-end;
+                padding-bottom:4px;
+                padding-inline: 0 ${padStr};
+                pointer-events:none;
+                z-index:3;
+              `;
 
-  // по слотам: мини-бар (если выбран speed) + стрелка (если выбран bearing)
-  items.forEach((i) => {
+              // по слотам: мини-бар (если выбран speed) + стрелка (если выбран bearing)
+              items.forEach((i) => {
 
-    const cell = document.createElement("div");
-    cell.style.cssText = `
-      flex:1 1 0;
-      min-width:${cellMinWidth}px;
-      width:0;
-      display:flex; flex-direction:column;
-      align-items:center; text-align:center;
-      color:var(--secondary-text-color);
-      padding-inline: clamp(1px,2%,5px);
-      /* box-sizing:border-box; */
-      line-height:1;
-    `;
+                const cell = document.createElement("div");
+                cell.style.cssText = `
+                  flex:1 1 0;
+                  min-width:${cellMinWidth}px;
+                  width:0;
+                  display:flex; flex-direction:column;
+                  align-items:center; text-align:center;
+                  color:var(--secondary-text-color);
+                  padding-inline: clamp(1px,2%,5px);
+                  /* box-sizing:border-box; */
+                  line-height:1;
+                `;
 
-    // --- STACK контейнер под столбики (нормируем к высоте слоя ветра) ---
-    const capTop     = showWindDir ? 15  : -15;
-    const usableH  = Math.max(0, WIND_H - capTop);
-    // резерв под подпись порыва (только если показываем порывы)
-    const GUST_LABEL_H = 10;
-    const GUST_GAP     = 2;
+                // --- STACK контейнер под столбики (нормируем к высоте слоя ветра) ---
+                const capTop     = showWindDir ? 15  : -15;
+                const usableH  = Math.max(0, WIND_H - capTop);
+                // резерв под подпись порыва (только если показываем порывы)
+                const GUST_LABEL_H = 10;
+                const GUST_GAP     = 2;
 
-    // barsAreaH — реальная высота под столбики (без верхней зоны под подпись порыва)
-    const barsAreaH = hasGustBars
-      ? Math.max(0, usableH - (GUST_LABEL_H + GUST_GAP))
-      : usableH;
+                // barsAreaH — реальная высота под столбики (без верхней зоны под подпись порыва)
+                const barsAreaH = hasGustBars
+                  ? Math.max(0, usableH - (GUST_LABEL_H + GUST_GAP))
+                  : usableH;
 
-    // пересчёт высот
-    const speedVal = showWindSpeed ? Math.max(0, Number(i?.wind_speed ?? 0)) : 0;
-    const gustVal  = showWindGust  ? Math.max(0, Number(i?.wind_gust_speed ?? (showWindSpeed ? i?.wind_speed : 0))) : 0;
+                // пересчёт высот
+                const speedVal = showWindSpeed ? Math.max(0, Number(i?.wind_speed ?? 0)) : 0;
+                const gustVal  = showWindGust  ? Math.max(0, Number(i?.wind_gust_speed ?? (showWindSpeed ? i?.wind_speed : 0))) : 0;
 
-    // конвертация значений в м/с для цвета
-    const speedMS = toMS(speedVal, windUnit);
-    const gustMS  = toMS(gustVal,  windUnit);
+                // конвертация значений в м/с для цвета
+                const speedMS = toMS(speedVal, windUnit);
+                const gustMS  = toMS(gustVal,  windUnit);
 
-    // номера по Бофорту
-    const bSpeed = Number.isFinite(speedMS) ? beaufortFromMS(speedMS) : 0;
-    const bGust  = Number.isFinite(gustMS)  ? beaufortFromMS(gustMS)  : bSpeed;
+                // номера по Бофорту
+                const bSpeed = Number.isFinite(speedMS) ? beaufortFromMS(speedMS) : 0;
+                const bGust  = Number.isFinite(gustMS)  ? beaufortFromMS(gustMS)  : bSpeed;
 
-    // цвета: порывы более прозрачные
-    const speedColor = beaufortColorWiki(bSpeed, 0.85);
-    const gustColor  = beaufortColorWiki(bGust,  0.28);
+                // цвета: порывы более прозрачные
+                const speedColor = beaufortColorWiki(bSpeed, 0.85);
+                const gustColor  = beaufortColorWiki(bGust,  0.28);
 
-    // высоты считаем ТОЛЬКО если есть бары
-    let hGustRaw = 0, hSpeedRaw = 0;
-    if (hasBars && maxWind > 0) {
-      hGustRaw  = Math.round((Math.max(speedVal, gustVal) / maxWind) * barsAreaH);
-      hSpeedRaw = Math.round((Math.min(speedVal, gustVal || speedVal) / maxWind) * barsAreaH);
-    }
+                // высоты считаем ТОЛЬКО если есть бары
+                let hGustRaw = 0, hSpeedRaw = 0;
+                if (hasBars && maxWind > 0) {
+                  hGustRaw  = Math.round((Math.max(speedVal, gustVal) / maxWind) * barsAreaH);
+                  hSpeedRaw = Math.round((Math.min(speedVal, gustVal || speedVal) / maxWind) * barsAreaH);
+                }
 
-// 2) stack с барами — только если есть что рисовать
-if (hasBars) {
-  const stack = document.createElement("div");
-  stack.style.cssText = `
-    position: relative; width: 100%; height: ${usableH}px;
-  `;
-  cell.appendChild(stack);
+            // 2) stack с барами — только если есть что рисовать
+            if (hasBars) {
+              const stack = document.createElement("div");
+              stack.style.cssText = `
+                position: relative; width: 100%; height: ${usableH}px;
+              `;
+              cell.appendChild(stack);
 
-  // порывы
-  if (hasGustBars && hGustRaw > 0) {
-    const gustBand = document.createElement("div");
-    gustBand.style.cssText = `
-      position: absolute;
-      left: 50%; transform: translateX(-50%);
-      bottom: 0;
-      width: clamp(12px,40%,42px); height: ${hGustRaw}px;
-      background: ${gustColor};
-      border-radius: 3px;
-    `;
-    stack.appendChild(gustBand);
+              // порывы
+              if (hasGustBars && hGustRaw > 0) {
+                const gustBand = document.createElement("div");
+                gustBand.style.cssText = `
+                  position: absolute;
+                  left: 50%; transform: translateX(-50%);
+                  bottom: 0;
+                  width: clamp(12px,40%,42px); height: ${hGustRaw}px;
+                  background: ${gustColor};
+                  border-radius: 3px;
+                `;
+                stack.appendChild(gustBand);
 
-    // значение порыва на вершине столбца (в выбранных единицах, без юнитов)
-    const windDigits = Number(this._cfg?.wind_digits ?? 0);
-    const gustText = this._formatNumberInternal(
-      gustVal,
-      this.hass?.locale || {},
-      { minimumFractionDigits: windDigits, maximumFractionDigits: windDigits }
-    );
-    
-    const gustDiff = (this._cfg?.gust_label_threshold ?? 0.5); // м/с или в юнитах источника
-    const showGustValue = hasGustBars && (Math.abs(gustVal - speedVal) >= gustDiff);
-    
-    // аккуратно держим подпись внутри stack
-    const approxLblH = 10;                         // примерная высота текста в px
-    const topOffset  = 2;                          // зазор над верхом столбца
-    const gustBottom = Math.min(
-      Math.max(0, usableH - approxLblH),           // не выше верха stack
-      hGustRaw + topOffset                         // на уровне верха столбца + зазор
-    );
+                // значение порыва на вершине столбца (в выбранных единицах, без юнитов)
+                const windDigits = Number(this._cfg?.wind_digits ?? 0);
+                const gustText = this._formatNumberInternal(
+                  gustVal,
+                  this.hass?.locale || {},
+                  { minimumFractionDigits: windDigits, maximumFractionDigits: windDigits }
+                );
+                
+                const gustDiff = (this._cfg?.gust_label_threshold ?? 0.5); // м/с или в юнитах источника
+                const showGustValue = hasGustBars && (Math.abs(gustVal - speedVal) >= gustDiff);
+                
+                // аккуратно держим подпись внутри stack
+                const approxLblH = 10;                         // примерная высота текста в px
+                const topOffset  = 2;                          // зазор над верхом столбца
+                const gustBottom = Math.min(
+                  Math.max(0, usableH - approxLblH),           // не выше верха stack
+                  hGustRaw + topOffset                         // на уровне верха столбца + зазор
+                );
 
-    if (showGustValue) { 
-      const gustLabel = document.createElement("div");
-      gustLabel.textContent = gustText;              // только число, без юнитов
-      gustLabel.style.cssText = `
-        position: absolute;
-        left: 50%; transform: translateX(-50%);
-        bottom: ${gustBottom}px;
-        font-size: .60em; line-height: 1;
-        text-shadow: 0 1px 1px rgba(0,0,0,.10);
-        color: var(--secondary-text-color);
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        pointer-events: none; user-select: none;
-      `;
-      stack.appendChild(gustLabel);
-    }
-  }
+                if (showGustValue) { 
+                  const gustLabel = document.createElement("div");
+                  gustLabel.textContent = gustText;              // только число, без юнитов
+                  gustLabel.style.cssText = `
+                    position: absolute;
+                    left: 50%; transform: translateX(-50%);
+                    bottom: ${gustBottom}px;
+                    font-size: .60em; line-height: 1;
+                    text-shadow: 0 1px 1px rgba(0,0,0,.10);
+                    color: var(--secondary-text-color);
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                    pointer-events: none; user-select: none;
+                  `;
+                  stack.appendChild(gustLabel);
+                }
+              }
 
-  // скорость
-  if (hasSpeedBars && hSpeedRaw > 0) {
-    const speedBar = document.createElement("div");
-    speedBar.style.cssText = `
-      position: absolute;
-      left: 50%; transform: translateX(-50%);
-      bottom: 0;
-      width: clamp(8px,30%,34px); height: ${hSpeedRaw}px;
-      background: ${speedColor};
-      border-radius: 2px;
-    `;
-    stack.appendChild(speedBar);
-  }
+              // скорость
+              if (hasSpeedBars && hSpeedRaw > 0) {
+                const speedBar = document.createElement("div");
+                speedBar.style.cssText = `
+                  position: absolute;
+                  left: 50%; transform: translateX(-50%);
+                  bottom: 0;
+                  width: clamp(8px,30%,34px); height: ${hSpeedRaw}px;
+                  background: ${speedColor};
+                  border-radius: 2px;
+                `;
+                stack.appendChild(speedBar);
+              }
 
-  // 3) число скорости под барами (в выбранных единицах, без юнитов)
-  if (hasSpeedBars) {
-    const windDigits = Number(this._cfg?.wind_digits ?? 0);
-    const numText = this._formatNumberInternal(
-      speedVal,
-      this.hass?.locale || {},
-      { minimumFractionDigits: windDigits, maximumFractionDigits: windDigits }
-    );
-    const vLabel = document.createElement("div");
-    vLabel.textContent = numText;
-    vLabel.style.cssText = `
-      margin-top:${VAL_GAP}px;
-      font-size:.72em; line-height:1;
-      color: var(--primary-text-color);
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      pointer-events:none; user-select:none;
-    `;
-    cell.appendChild(vLabel);
-  }
-}
+              // 3) число скорости под барами (в выбранных единицах, без юнитов)
+              if (hasSpeedBars) {
+                const windDigits = Number(this._cfg?.wind_digits ?? 0);
+                const numText = this._formatNumberInternal(
+                  speedVal,
+                  this.hass?.locale || {},
+                  { minimumFractionDigits: windDigits, maximumFractionDigits: windDigits }
+                );
+                const vLabel = document.createElement("div");
+                vLabel.textContent = numText;
+                vLabel.style.cssText = `
+                  margin-top:${VAL_GAP}px;
+                  font-size:.72em; line-height:1;
+                  color: var(--primary-text-color);
+                  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                  pointer-events:none; user-select:none;
+                `;
+                cell.appendChild(vLabel);
+              }
+            }
 
-    if (hasDir) {
-      const arrow = createWindDir(i?.wind_bearing, {
-        toDirection: true,             // «куда дует»
-        prefer: "svg",                 // или "mdi" | "auto"
-        size: 16,                      // для SVG; для MDI см. mode
-        color: "currentColor",
-        hass: this._hass || this.hass, // для локализации румба в title
-        mode,                          // если выберешь prefer:"mdi"
-      });
-      if (arrow) {
-        // при необходимости можно добавить доп. стили позиционирования
-        arrow.style.cssText += 
-          `flex:0 0 16px;
-          margin-top:2px;
-          `;
-        cell.appendChild(arrow);
-        const deg = parseBearing(i?.wind_bearing);
-        if (Number.isFinite(deg)) {
-          const short = toCardinal(deg);
-          const label = document.createElement("div");
-          label.textContent = localizeCardinal(this._hass || this.hass, short);
-          label.style.cssText = `
-            font-size:.7em; line-height:1;
-            margin-top:2px; opacity:.75;
-            pointer-events:none; user-select:none;
-            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-            max-width:100%;
-          `;
-          cell.appendChild(label);
-        }
-      }
-    }
+                if (hasDir) {
+                  const arrow = createWindDir(i?.wind_bearing, {
+                    toDirection: true,             // «куда дует»
+                    prefer: "svg",                 // или "mdi" | "auto"
+                    size: 16,                      // для SVG; для MDI см. mode
+                    color: "currentColor",
+                    hass: this._hass || this.hass, // для локализации румба в title
+                    mode,                          // если выберешь prefer:"mdi"
+                  });
+                  if (arrow) {
+                    // при необходимости можно добавить доп. стили позиционирования
+                    arrow.style.cssText += 
+                      `flex:0 0 16px;
+                      margin-top:2px;
+                      `;
+                    cell.appendChild(arrow);
+                    const deg = parseBearing(i?.wind_bearing);
+                    if (Number.isFinite(deg)) {
+                      const short = toCardinal(deg);
+                      const label = document.createElement("div");
+                      label.textContent = localizeCardinal(this._hass || this.hass, short);
+                      label.style.cssText = `
+                        font-size:.7em; line-height:1;
+                        margin-top:2px; opacity:.75;
+                        pointer-events:none; user-select:none;
+                        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                        max-width:100%;
+                      `;
+                      cell.appendChild(label);
+                    }
+                  }
+                }
 
-    windFlex.appendChild(cell);
-  });
-  overlay.appendChild(windFlex);
-}
+                windFlex.appendChild(cell);
+              });
+              overlay.appendChild(windFlex);
+            }
 
             // 2) tempFlex
             const tempFlex = document.createElement("div");
@@ -3938,28 +3965,37 @@ if (hasBars) {
                     background: ${precipColor};
                     border-radius: 2px 2px 0 0;
                     pointer-events: none;
-                    ${showTemp
+                    ${
+                      showTemp
                         ? `right: 4%;`
-                        : `left: 50%; transform: translateX(-50%);`
-                      }
+                        : bothNoTemp
+                          ? `right: 4%;` // ставим к правому краю
+                          : `left: 50%; transform: translateX(-50%);` // по центру как раньше
+                    }
                   `;
                   cell.appendChild(precipBar);
 
-                  // подпись «42 %» сразу над баром (если он достаточно высокий)
+                  // подпись «NN %» ТЕПЕРЬ ПОД баром (если он достаточно высокий)
                   if (probH > 24) {
+                    const LBL_H   = 10;         // примерная высота строки
+                    const LBL_GAP = 2;          // зазор под баром
+                    // нижняя кромка бара сидит на markerH/2 — опускаем подпись ниже него
+                    const labelBottom = Math.max(0, (markerH / 2) - (LBL_H + LBL_GAP));
+
                     const lbl = document.createElement("div");
                     lbl.textContent = `${prob}%`;
                     lbl.style.cssText = `
                       position: absolute;
-                      bottom: ${markerH / 2 + probH + 2}px;
-                      /* если рисуем вместе с температурой — 12% ширины и сдвиг вправо,
-                        иначе — центрируем и делаем ширину auto */
-                      ${showTemp
-                        ? `right: 4%;
-                          width: ${precipBarW * 100}%;`
-                        : `left: 50%;
-                          transform: translateX(-50%);
-                          width: auto;`
+                      bottom: ${labelBottom-6}px;
+                      ${
+                        showTemp
+                          ? `right: 4%;
+                            width: ${precipBarW * 100}%;`
+                          : (
+                              bothNoTemp
+                                ? `right: 4%; width: 30%;`  /* делим ячейку: prob справа */
+                                : `left: 50%; transform: translateX(-50%); width: auto;`
+                            )
                       }
                       text-align: center;
                       font-size: .55em;
@@ -4031,6 +4067,85 @@ if (hasBars) {
                   }
                 }
               }
+              // UV INDEX — как precip_probability, но:
+              // при showTemp — растёт СВЕРХУ ВНИЗ и стоит СЛЕВА в ячейке
+              if (showUV) {
+                const uvRaw = i.uv_index;
+                if (typeof uvRaw === "number" && uvRaw > 0) {
+                  // высота столбика
+                  let uvH = 0;
+                  if (showTemp) {
+                    uvH = Math.round((Math.min(uvRaw, UV_REF) / UV_REF) * (chartH - markerH));
+                  } else {
+                    uvH = maxUV > 0 ? Math.round((uvRaw / maxUV) * (chartH - markerH)) : 0;
+                  }
+                  const fill = uvColorForIndex(uvRaw, showTemp ? 0.55 : 0.65); // чуть плотнее без температуры
+                  
+                  const uvBar = document.createElement("div");
+                  if (showTemp) {
+                    // слева, сверху вниз (как было)
+                    uvBar.style.cssText = `
+                      position:absolute;
+                      top:${markerH/2}px; left:4%;
+                      width:${uvBarW*100}%; height:${uvH}px;
+                      background:${fill};
+                      border-radius:0 0 2px 2px;
+                      pointer-events:none;
+                    `;
+                  } else {
+                    // БЕЗ температуры: по центру, СВЕРХУ ВНИЗ (как prob по центру, но направление сверху)
+                    uvBar.style.cssText = `
+                      position: absolute;
+                      top: ${markerH/2}px;
+                      ${bothNoTemp
+                        ? `left: 4%; width: 30%;`                  // слева, 30%
+                        : `left: 50%; transform: translateX(-50%); width: 30%;`  // по центру, как раньше
+                      }
+                      height: ${uvH}px;
+                      background: ${fill};
+                      border-radius: 0 0 2px 2px;
+                      pointer-events: none;
+                    `;
+                  }
+                  cell.appendChild(uvBar);
+                  
+                  // подпись UV: теперь НАД столбиком (бар растёт сверху → вниз)
+                  if (uvRaw >= 2.5) {
+                    const UV_LABEL_H   = 12; // примерная высота строки
+                    const UV_LABEL_GAP = 2;  // зазор над верхом бара
+                    // верх UV-бара начинается на markerH/2, поднимаем лейбл над ним
+                    const labelTop = Math.max(0, (markerH / 2) - (UV_LABEL_H + UV_LABEL_GAP));
+
+                    const uvLbl = document.createElement("div");
+                    uvLbl.textContent = String(Math.round(uvRaw));
+
+                    if (showTemp) {
+                      uvLbl.style.cssText = `
+                        position:absolute;
+                        top:${labelTop - 5}px;
+                        left:4%;
+                        width:${uvBarW*100}%;
+                        text-align:center;
+                        font-size:.55em; color:var(--secondary-text-color);
+                        pointer-events:none;
+                      `;
+                    } else {
+                      uvLbl.style.cssText = `
+                        position:absolute;
+                        top:${labelTop - 5}px;
+                        ${bothNoTemp
+                          ? `left: 4%; width: 30%; text-align: center;`  /* под левую «полосу» UV */
+                          : `left: 50%; transform: translateX(-50%); width: auto; text-align: center;`
+                        }
+                        font-size:.55em; color:var(--secondary-text-color);
+                        pointer-events:none;
+                      `;
+                    }
+                    cell.appendChild(uvLbl);
+                  }
+                }
+              }
+              
               tempFlex.appendChild(cell);
             });
             bars.appendChild(overlay);
