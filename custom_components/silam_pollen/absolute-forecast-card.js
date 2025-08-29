@@ -817,8 +817,7 @@ class AbsoluteForecastCard extends HTMLElement {
     if (typeof num !== "string") return defaultOpts;
     if (
       !options ||
-      (options.minimumFractionDigits === undefined &&
-       options.maximumFractionDigits === undefined)
+      (options.minimumFractionDigits === undefined && options.maximumFractionDigits === undefined)
     ) {
       const digits = num.includes(".") ? num.split(".")[1].length : 0;
       defaultOpts.minimumFractionDigits = digits;
@@ -3032,7 +3031,53 @@ class AbsoluteForecastCard extends HTMLElement {
             /* —— высоты сегментов (px) —— */
             const TEMP_H   = hasTemp   ?  80 : 0;
             const PROB_H   = (hasProb || hasUV)   ?  50 : 0;
-            const AMOUNT_H = hasAmount ?  15 : 0;   // было 0 — теперь реально резервирует место
+
+            /* —— выбор пользователя + наличие данных для мет-блока —— */
+            const showHum = availableAttrs.includes("humidity");
+            const showDew = availableAttrs.includes("dew_point");
+
+            // Полоска условий показывается, если выбран humidity или dew_point
+            const showCond = (showHum || showDew);
+
+            const hasHum = showHum && items.some(i => typeof i?.humidity   === "number");
+            const hasDew = showDew && items.some(i => typeof i?.dew_point  === "number");
+
+            // CONDITIONS доступна, если хотим её показывать и есть хоть что-то из Td/RH
+            const hasCond = showCond && (hasDew || hasHum);
+
+            // есть ли вообще что-то из метрик
+            const hasAnyMet = hasHum || hasDew || hasCond;
+
+            /* —— индивидуальные высоты строк (можно вынести в конфиг) —— */
+            const HUM_H        = Number(this._cfg?.met_humidity_h    ?? 20); // humidity — заливка
+            const DEW_STRIP_H  = Number(this._cfg?.met_dew_strip_h   ?? 10); // узкая лента Td
+            const COND_H       = Number(this._cfg?.met_conditions_h  ?? 20); // лента явлений (conditions)
+            const DEW_H        = Number(this._cfg?.met_dew_h         ?? 20); // dew — бар разницы Δ(T−Td)
+
+            const MET_ROW_GAP = 2;   // межстрочный зазор
+            const MET_PB      = 6;   // нижний паддинг всего мет-блока
+
+            /* —— сколько реально полос будет —— 
+              humidity strip + dew strip + conditions strip + dew bar */
+            const rowsCount =
+              (hasHum  ? 1 : 0) +   // HUMIDITY STRIP
+              (hasDew  ? 1 : 0) +   // DEW STRIP (узкая)
+              (hasCond ? 1 : 0) +   // CONDITIONS STRIP
+              (hasDew  ? 1 : 0);    // DEW POINT bar (Δ)
+
+            /* —— суммарная высота мет-блока с учётом зазоров —— */
+            const MET_H =
+              (hasHum  ? HUM_H       : 0) +
+              (hasDew  ? DEW_STRIP_H : 0) +
+              (hasCond ? COND_H      : 0) +
+              (hasDew  ? DEW_H       : 0) +
+              Math.max(0, rowsCount - 1) * MET_ROW_GAP;
+
+            // ——— amountFlex: высота строки и паддинг блока ———
+            const AMT_LINE_H = (hasTemp && showAmount) ? 5 : 25; // высота ряда с иконкой
+            const AMT_PB     = 4;    // нижний паддинг блока
+            const amtRows    = (showAmount && hasAnyAmount) ? 1 : 0;  // рисуем 1 строку, если есть что
+            const AMT_H      = amtRows ? AMT_LINE_H : 0;
 
             // режимы
             const hasSpeedBars = showWindSpeed && maxWind > 0;
@@ -3048,15 +3093,19 @@ class AbsoluteForecastCard extends HTMLElement {
             let WIND_H = 0;
 
             if (hasSpeedBars && hasGustBars && showWindDir) {
-              WIND_H = 56; // оба бара + стрелка/лейбл (чуть выше, чтобы уместилась подпись порыва сверху и скорость снизу)
+              WIND_H = 60; // оба бара + стрелка/лейбл (чуть выше, чтобы уместилась подпись порыва сверху и скорость снизу)
             } else if (hasSpeedBars && hasGustBars && !showWindDir) {
-              WIND_H = 32; // оба бара, без стрелки
+              WIND_H = 26; // оба бара, без стрелки
+            } else if (hasSpeedBars && !hasGustBars && !showWindDir) {
+              WIND_H = 26; // только скорость ветра, без стрелки
+            } else if (!hasSpeedBars && hasGustBars && !showWindDir) {
+              WIND_H = 40; // только порывы без стрелки
             } else if (hasBars && showWindDir) {
               WIND_H = 50; // ваш случай: один бар (speed или gust) + стрелка/лейбл
             } else if (hasBars && !showWindDir) {
-              WIND_H = 20; // ваш случай: только один бар (speed или gust), компактно
+              WIND_H = 25; // ваш случай: только один бар (speed или gust), компактно
             } else if (!hasBars && showWindDir) {
-              WIND_H = 30; // ваш случай: только стрелка/лейбл
+              WIND_H = 25; // ваш случай: только стрелка/лейбл
             } else {
               WIND_H = 0;  // ничего не выбрано или нет данных
             }
@@ -3117,17 +3166,16 @@ class AbsoluteForecastCard extends HTMLElement {
             const colorZero = mapTempToColor(0,   0.4, entityTemperatureUnit);
             const SEGMENT_ALPHA_PCT = isDarkMode ? 15 : 30; 
             const markerH = 12;
+            const MARKER_RADIUS = 3; // радиус скругления у маркеров/столбиков
             const labelMargin = 8;
             const offset = markerH / 2 + labelMargin;
-            const labelPadding = (showTemp || showAppTemp) ? 20 : 6; // запас под подписи min/max/zero
+            const labelPadding = (showTemp || showAppTemp) ? 16 : 6; // запас под подписи min/max/zero
             const TEMP_PB = ((showTemp || showAppTemp) && !hasAmount) ? 15 : 0; // запас под подписи min/max/zero
             /* —— сводная высота «температурно-осадочной» части (без ветра!) —— */
             let chartH = 0;
             if (hasTemp)      chartH += TEMP_H;
             else if (hasProb || hasUV) chartH += PROB_H;
-            if (hasAmount)    chartH += AMOUNT_H;
 
-            const AMOUNT_OVERHANG = hasAnyAmount ? Math.round(chartH * 0.25) /* + 8 */ : 0;
             const TIME_PB = 4;                 // timeFlex: padding-bottom: 4px
             const WIND_PB = hasWind  ? 4 : 0;   // windFlex: padding-bottom: 4px (а не labelPadding)
             const WIND_DIR_PB = showWindDir  ? 2 : 0;
@@ -3136,13 +3184,14 @@ class AbsoluteForecastCard extends HTMLElement {
             const OVERLAY_H =
               tfh +                 // высота timeFlex
               TIME_PB +             // его нижний паддинг
-              (hasWind ? (WIND_H + WIND_PB + WIND_DIR_PB) : 0) +  // ветрослой + его паддинг
-              capBottom +
+              ((hasWind || hasDir) ? (WIND_H + WIND_PB + WIND_DIR_PB + capBottom) : 0) +  // ветрослой + его паддинг
+              (hasAnyMet ? (MET_H + MET_PB) : 0) +
+              (amtRows ? (AMT_H + AMT_PB) : 0) +    // ← добавили amountFlex
               chartH +              // температура/осадки
+              (((hasProb || hasUV) && (!hasTemp)) ? 16 : 0) +
               TEMP_PT +            // верхний запас под подписи температур
               TEMP_PB +
-              labelPadding +                  // ваш сервисный зазор
-              AMOUNT_OVERHANG;      // доп. запас только если рисуем amount с bottom:-25%
+              labelPadding*2;                  // ваш сервисный зазор
 
             // — создаём контейнер для базовой информации —
             const baseInfo = this._createSectionContainer(
@@ -3553,6 +3602,7 @@ class AbsoluteForecastCard extends HTMLElement {
 
             // 1) timeFlex с теми же стилями, что использовались раньше
             const timeFlex = document.createElement("div");
+            timeFlex.classList.add("timeFlex");
             timeFlex.style.cssText = `
               display:flex;
               flex:1 1 auto; min-width:0; box-sizing:border-box;
@@ -3641,6 +3691,7 @@ class AbsoluteForecastCard extends HTMLElement {
             // 1.1) windFlex — между timeFlex и tempFlex (только если пользователь выбрал и есть данные)
             if ((hasWind && maxWind > 0) || showWindDir) {
               const windFlex = document.createElement("div");
+              windFlex.classList.add("windFlex");
               windFlex.style.cssText = `
                 display:flex;
                 align-items:flex-end;
@@ -3718,7 +3769,7 @@ class AbsoluteForecastCard extends HTMLElement {
                   bottom: 0;
                   width: clamp(12px,40%,42px); height: ${hGustRaw}px;
                   background: ${gustColor};
-                  border-radius: 3px;
+                  border-radius: ${MARKER_RADIUS}px;
                 `;
                 stack.appendChild(gustBand);
 
@@ -3767,7 +3818,7 @@ class AbsoluteForecastCard extends HTMLElement {
                   bottom: 0;
                   width: clamp(8px,30%,34px); height: ${hSpeedRaw}px;
                   background: ${speedColor};
-                  border-radius: 2px;
+                  border-radius: ${MARKER_RADIUS-1}px;
                 `;
                 stack.appendChild(speedBar);
               }
@@ -3784,7 +3835,7 @@ class AbsoluteForecastCard extends HTMLElement {
                 vLabel.textContent = numText;
                 vLabel.style.cssText = `
                   margin-top:${VAL_GAP}px;
-                  font-size:.72em; line-height:1;
+                  font-size:${VAL_LABEL_H}px; line-height:1;
                   color: var(--primary-text-color);
                   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
                   pointer-events:none; user-select:none;
@@ -3832,12 +3883,14 @@ class AbsoluteForecastCard extends HTMLElement {
             }
 
             // 2) tempFlex
+            if (hasTemp || hasProb || hasUV) {
             const tempFlex = document.createElement("div");
+            tempFlex.classList.add("tempFlex");
             tempFlex.style.cssText = `
               display:flex;
-              /* gap:clamp(1px,2%,10px);  */
               flex:1 1 auto; min-width:0; box-sizing:border-box;
               padding-top: ${labelPadding}px;
+              padding-bottom: ${labelPadding+4}px;
               padding-inline: 0 ${padStr};
               pointer-events:none;
             `;
@@ -3852,464 +3905,455 @@ class AbsoluteForecastCard extends HTMLElement {
                 /* box-sizing:border-box; */
                 padding-inline: clamp(1px,2%,5px);
               `;              
-// === ЕДИНЫЙ БЛОК: базовая температура + маркер apparent_temperature ===
-{
-  const hasBaseTemp = !!(showTemp && tempAttr);
-  const appValNum = (showAppTemp && typeof i.apparent_temperature === "number")
-    ? Number(i.apparent_temperature)
-    : NaN;
-  const MARKER_RADIUS = 3; // радиус скругления у маркеров/столбиков
+              // === ЕДИНЫЙ БЛОК: базовая температура + маркер apparent_temperature ===
+              {
+                const hasBaseTemp = !!(showTemp && tempAttr);
+                const appValNum = (showAppTemp && typeof i.apparent_temperature === "number")
+                  ? Number(i.apparent_temperature)
+                  : NaN;
+                // Рендер базовой температуры (как было), но нормализация по scaleMin/scaleRange,
+                // а цвета линий берём из colorLineMax/colorLineMin.
+                if (hasBaseTemp) {
+                  const vHigh  = i[tempAttr] != null ? i[tempAttr] : scaleMin;
+                  const hasLow = i.templow != null;
+                  const vLow   = hasLow ? i.templow : vHigh;
+                
+                  // нормализация по комбинированной шкале
+                  const normHigh = (vHigh - scaleMin) / scaleRange;
+                  const normLow  = (vLow  - scaleMin) / scaleRange;
+                
+                  const offHigh  = Math.round((1 - normHigh) * (chartH - markerH)); // ВЕРХ маркера high
+                  const offLow   = Math.round((1 - normLow ) * (chartH - markerH)); // ВЕРХ маркера low
+                  
+                  // есть ли apparent_temperature в текущем слоте
+                  const hasAppHere = showAppTemp && typeof i.apparent_temperature === "number" && !Number.isNaN(i.apparent_temperature);
+                
+                  if (hasAppHere) {
+                    // коннекторы: от ВЕРХНЕЙ кромки маркера high → НИЖНЯЯ кромка маркера apparent,
+                    // и от ВЕРХНЕЙ кромки маркера apparent → НИЖНЯЯ кромка маркера low (если есть)
+                    const appVal = Number(i.apparent_temperature);
+                    let appNorm = (appVal - scaleMin) / scaleRange;
+                    appNorm = Math.max(0, Math.min(1, appNorm));
+                    const appOff = Math.round((1 - appNorm) * (chartH - markerH)); // ВЕРХ маркера apparent
+                  
+                    const yHighTop    = offHigh;                 // верхняя кромка high
+                    const yHighBottom = offHigh + markerH;       // нижняя кромка high
+                    const yAppTop     = appOff;                  // верхняя кромка apparent
+                    const yAppBottom  = appOff + markerH;        // нижняя кромка apparent
+                    const yLowTop     = hasLow ? offLow : NaN;
+                    const yLowBottom  = hasLow ? (offLow + markerH) : NaN; // нижняя кромка low
+                  
+                    const primaryWidth   = "clamp(30%,40%,50%)"; // как ширина маркера
+                  
+                    const colorHighFull = mapTempToColor(vHigh, 1, entityTemperatureUnit);
+                    const colorLowFull  = hasLow ? mapTempToColor(vLow, 1, entityTemperatureUnit) : colorHighFull;
+                    const colorAppFull  = mapTempToColor(appVal, 1, entityTemperatureUnit);
 
-  // Рендер базовой температуры (как было), но нормализация по scaleMin/scaleRange,
-  // а цвета линий берём из colorLineMax/colorLineMin.
-  if (hasBaseTemp) {
-    const vHigh  = i[tempAttr] != null ? i[tempAttr] : scaleMin;
-    const hasLow = i.templow != null;
-    const vLow   = hasLow ? i.templow : vHigh;
-  
-    // нормализация по комбинированной шкале
-    const normHigh = (vHigh - scaleMin) / scaleRange;
-    const normLow  = (vLow  - scaleMin) / scaleRange;
-  
-    const offHigh  = Math.round((1 - normHigh) * (chartH - markerH)); // ВЕРХ маркера high
-    const offLow   = Math.round((1 - normLow ) * (chartH - markerH)); // ВЕРХ маркера low
-    
-    // есть ли apparent_temperature в текущем слоте
-    const hasAppHere = showAppTemp && typeof i.apparent_temperature === "number" && !Number.isNaN(i.apparent_temperature);
-  
-    if (hasAppHere) {
-      // коннекторы: от ВЕРХНЕЙ кромки маркера high → НИЖНЯЯ кромка маркера apparent,
-      // и от ВЕРХНЕЙ кромки маркера apparent → НИЖНЯЯ кромка маркера low (если есть)
-      const appVal = Number(i.apparent_temperature);
-      let appNorm = (appVal - scaleMin) / scaleRange;
-      appNorm = Math.max(0, Math.min(1, appNorm));
-      const appOff = Math.round((1 - appNorm) * (chartH - markerH)); // ВЕРХ маркера apparent
-    
-      const yHighTop    = offHigh;                 // верхняя кромка high
-      const yHighBottom = offHigh + markerH;       // нижняя кромка high
-      const yAppTop     = appOff;                  // верхняя кромка apparent
-      const yAppBottom  = appOff + markerH;        // нижняя кромка apparent
-      const yLowTop     = hasLow ? offLow : NaN;
-      const yLowBottom  = hasLow ? (offLow + markerH) : NaN; // нижняя кромка low
-    
-      const primaryWidth   = "clamp(30%,40%,50%)"; // как ширина маркера
-    
-      const colorHighFull = mapTempToColor(vHigh, 1, entityTemperatureUnit);
-      const colorLowFull  = hasLow ? mapTempToColor(vLow, 1, entityTemperatureUnit) : colorHighFull;
-      const colorAppFull  = mapTempToColor(appVal, 1, entityTemperatureUnit);
+                    // полноцветные концы + общая прозрачность элемента (градиент остаётся видимым)
+                    const RING_COLOR = `color-mix(in srgb, ${colorHighFull} 5%, var(--divider-color) 40%)`;
+                    const drawConnector = (yA, yB, w = primaryWidth, cA = colorHighFull, cB = colorAppFull) => {
+                      if (!Number.isFinite(yA) || !Number.isFinite(yB) || yA === yB) return;
+                      const top = Math.min(yA, yB);
+                      const h   = Math.abs(yB - yA);
+                    
+                      // верх/низ градиента выбираем по направлению A→B
+                      const topColor    = (yA <= yB) ? cA : cB;
+                      const bottomColor = (yA <= yB) ? cB : cA;
+                    
+                      // делаем сам градиент полупрозрачным через color-mix, а не через opacity (чтобы контур не «тух»)
+                      const topFill    = `color-mix(in srgb, ${topColor} ${SEGMENT_ALPHA_PCT}%, transparent)`;
+                      const bottomFill = `color-mix(in srgb, ${bottomColor} ${SEGMENT_ALPHA_PCT}%, transparent)`;
+                    
+                      const conn = document.createElement("div");
+                      conn.style.cssText = `
+                        position:absolute;
+                        top:${top}px;
+                        left:50%;
+                        transform:translateX(-50%);
+                        width:${w};
+                        height:${h}px;
+                        background: linear-gradient(to bottom, ${topFill}, ${bottomFill});
+                        border-radius:${MARKER_RADIUS}px;    /* ← было 2px */
+                        box-shadow: inset 0 0 0 1px ${RING_COLOR};  /* выразительный контур */
+                        pointer-events:none;
+                      `;
+                      cell.appendChild(conn);
+                    };      
+                  
+                    // НОВАЯ ЛОГИКА при наличии low: рисуем единый «столбик разницы» как градиент
+                    if (hasLow) {
+                      let topY, bottomY, backgroundCSS;
+                  
+                      // apparent между high и low → от high-top до low-bottom
+                      if (yAppTop >= yHighTop && yAppBottom <= yLowBottom) {
+                        topY = yHighTop;
+                        bottomY = yLowBottom;
+                        backgroundCSS = `linear-gradient(to bottom, ${colorHighFull}, ${colorLowFull})`;
+                      }
+                      // apparent выше high → от app-top до low-bottom
+                      else if (yAppTop < yHighTop) {
+                        topY = yAppTop;
+                        bottomY = yLowBottom;
+                        backgroundCSS = `linear-gradient(to bottom, ${colorAppFull}, ${colorLowFull})`;
+                      }
+                      // apparent ниже low → от high-top до app-bottom
+                      else {
+                        topY = yHighTop;
+                        bottomY = yAppBottom;
+                        backgroundCSS = `linear-gradient(to bottom, ${colorHighFull}, ${colorAppFull})`;
+                      }
+                  
+                      const barH = Math.max(0, bottomY - topY);
+                      if (barH > 0) {
+                        // фон: превращаем цвета градиента в полупрозрачные через color-mix
+                        const bgWithAlpha = backgroundCSS
+                          .replace(colorHighFull, `color-mix(in srgb, ${colorHighFull} ${SEGMENT_ALPHA_PCT}%, transparent)`)
+                          .replace(colorLowFull,  `color-mix(in srgb, ${colorLowFull}  ${SEGMENT_ALPHA_PCT}%, transparent)`)
+                          .replace(colorAppFull,  `color-mix(in srgb, ${colorAppFull}  ${SEGMENT_ALPHA_PCT}%, transparent)`);
+                      
+                        const diffBar = document.createElement("div");
+                        diffBar.style.cssText = `
+                          position:absolute;
+                          top:${topY}px;
+                          left:50%;
+                          transform:translateX(-50%);
+                          width:${primaryWidth};
+                          height:${barH}px;
+                          background:${bgWithAlpha};              /* полупрозрачный градиент */
+                          border-radius:${MARKER_RADIUS}px;       /* как у маркеров */
+                          box-shadow: inset 0 0 0 1px ${RING_COLOR}; /* чёткий контур на светлой теме */
+                          pointer-events:none;
+                        `;
+                        cell.appendChild(diffBar);
+                      }
+                      
+                    } else {
+                      // 1) HIGH ↔ APPARENT
+                      // если apparent выше high — тянем от нижней кромки high к верхней кромке apparent
+                      // иначе (apparent ниже/на уровне high) — от верхней кромки high к нижней кромке apparent
+                      if (yAppTop < yHighTop) {
+                        drawConnector(yHighBottom, yAppTop, primaryWidth, colorHighFull, colorAppFull);
+                      } else {
+                        drawConnector(yHighTop, yAppBottom, primaryWidth, colorHighFull, colorAppFull);
+                      }
+                  
+                      // 2) APPARENT ↔ LOW (если low есть)
+                      // если apparent выше low — от нижней кромки apparent к верхней кромке low
+                      // иначе (apparent ниже/на уровне low) — от нижней кромки low к верхней кромке apparent
+                      // (в этой ветке low отсутствует, блок оставлен как комментарий для совместимости с исходной логикой)
+                    }
+                  
+                    // подписи обычной температуры показываем только при заметной разнице с apparent (>= 3°)
+                    {
+                      const DIFF_THRESHOLD = Number(this._cfg?.apparent_label_diff ?? 2);
 
-      // полноцветные концы + общая прозрачность элемента (градиент остаётся видимым)
-      const RING_COLOR = `color-mix(in srgb, ${colorHighFull} 5%, var(--divider-color) 40%)`;
-      const drawConnector = (yA, yB, w = primaryWidth, cA = colorHighFull, cB = colorAppFull) => {
-        if (!Number.isFinite(yA) || !Number.isFinite(yB) || yA === yB) return;
-        const top = Math.min(yA, yB);
-        const h   = Math.abs(yB - yA);
-      
-        // верх/низ градиента выбираем по направлению A→B
-        const topColor    = (yA <= yB) ? cA : cB;
-        const bottomColor = (yA <= yB) ? cB : cA;
-      
-        // делаем сам градиент полупрозрачным через color-mix, а не через opacity (чтобы контур не «тух»)
-        const topFill    = `color-mix(in srgb, ${topColor} ${SEGMENT_ALPHA_PCT}%, transparent)`;
-        const bottomFill = `color-mix(in srgb, ${bottomColor} ${SEGMENT_ALPHA_PCT}%, transparent)`;
-      
-        const conn = document.createElement("div");
-        conn.style.cssText = `
-          position:absolute;
-          top:${top}px;
-          left:50%;
-          transform:translateX(-50%);
-          width:${w};
-          height:${h}px;
-          background: linear-gradient(to bottom, ${topFill}, ${bottomFill});
-          border-radius:${MARKER_RADIUS}px;    /* ← было 2px */
-          box-shadow: inset 0 0 0 1px ${RING_COLOR};  /* выразительный контур */
-          pointer-events:none;
-          z-index:4;
-        `;
-        cell.appendChild(conn);
-      };      
-    
-      // НОВАЯ ЛОГИКА при наличии low: рисуем единый «столбик разницы» как градиент
-      if (hasLow) {
-        let topY, bottomY, backgroundCSS;
-    
-        // apparent между high и low → от high-top до low-bottom
-        if (yAppTop >= yHighTop && yAppBottom <= yLowBottom) {
-          topY = yHighTop;
-          bottomY = yLowBottom;
-          backgroundCSS = `linear-gradient(to bottom, ${colorHighFull}, ${colorLowFull})`;
-        }
-        // apparent выше high → от app-top до low-bottom
-        else if (yAppTop < yHighTop) {
-          topY = yAppTop;
-          bottomY = yLowBottom;
-          backgroundCSS = `linear-gradient(to bottom, ${colorAppFull}, ${colorLowFull})`;
-        }
-        // apparent ниже low → от high-top до app-bottom
-        else {
-          topY = yHighTop;
-          bottomY = yAppBottom;
-          backgroundCSS = `linear-gradient(to bottom, ${colorHighFull}, ${colorAppFull})`;
-        }
-    
-        const barH = Math.max(0, bottomY - topY);
-        if (barH > 0) {
-          // фон: превращаем цвета градиента в полупрозрачные через color-mix
-          const bgWithAlpha = backgroundCSS
-            .replace(colorHighFull, `color-mix(in srgb, ${colorHighFull} ${SEGMENT_ALPHA_PCT}%, transparent)`)
-            .replace(colorLowFull,  `color-mix(in srgb, ${colorLowFull}  ${SEGMENT_ALPHA_PCT}%, transparent)`)
-            .replace(colorAppFull,  `color-mix(in srgb, ${colorAppFull}  ${SEGMENT_ALPHA_PCT}%, transparent)`);
-        
-          const diffBar = document.createElement("div");
-          diffBar.style.cssText = `
-            position:absolute;
-            top:${topY}px;
-            left:50%;
-            transform:translateX(-50%);
-            width:${primaryWidth};
-            height:${barH}px;
-            background:${bgWithAlpha};              /* полупрозрачный градиент */
-            border-radius:${MARKER_RADIUS}px;       /* как у маркеров */
-            box-shadow: inset 0 0 0 1px ${RING_COLOR}; /* чёткий контур на светлой теме */
-            pointer-events:none;
-            z-index:4;
-          `;
-          cell.appendChild(diffBar);
-        }
-        
-      } else {
-        // 1) HIGH ↔ APPARENT
-        // если apparent выше high — тянем от нижней кромки high к верхней кромке apparent
-        // иначе (apparent ниже/на уровне high) — от верхней кромки high к нижней кромке apparent
-        if (yAppTop < yHighTop) {
-          drawConnector(yHighBottom, yAppTop, primaryWidth, colorHighFull, colorAppFull);
-        } else {
-          drawConnector(yHighTop, yAppBottom, primaryWidth, colorHighFull, colorAppFull);
-        }
-    
-        // 2) APPARENT ↔ LOW (если low есть)
-        // если apparent выше low — от нижней кромки apparent к верхней кромке low
-        // иначе (apparent ниже/на уровне low) — от нижней кромки low к верхней кромке apparent
-        // (в этой ветке low отсутствует, блок оставлен как комментарий для совместимости с исходной логикой)
-      }
-    
-      // подписи обычной температуры показываем только при заметной разнице с apparent (>= 3°)
-      {
-        const DIFF_THRESHOLD = Number(this._cfg?.apparent_label_diff ?? 2);
+                      const baseLblColor  = "var(--secondary-text-color)";
+                      const baseLblSize   = "0.68em";
+                      const baseLblWeight = "400";
 
-        const baseLblColor  = "var(--secondary-text-color)";
-        const baseLblSize   = "0.68em";
-        const baseLblWeight = "400";
+                      const centerHigh = offHigh + markerH / 2;
+                      const centerLow  = offLow  + markerH / 2;
 
-        const centerHigh = offHigh + markerH / 2;
-        const centerLow  = offLow  + markerH / 2;
+                      // HIGH: |vHigh - appVal| >= threshold
+                      const diffHigh = Math.abs(Number(vHigh) - appVal);
+                      if (Number.isFinite(diffHigh) && diffHigh >= DIFF_THRESHOLD) {
+                        let highTopPx;
 
-        // HIGH: |vHigh - appVal| >= threshold
-        const diffHigh = Math.abs(Number(vHigh) - appVal);
-        if (Number.isFinite(diffHigh) && diffHigh >= DIFF_THRESHOLD) {
-          let highTopPx;
+                        if (hasLow) {
+                          if (yAppTop < yHighTop) {
+                            // apparent выше high → в маркере high рисуем центральную полоску
+                            // цвет как у обычного маркера high, но прозрачнее
+                            const highBaseColor = (typeof colorHighMarker === "string" && colorHighMarker)
+                              ? colorHighMarker                               // если уже посчитан выше
+                              : mapTempToColor(vHigh, 1, entityTemperatureUnit); // иначе берём полноцвет
 
-          if (hasLow) {
-            if (yAppTop < yHighTop) {
-              // apparent выше high → в маркере high рисуем центральную полоску
-              // цвет как у обычного маркера high, но прозрачнее
-              const highBaseColor = (typeof colorHighMarker === "string" && colorHighMarker)
-                ? colorHighMarker                               // если уже посчитан выше
-                : mapTempToColor(vHigh, 1, entityTemperatureUnit); // иначе берём полноцвет
+                            // можно слегка менять прозрачность в зависимости от темы (опционально)
+                            const isDarkMode = !!(this.hass?.themes?.darkMode ??
+                              (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches));
+                            const STRIPE_ALPHA_PCT = isDarkMode ? 65 : 75; // темнее в светлой теме
 
-              // можно слегка менять прозрачность в зависимости от темы (опционально)
-              const isDarkMode = !!(this.hass?.themes?.darkMode ??
-                (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches));
-              const STRIPE_ALPHA_PCT = isDarkMode ? 65 : 75; // темнее в светлой теме
+                            const highStripe = document.createElement("div");
+                            highStripe.style.cssText = `
+                              position:absolute;
+                              top:${centerHigh - 1}px;
+                              left:50%;
+                              transform:translateX(-50%);
+                              width:${primaryWidth};
+                              height:1px;
+                              background: color-mix(in srgb, ${highBaseColor} ${STRIPE_ALPHA_PCT}%, transparent);
+                              pointer-events:none;
+                            `;
+                            cell.appendChild(highStripe);
 
-              const highStripe = document.createElement("div");
-              highStripe.style.cssText = `
-                position:absolute;
-                top:${centerHigh - 1}px;
-                left:50%;
-                transform:translateX(-50%);
-                width:${primaryWidth};
-                height:1px;
-                background: color-mix(in srgb, ${highBaseColor} ${STRIPE_ALPHA_PCT}%, transparent);
-                pointer-events:none;
-                z-index:7;
-              `;
-              cell.appendChild(highStripe);
+                            // и размещаем значение ПОД полоской, внутри маркера high
+                            const insideGap = Math.min(Math.max(2, (markerH / 2) - 2), 6); // аккуратный отступ внутрь
+                            highTopPx = centerHigh + insideGap;
+                          } else {
+                            // apparent не выше high → оставляем как было (над маркером)
+                            highTopPx = centerHigh - offset;
+                          }
+                        } else {
+                          // без low: если apparent выше high — подпись снизу, иначе сверху (как раньше)
+                          const placeHighBelow = (yAppTop < yHighTop);
+                          highTopPx = placeHighBelow ? (centerHigh + offset) : (centerHigh - offset);
+                        }
 
-              // и размещаем значение ПОД полоской, внутри маркера high
-              const insideGap = Math.min(Math.max(2, (markerH / 2) - 2), 6); // аккуратный отступ внутрь
-              highTopPx = centerHigh + insideGap;
-            } else {
-              // apparent не выше high → оставляем как было (над маркером)
-              highTopPx = centerHigh - offset;
-            }
-          } else {
-            // без low: если apparent выше high — подпись снизу, иначе сверху (как раньше)
-            const placeHighBelow = (yAppTop < yHighTop);
-            highTopPx = placeHighBelow ? (centerHigh + offset) : (centerHigh - offset);
-          }
+                        const lblHigh = document.createElement("div");
+                        lblHigh.textContent = `${this._formatNumberInternal(vHigh, localeOptions, fmtOpts)}°`;
+                        lblHigh.style.cssText = `
+                          position:absolute;
+                          top:${highTopPx + 3}px;
+                          left:50%;
+                          transform:translate(-50%, -50%);
+                          font-size:${baseLblSize};
+                          font-weight:${baseLblWeight};
+                          color:${baseLblColor};
+                        `;
+                        cell.appendChild(lblHigh);
+                      }
 
-          const lblHigh = document.createElement("div");
-          lblHigh.textContent = `${this._formatNumberInternal(vHigh, localeOptions, fmtOpts)}°`;
-          lblHigh.style.cssText = `
-            position:absolute;
-            top:${highTopPx + 3}px;
-            left:50%;
-            transform:translate(-50%, -50%);
-            font-size:${baseLblSize};
-            font-weight:${baseLblWeight};
-            color:${baseLblColor};
-            z-index:7;
-          `;
-          cell.appendChild(lblHigh);
-        }
+                      // LOW (если есть): |vLow - appVal| >= threshold
+                      if (hasLow) {
+                        const diffLow = Math.abs(Number(vLow) - appVal);
+                        if (Number.isFinite(diffLow) && diffLow >= DIFF_THRESHOLD) {
+                          // по умолчанию подпись у low — снизу (оставляем как было)
+                          const lblLow = document.createElement("div");
+                          lblLow.textContent = `${this._formatNumberInternal(vLow, localeOptions, fmtOpts)}°`;
+                          lblLow.style.cssText = `
+                            position:absolute;
+                            top:${centerLow + offset}px;
+                            left:50%; transform:translate(-50%, -50%);
+                            font-size:${baseLblSize};
+                            font-weight:${baseLblWeight};
+                            color:${baseLblColor};
+                          `;
+                          cell.appendChild(lblLow);
+                        }
+                      }
+                    }
+                  }
+                  
+                  else {
+                    // классический режим: столбик между КРОМКАМИ маркеров (high-top → low-bottom)
+                    const FILL_ALPHA = showAppTemp ? 0.45 : 1; // почти прозрачная заливка, если включён apparent
+                    const gradHigh   = mapTempToColor(vHigh, FILL_ALPHA, entityTemperatureUnit);
+                    const gradLow    = mapTempToColor(vLow,  FILL_ALPHA, entityTemperatureUnit);
+                  
+                    const colorHighMarker = mapTempToColor(vHigh, 1, entityTemperatureUnit);
+                    const colorLowMarker  = mapTempToColor(vLow,  1, entityTemperatureUnit);
+                  
+                    // координаты кромок маркеров
+                    const yHighTop   = offHigh;                 // верхняя кромка high
+                    const yLowBottom = hasLow ? (offLow + markerH) : NaN; // нижняя кромка low
+                  
+                    // столбик от верхней кромки high → нижней кромки low
+                    let barTop = yHighTop;
+                    let barHeight = 0;
+                    if (hasLow) {
+                      barTop    = Math.min(yHighTop, yLowBottom);
+                      barHeight = Math.max(0, Math.abs(yLowBottom - yHighTop));
+                    }
+                  
+                    const bar = document.createElement("div");
+                    bar.style.cssText = `
+                      position:absolute;
+                      top:${barTop}px;
+                      left:50%;
+                      transform:translateX(-50%);
+                      width:clamp(30%,40%,50%);
+                      height:${barHeight}px;
+                      background:linear-gradient(to bottom, ${gradHigh}, ${gradLow});
+                      border-radius:${MARKER_RADIUS}px;
+                    `;
+                    cell.appendChild(bar);
+                  
+                    // маркеры: прозрачность ТОЛЬКО когда столбик действительно строится между маркерами
+                    const buildingBetweenMarkers = hasLow && barHeight > 0;
+                    const markerOpacity = buildingBetweenMarkers ? 0 : (showAppTemp ? 0.55 : 1);
+                  
+                    const markerHighEl = document.createElement("div");
+                    markerHighEl.style.cssText = `
+                      position:absolute;
+                      top:${offHigh}px;
+                      left:50%; transform:translateX(-50%);
+                      width:clamp(30%,40%,50%);
+                      height:${markerH}px;
+                      background:${colorHighMarker};
+                      border-radius:${MARKER_RADIUS}px;
+                      opacity:${markerOpacity};
+                      pointer-events:none;
+                    `;
+                    cell.appendChild(markerHighEl);
+                  
+                    if (hasLow) {
+                      const markerLowEl = document.createElement("div");
+                      markerLowEl.style.cssText = `
+                        position:absolute;
+                        top:${offLow}px;
+                        left:50%; transform:translateX(-50%);
+                        width:clamp(30%,40%,50%);
+                        height:${markerH}px;
+                        background:${colorLowMarker};
+                        border-radius:${MARKER_RADIUS}px;
+                        opacity:${markerOpacity};
+                        pointer-events:none;
+                      `;
+                      cell.appendChild(markerLowEl);
+                    }
+                  
+                    // подписи фактической температуры показываем только если apparent_temperature НЕ включён
+                    if (!showAppTemp) {
+                      const centerHigh = offHigh + markerH / 2;
+                      const centerLow  = offLow  + markerH / 2;
+                  
+                      const isExtremeHigh = (vHigh === tMax) || (!hasLow && (vHigh === tMin));
+                      const lblHigh = document.createElement("div");
+                      lblHigh.textContent = `${this._formatNumberInternal(vHigh, localeOptions, fmtOpts)}°`;
+                      lblHigh.style.cssText = `
+                        position:absolute;
+                        top:${centerHigh - offset}px;
+                        left:50%; transform:translate(-50%,-50%);
+                        font-size:${isExtremeHigh ? "0.95em" : "0.75em"};
+                        font-weight:${isExtremeHigh ? "700" : "400"};
+                      `;
+                      cell.appendChild(lblHigh);
+                  
+                      if (hasLow) {
+                        const isExtremeLow = (vLow === tMin);
+                        const lblLow = document.createElement("div");
+                        lblLow.textContent = `${this._formatNumberInternal(vLow, localeOptions, fmtOpts)}°`;
+                        lblLow.style.cssText = `
+                          position:absolute;
+                          top:${centerLow + offset}px;
+                          left:50%; transform:translate(-50%,-50%);
+                          font-size:${isExtremeLow ? "0.95em" : "0.75em"};
+                          font-weight:${isExtremeLow ? "700" : "400"};
+                        `;
+                        cell.appendChild(lblLow);
+                      }
+                    }
+                  }    
+                }
+                
+                
+                // Маркер apparent_temperature — рисуем всегда, если выбран и есть число
+                if (hasAppSeries && Number.isFinite(appValNum)) {
+                  let appNorm = (appValNum - scaleMin) / scaleRange;
+                  appNorm = Math.max(0, Math.min(1, appNorm));
 
-        // LOW (если есть): |vLow - appVal| >= threshold
-        if (hasLow) {
-          const diffLow = Math.abs(Number(vLow) - appVal);
-          if (Number.isFinite(diffLow) && diffLow >= DIFF_THRESHOLD) {
-            // по умолчанию подпись у low — снизу (оставляем как было)
-            const lblLow = document.createElement("div");
-            lblLow.textContent = `${this._formatNumberInternal(vLow, localeOptions, fmtOpts)}°`;
-            lblLow.style.cssText = `
-              position:absolute;
-              top:${centerLow + offset}px;
-              left:50%; transform:translate(-50%, -50%);
-              font-size:${baseLblSize};
-              font-weight:${baseLblWeight};
-              color:${baseLblColor};
-              z-index:7;
-            `;
-            cell.appendChild(lblLow);
-          }
-        }
-      }
-    }
-    
-    else {
-      // классический режим: столбик между КРОМКАМИ маркеров (high-top → low-bottom)
-      const FILL_ALPHA = showAppTemp ? 0.45 : 1; // почти прозрачная заливка, если включён apparent
-      const gradHigh   = mapTempToColor(vHigh, FILL_ALPHA, entityTemperatureUnit);
-      const gradLow    = mapTempToColor(vLow,  FILL_ALPHA, entityTemperatureUnit);
-    
-      const colorHighMarker = mapTempToColor(vHigh, 1, entityTemperatureUnit);
-      const colorLowMarker  = mapTempToColor(vLow,  1, entityTemperatureUnit);
-    
-      // координаты кромок маркеров
-      const yHighTop   = offHigh;                 // верхняя кромка high
-      const yLowBottom = hasLow ? (offLow + markerH) : NaN; // нижняя кромка low
-    
-      // столбик от верхней кромки high → нижней кромки low
-      let barTop = yHighTop;
-      let barHeight = 0;
-      if (hasLow) {
-        barTop    = Math.min(yHighTop, yLowBottom);
-        barHeight = Math.max(0, Math.abs(yLowBottom - yHighTop));
-      }
-    
-      const bar = document.createElement("div");
-      bar.style.cssText = `
-        position:absolute;
-        top:${barTop}px;
-        left:50%;
-        transform:translateX(-50%);
-        width:clamp(30%,40%,50%);
-        height:${barHeight}px;
-        background:linear-gradient(to bottom, ${gradHigh}, ${gradLow});
-        border-radius:${MARKER_RADIUS}px;
-      `;
-      cell.appendChild(bar);
-    
-      // маркеры: прозрачность ТОЛЬКО когда столбик действительно строится между маркерами
-      const buildingBetweenMarkers = hasLow && barHeight > 0;
-      const markerOpacity = buildingBetweenMarkers ? 0 : (showAppTemp ? 0.55 : 1);
-    
-      const markerHighEl = document.createElement("div");
-      markerHighEl.style.cssText = `
-        position:absolute;
-        top:${offHigh}px;
-        left:50%; transform:translateX(-50%);
-        width:clamp(30%,40%,50%);
-        height:${markerH}px;
-        background:${colorHighMarker};
-        border-radius:3px;
-        opacity:${markerOpacity};
-        pointer-events:none;
-      `;
-      cell.appendChild(markerHighEl);
-    
-      if (hasLow) {
-        const markerLowEl = document.createElement("div");
-        markerLowEl.style.cssText = `
-          position:absolute;
-          top:${offLow}px;
-          left:50%; transform:translateX(-50%);
-          width:clamp(30%,40%,50%);
-          height:${markerH}px;
-          background:${colorLowMarker};
-          border-radius:3px;
-          opacity:${markerOpacity};
-          pointer-events:none;
-        `;
-        cell.appendChild(markerLowEl);
-      }
-    
-      // подписи фактической температуры показываем только если apparent_temperature НЕ включён
-      if (!showAppTemp) {
-        const centerHigh = offHigh + markerH / 2;
-        const centerLow  = offLow  + markerH / 2;
-    
-        const isExtremeHigh = (vHigh === tMax) || (!hasLow && (vHigh === tMin));
-        const lblHigh = document.createElement("div");
-        lblHigh.textContent = `${this._formatNumberInternal(vHigh, localeOptions, fmtOpts)}°`;
-        lblHigh.style.cssText = `
-          position:absolute;
-          top:${centerHigh - offset}px;
-          left:50%; transform:translate(-50%,-50%);
-          font-size:${isExtremeHigh ? "0.95em" : "0.75em"};
-          font-weight:${isExtremeHigh ? "700" : "400"};
-        `;
-        cell.appendChild(lblHigh);
-    
-        if (hasLow) {
-          const isExtremeLow = (vLow === tMin);
-          const lblLow = document.createElement("div");
-          lblLow.textContent = `${this._formatNumberInternal(vLow, localeOptions, fmtOpts)}°`;
-          lblLow.style.cssText = `
-            position:absolute;
-            top:${centerLow + offset}px;
-            left:50%; transform:translate(-50%,-50%);
-            font-size:${isExtremeLow ? "0.95em" : "0.75em"};
-            font-weight:${isExtremeLow ? "700" : "400"};
-          `;
-          cell.appendChild(lblLow);
-        }
-      }
-    }    
-  }
-  
-  
-  // Маркер apparent_temperature — рисуем всегда, если выбран и есть число
-  if (hasAppSeries && Number.isFinite(appValNum)) {
-    let appNorm = (appValNum - scaleMin) / scaleRange;
-    appNorm = Math.max(0, Math.min(1, appNorm));
+                  const appOff    = Math.round((1 - appNorm) * (chartH - markerH)); // верхняя кромка маркера
+                  const appCenter = appOff + markerH / 2;
 
-    const appOff    = Math.round((1 - appNorm) * (chartH - markerH)); // верхняя кромка маркера
-    const appCenter = appOff + markerH / 2;
+                  // прямоугольный маркер как у high/low
+                  const colorApp = mapTempToColor(appValNum, 1, entityTemperatureUnit);
+                  const appMarker = document.createElement("div");
+                  appMarker.style.cssText = `
+                    position: absolute;
+                    top: ${appOff}px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: clamp(30%,40%,50%);
+                    height: ${markerH}px;
+                    background: ${colorApp};
+                    border-radius: ${MARKER_RADIUS}px;
+                    pointer-events: none;
+                  `;
+                  try {
+                    const appUnit = (typeof pickUnit === "function")
+                      ? pickUnit("apparent_temperature")
+                      : (stateObj.attributes.temperature_unit || "°C");
+                    const digits  = Number(this._cfg?.temperature_digits ?? this._cfg?.digits ?? 0);
+                    const fmtOpts = { minimumFractionDigits: digits, maximumFractionDigits: digits };
+                    appMarker.title = `${this._formatNumberInternal(appValNum, this.hass?.locale || {}, fmtOpts)}\u00A0${appUnit || ""}`;
+                  } catch (_) {}
+                  cell.appendChild(appMarker);
 
-    // прямоугольный маркер как у high/low
-    const colorApp = mapTempToColor(appValNum, 1, entityTemperatureUnit);
-    const appMarker = document.createElement("div");
-    appMarker.style.cssText = `
-      position: absolute;
-      top: ${appOff}px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: clamp(30%,40%,50%);
-      height: ${markerH}px;
-      background: ${colorApp};
-      border-radius: 3px;
-      z-index: 6;
-      pointer-events: none;
-    `;
-    try {
-      const appUnit = (typeof pickUnit === "function")
-        ? pickUnit("apparent_temperature")
-        : (stateObj.attributes.temperature_unit || "°C");
-      const digits  = Number(this._cfg?.temperature_digits ?? this._cfg?.digits ?? 0);
-      const fmtOpts = { minimumFractionDigits: digits, maximumFractionDigits: digits };
-      appMarker.title = `${this._formatNumberInternal(appValNum, this.hass?.locale || {}, fmtOpts)}\u00A0${appUnit || ""}`;
-    } catch (_) {}
-    cell.appendChild(appMarker);
+                  // определяем экстремум по ряду apparent_temperature (локально по items)
+                  const isAppExtreme = (() => {
+                    let mn = Number.POSITIVE_INFINITY, mx = Number.NEGATIVE_INFINITY;
+                    for (const it of items) {
+                      const v = it?.apparent_temperature;
+                      if (typeof v === "number" && !Number.isNaN(v)) {
+                        if (v < mn) mn = v;
+                        if (v > mx) mx = v;
+                      }
+                    }
+                    return (Number.isFinite(mn) && appValNum === mn) || (Number.isFinite(mx) && appValNum === mx);
+                  })();
 
-    // определяем экстремум по ряду apparent_temperature (локально по items)
-    const isAppExtreme = (() => {
-      let mn = Number.POSITIVE_INFINITY, mx = Number.NEGATIVE_INFINITY;
-      for (const it of items) {
-        const v = it?.apparent_temperature;
-        if (typeof v === "number" && !Number.isNaN(v)) {
-          if (v < mn) mn = v;
-          if (v > mx) mx = v;
-        }
-      }
-      return (Number.isFinite(mn) && appValNum === mn) || (Number.isFinite(mx) && appValNum === mx);
-    })();
+                  // Позиция подписи: если базовая температура не выбрана/недоступна — ВСЕГДА сверху.
+                  // Иначе сравниваем с high: app выше high → сверху, иначе снизу.
+                  let placeAbove;
+                  if (showTemp && tempAttr && typeof i?.[tempAttr] === "number" && !Number.isNaN(i[tempAttr])) {
+                    const highVal = Number(i[tempAttr]);
+                    let highNorm  = (highVal - scaleMin) / scaleRange;
+                    highNorm      = Math.max(0, Math.min(1, highNorm));
+                    const highOff = Math.round((1 - highNorm) * (chartH - markerH)); // верхняя кромка HIGH
+                    placeAbove    = appOff < highOff;
+                  } else {
+                    placeAbove = true; // базовая температура не выбрана — подпись всегда сверху
+                  }
 
-    // Позиция подписи: если базовая температура не выбрана/недоступна — ВСЕГДА сверху.
-    // Иначе сравниваем с high: app выше high → сверху, иначе снизу.
-    let placeAbove;
-    if (showTemp && tempAttr && typeof i?.[tempAttr] === "number" && !Number.isNaN(i[tempAttr])) {
-      const highVal = Number(i[tempAttr]);
-      let highNorm  = (highVal - scaleMin) / scaleRange;
-      highNorm      = Math.max(0, Math.min(1, highNorm));
-      const highOff = Math.round((1 - highNorm) * (chartH - markerH)); // верхняя кромка HIGH
-      placeAbove    = appOff < highOff;
-    } else {
-      placeAbove = true; // базовая температура не выбрана — подпись всегда сверху
-    }
+                  const labelTopPx = placeAbove ? (appCenter - offset) : (appCenter + offset);
 
-    const labelTopPx = placeAbove ? (appCenter - offset) : (appCenter + offset);
+                  // подпись как у базовой температуры, с подсветкой экстремумов и динамическим расположением
+                  const appLbl = document.createElement("div");
+                  appLbl.textContent = `${this._formatNumberInternal(appValNum, localeOptions, fmtOpts)}°`;
+                  appLbl.style.cssText = `
+                    position: absolute;
+                    top: ${labelTopPx}px;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: ${isAppExtreme ? '0.95em' : '0.75em'};
+                    font-weight: ${isAppExtreme ? '700'   : '400'};
+                  `;
+                  cell.appendChild(appLbl);
+                }
 
-    // подпись как у базовой температуры, с подсветкой экстремумов и динамическим расположением
-    const appLbl = document.createElement("div");
-    appLbl.textContent = `${this._formatNumberInternal(appValNum, localeOptions, fmtOpts)}°`;
-    appLbl.style.cssText = `
-      position: absolute;
-      top: ${labelTopPx}px;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: ${isAppExtreme ? '0.95em' : '0.75em'};
-      font-weight: ${isAppExtreme ? '700'   : '400'};
-    `;
-    cell.appendChild(appLbl);
-  }
+                // === ЛИНИИ min/max/zero — рисуем, если выбран хотя бы один слой (temp или apparent) ===
+                if ((showTemp && tempAttr) || showAppTemp) {
+                  // max
+                  const maxLine = document.createElement("div");
+                  maxLine.style.cssText = `
+                    position:absolute;
+                    top:${markerH/2}px;
+                    left:0; right:0;
+                    width: 100%;
+                    border-top: 1px solid
+                      color-mix(in srgb, var(--divider-color) 70%, ${colorLineMax} 30%);
+                    pointer-events:none;
+                  `;
+                  cell.appendChild(maxLine);
 
-  // === ЛИНИИ min/max/zero — рисуем, если выбран хотя бы один слой (temp или apparent) ===
-  if ((showTemp && tempAttr) || showAppTemp) {
-    // max
-    const maxLine = document.createElement("div");
-    maxLine.style.cssText = `
-      position:absolute;
-      top:${markerH/2}px;
-      left:0; right:0;
-      width: 100%;
-      border-top: 1px solid
-        color-mix(in srgb, var(--divider-color) 70%, ${colorLineMax} 30%);
-      pointer-events:none;
-    `;
-    cell.appendChild(maxLine);
+                  // min
+                  const minLine = document.createElement("div");
+                  minLine.style.cssText = `
+                    position:absolute;
+                    top:${chartH - markerH/2}px;
+                    left:0; right:0;
+                    border-top: 1px solid
+                      color-mix(in srgb, var(--divider-color) 70%, ${colorLineMin} 30%);
+                    pointer-events:none;
+                  `;
+                  cell.appendChild(minLine);
 
-    // min
-    const minLine = document.createElement("div");
-    minLine.style.cssText = `
-      position:absolute;
-      top:${chartH - markerH/2}px;
-      left:0; right:0;
-      border-top: 1px solid
-        color-mix(in srgb, var(--divider-color) 70%, ${colorLineMin} 30%);
-      pointer-events:none;
-    `;
-    cell.appendChild(minLine);
-
-    // zero — по комбинированной шкале
-    if (scaleMin < 0 && scaleMax > 0) {
-      const zeroNorm = (0 - scaleMin) / scaleRange;
-      const zeroOff  = Math.round((1 - zeroNorm) * (chartH - markerH));
-      const zeroLine = document.createElement("div");
-      zeroLine.style.cssText = `
-        position:absolute;
-        top:${zeroOff + markerH / 2}px;
-        left:0; right:0;
-        border-top: 1px solid
-          color-mix(in srgb, var(--divider-color) 70%, ${colorZero} 30%);
-        pointer-events:none;
-      `;
-      cell.appendChild(zeroLine);
-    }
-  }
-}
-
+                  // zero — по комбинированной шкале
+                  if (scaleMin < 0 && scaleMax > 0) {
+                    const zeroNorm = (0 - scaleMin) / scaleRange;
+                    const zeroOff  = Math.round((1 - zeroNorm) * (chartH - markerH));
+                    const zeroLine = document.createElement("div");
+                    zeroLine.style.cssText = `
+                      position:absolute;
+                      top:${zeroOff + markerH / 2}px;
+                      left:0; right:0;
+                      border-top: 1px solid
+                        color-mix(in srgb, var(--divider-color) 70%, ${colorZero} 30%);
+                      pointer-events:none;
+                    `;
+                    cell.appendChild(zeroLine);
+                  }
+                }
+              }
               // --- вероятность осадков + amount scatter на cell ----------------------
               // 1) probability-бар, если есть вероятность И если пользователь добавил precipitation_probability
               if (showProb) {
@@ -4348,10 +4392,10 @@ class AbsoluteForecastCard extends HTMLElement {
                     lbl.textContent = `${prob}%`;
                     lbl.style.cssText = `
                       position: absolute;
-                      bottom: ${labelBottom-6}px;
+                      bottom: ${labelBottom-9}px;
                       ${
                         showTemp | showAppTemp
-                          ? `right: 4%;
+                          ? `right: 5px;
                             width: ${precipBarW * 100}%;`
                           : (
                               bothNoTemp
@@ -4369,66 +4413,6 @@ class AbsoluteForecastCard extends HTMLElement {
                 }
               }
 
-              // 2) «Короб» для разбросанных иконок и подписи amount, если есть количество осадков И если пользователь добавил precipitation
-              if (showAmount) {
-                const amount = i.precipitation;             // может быть undefined
-                const isSnow = snowyStates.has(i.condition);
-                const lvl    = precipLevel(amount ?? 0, hSlot, isSnow);
-                if (typeof amount === "number" && lvl > 0) {
-                  const iconBox = document.createElement("div");
-                  iconBox.style.cssText = `
-                    position: absolute;
-                    bottom: -25%;
-                    width: 40%;
-                    pointer-events: none;
-
-                    /* центрируем единственную иконку */
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-
-                    /* цвет и масштаб всей иконки */
-                    color: ${isSnow ? "#b3e5fc" : "#2196f3"};
-                    font-size: 1.1em; /* можно играть размером: 0.9em…1.2em */
-                    line-height: 0;
-                    ${showTemp | showAppTemp
-                      ? `right: -11%;`
-                      : `left: 50%;
-                        transform: translateX(-50%);`
-                    }
-                  `;
-                  cell.appendChild(iconBox);
-
-                  // берём массивы, что ты подготовил
-                  const arr = isSnow ? snowSVG : rainSVG;
-                  const idx = Math.max(0, Math.min(lvl, 4)); // clamp 0..4
-
-                  // вставляем одну готовую SVG, задаём явный размер
-                  iconBox.innerHTML = sized(arr[idx], 1.1); // 1.1em — подстрой по вкусу
-
-                  // подпись «мм», если накопилось ≥ 1 мм (как раньше)
-                  if (amount > 0) {
-                    const amtLbl = document.createElement("div");
-                    amtLbl.textContent = `${this._formatNumberInternal(
-                      amount,
-                      this.hass.locale,
-                      { maximumFractionDigits: 1 }
-                    )}\u00A0${stateObj.attributes.precipitation_unit || ""}`;
-                    amtLbl.style.cssText = `
-                      position: absolute;
-                      bottom: -5px;
-                      left: 50%;
-                      transform: translateX(-50%);
-                      font-size: .55em;
-                      color: var(--secondary-text-color);
-                      pointer-events: none;
-                    `;
-                    if (!(showTemp | showAppTemp)) {
-                      iconBox.appendChild(amtLbl);
-                    }
-                  }
-                }
-              }
               // UV INDEX — как precip_probability, но:
               // при showTemp — растёт СВЕРХУ ВНИЗ и стоит СЛЕВА в ячейке
               if (showUV) {
@@ -4507,11 +4491,1326 @@ class AbsoluteForecastCard extends HTMLElement {
                   }
                 }
               }
-              
               tempFlex.appendChild(cell);
             });
-            bars.appendChild(overlay);
             overlay.appendChild(tempFlex);
+            }
+            // ——— 1.3) amtFlex — вынесенный «Короб» осадков (только если пользователь выбрал и есть данные) ———
+            // (раньше этот код жил внутри tempFlex → cell с absolute: bottom:-25%)
+            if (amtRows) {
+              const amtFlex = document.createElement("div");
+              amtFlex.classList.add("amtFlex");
+              amtFlex.style.cssText = `
+                display:flex;
+                align-items:flex-end;
+                padding-bottom:${AMT_PB}px;
+                padding-inline: 0 ${padStr};
+                pointer-events:none;
+                z-index:3;
+              `;
+
+              items.forEach((i, idx) => {
+                const amount = i.precipitation;                 // может быть undefined
+                const isSnow = snowyStates.has(i.condition);
+                const lvl    = precipLevel(amount ?? 0, hSlot, isSnow); // как и раньше
+                const has    = (typeof amount === "number" && amount > 0 && lvl > 0);
+
+                const cell = document.createElement("div");
+                cell.style.cssText = `
+                  position: relative;  
+                  flex:1 1 0;
+                  min-width:${cellMinWidth}px;
+                  width:0;
+                  height: ${AMT_LINE_H}px;
+                  display:flex; flex-direction:column;
+                  align-items:center; justify-content:center;
+                  text-align:center;
+                  color:var(--secondary-text-color);
+                  padding-inline: clamp(1px,2%,5px);
+                  line-height:1;
+                `;
+
+                if (has) {
+                  // контейнер под иконку и, при необходимости, подпись
+                  const iconBox = document.createElement("div");
+                  iconBox.style.cssText = `
+                    position: relative;
+                    width: 100%;
+                    display: flex; align-items: center; justify-content: center;
+                    color: ${isSnow ? "#b3e5fc" : "#2196f3"};
+                    font-size: 1em;
+                    line-height: 0;
+                    pointer-events: none;
+                  `;
+                  
+                  // ВНИМАНИЕ: используем логическое ИЛИ (||), а не побитовое |
+                  if (showTemp || showAppTemp) {
+                    // как раньше: сдвиг вправо с небольшим «вылетом»
+                    iconBox.style.cssText += `
+                      margin-left: auto;
+                      right: -50%;
+                      top: -4px;
+                    `;
+                  } else {
+                    // по центру — оставляем как есть (флекс-центр)
+                    // можно явно:
+                    // iconBox.style.cssText += `margin-left:auto; margin-right:auto;`;
+                  }
+                  
+                  cell.appendChild(iconBox);
+
+                  // SVG-«капля/снег» по уровню
+                  const arr = isSnow ? snowSVG : rainSVG;
+                  const idxIcon = Math.max(0, Math.min(lvl, 4)); // clamp 0..4
+                  iconBox.innerHTML = sized(arr[idxIcon], 1.1);
+
+                  // подпись «мм»: как и раньше, показываем только если темпы не заняты основным графиком
+                  if (!(showTemp || showAppTemp)) {
+                    const amtLbl = document.createElement("div");
+                    amtLbl.textContent = `${this._formatNumberInternal(
+                      amount,
+                      this.hass.locale,
+                      { maximumFractionDigits: 1 }
+                    )}`;
+                    amtLbl.style.cssText = `
+                      margin-top: 2px;
+                      font-size: .55em;
+                      color: var(--secondary-text-color);
+                      pointer-events: none;
+                    `;
+                    cell.appendChild(amtLbl);
+                  }
+                } else {
+                  // нет осадков — ставим плейсхолдер для ровной высоты
+                  const placeholder = document.createElement("div");
+                  placeholder.style.cssText = `height:${AMT_LINE_H}px;`;
+                  cell.appendChild(placeholder);
+                }
+
+                amtFlex.appendChild(cell);
+              });
+
+              overlay.appendChild(amtFlex);
+            }
+
+// ——— 1.2) HUM / DEW / VIS — три отдельные полосы с собственными cell ———
+if (hasAnyMet) {
+
+  // Шкала 0..100% (твои точки)
+  const HUM_STOPS = [
+    { stop: 0,   color: "rgb(135, 75, 41)" }, // сухо
+    { stop: 25,  color: "rgb(232, 190, 102)" },
+    { stop: 50,  color: "rgb(254,253,171)" },
+    { stop: 75,  color: "rgb(127,220,203)"  },
+    { stop: 100, color: "rgb(47,110,157)"  }  // очень влажно
+  ];
+  
+  // Кэш на каждый целый % (ускоряет перерисовку)
+  const HUM_COLOR_CACHE = new Map();
+
+  // Возвращает CSS-цвет по значению 0..100, микс между соседними стопами
+  const humColor = (val) => {
+    let v = Number(val);
+    if (!Number.isFinite(v)) v = 0;
+    v = Math.min(100, Math.max(0, v));
+    const key = Math.round(v);
+    const cached = HUM_COLOR_CACHE.get(key);
+    if (cached) return cached;
+
+    let a = HUM_STOPS[0], b = HUM_STOPS[HUM_STOPS.length - 1];
+    for (let i = 0; i < HUM_STOPS.length - 1; i++) {
+      const s = HUM_STOPS[i], t = HUM_STOPS[i + 1];
+      if (v >= s.stop && v <= t.stop) { a = s; b = t; break; }
+    }
+    const span = Math.max(1, b.stop - a.stop);
+    const p = Math.round(((v - a.stop) / span) * 100); // 0..100
+
+    // perceptual mix
+    const css = `color-mix(in oklab, ${b.color} ${p}%, ${a.color})`;
+    HUM_COLOR_CACHE.set(key, css);
+    return css;
+  };
+
+  const getUnit = (attr) => {
+    if (typeof pickUnit === "function") return pickUnit(attr);
+    if (attr === "humidity") return "%";
+    if (attr === "dew_point") return stateObj.attributes?.temperature_unit
+      || this.hass?.config?.unit_system?.temperature || "°C";
+    if (attr === "visibility") return stateObj.attributes?.visibility_unit
+      || stateObj.attributes?.distance_unit || "km";
+    return stateObj.attributes?.[`${attr}_unit`] || "";
+  };
+
+  const tempDigits = Number(this._cfg?.temperature_digits ?? this._cfg?.digits ?? 0);
+  const fmtTemp = { minimumFractionDigits: tempDigits, maximumFractionDigits: tempDigits };
+
+  // helper: общий стиль полосы
+  const stripCss = (mb) => `
+    display:flex;
+    align-items:stretch;
+    padding-bottom:${mb}px;
+    padding-inline: 0 ${padStr};
+    pointer-events:none;
+    z-index:3;
+  `;
+
+  // 1) HUMIDITY STRIP
+  if (hasHum) {
+    const humFlex = document.createElement("div");
+    humFlex.classList.add("metFlex-humidity");
+    humFlex.style.cssText = stripCss(rowsCount > 1 ? MET_ROW_GAP : 0);
+
+    items.forEach((i, idx) => {
+      const v = (typeof i.humidity === "number") ? Math.round(i.humidity) : null;
+
+      const cell = document.createElement("div");
+      cell.style.cssText = `
+        position:relative;
+        flex:1 1 0;
+        min-width:${cellMinWidth}px;
+        width:0;
+        height:${HUM_H}px;
+        display:flex; align-items:center; justify-content:center;
+        line-height:1;
+        padding-inline: clamp(1px,2%,5px);
+      `;
+      // закругления краёв для первого/последнего сегмента
+      const isFirst = idx === 0;
+      const isLast  = idx === items.length - 1;
+      const RADIUS  = 4; // px, подстрой по вкусу
+
+      cell.style.overflow = "hidden"; // чтобы фон обрезался по радиусу
+
+      if (isFirst && isLast) {
+        // единственный сегмент — закруглить обе стороны
+        cell.style.borderRadius = `${RADIUS}px`;
+      } else if (isFirst) {
+        cell.style.borderTopLeftRadius = `${RADIUS}px`;
+        cell.style.borderBottomLeftRadius = `${RADIUS}px`;
+      } else if (isLast) {
+        cell.style.borderTopRightRadius = `${RADIUS}px`;
+        cell.style.borderBottomRightRadius = `${RADIUS}px`;
+      }
+
+      if (v != null) {
+        const base = humColor(v);
+        // почти сплошная заливка; isDarkMode ты уже определяешь выше
+        const HUM_FILL_PCT = isDarkMode ? 85 : 96; // можно 100 для полностью непрозрачной
+        cell.style.background = `color-mix(in oklab, ${base} ${HUM_FILL_PCT}%, transparent)`;
+      
+        // подпись — меньше и чёрная
+        cell.textContent = `${v}${getUnit("humidity")}`;
+        cell.style.color = "#000";
+        cell.style.fontSize = ".62em";
+        cell.style.lineHeight = "1";
+        cell.style.textShadow = "none";
+      } else {
+        cell.textContent = "—";
+        cell.style.color = "#000";
+        cell.style.fontSize = ".62em";
+        cell.style.lineHeight = "1";
+        cell.style.textShadow = "none";
+      }
+                    
+
+      humFlex.appendChild(cell);
+    });
+
+    overlay.appendChild(humFlex);
+  }
+
+  // 2) DEW STRIP — узкая лента по точке росы (цвет по DEW_STOPS)
+  if (hasDew) {
+    const dewStrip = document.createElement("div");
+    dewStrip.classList.add("metFlex-dew-strip");
+    dewStrip.style.cssText = stripCss(rowsCount > 1 ? MET_ROW_GAP : 0);
+
+    // helper юнитов
+    const isFUnit = (u) => {
+      const s = String(u || "").toUpperCase().replace(/[^A-Z]/g, "");
+      return s === "F" || s === "FAHRENHEIT";
+    };
+    const toCelsius = (v, unit) =>
+      Number.isFinite(v) ? (isFUnit(unit) ? (v - 32) * 5/9 : v) : NaN;
+
+    // палитра Td (°C)
+    const DEW_STOPS = [
+      { stop: -99, color: "rgb(114, 68, 34)" },
+      { stop: -10, color: "rgb(166, 106, 58)" },
+      { stop:   0, color: "rgb(200, 150, 90)" },
+      { stop:   5, color: "rgb(232, 190, 102)" },
+      { stop:  10, color: "rgb(254, 253, 171)" },
+      { stop:  15, color: "rgb(173, 250, 197)" },
+      { stop:  18, color: "rgb(110, 206, 203)" },
+      { stop:  20, color: "rgb(67, 170, 194)" },
+      { stop:  24, color: "rgb(45, 102, 153)" },
+      { stop:  99, color: "rgb(19, 49, 87)" }
+    ];
+    const DEW_COLOR_CACHE = new Map();
+    const DEW_BG_INTENSITY = isDarkMode ? 92 : 96; // ← как договаривались
+
+    const dewColor = (valC) => {
+      let v = Number(valC);
+      if (!Number.isFinite(v)) v = 0;
+      v = Math.max(DEW_STOPS[0].stop, Math.min(DEW_STOPS.at(-1).stop, v));
+      const key = Math.round(v);
+      const cached = DEW_COLOR_CACHE.get(key);
+      if (cached) return cached;
+      let a = DEW_STOPS[0], b = DEW_STOPS.at(-1);
+      for (let i = 0; i < DEW_STOPS.length - 1; i++) {
+        const s = DEW_STOPS[i], t = DEW_STOPS[i + 1];
+        if (v >= s.stop && v <= t.stop) { a = s; b = t; break; }
+      }
+      const span = Math.max(1, b.stop - a.stop);
+      const p = Math.round(((v - a.stop) / span) * 100);
+      const css = `color-mix(in oklab, ${b.color} ${p}%, ${a.color})`;
+      DEW_COLOR_CACHE.set(key, css);
+      return css;
+    };
+
+    const unitTd = (typeof pickUnit === "function")
+      ? pickUnit("dew_point")
+      : (stateObj.attributes.temperature_unit || "°C");
+    const unitT  = (typeof pickUnit === "function")
+      ? pickUnit("temperature")
+      : (stateObj.attributes.temperature_unit || "°C");
+    const fmt = fmtTemp;
+
+    items.forEach((i, idx) => {
+      const td = (typeof i.dew_point === "number") ? i.dew_point : NaN;
+
+      const cell = document.createElement("div");
+      cell.style.cssText = `
+        position:relative;
+        flex:1 1 0;
+        min-width:${cellMinWidth}px;
+        width:0;
+        height:${DEW_H}px;
+        display:flex; align-items:center; justify-content:center;
+        line-height:1;
+        padding-inline: clamp(1px,2%,5px);
+      `;
+
+      // скругления краёв
+      const isFirst = idx === 0;
+      const isLast  = idx === items.length - 1;
+      const RADIUS  = 4;
+      cell.style.overflow = "hidden";
+      if (isFirst && isLast) {
+        cell.style.borderRadius = `${RADIUS}px`;
+      } else if (isFirst) {
+        cell.style.borderTopLeftRadius = `${RADIUS}px`;
+        cell.style.borderBottomLeftRadius = `${RADIUS}px`;
+      } else if (isLast) {
+        cell.style.borderTopRightRadius = `${RADIUS}px`;
+        cell.style.borderBottomRightRadius = `${RADIUS}px`;
+      }
+
+      if (Number.isFinite(td)) {
+        const tdC = toCelsius(td, unitTd || unitT);
+        const base = dewColor(tdC);
+        cell.style.background = `color-mix(in oklab, ${base} ${DEW_BG_INTENSITY}%, transparent)`;
+
+        const lbl = document.createElement("div");
+        lbl.textContent = `${this._formatNumberInternal(td, this.hass?.locale || {}, fmt)}°`;
+        lbl.style.cssText = `
+          position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
+          font-size:.62em; line-height:1; color:#000;
+          white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
+          pointer-events:none; user-select:none;
+        `;
+        cell.appendChild(lbl);
+      } else {
+        cell.style.background = `color-mix(in srgb, var(--card-background-color) 100%, transparent)`;
+        const lbl = document.createElement("div");
+        lbl.textContent = "—";
+        lbl.style.cssText = `
+          position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
+          font-size:.62em; line-height:1; color:#000; pointer-events:none; user-select:none;
+        `;
+        cell.appendChild(lbl);
+      }
+
+      dewStrip.appendChild(cell);
+    });
+
+    // только DEW STRIP в этом блоке
+    overlay.appendChild(dewStrip);
+  }
+
+// ── 2b) CONDITIONS STRIP — погодные явления (туман/роса/иней/гололёд + жара)
+//     Отдельная полоса-строка с «светофором» риска по Δ(T−Td) и эмодзи-бейджами.
+//     В этом блоке:
+//       • собираем юниты и входные данные;
+//       • объявляем пороги/хелперы;
+//       • считаем Heat Index/Humidex (для 🥵);
+//       • считаем объединённую оценку assessDew(...) → { risk, emojiText, emojiTitle };
+//       • рендерим полоску с деликатным фоном по risk и центром-эмодзи.
+//
+(() => {
+  // Рисуем только если метрика условий вообще нужна и есть данные (см. расчёт hasCond выше)
+  if (!hasCond) return;
+
+  // 1) ЮНИТЫ (единицы измерения). Берём из pickUnit(...) или атрибутов темы/карточки.
+  const unitT  = (typeof pickUnit === "function")
+    ? pickUnit("temperature")
+    : (stateObj.attributes.temperature_unit || "°C");
+  const unitTd = (typeof pickUnit === "function")
+    ? pickUnit("dew_point")
+    : (stateObj.attributes.temperature_unit || "°C");
+  const windUnit = (typeof pickUnit === "function")
+    ? (pickUnit("wind_speed") || stateObj.attributes.wind_speed_unit || "")
+    : (stateObj.attributes.wind_speed_unit || "");
+  const precipUnit = (typeof pickUnit === "function")
+    ? (pickUnit("precipitation") || stateObj.attributes.precipitation_unit || "")
+    : (stateObj.attributes.precipitation_unit || "");
+
+  // 2) ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ И ПОРОГИ
+
+  // 2.1) Приведение температур: поддержка °F → °C (шкалы риска и расчёты ведём в °C).
+  const isFUnit = (u) => {
+    const s = String(u || "").toUpperCase().replace(/[^A-Z]/g, "");
+    return s === "F" || s === "FAHRENHEIT";
+  };
+  const toCelsius = (v, unit) =>
+    Number.isFinite(v) ? (isFUnit(unit) ? (v - 32) * 5/9 : v) : NaN;
+
+  // 2.2) Цвета «светофора» для Δ-риска (цвет — только для столбика/фона conditions).
+  const RISK_COLORS = {
+    none:     "var(--dew-risk-none, #2e7d32)",   // низкий риск (зелёный)
+    possible: "var(--dew-risk-possible, #fb8c00)", // возможен (оранжевый)
+    high:     "var(--dew-risk-high, #e53935)"    // высокий (красный)
+  };
+  // ⚠️ Все пороги «мм» заданы как для ~1-часового слота.
+  // В assessDew() они умножаются на длительность слота H (1h/3h/12h/24h).
+  // 2.3) Пороговые значения для теплового риска (по Heat Index/Humidex) в °C.
+  const HEAT_THRESH = {
+    possible: 32, // начиная примерно с «ощущается как 32 °C» предупреждаем
+    high:     41, // сильная жара
+    extreme:  54  // экстремальная жара (мапится в high)
+  };
+  // ——— Пороги Wind Chill (по канадо-американской шкале), всё в °C
+  const WCHILL_THRESH = {
+    possible: -10, // «ощущается» холоднее −10°C → возможен риск переохлаждения
+    high:     -28, // «ощущается» ≤ −28°C → высокий риск (обморожения)
+    extreme:  -40  // «оч. высокий» (мапим тоже в high для 0/1/2)
+  };
+
+  // Пороговые значения для ливневого и ледяного дождя
+  const HEAVY_RAIN_THRESH = {
+    possible_mm: 20.0,   // мм за слот (обычно ~час)
+    high_mm:     25.0,  // ОПАСНЫЙ ЛИВЕНЬ: ≥15 мм
+    possible_prob: 60,  // %
+    high_prob:     85   // %
+  };
+  const FREEZING_RAIN_THRESH = {
+    t_min: -2.5,  // °C — окно для ледяного дождя (прибл.)
+    t_max:  0.5,  // °C
+    td_min: -3.0, // °C — Td не слишком низкая (жидкие осадки вероятнее)
+    possible_mm: 0.2,
+    high_mm:     1.0,
+    possible_prob: 40,
+    high_prob:     60
+  };
+  // Сильнейший снегопад (по жидкому эквиваленту осадков)
+  const HEAVY_SNOW_THRESH = {
+    t_max: 0.5,        // °C — температура для «снега» (≤0.5 ~ тающий снег)
+    possible_mm: 2.5,  // мм за слот — «возможен сильный снег»
+    high_mm:    3.0,  // мм за слот — «сильнейший снегопад»
+    possible_prob: 60, // %
+    high_prob:     85  // %
+  };
+  // рядом с HEAVY_RAIN_THRESH/HEAVY_SNOW_THRESH
+  const PRECIP_ANCHORS = {
+    rain_high: { h1: 15, h12: 50,  h24: 100 }, // ← редактируешь тут
+    snow_high: { h1: 3.0, h12: 15, h24: 20   }, // ← и тут
+    near_high_pct: 0.8                         // ← окно «почти high»
+  };
+  // Осадки vs туман/роса: блокировки/допуск «мороси»
+  const PRECIP_FOG = {
+    block_mm:     0.20, // мм за слот: при ≥ 0.20 туман НЕ показываем/не красим светофор
+    block_prob:     70, // %: высокая вероятность осадков тоже блокирует туман (если нет суммы)
+    drizzle_max_mm: 0.20 // мм: только до этой суммы «морось» может слегка повышать Δ-риск
+  };
+  // Осадки vs роса/иней: отдельные пороги блокировки бейджей
+  const PRECIP_DEW_FROST = {
+    // Росу блокируем при любой «заметной» мороси/дожде, либо при высоких шансах
+    dew_block_mm:   0.10,  // мм за слот
+    dew_block_prob: 60,    // %
+
+    // Иней (hoar frost) тоже подавляется осадками; держим те же пороги,
+    // при желании можно ужесточить отдельно
+    frost_block_mm:   0.10,
+    frost_block_prob: 60
+  };
+  // 2.4) Пороговые значения (туман/роса/иней/гололёд/ветер/облачность).
+  //      Комментарии объясняют метеосмысл каждого порога.
+  const RISK_THRESH = {
+    // Почти насыщение / близко к насыщению: Δ = T − Td (в °C)
+    deltaHigh:  1.5, // ≤1.5: туман/инеобразование уже реалистичны
+    deltaMaybe: 2.5, // ≤2.5: ещё возможно, но слабее
+
+    // Влажность
+    rhHigh:  95,     // очень влажно (насыщение)
+    rhMaybe: 90,     // просто влажно
+
+    // Иней/обмерзание без осадков: при T≤0 и Δ≤2
+    frostDelta: 2.0,
+
+    // Гололёдное окно: T вблизи нуля и есть/ожидаются осадки
+    icingTempMin: -2,
+    icingTempMax:  1,
+    icingProb:    40, // вероятность осадков, %
+    rainMin:     0.1, // «ненулевая» сумма, мм
+
+    // Ветер: калибровка реалистичности для различных типов тумана
+    calm:      2, // штиль/слабый — радиационный туман любит
+    breezy:    3, // 3..5 — гасит радиац. туман (адвецию — нет)
+    windy:     5, // 5..8 — заметный ветер, максимум Possible
+    veryWindy: 8, // ≥8 — почти всегда None
+    gustDelta: 3, // порывистость: gust − wind ≥ 3 м/с → разрушает туман
+
+    // Время суток (локальные часы)
+    nightStart: 22,
+    nightEnd:    8,
+
+    // Облачность (радиационное охлаждение ночью)
+    lowCloud:  30, // мало облаков — сильнее охлаждение
+    highCloud: 80  // сплошная облачность — слабее охлаждение
+  };
+
+  // 2.6) Осадки → мм (для некоторых провайдеров только inch).
+  const toMm = (v, unit) => {
+    if (!Number.isFinite(v)) return NaN;
+    const u = String(unit || "").toLowerCase();
+    if (u.includes("in")) return v * 25.4;
+    return v;
+  };
+
+  // 2.7) Локальное время из ISO (для определения ночи/полудня).
+  const localHour = (iso) => { const d = new Date(iso); return d.getHours(); };
+  const isNightHour  = (h) => h >= RISK_THRESH.nightStart || h < RISK_THRESH.nightEnd;
+  const isMiddayHour = (h) => h >= 12 && h <= 17;
+
+  // 2.7b) Длительность слота (часы) из массива items и индекса.
+  // Порядок источников:
+  //  • i.duration_hours (если провайдер даёт);
+  //  • разница между datetime текущего и соседнего слота;
+  //  • эвристики (daily → 24h, daypart → 12h, иначе 1h).
+  const slotHoursAt = (arr, idx) => {
+    const it = arr[idx] || {};
+    // 1) прямое поле
+    if (typeof it.duration_hours === "number" && isFinite(it.duration_hours) && it.duration_hours > 0) {
+      return Math.min(36, Math.max(0.5, it.duration_hours));
+    }
+    // 2) по datetime
+    const parseISO = (dt) => (dt ? new Date(dt) : null);
+    const t0 = parseISO(it.datetime);
+    let hours = NaN;
+    if (t0) {
+      const next = (idx + 1 < arr.length) ? parseISO(arr[idx + 1]?.datetime) : null;
+      const prev = (idx - 1 >= 0)         ? parseISO(arr[idx - 1]?.datetime) : null;
+      if (next) hours = Math.abs((next - t0) / 36e5);
+      else if (prev) hours = Math.abs((t0 - prev) / 36e5);
+    }
+    if (Number.isFinite(hours) && hours > 0) {
+      return Math.min(36, Math.max(0.5, hours));
+    }
+    // 3) эвристики по типу слота
+    if (typeof it.temperature_high === "number" || typeof it.temperature_low === "number") return 24; // daily
+    if (it.part || it.is_daypart || it.is_daytime === true || it.is_nighttime === true) return 12;   // day/night
+    return 1; // fallback: почасовой
+  };
+
+  // 2.7c) Якорные пороги по длительности для ливня/снега (1h↔12h↔24h)
+  const anchoredThreshold = (H, y1h, y12h, y24h) => {
+    const h = Math.max(0.5, Math.min(36, Number(H) || 1));
+    if (h <= 1)  return y1h * h;                              // суб-часовые — пропорционально
+    if (h <= 12) return y1h + (y12h - y1h) * (h - 1) / 11;    // 1..12ч
+    if (h <= 24) return y12h + (y24h - y12h) * (h - 12) / 12; // 12..24ч
+    return y24h;                                              // >24ч как суточный
+  };
+
+  // 2.8) Попадание направления ветра в сектор [a,b] (градусы, с учётом перехода через 360).
+  const inSector = (bearing, [a, b]) => {
+    if (!Number.isFinite(bearing)) return false;
+    const x  = ((bearing % 360) + 360) % 360;
+    const aa = ((a % 360) + 360) % 360;
+    const bb = ((b % 360) + 360) % 360;
+    return aa <= bb ? (x >= aa && x <= bb) : (x >= aa || x <= bb);
+  };
+
+  // 2.9) «Крышки» по Δ — ограничивают «поднятие» риска модификаторами при большой Δ.
+  const DELTA_CAP_HIGH     = 2.5; // >2.5 — не поднимаем до High
+  const DELTA_CAP_POSSIBLE = 4.0; // >4.0 — обычно даже Possible не даём (кроме гололёда)
+
+  // 2.10) Эмодзи/подписи для бейджей событий (макс. 2 одновременно).
+  const EVENT_EMOJI = {
+    icing:"🧊", frost:"❄️", fog_adv:"🌫️🧭", fog:"🌫️", dew:"💧",
+    heat:"🥵", wind_chill:"🥶",
+    wind_strong:"💨", wind_storm:"🌪️",
+    heavy_rain:"🌧️", freezing_rain:"🌧️🧊", heavy_snow:"🌨️❄️"
+  };
+  const EVENT_LABEL = {
+    icing:"Гололёдный риск",
+    frost:"Иней/обледенение поверхностей",
+    fog_adv:"Туман (адвективный)",
+    fog:"Туман/мгла",
+    dew:"Роса",
+    heat:"Тепловой стресс",
+    wind_chill:"Охлаждение ветром",
+    wind_strong:"Сильный ветер (Бофорт ≥7)",
+    wind_storm:"Штормовой ветер (Бофорт ≥10)",
+    heavy_rain:"Ливневый дождь",
+    freezing_rain:"Ледяной дождь",
+    heavy_snow:"Сильнейший снегопад" // ← НОВОЕ
+  };
+
+  // 2.11) Heat Index (NOAA, Rothfusz) с поправками + мягкий режим при T<80°F.
+  //       Возвращает °C. При T<~27°C чаще ≈ T.
+  const heatIndexC = (tC, rh) => {
+    if (!Number.isFinite(tC) || !Number.isFinite(rh)) return NaN;
+    const T = tC * 9/5 + 32;
+    const R = Math.min(100, Math.max(0, rh));
+
+    let HI = -42.379
+      + 2.04901523 * T + 10.14333127 * R
+      - 0.22475541 * T * R - 0.00683783 * T * T - 0.05481717 * R * R
+      + 0.00122874 * T * T * R + 0.00085282 * T * R * R
+      - 0.00000199 * T * T * R * R;
+
+    // Поправка 1: очень сухо и жарко → уменьшаем HI
+    if (R < 13 && T >= 80 && T <= 112) {
+      HI -= ((13 - R) / 4) * Math.sqrt((17 - Math.abs(T - 95)) / 17);
+    }
+    // Поправка 2: очень влажно и не слишком жарко → увеличиваем HI
+    if (R > 85 && T >= 80 && T <= 87) {
+      HI += ((R - 85) / 10) * ((87 - T) / 5);
+    }
+
+    // Мягкий режим для прохлады: аппроксимация Стедмана и кламп «не ниже T»
+    if (T < 80) {
+      const HI_approx = 0.5 * (T + 61.0 + (T - 68.0) * 1.2 + R * 0.094);
+      HI = Math.max(HI_approx, T);
+    }
+
+    return (HI - 32) * 5/9;
+  };
+
+  // 2.12) Humidex (Канада): T(°C) + Td(°C) → «ощущается как» (°C). Используем, если RH нет.
+  const humidexC = (tC, tdC) => {
+    if (!Number.isFinite(tC) || !Number.isFinite(tdC)) return NaN;
+    const e = 6.11 * Math.exp(5417.7530 * (1/273.16 - 1/(tdC + 273.15))); // парциальное давление
+    return tC + (5/9) * (e - 10);
+  };
+
+  /* Wind Chill (канадо-американская формула, SI-ветка).
+  * Вход: tC — температура воздуха °C, v_mps — скорость ветра м/с (10 м).
+  * Валидно при tC ≤ 10°C и v ≥ 4.8 км/ч (~1.34 м/с). Иначе возвращаем исходную T.
+  * Формула: Twc = 13.12 + 0.6215 Ta − 11.37 v^0.16 + 0.3965 Ta v^0.16, где v в км/ч.
+  */
+  const windChillC = (tC, v_mps) => {
+    if (!Number.isFinite(tC) || !Number.isFinite(v_mps)) return NaN;
+    const v_kmh = v_mps * 3.6;
+    if (tC > 10 || v_kmh < 4.8) return tC; // вне области применимости → без эффекта
+    const Twc = 13.12 + 0.6215 * tC - 11.37 * Math.pow(v_kmh, 0.16) + 0.3965 * tC * Math.pow(v_kmh, 0.16);
+    return Math.min(tC, Twc); // охлаждение не может «согреть»
+  };
+
+  // 3) Единая оценка Δ-риска и эмодзи (включая тепловой риск): assessDew(ctx)
+  //    Возвращает:
+  //      risk: "none" | "possible" | "high"       — для цвета conditions/столбика Δ
+  //      emojiText / emojiTitle                    — для бейджа(ей) событий (макс. 2)
+  //    Внутри: все гейты/клампы по Δ и ветру, учёт ночи/облачности/осадков/адвекции.
+  const assessDew = (ctx) => {
+    const {
+      t, td, rh, wind, gust, bearing, precip, precipProb,
+      cloud, hour, unitT, unitTd, windUnit, precipUnit, moistSectors
+    } = ctx;
+
+    // Нормализация порогов под длительность слота
+    const H = Math.max(0.5, Number(ctx.slotHours) || 1); // часы слота
+    const scale = (mm) => mm * H;
+
+    // Скалируем «осадки vs туман/роса/иней» (мм за слот)
+    const FOG_BLOCK_MM      = scale(PRECIP_FOG.block_mm);
+    const FOG_DRIZZLE_MAX   = scale(PRECIP_FOG.drizzle_max_mm);
+    const DEW_BLOCK_MM      = scale(PRECIP_DEW_FROST.dew_block_mm);
+    const FROST_BLOCK_MM    = scale(PRECIP_DEW_FROST.frost_block_mm);
+
+    // «шумы» и «следовые» суммы (мм за слот)
+    const NOISE_MIN_MM = 1.0;
+    const TRACE_MIN_MM = 0.1;
+
+    // 3.1) Нормализация температур и физический кламп Td ≤ T (Td не может быть выше T).
+    const tC_raw  = toCelsius(t,  unitT);
+    let   tdC_raw = toCelsius(td, unitTd);
+    let tC = tC_raw, tdC = tdC_raw;
+    if (Number.isFinite(tC) && Number.isFinite(tdC) && tdC > tC) tdC = tC;
+
+    // 3.2) Δ (в °C) — ключевой параметр для конденсации/тумана.
+    const deltaC = (Number.isFinite(tC) && Number.isFinite(tdC)) ? (tC - tdC) : NaN;
+
+    // 3.3) Вторичные величины (ветер, порывы, осадки, облачность, время).
+    const hasRH = Number.isFinite(rh);
+    const v   = toMS(wind, windUnit);
+    const g   = toMS(gust, windUnit);
+    const pp  = Number.isFinite(precipProb) ? precipProb : NaN; // %
+    const prMm= toMm(precip, precipUnit);                       // мм
+    const cc  = Number.isFinite(cloud) ? cloud : NaN;           // %
+
+    // 💡 ДОБАВЬ СРАЗУ ЗДЕСЬ (до любого использования precipBlocksFog / noPrecip):
+    // --- Гейт осадков для тумана/росы (внутри assessDew, сразу после prMm/pp) ---
+    const precipAmountKnown = Number.isFinite(prMm);
+    const precipProbKnown   = Number.isFinite(pp);
+
+    // Интенсивность осадков в мм/час из суммы за слот
+    const perHour = (precipAmountKnown && H > 0) ? (prMm / H) : NaN;
+
+    // «Слабая морось»: интенсивность < 0.2 мм/ч (берём из drizzle_max_mm)
+    const lightRate = Number.isFinite(perHour) && perHour < (PRECIP_FOG.drizzle_max_mm || 0.2);
+
+    // Блокировки с учётом «слабой мороси» (она НЕ гасит fog/dew при любой вероятности)
+    const precipBlocksFog =
+      !lightRate && (
+        (precipAmountKnown && prMm >= FOG_BLOCK_MM) ||
+        (!precipAmountKnown && precipProbKnown && pp >= PRECIP_FOG.block_prob)
+      );
+
+    const precipBlocksDew =
+      !lightRate && (
+        (precipAmountKnown && prMm >= DEW_BLOCK_MM) ||
+        (!precipAmountKnown && precipProbKnown && pp >= PRECIP_DEW_FROST.dew_block_prob)
+      );
+
+    // Иней оставляем как было (если нужно — аналогично можно ослабить)
+    const precipBlocksFrost =
+      (precipAmountKnown && prMm >= FROST_BLOCK_MM) ||
+      (!precipAmountKnown && precipProbKnown && pp >= PRECIP_DEW_FROST.frost_block_prob);
+
+    // «Сухо» для правил тумана/росы: либо нет осадков, либо «слабая морось»
+    const noPrecip =
+      !(precipAmountKnown && prMm > 0) &&
+      !(precipProbKnown && pp >= 20);
+
+
+    const night  = Number.isFinite(hour) ? isNightHour(hour)  : false;
+    const midday = Number.isFinite(hour) ? isMiddayHour(hour) : false;
+
+    // Бофорт по среднему ветру и по порывам
+    const bWind = Number.isFinite(v) ? beaufortFromMS(v) : NaN;
+    const bGust = Number.isFinite(g) ? beaufortFromMS(g) : NaN;
+
+    /* Вероятностная оценка ветровых событий.
+    * Идея: красный (high) только при «устойчивом» выполнении порога или порог+запас,
+    * оранжевый (possible) — когда выполняется только по порывам или «на грани».
+    */
+
+    // 1) ШТОРМ (🌪️): base порог B≥10
+    let windStormScore = 0; // 0/1/2 → none/possible/high
+    {
+      const bS = Number.isFinite(bWind) ? bWind : -Infinity;
+      const bG = Number.isFinite(bGust) ? bGust : -Infinity;
+
+      // High: уверенный шторм — устойчивый B≥10 ИЛИ (порыв B≥11 и устойчивый B≥9)
+      if (bS >= 10 || (bG >= 11 && bS >= 9)) {
+        windStormScore = 2;
+      }
+      // Possible: «может быть шторм» — порыв B≥10 ИЛИ устойчивый B=9 (почти шторм)
+      else if (bG >= 10 || bS >= 9) {
+        windStormScore = 1;
+      }
+    }
+
+    // 2) СИЛЬНЫЙ ВЕТЕР (💨): base порог B≥7, считаем только если шторм не набрался
+    let windStrongScore = 0; // 0/1/2 → none/possible/high
+    if (windStormScore === 0) {
+      const bS = Number.isFinite(bWind) ? bWind : -Infinity;
+      const bG = Number.isFinite(bGust) ? bGust : -Infinity;
+
+      // High: устойчивый B≥7 ИЛИ (порыв B≥8 и устойчивый B≥6)
+      if (bS >= 7 || (bG >= 8 && bS >= 6)) {
+        windStrongScore = 2;
+      }
+      // Possible: «на грани» — порыв B≥7 ИЛИ устойчивый B≥6
+      else if (bG >= 7 || bS >= 6) {
+        windStrongScore = 1;
+      }
+    }
+
+    // Удобные флаги для эмодзи (показываем при вероятности ≥ possible)
+    const hasStormWind  = windStormScore  >= 1;
+    const hasStrongWind = windStormScore === 0 && windStrongScore >= 1;
+
+    /* ——— Ливневый дождь (🌧️) — логика с «окном 5% ниже high» и требованием high_prob для красного:
+      • prMm ≥ high_mm                  → score = 2 только при pp ≥ high_prob, иначе 1 (оранжевый);
+      • prMm ∈ [0.95*high_mm, high_mm) → score = 1 (никогда не 2, даже при высокой вероятности);
+      • prMm ∈ [possible_mm, 0.95*high_mm) → score = 1, если (pp ≥ possible_prob) или (pp отсутствует);
+      • иначе → 0. Суммы < 1 мм игнорируем как шум.
+    */
+      let heavyRainScore = 0;
+      {
+        const hasAmt  = Number.isFinite(prMm);
+        const hasProb = Number.isFinite(pp);
+      
+        if (!hasAmt || prMm < NOISE_MIN_MM) {
+          heavyRainScore = 0;
+        } else {
+          const highScaled = anchoredThreshold(
+            H,
+            PRECIP_ANCHORS.rain_high.h1,
+            PRECIP_ANCHORS.rain_high.h12,
+            PRECIP_ANCHORS.rain_high.h24
+          );
+          const rainRatio  = HEAVY_RAIN_THRESH.possible_mm / HEAVY_RAIN_THRESH.high_mm; // 0.8
+          const possScaled = highScaled * rainRatio;
+          const nearHigh = highScaled * PRECIP_ANCHORS.near_high_pct;
+      
+          if (prMm >= highScaled) {
+            heavyRainScore = (hasProb && pp >= HEAVY_RAIN_THRESH.high_prob) ? 2 : 1;
+          } else if (prMm >= nearHigh) {
+            heavyRainScore = 1;
+          } else if (prMm >= possScaled) {
+            heavyRainScore = (!hasProb || pp >= HEAVY_RAIN_THRESH.possible_prob) ? 1 : 0;
+          } else {
+            heavyRainScore = 0;
+          }
+        }
+      }      
+
+    /* ——— Ледяной дождь (🌧️🧊): окно температуры вокруг 0°C + ненулевая вероятность/сумма */
+    let freezingRainScore = 0;
+    {
+      const inT = Number.isFinite(tC) && tC >= FREEZING_RAIN_THRESH.t_min && tC <= FREEZING_RAIN_THRESH.t_max;
+      const tdOk = !Number.isFinite(tdC) ? true : (tdC >= FREEZING_RAIN_THRESH.td_min);
+      if (inT && tdOk) {
+        const hasAmt = Number.isFinite(prMm);
+        const hasProb = Number.isFinite(pp);
+        const probHigh = hasProb && pp >= FREEZING_RAIN_THRESH.high_prob;
+        const probPoss = hasProb && pp >= FREEZING_RAIN_THRESH.possible_prob;
+    
+        const highScaled = scale(FREEZING_RAIN_THRESH.high_mm);
+        const possScaled = scale(FREEZING_RAIN_THRESH.possible_mm);
+    
+        const amtHigh  = hasAmt && prMm >= highScaled;
+        const amtPoss  = hasAmt && prMm >= possScaled;
+    
+        if ((amtHigh && (probPoss || !hasProb)) || probHigh) {
+          freezingRainScore = 2;
+        } else if ((amtPoss && (probPoss || !hasProb)) ||
+                   (hasProb && pp >= 50 && hasAmt && prMm >= TRACE_MIN_MM)) {
+          freezingRainScore = 1;
+        }
+    
+        if (freezingRainScore > 0 && night) freezingRainScore = Math.max(1, Math.min(2, freezingRainScore + 1));
+      }
+    }
+    
+    /* ——— Сильнейший снегопад (🌨️❄️) — логика как у ливня:
+      • tC ≤ t_max обязателен (холод);
+      • prMm ≥ high_mm                  → score = 2 только при pp ≥ high_prob, иначе 1;
+      • prMm ∈ [0.95*high_mm, high_mm) → score = 1 (никогда не 2);
+      • prMm ∈ [possible_mm, 0.95*high_mm) → score = 1, если (pp ≥ possible_prob) или (pp отсутствует);
+      • иначе → 0. Суммы < 1 мм игнорируем как шум.
+    */
+      let heavySnowScore = 0;
+      {
+        const coldEnough = Number.isFinite(tC) && tC <= HEAVY_SNOW_THRESH.t_max;
+        const hasAmt  = Number.isFinite(prMm);
+        const hasProb = Number.isFinite(pp);
+      
+        if (!coldEnough || !hasAmt || prMm < NOISE_MIN_MM) {
+          heavySnowScore = 0;
+        } else {
+          // стало: якоря 1h=3 (SWE), 12h=10, 24h=15; possible как доля от high (2.5/3)
+          const highScaled = anchoredThreshold(
+            H,
+            PRECIP_ANCHORS.snow_high.h1,
+            PRECIP_ANCHORS.snow_high.h12,
+            PRECIP_ANCHORS.snow_high.h24
+          );
+          const snowRatio  = HEAVY_SNOW_THRESH.possible_mm / HEAVY_SNOW_THRESH.high_mm; // 0.8333
+          const possScaled = highScaled * snowRatio;
+          const nearHigh = highScaled * PRECIP_ANCHORS.near_high_pct;
+      
+          if (prMm >= highScaled) {
+            heavySnowScore = (hasProb && pp >= HEAVY_SNOW_THRESH.high_prob) ? 2 : 1;
+          } else if (prMm >= nearHigh) {
+            heavySnowScore = 1;
+          } else if (prMm >= possScaled) {
+            heavySnowScore = (!hasProb || pp >= HEAVY_SNOW_THRESH.possible_prob) ? 1 : 0;
+          } else {
+            heavySnowScore = 0;
+          }
+        }
+        heavySnowScore = Math.max(0, Math.min(2, heavySnowScore));
+      }      
+
+    // 3.4) Гололёдное окно: T около 0 и есть (вероятные) осадки.
+    const icingWindow      = Number.isFinite(tC) && tC >= RISK_THRESH.icingTempMin && tC <= RISK_THRESH.icingTempMax;
+    const hasNotablePrecip = (Number.isFinite(pp) && pp >= RISK_THRESH.icingProb) ||
+                              (Number.isFinite(prMm) && prMm >= RISK_THRESH.rainMin);
+
+    // 3.5) Кандидат на АДВЕКТИВНЫЙ туман: ветровой сектор + высокая RH + малая Δ.
+    const advectiveCandidate =
+      Array.isArray(moistSectors) && moistSectors.length &&
+      Number.isFinite(bearing) &&
+      moistSectors.some(seg => Array.isArray(seg) && seg.length === 2 && inSector(bearing, seg)) &&
+      hasRH && rh >= RISK_THRESH.rhMaybe &&
+      Number.isFinite(deltaC) && deltaC <= RISK_THRESH.deltaMaybe;
+
+    // ── ТЕПЛОВОЙ РИСК (независимый сценарий для эмодзи 🥵)
+    let heatMetricC = NaN;
+    if (Number.isFinite(tC)) {
+      if (Number.isFinite(rh)) heatMetricC = heatIndexC(tC, rh);
+      else if (Number.isFinite(tdC)) heatMetricC = humidexC(tC, tdC);
+    }
+    let heatScore = 0; // 0/1/2 → нет/возможен/высокий
+    if (Number.isFinite(heatMetricC) && tC >= 24) {
+      if (heatMetricC >= HEAT_THRESH.high)          heatScore = 2;
+      else if (heatMetricC >= HEAT_THRESH.possible) heatScore = 1;
+    }
+    // Модификаторы тепла: полдень усиливает; ветер/осадки/ночь — снижают.
+    if (heatScore > 0) {
+      if (midday && (!Number.isFinite(cc) || cc <= 40)) heatScore += 1;
+      if (Number.isFinite(v)) {
+        if (v >= RISK_THRESH.veryWindy) heatScore -= 2;
+        else if (v >= RISK_THRESH.windy) heatScore -= 1;
+      }
+      if ((Number.isFinite(prMm) && prMm > 0) || (Number.isFinite(pp) && pp >= 50)) heatScore -= 1;
+      if (night) heatScore -= 1;
+    }
+    heatScore = Math.max(0, Math.min(2, heatScore));
+
+    /* ——— ВЕТРООХЛАЖДЕНИЕ (Wind Chill) — канадская шкала
+    Считаем всегда при наличии T и ветра; windChillC сам гейтит применимость (T ≤ 10°C и v ≥ 1.34 м/с). */
+    let wchillMetricC = NaN;
+    if (Number.isFinite(tC) && Number.isFinite(v)) {
+      wchillMetricC = windChillC(tC, v); // °C, всегда ≤ tC
+    }
+    
+    /* Показываем бейдж ТОЛЬКО с уровня «Средний риск…»
+        0 — нет/выше порога; 2 — WCI ≤ -28°C (и ниже: -40, -48, …) */
+    let wchillScore = 0;
+    if (Number.isFinite(wchillMetricC) && wchillMetricC <= WCHILL_THRESH.high) {
+      wchillScore = 2;
+    }
+    
+    // Модификаторы применяем только после входа в порог
+    if (wchillScore > 0) {
+      if (night) wchillScore += 1; // ночь усиливает
+      if (Number.isFinite(g) && Number.isFinite(v) && (g - v >= RISK_THRESH.gustDelta)) wchillScore += 1; // порывистость
+      if (isMiddayHour(Number.isFinite(hour) ? hour : NaN) && (!Number.isFinite(cc) || cc <= 40)) wchillScore -= 1; // солнце
+      wchillScore = Math.max(2, Math.min(2, wchillScore)); // остаёмся в "high" (2)
+    }
+
+    // ── БАЗА Δ-риска: почти насыщение (или иней) → high; близко к насыщению → possible.
+    let sBase = 0;
+    if (Number.isFinite(deltaC)) {
+      const isHighByRH = hasRH && (deltaC <= RISK_THRESH.deltaHigh) && (rh >= RISK_THRESH.rhHigh);
+      const isFrost    = (tC <= 0) && (deltaC <= RISK_THRESH.frostDelta);
+      if (isHighByRH || isFrost) sBase = 2;
+      else if ((hasRH && (deltaC <= RISK_THRESH.deltaMaybe) && (rh >= RISK_THRESH.rhMaybe)) ||
+               (!hasRH && (deltaC <= RISK_THRESH.deltaHigh))) sBase = 1;
+    }
+    // Фолбэк без Td: если Δ неизвестна, но RH очень велика — считаем хотя бы Possible
+    else if (hasRH && rh >= RISK_THRESH.rhHigh) {
+      sBase = 1; // «possible» по насыщению, без точной Δ
+    }
+
+    // «Гейты» по Δ: ограничение усиления модификаторами при большой Δ.
+    const allowPromoPossible = Number.isFinite(deltaC) && deltaC <= DELTA_CAP_POSSIBLE;
+    const allowPromoHigh     = Number.isFinite(deltaC) && deltaC <= DELTA_CAP_HIGH;
+
+    // ── МОДИФИКАТОРЫ Δ-риска (ветер/порывы/осадки/ночь/облачность/адвекция)
+    let s = sBase;
+
+    // Ветер: штиль повышает; 3..5 — гасит радиац. туман; ≥5 — гасит всё.
+    if (Number.isFinite(v)) {
+      if (v <= RISK_THRESH.calm && allowPromoPossible) s += 1;
+      else if (v >= RISK_THRESH.breezy && v < RISK_THRESH.windy && !advectiveCandidate) s -= 1;
+      else if (v >= RISK_THRESH.windy) s -= 1;
+    }
+    // Порывы (турбулентность) — снижают.
+    if (Number.isFinite(v) && Number.isFinite(g) && (g - v >= RISK_THRESH.gustDelta)) s -= 1;
+
+    // Морось может помочь туману ТОЛЬКО при очень малых суммах (≤ drizzle_max_mm).
+    if (Number.isFinite(prMm) && prMm > 0 && prMm <= FOG_DRIZZLE_MAX &&
+        hasRH && rh >= RISK_THRESH.rhHigh &&
+        Number.isFinite(deltaC) && deltaC <= RISK_THRESH.deltaHigh) {
+      if (allowPromoHigh) s += 1;
+    }
+    // При более заметных осадках Δ-риск не усиливаем.
+
+    // Ночь и мало облаков — сильное радиационное охлаждение → повышаем.
+    if (night && allowPromoPossible) {
+      s += 1;
+
+      // второй «плюс» даём только при почти насыщенной влаге И штиле/очень слабом ветре
+      const nearSat =
+        (hasRH && rh >= RISK_THRESH.rhHigh) ||
+        (Number.isFinite(deltaC) && deltaC <= RISK_THRESH.deltaHigh);
+
+      const calmish = Number.isFinite(v) ? v <= RISK_THRESH.calm : true; // ≤ 2 м/с
+
+      if (nearSat && calmish && Number.isFinite(cc) &&
+          cc <= RISK_THRESH.lowCloud && allowPromoHigh) {
+        s += 1;
+      } else if (Number.isFinite(cc) && cc >= RISK_THRESH.highCloud) {
+        s -= 1;
+      }
+    } else if (midday) {
+      s -= 1; // днём вероятность тумана ниже (если нет адвекии)
+    }
+
+    // Адвекция при малой Δ — повышаем.
+    if (advectiveCandidate && allowPromoHigh) s += 1;
+
+    // Клампы по ветру для реалистичности: при 5..8 — максимум Possible, при ≥8 — None (с исключениями).
+    if (Number.isFinite(v)) {
+      if (v >= RISK_THRESH.veryWindy) {
+        // ≥8 м/с → почти всегда нет, кроме сильной адвекии и «гололёдного окна».
+        if (advectiveCandidate && hasRH && rh >= RISK_THRESH.rhHigh &&
+            Number.isFinite(deltaC) && deltaC <= RISK_THRESH.deltaHigh) {
+          s = Math.max(s, 1);
+        } else if (icingWindow && hasNotablePrecip) {
+          s = Math.max(s, 1);
+        } else {
+          s = 0;
+        }
+      } else if (v >= RISK_THRESH.windy) {
+        // 5..8 м/с → максимум Possible (кроме «ледяного» High при очень малой Δ).
+        s = Math.min(s, 1);
+        if (icingWindow && hasNotablePrecip &&
+            Number.isFinite(deltaC) && deltaC <= RISK_THRESH.frostDelta) {
+          s = Math.max(s, 2);
+        }
+      } else if (v >= RISK_THRESH.breezy && !advectiveCandidate) {
+        // 3..5 м/с без адвекии — не даём High.
+        s = Math.min(s, 1);
+      }
+    }
+
+    // Клампы и «крышки» по Δ (финальные).
+    s = Math.max(0, Math.min(2, s));
+    if (sBase === 2 && s < 1) s = 1;
+    if (Number.isFinite(deltaC)) {
+      if (deltaC > DELTA_CAP_POSSIBLE) s = (icingWindow && hasNotablePrecip) ? Math.max(s, 1) : 0;
+      else if (deltaC > DELTA_CAP_HIGH) s = Math.min(s, 1);
+    }
+    // Ледяной High при узкой Δ и осадках (гололёд).
+    if (icingWindow && hasNotablePrecip && Number.isFinite(deltaC) && deltaC <= RISK_THRESH.frostDelta) {
+      s = Math.max(s, 2);
+    }
+
+    // Итоговая метка Δ-риска для светофора.
+    const risk = s === 2 ? "high" : s === 1 ? "possible" : "none";
+    // --- Комбинированный светофор для CONDITIONS (вероятности событий)
+    const dewScore = (risk === "high") ? 2 : (risk === "possible" ? 1 : 0);
+    const dewScoreEffective = (precipBlocksFog || precipBlocksDew) ? 0 : dewScore;
+    
+    // Замечание: «жара» (🥵) и "ветроохлаждение" (🥶) не зависима от Δ-риска и может выводиться даже при risk="none".
+    // — приоритет событий: 🧊 гололёд → 🥶 ветроохлаждение → 🥵 жара → 🌫️/🌫️🧭 → ❄️ → 💧
+    let flags = [];
+
+    const isIcing = icingWindow && hasNotablePrecip;
+    const isHeatHigh = (heatScore === 2),   isHeatPossible = (heatScore === 1);
+    const isChillHigh = (wchillScore >= 2);
+    const isFrost = (Number.isFinite(tC) && Number.isFinite(deltaC)) &&
+                    (tC <= 0) && (deltaC <= RISK_THRESH.frostDelta);
+
+    const deltaVerySmall = Number.isFinite(deltaC) && (deltaC <= RISK_THRESH.deltaHigh);
+    const deltaSmallish  = Number.isFinite(deltaC) && (deltaC >  RISK_THRESH.deltaHigh) &&
+                           (deltaC <= RISK_THRESH.deltaMaybe);
+
+
+    const clearEnough = !Number.isFinite(cc) ? true : (cc <= Math.max(50, RISK_THRESH.lowCloud + 20));
+    const dewOk = (
+      (risk !== "none") &&
+      Number.isFinite(tC) && tC > 0 &&
+      isNightHour(Number.isFinite(hour) ? hour : NaN) &&
+      Number.isFinite(v) && v <= RISK_THRESH.calm &&
+      clearEnough && !precipBlocksDew && (noPrecip || lightRate) &&
+      hasRH && rh >= RISK_THRESH.rhMaybe &&
+      deltaSmallish
+    );
+
+    // Радиционный туман с двумя порогами RH → score 0/1/2
+    let radFogScore = 0;
+    {
+      const fogWindow =
+        (risk !== "none") && !precipBlocksFog && // ← без noPrecip
+        isNightHour(Number.isFinite(hour) ? hour : NaN) &&
+        hasRH && (rh >= RISK_THRESH.rhMaybe) &&
+        Number.isFinite(v) && v <= RISK_THRESH.windy;
+    
+      if (fogWindow) {
+        if (rh >= RISK_THRESH.rhHigh && deltaVerySmall && v <= RISK_THRESH.calm) {
+          radFogScore = 2; // красный
+        } else if (rh >= RISK_THRESH.rhMaybe && (deltaVerySmall || deltaSmallish)) {
+          radFogScore = 1; // оранжевый
+        }
+      }
+    }
+    
+    // Адвективный туман с двумя порогами RH и "идеальным" ветром → score 0/1/2
+    let advFogScore = 0;
+    {
+      // окно по ветру: для адвекции нужен ветер ≥ breezy; слишком большой (≥ veryWindy) — мешает
+      const vOk    = Number.isFinite(v) && v >= RISK_THRESH.breezy && v < RISK_THRESH.veryWindy; // 3..8 м/с
+      const vIdeal = Number.isFinite(v) && v >= RISK_THRESH.breezy && v < RISK_THRESH.windy;     // 3..5 м/с
+    
+      const fogWindow =
+        (risk !== "none") && !precipBlocksFog && // ← без noPrecip
+        advectiveCandidate && hasRH && vOk;
+    
+      if (fogWindow) {
+        if (rh >= RISK_THRESH.rhHigh && deltaVerySmall && vIdeal) {
+          advFogScore = 2;
+        } else if (rh >= RISK_THRESH.rhMaybe && (deltaVerySmall || deltaSmallish)) {
+          advFogScore = 1;
+        }
+      }
+    }
+
+    // Формируем список событий по приоритету (макс. 2 значка)
+    if (freezingRainScore >= 1) {
+      flags.push("freezing_rain"); // 🌧️🧊 — очень опасно (выше общего «icing»)
+    } else if (isIcing) {
+      flags.push("icing");         // 🧊 — общий гололёдный риск
+    }
+
+    if (heavySnowScore >= 2) flags.push("heavy_snow");   // 🌨️❄️ — сильнейший снегопад
+    if (hasStormWind)        flags.push("wind_storm");   // 🌪️
+    if (isChillHigh)         flags.push("wind_chill");   // 🥶
+    if (isHeatHigh || isHeatPossible) flags.push("heat");// 🥵
+
+    if (heavyRainScore >= 2) {
+      flags.push("heavy_rain");                          // 🌧️ — опасный ливень (≥25 мм)
+    }
+    if (radFogScore === 2 && flags.length < 2 && !precipBlocksFog) {
+      flags.push("fog"); // 🌫️
+    }    
+    if (advFogScore === 2 && flags.length < 2 && !precipBlocksFog) {
+      flags.push("fog_adv"); // 🌫️🧭
+    }
+    // Возможные (если осталось место)
+    if (flags.length < 2) {
+      if (heavySnowScore === 1)   flags.push("heavy_snow");
+      else if (hasStrongWind)     flags.push("wind_strong");
+      else if (heavyRainScore === 1) flags.push("heavy_rain");
+      else if (advFogScore === 1)          flags.push("fog_adv");   // 🌫️🧭
+      else if (radFogScore === 1)      flags.push("fog");
+      else if (!precipBlocksFrost && isFrost) flags.push("frost");
+      else if (dewOk)             flags.push("dew");
+    }
+
+    // Если ничего не выбралось — учитываем возможный холод/ветер/жару отдельно
+    if (!flags.length) {
+      if (risk === "high") {
+        if (!precipBlocksFog && noPrecip) {
+          flags = [advectiveCandidate ? "fog_adv" : "fog"];
+        }
+      } else if (risk === "possible") {
+        if (!precipBlocksFog && noPrecip && (
+          // обычный путь — когда Δ известна
+          (Number.isFinite(deltaC) && deltaC <= RISK_THRESH.deltaMaybe) ||
+          // фолбэк — когда Td/Δ нет, но RH очень высокая
+          (!Number.isFinite(deltaC) && hasRH && rh >= RISK_THRESH.rhHigh)
+            )) {
+          // без Δ предпочитаем нейтральный «fog», не «adv»
+          flags = [Number.isFinite(deltaC) && advectiveCandidate ? "fog_adv" : "fog"];
+        } else if (freezingRainScore >= 1) {
+          flags = ["freezing_rain"];
+        } else if (heavySnowScore >= 1) {
+          flags = ["heavy_snow"];
+        } else if (heavyRainScore >= 1) {
+          flags = ["heavy_rain"];
+        } else if (hasStormWind) {
+          flags = ["wind_storm"];
+        } else if (hasStrongWind) {
+          flags = ["wind_strong"];
+        } else if (isChillHigh) {
+          flags = ["wind_chill"];
+        } else if (isHeatPossible || isHeatHigh) {
+          flags = ["heat"];
+        } else {
+          flags = [
+            (Number.isFinite(tC) && tC > 0 && !precipBlocksDew)
+              ? "dew"
+              : ((!precipBlocksFog && noPrecip) ? (advectiveCandidate ? "fog_adv" : "fog") : undefined)
+          ].filter(Boolean);
+        }
+      } else {
+        // risk === "none"
+        if (freezingRainScore >= 1)      flags = ["freezing_rain"];
+        else if (heavySnowScore >= 1)    flags = ["heavy_snow"];
+        else if (heavyRainScore >= 1)    flags = ["heavy_rain"];
+        else if (hasStormWind)           flags = ["wind_storm"];
+        else if (hasStrongWind)          flags = ["wind_strong"];
+        else if (isChillHigh)            flags = ["wind_chill"];
+        else if (isHeatPossible || isHeatHigh) flags = ["heat"];
+      }
+    }    
+
+    const top = flags.slice(0, 2); // максимум 2 бейджа
+    const emojiText  = top.map(k => EVENT_EMOJI[k]).join(" ");
+    const emojiTitle = top.map(k => EVENT_LABEL[k]).join(" · ");
+
+    // --- Фон только по событиям (включая fog / fog_adv / dew / frost)
+    let bgScore = 0;
+
+    // Твёрдые события
+    if (flags.includes("freezing_rain")) bgScore = Math.max(bgScore, freezingRainScore);
+    if (flags.includes("heavy_rain"))     bgScore = Math.max(bgScore, heavyRainScore);
+    if (flags.includes("heavy_snow"))     bgScore = Math.max(bgScore, heavySnowScore);
+    if (flags.includes("wind_storm"))     bgScore = Math.max(bgScore, 2);
+    if (flags.includes("wind_strong"))    bgScore = Math.max(bgScore, windStrongScore);
+    if (flags.includes("heat"))           bgScore = Math.max(bgScore, heatScore);
+    if (flags.includes("wind_chill"))     bgScore = Math.max(bgScore, 2);
+
+    // FOG / FOG_ADV — берём их собственные score; если флаг пришёл из фолбэка (score=0), красим минимум в оранжевый
+    let fogScore = 0;
+    if (!precipBlocksFog) {
+      if (flags.includes("fog"))     fogScore = Math.max(fogScore, radFogScore);
+      if (flags.includes("fog_adv")) fogScore = Math.max(fogScore, advFogScore);
+
+      if (fogScore === 0 && (flags.includes("fog") || flags.includes("fog_adv"))) {
+        // флаг тумана появился не из строгого детектора → даём «possible» для фона
+        fogScore = 1;
+      }
+      bgScore = Math.max(bgScore, fogScore);
+    }
+
+    // DEW — если флаг выбран и осадки не блокируют, фон минимум «оранжевый»
+    if (flags.includes("dew") && !precipBlocksDew) {
+      bgScore = Math.max(bgScore, 1);
+    }
+
+    // FROST — как было: может стать красным при сильном охлаждении/ночью
+    if (flags.includes("frost") && !precipBlocksFrost) {
+      const frostScoreBG =
+        (Number.isFinite(tC) && tC <= -5) || (deltaVerySmall && night) ? 2 : 1;
+      bgScore = Math.max(bgScore, frostScoreBG);
+    }
+
+    const comboScore = Math.max(
+      dewScoreEffective,
+      windStormScore, windStrongScore ? windStrongScore : 0, // или твой уже свёрнутый windScoreP
+      heavyRainScore,
+      freezingRainScore,
+      heavySnowScore,
+      radFogScore, advFogScore 
+    );
+    const riskCond = comboScore === 2 ? "high" : comboScore === 1 ? "possible" : "none";
+    const riskStrip = bgScore >= 2 ? "high" : (bgScore === 1 ? "possible" : "none");
+    return { risk, riskCond, riskStrip, emojiText, emojiTitle };
+  };
+
+  // 4) Рендер самой полосы «условий»
+  const COND_BG_INTENSITY = 46; // интенсивность фона (в %, через color-mix)
+  const RADIUS = 4;          // скругления краёв, как у соседних полос
+  const moistSectors = this.config?.dew_highlight?.moist_sectors; // опционально из конфига
+
+  const condStrip = document.createElement("div");
+  condStrip.classList.add("metFlex-conditions-strip");
+  condStrip.style.cssText = stripCss(rowsCount > 1 ? MET_ROW_GAP : 0);
+
+  items.forEach((i, idx) => {
+    // 4.1) Достаём значения слота (температуры — приоритет: temperature → high → low).
+    const t   = (typeof i.temperature === "number") ? i.temperature :
+                (typeof i.temperature_high === "number") ? i.temperature_high :
+                (typeof i.temperature_low  === "number") ? i.temperature_low  : NaN;
+    const td  = (typeof i.dew_point === "number") ? i.dew_point : NaN;
+    const rh  = (typeof i.humidity   === "number") ? i.humidity   : NaN;
+    const wnd = (typeof i.wind_speed === "number") ? i.wind_speed : NaN;
+    const gst = (typeof i.wind_gust_speed === "number") ? i.wind_gust_speed : NaN;
+    const brg = (typeof i.wind_bearing === "number") ? i.wind_bearing : NaN;
+    const prc = (typeof i.precipitation === "number") ? i.precipitation : NaN;
+    const prp = (typeof i.precipitation_probability === "number") ? i.precipitation_probability : NaN;
+    const cld = (typeof i.cloud_coverage === "number") ? i.cloud_coverage : NaN;
+    const hour = i.datetime ? localHour(i.datetime) : NaN;
+    const slotHours = slotHoursAt(items, idx);
+
+    // 4.2) Оценка риска/эмодзи (используем комбинированный светофор riskCond)
+    let risk = "none", riskCond = "none", emojiText = "", emojiTitle = "";
+
+    {
+      const { risk: r, riskCond: rc, riskStrip: rs, emojiText: et, emojiTitle: tt } = assessDew({
+        t, td, rh,
+        wind: wnd, gust: gst, bearing: brg,
+        precip: prc, precipProb: prp,
+        cloud: cld, hour,
+        unitT, unitTd, windUnit, precipUnit,
+        moistSectors,
+        slotHours
+      });
+      risk = r;
+      riskCond = rc || r;
+      var riskForBg = rs;              // ← только по событию!
+      emojiText = et;
+      emojiTitle = tt;
+    }
+    
+
+    // 4.3) Создаём ячейку, применяем скругления (первый/последний), красим фон.
+    const cell = document.createElement("div");
+    cell.style.cssText = `
+      position:relative;
+      flex:1 1 0;
+      min-width:${cellMinWidth}px;
+      width:0;
+      height:${COND_H}px;
+      display:flex; align-items:center; justify-content:center;
+      line-height:1;
+      padding-inline: clamp(1px,2%,5px);
+      overflow:hidden; /* чтобы фон и контент не «вылезали» за радиус */
+    `;
+    const isFirst = idx === 0, isLast = idx === items.length - 1;
+    if (isFirst && isLast) cell.style.borderRadius = `${RADIUS}px`;
+    else if (isFirst) { cell.style.borderTopLeftRadius = `${RADIUS}px`; cell.style.borderBottomLeftRadius = `${RADIUS}px`; }
+    else if (isLast)  { cell.style.borderTopRightRadius = `${RADIUS}px`; cell.style.borderBottomRightRadius = `${RADIUS}px`; }
+
+    const riskColor = RISK_COLORS[riskForBg];
+    if (riskColor) {
+      cell.style.background = `color-mix(in oklab, ${riskColor} ${COND_BG_INTENSITY}%, transparent)`;
+    }     
+
+    // 4.4) Контент: либо эмодзи событий по центру, либо «—» как спокойный маркер.
+    if (emojiText) {
+      const mark = document.createElement("div");
+      mark.textContent = emojiText;
+      mark.title = emojiTitle;
+      mark.style.cssText = `
+        position:absolute;
+        left:50%; top:50%; transform:translate(-50%, -50%);
+        font-size:.85em; line-height:1;
+        z-index:1; pointer-events:none; user-select:none;
+        color:#000; text-shadow: 0 1px 2px rgba(0,0,0,.15);
+        white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis;
+      `;
+      cell.appendChild(mark);
+    } else {
+      const dash = document.createElement("div");
+      dash.textContent = "—";
+      dash.style.cssText = `
+        position:absolute;
+        left:50%; top:50%; transform:translate(-50%, -50%);
+        font-size:.62em; line-height:1; color:#000;
+        pointer-events:none; user-select:none;
+      `;
+      cell.appendChild(dash);
+    }
+
+    condStrip.appendChild(cell);
+  });
+
+  // 4.5) Вставляем полосу «условий» рядом с DEW STRIP (обычно над ним)
+  overlay.appendChild(condStrip);
+})();
+}
+
+            bars.appendChild(overlay);
             wrapper.appendChild(block);
           }
 
