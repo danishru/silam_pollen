@@ -280,24 +280,22 @@
       }
     }
   },
-  "frontend": {
-    "editor": {
-      "advanced_options": "Дополнительные настройки",
-      "only_silam": "Только сущности SILAM",
-      "debug_forecast": "Отладка: сырой прогноз",
-      "show_decimals": "Показывать десятые дроби",
-      "pollen_more_info_on_tap": "Открывать карточку сенсора пыльцы при тапе",
-      "value_attributes_left": "Левая колонка",
-      "value_attributes_right": "Правая колонка",
-      "value_attributes_as_rows": "Отображать атрибуты строками",
-      "additional_only": "Показывать только дополнительный блок",
-      "additional_forecast": "Дополнительные атрибуты",
-      "additional_forecast_mode": "Режим дополнительного блока",
-      "additional_forecast_mode.standard": "Стандартный",
-      "additional_forecast_mode.focus": "Фокусировка",
-      "additional_forecast_mode.minimal": "Минимальный",
-      "meteo_risk": "Метео-риск (экспериментально)",
-      "display_attribute": "Атрибут для вывода значения"
-    }
+  "common": {
+    "advanced_options": "Дополнительные настройки",
+    "only_silam": "Только сущности SILAM",
+    "debug_forecast": "Отладка: сырой прогноз",
+    "show_decimals": "Показывать десятые дроби",
+    "pollen_more_info_on_tap": "Открывать карточку сенсора пыльцы при тапе",
+    "value_attributes_left": "Левая колонка",
+    "value_attributes_right": "Правая колонка",
+    "value_attributes_as_rows": "Отображать атрибуты строками",
+    "additional_only": "Показывать только дополнительный блок",
+    "additional_forecast": "Дополнительные атрибуты",
+    "additional_forecast_mode": "Режим дополнительного блока",
+    "additional_forecast_mode.standard": "Стандартный",
+    "additional_forecast_mode.focus": "Фокусировка",
+    "additional_forecast_mode.minimal": "Минимальный",
+    "meteo_risk": "Метео-риск (экспериментально)",
+    "display_attribute": "Атрибут для вывода значения"
   }
 }

@@ -7100,9 +7100,9 @@ class AbsoluteForecastCardEditor extends LitElement {
   async firstUpdated() {
     this._helpers = await window.loadCardHelpers();
   
-    // ВАЖНО: грузим категорию 'frontend' для домена silam_pollen
+    // ВАЖНО: грузим категорию 'common' для домена silam_pollen
     try {
-      await this.hass.loadBackendTranslation("frontend", "silam_pollen");
+      await this.hass.loadBackendTranslation("common", "silam_pollen");
     } catch (_) {}
   
     if (this._config.entity) {
@@ -7204,7 +7204,7 @@ class AbsoluteForecastCardEditor extends LitElement {
   
       // локализация кастомного ключа meteo_risk
       const label = (attr === additionalOnlyAttr)
-        ? this._t("component.silam_pollen.frontend.editor.meteo_risk", "meteo_risk")
+        ? this._t("component.silam_pollen.common.meteo_risk", "meteo_risk")
         : this.hass.formatEntityAttributeName(stateObj, attr);
   
       out.push({ value: attr, label });
@@ -7265,7 +7265,7 @@ class AbsoluteForecastCardEditor extends LitElement {
       },
       {
         name: "display_attribute",
-        label: this._t("component.silam_pollen.frontend.editor.display_attribute", "display_attribute"),
+        label: this._t("component.silam_pollen.common.display_attribute", "display_attribute"),
         selector: { attribute: {} },
         context: { filter_entity: "entity" },
       },
@@ -7275,7 +7275,7 @@ class AbsoluteForecastCardEditor extends LitElement {
     const advancedSchema = [
       {
         name:  "value_attributes_left",
-        label: this._t("component.silam_pollen.frontend.editor.value_attributes_left","value_attributes_left"),
+        label: this._t("component.silam_pollen.common.value_attributes_left","value_attributes_left"),
         selector: {
           select: {
             reorder:     true,
@@ -7288,7 +7288,7 @@ class AbsoluteForecastCardEditor extends LitElement {
       },
       {
         name:  "value_attributes_right",
-        label: this._t("component.silam_pollen.frontend.editor.value_attributes_right","value_attributes_right"),
+        label: this._t("component.silam_pollen.common.value_attributes_right","value_attributes_right"),
         selector: {
           select: {
             reorder:     true,
@@ -7301,7 +7301,7 @@ class AbsoluteForecastCardEditor extends LitElement {
       },
       {
         name: "value_attributes_as_rows",
-        label: this._t("component.silam_pollen.frontend.editor.value_attributes_as_rows","value_attributes_as_rows"),
+        label: this._t("component.silam_pollen.common.value_attributes_as_rows","value_attributes_as_rows"),
         selector: { boolean: {} },
         default: false,
       },
@@ -7343,13 +7343,13 @@ class AbsoluteForecastCardEditor extends LitElement {
       },      
       {
         name: "additional_only",
-        label: this._t("component.silam_pollen.frontend.editor.additional_only","additional_only"),
+        label: this._t("component.silam_pollen.common.additional_only","additional_only"),
         selector: { boolean: {} },
         default: this._config.additional_only,
       },
       {
         name: "additional_forecast",
-        label: this._t("component.silam_pollen.frontend.editor.additional_forecast","additional_forecast"),
+        label: this._t("component.silam_pollen.common.additional_forecast","additional_forecast"),
         selector: {
           select: {
             reorder: true,                // разрешить менять порядок
@@ -7363,13 +7363,13 @@ class AbsoluteForecastCardEditor extends LitElement {
       // Новый параметр: режим дополнительного блока
       {
         name: "additional_forecast_mode",
-        label: this._t("component.silam_pollen.frontend.editor.additional_forecast_mode","additional_forecast_mode"),
+        label: this._t("component.silam_pollen.common.additional_forecast_mode","additional_forecast_mode"),
         selector: {
           select: {
             options: [
-              { value: "standard", label: this._t("component.silam_pollen.frontend.editor.additional_forecast_mode.standard","standard") },
-              { value: "focus",    label: this._t("component.silam_pollen.frontend.editor.additional_forecast_mode.focus","focus") },
-              { value: "minimal",  label: this._t("component.silam_pollen.frontend.editor.additional_forecast_mode.minimal","minimal") },
+              { value: "standard", label: this._t("component.silam_pollen.common.additional_forecast_mode.standard","standard") },
+              { value: "focus",    label: this._t("component.silam_pollen.common.additional_forecast_mode.focus","focus") },
+              { value: "minimal",  label: this._t("component.silam_pollen.common.additional_forecast_mode.minimal","minimal") },
             ]            
           }
         },
@@ -7402,33 +7402,33 @@ class AbsoluteForecastCardEditor extends LitElement {
       /* -------- НОВЫЙ раскрывающийся раздел “Доп.-настройки” -------- */
       {
         name:     "advanced_options",
-        label: this._t("component.silam_pollen.frontend.editor.advanced_options", "advanced_options"),
+        label: this._t("component.silam_pollen.common.advanced_options", "advanced_options"),
         type:     "expandable",
         iconPath: iconPath("mdiTuneVariant"),
         flatten:  true,
         schema: [
           {
             name: "only_silam",
-            label: this._t("component.silam_pollen.frontend.editor.only_silam","only_silam"),
+            label: this._t("component.silam_pollen.common.only_silam","only_silam"),
             selector: { boolean: {} },
             default: this._config.only_silam,
           },
           {
             name:  "debug_forecast",
-            label: this._t("component.silam_pollen.frontend.editor.debug_forecast","debug_forecast"),
+            label: this._t("component.silam_pollen.common.debug_forecast","debug_forecast"),
             selector: { boolean: {} },
             default: this._config.debug_forecast,
           },
           {
             name:  "show_decimals",
-            label: this._t("component.silam_pollen.frontend.editor.show_decimals","show_decimals"),
+            label: this._t("component.silam_pollen.common.show_decimals","show_decimals"),
             selector: { boolean: {} },
             default: this._config.show_decimals,
           },
           // === НОВОЕ: тап по пыльцевому блоку открывает more-info сенсора ===
           {
             name:  "pollen_more_info_on_tap",
-            label: this._t("component.silam_pollen.frontend.editor.pollen_more_info_on_tap", "pollen_more_info_on_tap"),
+            label: this._t("component.silam_pollen.common.pollen_more_info_on_tap", "pollen_more_info_on_tap"),
             selector: { boolean: {} },
             default: this._config.pollen_more_info_on_tap ?? true,
           },
