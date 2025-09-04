@@ -292,9 +292,9 @@
     "additional_only": "Показывать только дополнительный блок",
     "additional_forecast": "Дополнительные атрибуты",
     "additional_forecast_mode": "Режим дополнительного блока",
-    "additional_forecast_mode.standard": "Стандартный",
-    "additional_forecast_mode.focus": "Фокусировка",
-    "additional_forecast_mode.minimal": "Минимальный",
+    "additional_forecast_mode_standard": "Стандартный",
+    "additional_forecast_mode_focus": "Фокусировка",
+    "additional_forecast_mode_minimal": "Минимальный",
     "meteo_risk": "Метео-риск (экспериментально)",
     "display_attribute": "Атрибут для вывода значения"
   }

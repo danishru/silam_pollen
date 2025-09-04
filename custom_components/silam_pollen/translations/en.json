@@ -292,9 +292,9 @@
     "additional_forecast": "Additional attributes",
     "additional_only": "Show only the additional block",
     "additional_forecast_mode": "Additional block mode",
-    "additional_forecast_mode.standard": "Standard",
-    "additional_forecast_mode.focus": "Focus",
-    "additional_forecast_mode.minimal": "Minimal",
+    "additional_forecast_mode_standard": "Standard",
+    "additional_forecast_mode_focus": "Focus",
+    "additional_forecast_mode_minimal": "Minimal",
     "meteo_risk": "Meteo Risk (experimental)",
     "display_attribute": "Display attribute"
   }

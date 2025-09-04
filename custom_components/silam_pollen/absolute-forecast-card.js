@@ -7367,9 +7367,9 @@ class AbsoluteForecastCardEditor extends LitElement {
         selector: {
           select: {
             options: [
-              { value: "standard", label: this._t("component.silam_pollen.common.additional_forecast_mode.standard","standard") },
-              { value: "focus",    label: this._t("component.silam_pollen.common.additional_forecast_mode.focus","focus") },
-              { value: "minimal",  label: this._t("component.silam_pollen.common.additional_forecast_mode.minimal","minimal") },
+              { value: "standard", label: this._t("component.silam_pollen.common.additional_forecast_mode_standard","standard") },
+              { value: "focus",    label: this._t("component.silam_pollen.common.additional_forecast_mode_focus","focus") },
+              { value: "minimal",  label: this._t("component.silam_pollen.common.additional_forecast_mode_minimal","minimal") },
             ]            
           }
         },
