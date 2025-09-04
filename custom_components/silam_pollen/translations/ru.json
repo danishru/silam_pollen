@@ -255,19 +255,19 @@
       }
     }
   },
-    "selector": {
-      "config_pollen": {
-        "options": {
-          "alder_m22": "Ольха",
-          "birch_m22": "Берёза",
-          "grass_m32": "Трава",
-          "hazel_m23": "Лещина",
-          "mugwort_m18": "Полынь",
-          "olive_m28": "Олива",
-          "ragweed_m18": "Амброзия"
-        }
+  "selector": {
+    "config_pollen": {
+      "options": {
+        "alder_m22": "Ольха",
+        "birch_m22": "Берёза",
+        "grass_m32": "Трава",
+        "hazel_m23": "Лещина",
+        "mugwort_m18": "Полынь",
+        "olive_m28": "Олива",
+        "ragweed_m18": "Амброзия"
       }
-    },
+    }
+  },
   "services": {
     "manual_update": {
       "name": "Ручное обновление",
@@ -278,6 +278,26 @@
           "description": "Выберите одно или несколько устройств или сущностей для обновления."
         }
       }
+    }
+  },
+  "frontend": {
+    "editor": {
+      "advanced_options": "Дополнительные настройки",
+      "only_silam": "Только сущности SILAM",
+      "debug_forecast": "Отладка: сырой прогноз",
+      "show_decimals": "Показывать десятые дроби",
+      "pollen_more_info_on_tap": "Открывать карточку сенсора пыльцы при тапе",
+      "value_attributes_left": "Левая колонка",
+      "value_attributes_right": "Правая колонка",
+      "value_attributes_as_rows": "Отображать атрибуты строками",
+      "additional_only": "Показывать только дополнительный блок",
+      "additional_forecast": "Дополнительные атрибуты",
+      "additional_forecast_mode": "Режим дополнительного блока",
+      "additional_forecast_mode.standard": "Стандартный",
+      "additional_forecast_mode.focus": "Фокусировка",
+      "additional_forecast_mode.minimal": "Минимальный",
+      "meteo_risk": "Метео-риск (экспериментально)",
+      "display_attribute": "Атрибут для вывода значения"
     }
   }
 }
