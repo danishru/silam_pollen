@@ -3,7 +3,7 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": "Pollen index",
+        "name": "Pollen index (legacy)",
         "state": {
           "very_low": "Very Low",
           "low": "Low",
@@ -141,7 +141,7 @@
     },
     "weather": {
       "forecast": {
-        "name": "Pollen Forecast **BETA**",
+        "name": "Pollen Forecast",
         "state": {
           "very_low": "Very Low",
           "low": "Low",
@@ -218,11 +218,13 @@
           "altitude": "Altitude above sea level",
           "var": "Pollen type",
           "update_interval": "Update Interval (minutes, minimum 30)",
-          "forecast": "**BETA** Enable pollen forecast?",
+          "forecast": "Enable pollen forecast?",
+          "legacy": "Enable legacy index sensor (deprecated)",
           "forecast_duration": "Desired forecast duration (36–120 h; default 36)"
         },
         "data_description": {
-          "forecast": "The forecast feature may significantly increase API response time."
+          "forecast": "The forecast feature may significantly increase API response time.",
+          "legacy": "Deprecated: will be removed in a future release."
         },
         "title": "Create SILAM Pollen Service",
         "description": "Configure the parameters listed below.\nForecasts are for scientific use; accuracy is not guaranteed."
@@ -245,11 +247,13 @@
           "update_interval": "Update Interval (minutes, minimum 30)",
           "var": "Pollen type",
           "version": "Dataset",
-          "forecast": "**BETA** Enable pollen forecast?",
+          "forecast": "Enable pollen forecast?",
+          "legacy": "Enable legacy index sensor (deprecated)",
           "forecast_duration": "Desired forecast duration (36–120 h; default 36)"
         },
         "data_description": {
-          "forecast": "The forecast feature may significantly increase API response time."
+          "forecast": "The forecast feature may significantly increase API response time.",
+          "legacy": "Deprecated: will be removed in a future release. Keep enabled only if you rely on old automations or dashboards."
         },
         "title": "SILAM Pollen Options"
       }

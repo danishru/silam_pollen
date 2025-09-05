@@ -948,58 +948,144 @@ function withUserTimeZone(hass, opts = {}) {
       }
     }
   
-    // Привязка жестов к элементу без директив и импортов
-    function bindAction(target, options, onGesture /* (type, ev) => void */) {
-      if (!target || target.__afcActionBound) return;
-      target.__afcActionBound = true;
-  
-      let held = false;
-      let holdTimer = undefined;
-      let dblTimer  = undefined;
-  
-      const start = () => {
-        held = false;
-        clearTimeout(holdTimer);
-        holdTimer = window.setTimeout(() => (held = true), HOLD_MS);
-      };
-  
-      const end = (ev) => {
-        clearTimeout(holdTimer);
-        holdTimer = undefined;
-  
-        // тап/двойной тап/холд
-        if (held) {
-          onGesture("hold", ev);
-          return;
+// Найти ближайший прокручиваемый предок (по горизонтали/вертикали)
+function findScrollParent(el) {
+  let cur = el;
+  while (cur && cur !== document.body && cur !== document.documentElement) {
+    const cs = getComputedStyle(cur);
+    const canX = (cs.overflowX === "auto" || cs.overflowX === "scroll" || cs.overflow === "auto" || cs.overflow === "scroll") && cur.scrollWidth > cur.clientWidth;
+    const canY = (cs.overflowY === "auto" || cs.overflowY === "scroll" || cs.overflow === "auto" || cs.overflow === "scroll") && cur.scrollHeight > cur.clientHeight;
+    if (canX || canY) return cur;
+    cur = cur.parentElement;
+  }
+  return null;
+}
+
+// Привязка жестов к элементу (Pointer Events) с защитой от скролла/колеса
+function bindAction(target, options, onGesture /* (type, ev) => void */) {
+  if (!target || target.__afcActionBound) return;
+  target.__afcActionBound = true;
+
+  const MOVE_TOL = 12; // px
+  // помогает на тач-экранах: даём браузеру право панорамировать, без «призрачных кликов»
+  if (!target.style.touchAction) target.style.touchAction = "manipulation"; // можно "pan-x pan-y" если нужно
+
+  let held = false;
+  let moved = false;
+  let holdTimer = null;
+  let dblTimer  = null;
+  let startX = 0, startY = 0;
+  let activeId = null;
+
+  // слежение за прокруткой
+  let scroller = null;
+  let startSL = 0, startST = 0;
+  let onScroll = null;
+  let onWheel  = null;
+
+  const clearHold = () => { clearTimeout(holdTimer); holdTimer = null; };
+
+  const detachScrollWatch = () => {
+    if (scroller && onScroll) scroller.removeEventListener("scroll", onScroll, { passive: true });
+    if (scroller && onWheel)  scroller.removeEventListener("wheel",  onWheel,  { passive: true });
+    scroller = null; onScroll = null; onWheel = null;
+  };
+
+  const reset = () => {
+    detachScrollWatch();
+    clearHold();
+    held = false;
+    moved = false;
+    activeId = null;
+  };
+
+  const onDown = (ev) => {
+    // только основная кнопка/касание
+    if (ev.button != null && ev.button !== 0) return;
+    activeId = ev.pointerId ?? 1;
+
+    held = false;
+    moved = false;
+    startX = ev.clientX;
+    startY = ev.clientY;
+
+    // отслеживаем ближайший скролл-контейнер
+    scroller = findScrollParent(ev.target || target);
+    if (scroller) {
+      startSL = scroller.scrollLeft;
+      startST = scroller.scrollTop;
+      onScroll = () => {
+        if (activeId == null) return;
+        // любой заметный сдвиг скролла — считаем жестом прокрутки
+        if (Math.abs(scroller.scrollLeft - startSL) > 1 || Math.abs(scroller.scrollTop - startST) > 1) {
+          moved = true;
+          clearHold();
         }
-        if (options?.hasDoubleClick) {
-          if (dblTimer) {
-            clearTimeout(dblTimer);
-            dblTimer = undefined;
-            onGesture("double_tap", ev);
-          } else {
-            dblTimer = window.setTimeout(() => {
-              dblTimer = undefined;
-              onGesture("tap", ev);
-            }, 250);
-          }
-        } else {
-          onGesture("tap", ev);
-        }
       };
-  
-      // mouse / touch / keyboard
-      target.addEventListener("touchstart", start, { passive: true });
-      target.addEventListener("touchend", end);
-      target.addEventListener("touchcancel", end);
-  
-      target.addEventListener("mousedown", start, { passive: true });
-      target.addEventListener("click", end);
-  
-      target.addEventListener("keyup", (e) => {
-        if (e.key === "Enter" || e.keyCode === 13) end(e);
-      });
+      onWheel = () => {
+        if (activeId == null) return;
+        moved = true; // колесо/тачпад-скролл → не tap
+        clearHold();
+      };
+      scroller.addEventListener("scroll", onScroll, { passive: true });
+      scroller.addEventListener("wheel",  onWheel,  { passive: true });
     }
+
+    clearHold();
+    holdTimer = window.setTimeout(() => { held = true; }, HOLD_MS);
+  };
+
+  const onMove = (ev) => {
+    if (activeId == null || ev.pointerId !== activeId || moved) return;
+    const dx = Math.abs(ev.clientX - startX);
+    const dy = Math.abs(ev.clientY - startY);
+    if (dx > MOVE_TOL || dy > MOVE_TOL) {
+      moved = true;    // drag → не tap
+      clearHold();     // и не hold
+    }
+  };
+
+  const finishTapLike = (ev) => {
+    if (held) { onGesture("hold", ev); return; }
+    if (options?.hasDoubleClick) {
+      if (dblTimer) {
+        clearTimeout(dblTimer); dblTimer = null;
+        onGesture("double_tap", ev);
+      } else {
+        dblTimer = window.setTimeout(() => {
+          dblTimer = null;
+          onGesture("tap", ev);
+        }, 250);
+      }
+    } else {
+      onGesture("tap", ev);
+    }
+  };
+
+  const onUp = (ev) => {
+    if (activeId == null || ev.pointerId !== activeId) return;
+    clearHold();
+
+    // если был скролл/драг — игнор
+    if (!moved) finishTapLike(ev);
+
+    reset();
+  };
+
+  const onCancel = () => { reset(); };
+
+  target.addEventListener("pointerdown",  onDown,   { passive: true });
+  target.addEventListener("pointermove",  onMove,   { passive: true });
+  target.addEventListener("pointerup",    onUp);
+  target.addEventListener("pointercancel", onCancel);
+
+  // доступность: Enter = tap
+  target.addEventListener("keyup", (e) => {
+    if (e.key === "Enter" || e.keyCode === 13) onGesture("tap", e);
+  });
+}
+
+
   
     // Экспортируем в глобалку (чтобы использовать в классе карточки)
     window.__afcActions = { fireEvent, hasAction, handleAction, bindAction };
@@ -2427,7 +2513,7 @@ class AbsoluteForecastCard extends HTMLElement {
         if (isSilamSource) {
           // ── SILAM: остаётся прежнее отображение mdi-иконок ──
           const iconName = forecastIcons.state[i.condition] || forecastIcons.default;
-          iconEl = document.createElement("ha-icon");
+          iconEl = document.createElement("ha-state-icon");
           iconEl.icon = iconName;
         } else {
           // ── «обычные» интеграции ──
@@ -2457,9 +2543,11 @@ class AbsoluteForecastCard extends HTMLElement {
 
         // 3) Общие стили (одинаковые для SVG и ha-иконок)
         iconEl.style.cssText = `
-          width: 2.2em;
-          height: 2.2em;
-          flex: 0 0 2.2em;
+          text-align: center;
+          --mdc-icon-size: 2.6em;
+          width: 2.8em;
+          height: 2.8em;
+          flex: 0 0 2.8em;
           margin: 4px 0;
         `;
 

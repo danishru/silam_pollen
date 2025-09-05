@@ -35,7 +35,8 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
            название зоны и координаты через селектор местоположения.
            Итоговое имя интеграции формируется как "SILAM Pollen - {zone_name}".
     """
-    VERSION = 2
+    VERSION = 3
+    MINOR_VERSION = 3
 
     async def async_step_user(self, user_input=None):
         """Шаг 1: базовые параметры (без координат)."""
@@ -77,6 +78,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             vol.Required("update_interval", default=DEFAULT_UPDATE_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=30)),
             vol.Optional("forecast", default=False): bool,
+            vol.Optional("legacy", default=False): bool,
             vol.Optional("forecast_duration", default=36): NumberSelector(
                 NumberSelectorConfig(
                     min=36,
@@ -150,6 +152,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         base_data["manual_coordinates"] = True
         base_data["title"] = "SILAM Pollen - {zone_name}".format(zone_name=base_data["zone_name"])
         # Сохранение параметров прогноза из первого шага
+        base_data["legacy"] = self.context.get("base_data", {}).get("legacy", False)
         base_data["forecast"] = self.context.get("base_data", {}).get("forecast", False)
         base_data["forecast_duration"] = self.context.get("base_data", {}).get("forecast_duration", 36)
         # Добавляем уникальный идентификатор на основе координат.
@@ -343,5 +346,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     unit_of_measurement="h",
                 )
             ),  # Длительность прогноза в часах (36–120)
+            vol.Optional(
+                "legacy",
+                default=self.config_entry.options.get(
+                    "legacy",
+                    self.config_entry.data.get("legacy", True)
+                )
+            ): bool,
         })
         return self.async_show_form(step_id="init", data_schema=data_schema)

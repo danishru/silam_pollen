@@ -3,7 +3,7 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": "Indice dei pollini",
+        "name": "Indice pollinico (obsoleto)",
         "state": {
           "very_low": "Molto basso",
           "low": "Basso",
@@ -141,7 +141,7 @@
     },
     "weather": {
       "forecast": {
-        "name": "Previsione del polline **BETA**",
+        "name": "Previsione del polline",
         "state": {
           "very_low": "Molto basso",
           "low": "Basso",
@@ -204,7 +204,7 @@
           "altitude": "Altitudine sopra il livello del mare",
           "var": "Tipo di polline",
           "update_interval": "Intervallo di aggiornamento (minuti, minimo 30)",
-          "forecast": "**BETA** Abilitare la previsione del polline?",
+          "forecast": "Abilitare la previsione del polline?",
           "forecast_duration": "Durata previsione desiderata (36–120 ore; predefinito 36)"
         },
         "data_description": {
@@ -231,7 +231,7 @@
           "update_interval": "Intervallo di aggiornamento (minuti, minimo 30)",
           "var": "Tipo di polline",
           "version": "Dataset",
-          "forecast": "**BETA** Abilita la previsione del polline?",
+          "forecast": "Abilita la previsione del polline?",
           "forecast_duration": "Durata previsione desiderata (36–120 ore; predefinito 36)"
         },
         "data_description": {

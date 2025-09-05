@@ -18,7 +18,7 @@ from .coordinator import SilamCoordinator
 from .migration import async_migrate_entry  # ядро вызовет при необходимости
 
 # Актуальная версия схемы записи ConfigEntry
-CONFIG_VERSION = 2
+CONFIG_VERSION = 3
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,6 +27,16 @@ _LOGGER = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 async def async_setup(hass, _config):
     """Регистрация глобальных сервисов (выполняется один раз за ядро)."""
+    # Безопасно импортируем здесь, не на верхнем уровне
+    try:
+        from .config_flow import SilamPollenConfigFlow
+        _LOGGER.debug(
+            "ConfigFlow VERSION is %s.%s",
+            getattr(SilamPollenConfigFlow, "VERSION", None),
+            getattr(SilamPollenConfigFlow, "MINOR_VERSION", 0),
+        )
+    except Exception as e:
+        _LOGGER.debug("ConfigFlow version check skipped: %s", e)
 
     # Если сервис уже существует (hot-reload custom_component) — повторно не создаём
     if hass.services.has_service(DOMAIN, "manual_update"):
@@ -181,15 +191,26 @@ async def update_listener(hass, entry):
     """Удалить устаревшие сущности после изменения опций и перезагрузить запись."""
     registry = er.async_get(hass)
 
-    expected_ids: set[str] = {
-        f"{entry.entry_id}_index",
-        f"{entry.entry_id}_fetch_duration",
-    }
+    # Опции/данные
     var_list = entry.options.get("var", entry.data.get("var", []))
+    forecast_enabled = entry.options.get("forecast", entry.data.get("forecast", False))
+    legacy_enabled = entry.options.get("legacy", entry.data.get("legacy", True))
+
+    # Ожидаемые unique_id
+    expected_ids: set[str] = {f"{entry.entry_id}_fetch_duration"}
+
+    # Индекс — только если включён legacy
+    if legacy_enabled:
+        expected_ids.add(f"{entry.entry_id}_index")
+
+    # Основные сенсоры по аллергенам
     expected_ids.update(f"{entry.entry_id}_main_{p}" for p in var_list)
-    expected_ids.add(f"{entry.entry_id}_pollen_forecast")
 
+    # Погодный сенсор прогноза — только если включён forecast
+    if forecast_enabled:
+        expected_ids.add(f"{entry.entry_id}_pollen_forecast")
 
+    # Удаляем всё лишнее
     for entity in list(registry.entities.values()):
         if (
             entity.config_entry_id == entry.entry_id
@@ -201,13 +222,12 @@ async def update_listener(hass, entry):
                 hass,
                 (
                     f"Сущность {entity.entity_id} удалена, "
-                    "так как выбранный тип пыльцы больше не используется."
+                    "так как выбранный тип пыльцы или опции были изменены."
                 ),
                 title="SILAM Pollen",
             )
 
     await hass.config_entries.async_reload(entry.entry_id)
-
 
 async def async_get_options_flow(config_entry):
     """Вернуть обработчик Options Flow."""

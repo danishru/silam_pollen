@@ -3,7 +3,7 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": "Pollenindeks",
+        "name": "Pollenindeks (forældet)",
         "state": {
           "very_low": "Meget lav",
           "low": "Lav",
@@ -113,7 +113,7 @@
     },
     "weather": {
       "forecast": {
-        "name": "Pollenprognose **BETA**",
+        "name": "Pollenprognose",
         "state": {
           "very_low": "Meget lav",
           "low": "Lav",
@@ -170,7 +170,7 @@
           "altitude": "Højde over havets overflade",
           "var": "Pollentype",
           "update_interval": "Opdateringsinterval (minutter, minimum 30)",
-          "forecast": "**BETA** Aktiver pollenprognose?",
+          "forecast": "Aktiver pollenprognose?",
           "forecast_duration": "Ønsket prognosevarighed (36–120 timer; standard 36)"
         },
         "data_description": {
@@ -197,7 +197,7 @@
           "update_interval": "Opdateringsinterval (minutter, minimum 30)",
           "var": "Pollentype",
           "version": "Datasæt",
-          "forecast": "**BETA** Aktiver pollenprognose?",
+          "forecast": "Aktiver pollenprognose?",
           "forecast_duration": "Ønsket prognosevarighed (36–120 timer; standard 36)"
         },
         "data_description": {

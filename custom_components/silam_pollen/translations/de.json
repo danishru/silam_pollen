@@ -3,7 +3,7 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": "Pollenindex",
+        "name": "Pollenindex (veraltet)",
         "state": {
           "very_low": "Sehr niedrig",
           "low": "Niedrig",
@@ -141,7 +141,7 @@
     },
     "weather": {
       "forecast": {
-        "name": "Pollen-Vorhersage **BETA**",
+        "name": "Pollen-Vorhersage",
         "state": {
           "very_low": "Sehr niedrig",
           "low": "Niedrig",
@@ -204,7 +204,7 @@
           "altitude": "Höhe über dem Meeresspiegel",
           "var": "Pollenart",
           "update_interval": "Aktualisierungsintervall (Minuten, mindestens 30)",
-          "forecast": "**BETA** Pollenprognose aktivieren?",
+          "forecast": "Pollenprognose aktivieren?",
           "forecast_duration": "Prognosedauer (36–120 Stunden; Standard 36)"
         },
         "data_description": {
@@ -231,7 +231,7 @@
           "update_interval": "Aktualisierungsintervall (Minuten, mindestens 30)",
           "var": "Pollenart",
           "version": "Datensatz",
-          "forecast": "**BETA** Pollenprognose aktivieren?",
+          "forecast": "Pollenprognose aktivieren?",
           "forecast_duration": "Prognosedauer (36–120 Stunden; Standard 36)"
         },
         "data_description": {

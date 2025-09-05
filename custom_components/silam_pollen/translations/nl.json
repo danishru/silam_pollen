@@ -3,7 +3,7 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": "Pollenindex",
+        "name": "Pollenindex (verouderd)",
         "state": {
           "very_low": "Heel laag",
           "low": "Laag",
@@ -141,7 +141,7 @@
     },
     "weather": {
       "forecast": {
-        "name": "Pollenvoorspelling **BETA**",
+        "name": "Pollenvoorspelling",
         "state": {
           "very_low": "Heel laag",
           "low": "Laag",
@@ -204,7 +204,7 @@
           "altitude": "Hoogte boven zeeniveau",
           "var": "Pollen­type",
           "update_interval": "Update-interval (minuten, minimum 30)",
-          "forecast": "**BETA** Pollen­voorspelling inschakelen?",
+          "forecast": "Pollen­voorspelling inschakelen?",
           "forecast_duration": "Gewenste voorspellingstermijn (36–120 u; standaard 36)"
         },
         "data_description": {
@@ -231,7 +231,7 @@
           "update_interval": "Update-interval (minuten, minimum 30)",
           "var": "Pollen­type",
           "version": "Dataset",
-          "forecast": "**BETA** Pollen­voorspelling inschakelen?",
+          "forecast": "Pollen­voorspelling inschakelen?",
           "forecast_duration": "Gewenste voorspellingstermijn (36–120 u; standaard 36)"
         },
         "data_description": {

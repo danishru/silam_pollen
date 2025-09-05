@@ -3,7 +3,7 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": "Peľový index",
+        "name": "Peľový index (zastaralý)",
         "state": {
           "very_low": "Veľmi nízky",
           "low": "Nízky",
@@ -107,7 +107,7 @@
     },
     "weather": {
       "forecast": {
-        "name": "Peľová predpoveď **BETA**",
+        "name": "Peľová predpoveď",
         "state": {
           "very_low": "Veľmi nízky",
           "low": "Nízky",
@@ -164,7 +164,7 @@
           "altitude": "Nadmorská výška",
           "var": "Typ peľu",
           "update_interval": "Interval aktualizácií (minúty, min. 30)",
-          "forecast": "**BETA** Povoliť peľovú predpoveď?",
+          "forecast": "Povoliť peľovú predpoveď?",
           "forecast_duration": "Požadovaná dĺžka predpovede (36 – 120 h; predvolené 36)"
         },
         "data_description": {
@@ -191,7 +191,7 @@
           "update_interval": "Interval aktualizácií (minúty, min. 30)",
           "var": "Typ peľu",
           "version": "Dataset",
-          "forecast": "**BETA** Povoliť peľovú predpoveď?",
+          "forecast": "Povoliť peľovú predpoveď?",
           "forecast_duration": "Požadovaná dĺžka predpovede (36 – 120 h; predvolené 36)"
         },
         "data_description": {

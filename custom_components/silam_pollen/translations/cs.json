@@ -3,7 +3,7 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": "Pylový index",
+        "name": "Pylový index (zastaralý)",
         "state": {
           "very_low": "Velmi nízký",
           "low": "Nízký",
@@ -137,7 +137,7 @@
     },
     "weather": {
       "forecast": {
-        "name": "Pylová předpověď **BETA**",
+        "name": "Pylová předpověď",
         "state": {
           "very_low": "Velmi nízký",
           "low": "Nízký",
@@ -194,7 +194,7 @@
           "altitude": "Nadmořská výška",
           "var": "Typ pylu",
           "update_interval": "Interval aktualizací (minuty, minimálně 30)",
-          "forecast": "**BETA** Povolit pylovou předpověď?",
+          "forecast": "Povolit pylovou předpověď?",
           "forecast_duration": "Požadovaná délka předpovědi (36–120 h; výchozí 36)"
         },
         "data_description": {
@@ -221,7 +221,7 @@
           "update_interval": "Interval aktualizací (minuty, minimálně 30)",
           "var": "Typ pylu",
           "version": "Datová sada",
-          "forecast": "**BETA** Povolit pylovou předpověď?",
+          "forecast": "Povolit pylovou předpověď?",
           "forecast_duration": "Požadovaná délka předpovědi (36–120 h; výchozí 36)"
         },
         "data_description": {

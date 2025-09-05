@@ -79,23 +79,27 @@ async def async_setup_entry(hass, entry, async_add_entities):
     if coordinator is None:
         _LOGGER.error("Координатор для записи %s не найден!", entry.entry_id)
         return
+    # читаем флаг legacy
+    legacy_enabled = entry.options.get("legacy", entry.data.get("legacy", True))
 
     sensors = []
-    # Создаём сенсор типа "index"
-    sensors.append(
-        SilamPollenSensor(
-            sensor_name=f"{base_device_name} Index",
-            base_device_name=base_device_name,
-            coordinator=coordinator,
-            var=var_list,  # Для index передаётся список аллергенов (используется для формирования имени)
-            entry_id=entry.entry_id,
-            sensor_type="index",
-            desired_altitude=altitude,
-            manual_coordinates=manual_coordinates,
-            manual_latitude=manual_latitude,
-            manual_longitude=manual_longitude,
+    # Индекс — только если включён legacy
+    if legacy_enabled:
+        sensors.append(
+            SilamPollenSensor(
+                sensor_name=f"{base_device_name} Index",
+                base_device_name=base_device_name,
+                coordinator=coordinator,
+                var=var_list,  # список аллергенов используется для имени
+                entry_id=entry.entry_id,
+                sensor_type="index",
+                desired_altitude=altitude,
+                manual_coordinates=manual_coordinates,
+                manual_latitude=manual_latitude,
+                manual_longitude=manual_longitude,
+            )
         )
-    )
+
     # Если выбраны конкретные аллергены, создаём сенсоры типа "main" для каждого из них
     if var_list:
         for pollen in var_list:
@@ -116,7 +120,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
             )
 
     async_add_entities(sensors, True)
-
 
     # Добавляем диагностические диагностические сенсоры (fetch + forecast_horizon)
     fetch_diag = SilamPollenFetchDurationSensor(

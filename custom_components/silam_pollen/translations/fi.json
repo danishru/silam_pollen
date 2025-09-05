@@ -3,7 +3,7 @@
   "entity": {
     "sensor": {
       "index": {
-        "name": "Siitepölyindeksi",
+        "name": "Siitepölyindeksi (vanhentunut)",
         "state": {
           "very_low": "Erittäin alhainen",
           "low": "Alhainen",
@@ -141,7 +141,7 @@
     },
     "weather": {
       "forecast": {
-        "name": "Siitepölyennuste **BETA**",
+        "name": "Siitepölyennuste",
         "state": {
           "very_low": "Erittäin alhainen",
           "low": "Alhainen",
@@ -204,7 +204,7 @@
           "altitude": "Korkeus merenpinnasta",
           "var": "Siitepölyn laji",
           "update_interval": "Päivitysväli (minuutteina, vähintään 30)",
-          "forecast": "**BETA** Ota siitepölyennuste käyttöön?",
+          "forecast": "Ota siitepölyennuste käyttöön?",
           "forecast_duration": "Haluttu ennusteen kesto (36–120 h; oletus 36)"
         },
         "data_description": {
@@ -231,7 +231,7 @@
           "update_interval": "Päivitysväli (minuutteina, vähintään 30)",
           "var": "Siitepölyn laji",
           "version": "Aineisto",
-          "forecast": "**BETA** Ota siitepölyennuste käyttöön?",
+          "forecast": "Ota siitepölyennuste käyttöön?",
           "forecast_duration": "Haluttu ennusteen kesto (36–120 h; oletus 36)"
         },
         "data_description": {
