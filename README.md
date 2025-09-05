@@ -39,8 +39,7 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 ### v0.3.0 🚀 One glance — the full picture of weather and pollen.
 v0.3.0 delivers a cohesive experience: one card brings together weather and pollen with a familiar look, fast response, and clear presentation. The integration now ships **with the dashboard card included**: a local JS module is bundled — no CDN or external dependencies (you only need to add it once under “Resources”). The Basic panel preserves the simplicity of the stock Weather card, while the Extended panel unfolds all forecast and allergen layers — tidy, informative, and straight to the point.
 
-<img width="951" height="533" alt="image" src="https://github.com/user-attachments/assets/2ccdf8ff-5afe-446f-a775-9c842e5c5060" />
-
+![image](https://github.com/user-attachments/assets/2ccdf8ff-5afe-446f-a775-9c842e5c5060)
 
 - 💠 **Experimental Lovelace card (local build)**  
   - Self-contained JS bundle, **no CDN**, works offline.  
@@ -61,13 +60,15 @@ v0.3.0 delivers a cohesive experience: one card brings together weather and poll
 - 📊 **Extended forecast panel**  
   - Modes: **Standard**, **Focus**, **Minimal**.
   - 🌿 **Allergen-level forecasts**
-    <img width="1627" height="775" alt="image" src="https://github.com/user-attachments/assets/15a81dae-7c99-4418-9525-08411045bd56" />  
+    ![image](https://github.com/user-attachments/assets/15a81dae-7c99-4418-9525-08411045bd56)
+    
     - **A dedicated forecast line** for each selected allergen.  
     - **Peak concentrations** highlighted in 12-hour and daily views.  
     - **Show details on tap** on pollen blocks: opens the sensor card for the tapped allergen; behavior is configurable in the editor.  
     - **Trend logic + icon** — clear up/down indication.
   - ⛅ **Full forecast layers**
-    <img width="2046" height="1121" alt="image" src="https://github.com/user-attachments/assets/b3d2b70a-fec7-4d37-b6b9-add38f4119a8" />
+    ![image](https://github.com/user-attachments/assets/b3d2b70a-fec7-4d37-b6b9-add38f4119a8)
+    
     - **Temperature** and **apparent temperature**, **precipitation** (probability and amount), **UV index**, **wind** (speed, gust, direction), **cloud coverage**, **humidity**, **dew point**, **pressure**.  
     - **Meteo risk strip (experimental)**: fog (radiation/advection), dew, frost, icing/freezing rain, heavy rain/snow, heat, wind chill, strong/storm wind, “barometric saw”.  
     - Slim strips for **humidity** and **dew point**, clear labels, refined typography.  
