@@ -36,6 +36,10 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 
 ## 🆕 What’s new
 
+## Previous updates
+<details>
+<summary>Show</summary>
+
 ### v0.2.7 🚀 Major update of the "Pollen Forecast BETA" sensor!
 After its beta period, the forecast sensor is heading for a stable release—bringing more accuracy, data and possibilities for your dashboards.
 
@@ -69,7 +73,7 @@ After its beta period, the forecast sensor is heading for a stable release—bri
 
 [![More in release v0.2.7](https://img.shields.io/badge/More--in--release-v0.2.7-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.7)
 
-## v0.2.6
+### v0.2.6
 
 - 🆕 **`native_name` Attribute**  
   All allergen sensors now include a `native_name` attribute that reflects the original SILAM API key (e.g. `alder_m22`, `grass_m32`, etc.), ensuring better compatibility with external tools and visualizations.
@@ -86,11 +90,7 @@ After its beta period, the forecast sensor is heading for a stable release—bri
 
 [![More in release v0.2.6](https://img.shields.io/badge/More--in--release-v0.2.6-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.6)
 
-## Previous updates
-<details>
-<summary>Show</summary>
-
-## v0.2.5 🌟
+### v0.2.5 🌟
 
 This is a truly significant update for **SILAM Pollen**!
 
