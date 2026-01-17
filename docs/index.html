@@ -148,6 +148,32 @@
                 })
               })
             });
+
+            // Преобразование координат для нового полигона (SILAM Hires)
+            let hiresVectorLayer = null;
+            if (typeof rotatedPolygonHires !== 'undefined') {
+              const hiresCoords = rotatedPolygonHires.map(coord =>
+                ol.proj.fromLonLat([coord[1], coord[0]])
+              );
+              const hiresFeature = new ol.Feature({
+                geometry: new ol.geom.Polygon([hiresCoords])
+              });
+              const hiresVectorSource = new ol.source.Vector({
+                features: [hiresFeature]
+              });
+              hiresVectorLayer = new ol.layer.Vector({
+                source: hiresVectorSource,
+                style: new ol.style.Style({
+                  stroke: new ol.style.Stroke({
+                    color: 'rgba(0,120,255,1)',
+                    width: 0.5
+                  }),
+                  fill: new ol.style.Fill({
+                    color: 'rgba(0,120,255,0.2)'
+                  })
+                })
+              });
+            }
             
             // Базовый слой карты
             const rasterLayer = new ol.layer.Tile({
@@ -157,11 +183,16 @@
             // Определяем, мобильное ли устройство и задаем уровень зума
             const isMobile = isMobileDevice();
             const defaultZoom = isMobile ? 6 : 4;
+
+            const layersArr = [rasterLayer, vectorLayer, regionalVectorLayer];
+            if (hiresVectorLayer) {
+              layersArr.push(hiresVectorLayer);
+            }
             
             // Создаем карту с базовым и векторными слоями
             const map = new ol.Map({
               target: 'map',
-              layers: [rasterLayer, vectorLayer, regionalVectorLayer],
+              layers: layersArr,
               view: new ol.View({
                 center: ol.proj.fromLonLat([20, 20]),
                 zoom: defaultZoom
@@ -179,7 +210,11 @@
               let layerDesc = '';
               let squareColor = '';
               map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-                if (layer === regionalVectorLayer) {
+                if (hiresVectorLayer && layer === hiresVectorLayer) {
+                  layerDesc = 'SILAM Hires (v6.1)';
+                  squareColor = 'rgba(0,120,255,1)';
+                  return true;
+                } else if (layer === regionalVectorLayer) {
                   layerDesc = 'SILAM Regional (v5.9.1)';
                   squareColor = 'rgba(0,255,0,1)';
                   return true;
