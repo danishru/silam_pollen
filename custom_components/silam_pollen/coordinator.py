@@ -1,10 +1,21 @@
-   
 # coordinator.py
 
 """
 Реализует SilamCoordinator для интеграции SILAM Pollen.
 Использует DataUpdateCoordinator для обновления данных для всех сенсоров интеграции.
+
+Шаг 1 (аккуратное внедрение):
+- Добавлена лёгкая проверка "свежести" через THREDDS runs/catalog.xml.
+- На этом шаге информация используется только как диагностика (не влияет на логику фетча).
+
+Шаг 2 (аккуратное внедрение, без лишних изменений):
+- Добавлен «инкрементальный» режим: если новый набор данных НЕ появился (run_id не изменился),
+  то мы НЕ делаем полный запрос index/main, а пересобираем результат из уже сохранённого raw_merged.
+- Шаг 2b (очень аккуратно): добавлена опциональная догрузка «хвоста» в инкрементальном режиме,
+  если окно прогноза уехало дальше, чем максимальная дата в кеше.
 """
+
+import math
 
 import logging
 import re
@@ -12,11 +23,16 @@ import time
 import aiohttp
 import async_timeout
 import xml.etree.ElementTree as ET
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from .const import URL_VAR_MAPPING, BASE_URL_V6_0  # Импортируем маппинг для преобразования переменных
 
 _LOGGER = logging.getLogger(__name__)
+
+# THREDDS catalog namespace
+_THREDDS_NS = {"t": "http://www.unidata.ucar.edu/namespaces/thredds/InvCatalog/v1.0"}
+
 
 class SilamCoordinator(DataUpdateCoordinator):
     """Координатор для интеграции SILAM Pollen."""
@@ -59,6 +75,17 @@ class SilamCoordinator(DataUpdateCoordinator):
         self._base_url = base_url
         self._forecast_enabled = forecast
         self._forecast_duration = forecast_duration
+
+        # --- THREDDS runs catalog (проверка свежести) ---
+        self._runs_catalog_url = self._derive_runs_catalog_url()
+        self._latest_run_id = None
+        self._latest_run_start = None
+        self._latest_run_end = None
+
+        # --- Шаг 2: «активный» run_id, на котором построен текущий кеш raw_merged ---
+        # Нужен, чтобы понимать: «набор данных тот же» -> можно пересобрать из кеша без полного запроса.
+        self._active_run_id = None
+
         # Извлекаем версию SILAM из BASE_URL
         match = re.search(r"pollen_v(\d+_\d+)", self._base_url)
         if match:
@@ -85,6 +112,132 @@ class SilamCoordinator(DataUpdateCoordinator):
         _LOGGER.debug("Запрошено обновление данных. Контекст: %s", context)
         return await super().async_request_refresh()
 
+    def _derive_runs_catalog_url(self):
+        """Строит URL runs/catalog.xml по текущему self._base_url (NCSS grid).
+
+        Пример:
+          https://.../thredds/ncss/grid/<dataset>/<file>.ncd
+          -> https://.../thredds/catalog/<dataset>/runs/catalog.xml
+        """
+        try:
+            u = urlparse(self._base_url)
+            parts = [p for p in u.path.split("/") if p]
+            # ... thredds / ncss / grid / <dataset> / <file>
+            grid_idx = parts.index("grid")
+            dataset = parts[grid_idx + 1]
+            return f"{u.scheme}://{u.netloc}/thredds/catalog/{dataset}/runs/catalog.xml"
+        except Exception:
+            return None
+
+    async def _fetch_latest_run_info(self, session):
+        """Возвращает (run_id, start, end) из runs/catalog.xml.
+
+        На этом шаге это *только диагностика* (не влияет на логику фетча).
+        """
+        if not self._runs_catalog_url:
+            return None, None, None
+
+        try:
+            async with session.get(self._runs_catalog_url) as response:
+                if response.status != 200:
+                    _LOGGER.debug("runs catalog HTTP %s", response.status)
+                    return None, None, None
+                async with async_timeout.timeout(10):
+                    xml_text = await response.text()
+
+            root = ET.fromstring(xml_text)
+            parent = root.find(".//t:dataset[@name='Forecast Model Run']", _THREDDS_NS)
+            latest = parent.find("t:dataset", _THREDDS_NS) if parent is not None else None
+            if latest is None:
+                return None, None, None
+
+            run_id = latest.get("name")
+            start_el = latest.find("t:timeCoverage/t:start", _THREDDS_NS)
+            end_el = latest.find("t:timeCoverage/t:end", _THREDDS_NS)
+            start = start_el.text.strip() if (start_el is not None and start_el.text) else None
+            end = end_el.text.strip() if (end_el is not None and end_el.text) else None
+            return run_id, start, end
+
+        except Exception as err:
+            _LOGGER.debug("Не удалось получить/распарсить runs catalog: %s", err)
+            return None, None, None
+
+    # ---------------------------------------------------------------------
+    # Шаг 2: вспомогательные функции для «инкрементального» режима
+    # ---------------------------------------------------------------------
+
+    def _parse_dt_utc(self, dt_str: str):
+        """Парсит ISO-строку времени в aware datetime (UTC).
+
+        Поддерживает:
+          - ...Z
+          - ...+00:00
+          - naive (трактуем как UTC)
+        """
+        if not dt_str:
+            return None
+        try:
+            if dt_str.endswith("Z"):
+                return datetime.fromisoformat(dt_str[:-1]).replace(tzinfo=timezone.utc)
+            dt = datetime.fromisoformat(dt_str)
+            if dt.tzinfo is None:
+                return dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+        except Exception:
+            return None
+
+    def _build_station_features_xml_from_raw_merged(self, raw_merged: dict) -> ET.Element:
+        """Строит минимальный XML в формате NCSS (stationFeature/station/data) из raw_merged.
+
+        Важно: делаем именно тот формат, который ожидает текущий data_processing.parse_features():
+        - <stationFeature date="...">
+            <station name="..." latitude="..." longitude="..." altitude="..."/>
+            <data name="..." units="...">VALUE</data>
+          </stationFeature>
+
+        Это позволяет на шаге 2 пересобрать merged_data без полного сетевого фетча.
+        """
+        root = ET.Element("stationFeatureCollection")
+
+        # сортируем по времени (чтобы «now» вычислялся стабильно)
+        def _sort_key(k: str):
+            dt = self._parse_dt_utc(k)
+            return dt if dt is not None else datetime.min.replace(tzinfo=timezone.utc)
+
+        for dt_s in sorted(raw_merged.keys(), key=_sort_key):
+            payload = raw_merged.get(dt_s) or {}
+            sf = ET.SubElement(root, "stationFeature", {"date": dt_s})
+
+            station = payload.get("station") or {}
+            ET.SubElement(
+                sf,
+                "station",
+                {
+                    "name": str(station.get("name", "")),
+                    "latitude": str(station.get("latitude", "")),
+                    "longitude": str(station.get("longitude", "")),
+                    "altitude": str(station.get("altitude", "")),
+                },
+            )
+
+            data_dict = payload.get("data") or {}
+            for var_name, dv in data_dict.items():
+                if dv is None:
+                    continue
+                units = ""
+                value = ""
+                if isinstance(dv, dict):
+                    units = dv.get("units") or ""
+                    v = dv.get("value")
+                    value = "" if v is None else str(v)
+                else:
+                    value = str(dv)
+
+                el = ET.SubElement(sf, "data", {"name": str(var_name), "units": str(units)})
+                el.text = value
+
+        return root
+
     def _build_index_url(self, latitude, longitude):
         """
         Формирует URL для запроса данных для сенсора index.
@@ -106,7 +259,7 @@ class SilamCoordinator(DataUpdateCoordinator):
             f"longitude={longitude}",
             "time_start=present",
             f"time_duration={time_duration}",
-            "accept=xml"
+            "accept=xml",
         ]
         url = self._base_url + "?" + "&".join(query_params)
         return url
@@ -122,9 +275,9 @@ class SilamCoordinator(DataUpdateCoordinator):
           vertCoord=<desired_altitude>
           accept=xml
         """
-																		
+
         time_duration = f"PT{self._forecast_duration}H" if self._forecast_enabled else "PT0H"
-    
+
         query_params = []
         if self._var_list:
             for allergen in self._var_list:
@@ -136,7 +289,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         query_params.append(f"time_duration={time_duration}")  # Добавляем параметр времени прогноза
         query_params.append(f"vertCoord={self._desired_altitude}")
         query_params.append("accept=xml")
-        
+
         url = self._base_url + "?" + "&".join(query_params)
         return url
 
@@ -167,30 +320,214 @@ class SilamCoordinator(DataUpdateCoordinator):
 
         data = {}
 
+        # --- Диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
+        # full         : обычный полный сетевой фетч index/main
+        # synthetic    : пересборка только из кеша raw_merged (без сети)
+        # incremental  : кеш + частичный сетевой запрос (догрузка хвоста)
+        request_type = 'full'
+        tail_fetch_attempted = False
+        tail_fetch_success = None
+
         try:
             async with aiohttp.ClientSession() as session:
-                # Запрос для index
-                async with session.get(index_url) as response:
-                    _LOGGER.debug("Ответ для index с кодом %s", response.status)
-                    if response.status != 200:
-                        raise UpdateFailed(f"HTTP error (index): {response.status}")
-                    async with async_timeout.timeout(10):
-                        text = await response.text()
-                        _LOGGER.debug("Получен ответ для index: %s", text[:200])
-                        data["index"] = ET.fromstring(text)
+                # --- runs catalog (диагностика свежести) ---
+                run_id, run_start, run_end = await self._fetch_latest_run_info(session)
+                self._latest_run_id = run_id
+                self._latest_run_start = run_start
+                self._latest_run_end = run_end
 
-                # Если var_list задан, выполняем запрос для main
-                if self._var_list:
-                    main_url = self._build_main_url(latitude, longitude)
-                    _LOGGER.debug("Вызов API для main: %s", main_url)
-                    async with session.get(main_url) as response:
-                        _LOGGER.debug("Ответ для main с кодом %s", response.status)
+                # -----------------------------------------------------------------
+                # Шаг 2: если run_id не изменился, пересобираем из кеша raw_merged
+                # -----------------------------------------------------------------
+                use_incremental = False
+                if (
+                    self._forecast_enabled
+                    and run_id
+                    and self._active_run_id == run_id
+                    and isinstance(self.merged_data, dict)
+                    and isinstance(self.merged_data.get("raw_merged"), dict)
+                ):
+                    raw_all = self.merged_data.get("raw_merged") or {}
+
+                    # «Сдвигаем окно» по текущему времени:
+                    # - чуть захватываем прошлое (1 час), чтобы не ломать текущую семантику "now"
+                    # - конец окна = now + forecast_duration
+                    now_utc = datetime.now(timezone.utc)
+                    window_start = now_utc - timedelta(hours=1)
+                    window_end = now_utc + timedelta(hours=self._forecast_duration)
+
+                    # -----------------------------------------------------------------
+                    # Шаг 2b: догрузка «хвоста» (опционально)
+                    #
+                    # Если окно прогноза уехало дальше, чем максимальная дата в кеше,
+                    # подкачиваем только недостающий диапазон (time_start + time_duration)
+                    # и дописываем точки в raw_all.
+                    #
+                    # Важно: хвост опционален — при ошибке не валим обновление.
+                    # -----------------------------------------------------------------
+                    try:
+                        # Находим максимальное время в кеше
+                        max_dt = None
+                        for dt_s in raw_all.keys():
+                            dt = self._parse_dt_utc(dt_s)
+                            if dt is None:
+                                continue
+                            if (max_dt is None) or (dt > max_dt):
+                                max_dt = dt
+
+                        # Если кеш не дотягивает до конца окна — догружаем
+                        # (порог 30 минут, чтобы не дёргаться из-за погрешностей)
+                        if max_dt and (max_dt < (window_end - timedelta(minutes=30))):
+                            tail_start_dt = max_dt + timedelta(hours=1)
+
+                            # Если после +1ч старт уже за пределами окна — хвост не нужен
+                            delta_sec = (window_end - tail_start_dt).total_seconds()
+                            if delta_sec <= 0:
+                                tail_start_dt = None
+                            else:
+                                missing_hours = math.ceil(delta_sec / 3600.0)
+                                missing_hours = max(1, min(missing_hours, self._forecast_duration))
+
+                                tail_time_start = tail_start_dt.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+                                tail_time_duration = f"PT{missing_hours}H"
+
+                            if tail_start_dt is None:
+                                _LOGGER.debug(
+                                    "Шаг 2b: хвост не нужен (tail_start уже за окном): max_dt=%s window_end=%s",
+                                    max_dt,
+                                    window_end,
+                                )
+                            else:
+                                _LOGGER.debug(
+                                    "Шаг 2b: догружаем хвост кеша: start=%s, duration=%s (missing_hours=%s)",
+                                    tail_time_start,
+                                    tail_time_duration,
+                                    missing_hours,
+                                )
+
+                                # --- фиксация попытки догрузки хвоста (для диагностики) ---
+                                tail_fetch_attempted = True
+                                tail_fetch_success = False
+
+                                # --- tail: index ---
+                                tail_index_params = [
+                                    "var=POLI",
+                                    "var=POLISRC",
+                                    "var=temp_2m",
+                                    f"latitude={latitude}",
+                                    f"longitude={longitude}",
+                                    f"time_start={tail_time_start}",
+                                    f"time_duration={tail_time_duration}",
+                                    "accept=xml",
+                                ]
+                                tail_index_url = self._base_url + "?" + "&".join(tail_index_params)
+
+                                tail_index_xml = None
+                                async with session.get(tail_index_url) as resp:
+                                    _LOGGER.debug("Шаг 2b: tail index HTTP %s", resp.status)
+                                    if resp.status == 200:
+                                        async with async_timeout.timeout(10):
+                                            tail_index_text = await resp.text()
+                                        tail_index_xml = ET.fromstring(tail_index_text)
+
+                                # --- tail: main (только если есть аллергены) ---
+                                tail_main_xml = None
+                                if self._var_list:
+                                    tail_main_params = []
+                                    for allergen in self._var_list:
+                                        full_allergen = URL_VAR_MAPPING.get(allergen, allergen)
+                                        tail_main_params.append(f"var={full_allergen}")
+
+                                    tail_main_params += [
+                                        f"latitude={latitude}",
+                                        f"longitude={longitude}",
+                                        f"time_start={tail_time_start}",
+                                        f"time_duration={tail_time_duration}",
+                                        f"vertCoord={self._desired_altitude}",
+                                        "accept=xml",
+                                    ]
+                                    tail_main_url = self._base_url + "?" + "&".join(tail_main_params)
+
+                                    async with session.get(tail_main_url) as resp:
+                                        _LOGGER.debug("Шаг 2b: tail main HTTP %s", resp.status)
+                                        if resp.status == 200:
+                                            async with async_timeout.timeout(10):
+                                                tail_main_text = await resp.text()
+                                            tail_main_xml = ET.fromstring(tail_main_text)
+
+                                # Если tail index получили — выжимаем raw_merged и добавляем в кеш
+                                if tail_index_xml is not None:
+                                    from .data_processing import merge_station_features
+
+                                    tail_merged = merge_station_features(
+                                        tail_index_xml,
+                                        tail_main_xml,
+                                        hass=self.hass,
+                                        forecast_enabled=True,
+                                        selected_allergens=self._var_list,
+                                        forecast_duration=self._forecast_duration,
+                                    )
+                                    tail_raw = tail_merged.get("raw_merged") or {}
+                                    if tail_raw:
+                                        raw_all.update(tail_raw)
+                                        tail_fetch_success = True
+                                        _LOGGER.debug("Шаг 2b: добавлено точек в кеш: %s", len(tail_raw))
+                    except Exception as err:
+                        _LOGGER.debug("Шаг 2b: ошибка догрузки хвоста (пропускаем): %s", err)
+
+                    raw_view = {}
+                    for k, v in raw_all.items():
+                        dt = self._parse_dt_utc(k)
+                        if dt is None:
+                            continue
+                        if window_start <= dt <= window_end:
+                            raw_view[k] = v
+
+                    if raw_view:
+                        _LOGGER.debug(
+                            "Шаг 2: инкрементальный режим (run_id=%s). "
+                            "Пересобираем из кеша %s/%s точек и пропускаем сетевые запросы.",
+                            run_id,
+                            len(raw_view),
+                            len(raw_all),
+                        )
+                        data["index"] = self._build_station_features_xml_from_raw_merged(raw_view)
+                        request_type = 'incremental' if tail_fetch_attempted else 'synthetic'
+                        # На шаге 2 main не запрашиваем: мы пересобираем всё из кеша как «единый» индекс XML.
+                        # Догрузка хвоста/доп.точек будет на следующем шаге.
+                        # (Начиная с шага 2b хвост может догружаться прямо здесь, если окно прогноза уехало дальше кеша.)
+                        use_incremental = True
+
+                # Если инкрементальный режим не сработал — выполняем текущую (старую) логику запросов
+                if not use_incremental:
+                    # Запрос для index
+                    async with session.get(index_url) as response:
+                        _LOGGER.debug("Ответ для index с кодом %s", response.status)
                         if response.status != 200:
-                            raise UpdateFailed(f"HTTP error (main): {response.status}")
+                            raise UpdateFailed(f"HTTP error (index): {response.status}")
                         async with async_timeout.timeout(10):
                             text = await response.text()
-                            _LOGGER.debug("Получен ответ для main: %s", text[:200])
-                            data["main"] = ET.fromstring(text)
+                            _LOGGER.debug("Получен ответ для index: %s", text[:200])
+                            data["index"] = ET.fromstring(text)
+
+                    # Если var_list задан, выполняем запрос для main
+                    if self._var_list:
+                        main_url = self._build_main_url(latitude, longitude)
+                        _LOGGER.debug("Вызов API для main: %s", main_url)
+                        async with session.get(main_url) as response:
+                            _LOGGER.debug("Ответ для main с кодом %s", response.status)
+                            if response.status != 200:
+                                raise UpdateFailed(f"HTTP error (main): {response.status}")
+                            async with async_timeout.timeout(10):
+                                text = await response.text()
+                                _LOGGER.debug("Получен ответ для main: %s", text[:200])
+                                data["main"] = ET.fromstring(text)
+
+                    # --- Шаг 2: фиксируем, на каком run_id построен актуальный кеш ---
+                    # Обновляем только после успешного «полного» фетча (чтобы не закрепить битый/частичный результат).
+                    if run_id:
+                        self._active_run_id = run_id
+
         except Exception as err:
             raise UpdateFailed(f"Ошибка при получении или обработке XML: {err}")
 
@@ -198,6 +535,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         # при этом оригинальный словарь data возвращается как есть для совместимости
         try:
             from .data_processing import merge_station_features
+
             merged = merge_station_features(
                 data.get("index"),
                 data.get("main"),
@@ -209,9 +547,22 @@ class SilamCoordinator(DataUpdateCoordinator):
             # Засекаем конец и вычисляем длительность фетча
             duration = time.monotonic() - start
             merged["last_fetch_duration"] = round(duration, 3)
+
+            # --- runs catalog (диагностика) ---
+            merged["runs_catalog_url"] = self._runs_catalog_url
+            merged["latest_run_id"] = self._latest_run_id
+            merged["latest_run_start"] = self._latest_run_start
+            merged["latest_run_end"] = self._latest_run_end
+
+            # --- диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
+            merged["request_type"] = request_type
+            merged["tail_fetch_attempted"] = tail_fetch_attempted
+            merged["tail_fetch_success"] = tail_fetch_success
+
             _LOGGER.debug(
                 "Сформированные объединённые данные (fetch duration: %.3fs): %s",
-                duration, merged
+                duration,
+                merged,
             )
             self.merged_data = {**merged}
         except Exception as err:

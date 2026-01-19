@@ -94,6 +94,20 @@ class SilamPollenFetchDurationSensor(SensorEntity):
         """Последняя длительность fetch (сек)."""
         return self.coordinator.merged_data.get("last_fetch_duration")
 
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Диагностические атрибуты последнего фетча."""
+        md = self.coordinator.merged_data
+        return {
+            "request_type": md.get("request_type"),
+            "runs_catalog_url": md.get("runs_catalog_url"),
+            "latest_run_id": md.get("latest_run_id"),
+            "latest_run_start": md.get("latest_run_start"),
+            "latest_run_end": md.get("latest_run_end"),
+            # полезно для отладки догрузки хвоста
+            "tail_fetch_attempted": md.get("tail_fetch_attempted"),
+            "tail_fetch_success": md.get("tail_fetch_success"),
+        }
 
 # -------------------------------------------------------------------------
 # SilamPollenForecastHorizonSensor
