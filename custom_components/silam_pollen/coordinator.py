@@ -67,6 +67,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         :param forecast_duration: длительность прогноза в часах (от 36 до 120).
         """
         self._base_device_name = base_device_name
+        self._log_prefix = f"[{base_device_name}]"
         self._var_list = var_list
         self._manual_coordinates = manual_coordinates
         self._manual_latitude = manual_latitude
@@ -109,7 +110,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         Переопределённый метод принудительного обновления.
         Логирует контекст вызова (например, идентификатор сущности, которая запросила обновление).
         """
-        _LOGGER.debug("Запрошено обновление данных. Контекст: %s", context)
+        _LOGGER.debug("%s Запрошено обновление данных. Контекст: %s", self._log_prefix, context)
         return await super().async_request_refresh()
 
     def _derive_runs_catalog_url(self):
@@ -140,7 +141,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         try:
             async with session.get(self._runs_catalog_url) as response:
                 if response.status != 200:
-                    _LOGGER.debug("runs catalog HTTP %s", response.status)
+                    _LOGGER.debug("%s runs catalog HTTP %s", self._log_prefix, response.status)
                     return None, None, None
                 async with async_timeout.timeout(10):
                     xml_text = await response.text()
@@ -159,7 +160,7 @@ class SilamCoordinator(DataUpdateCoordinator):
             return run_id, start, end
 
         except Exception as err:
-            _LOGGER.debug("Не удалось получить/распарсить runs catalog: %s", err)
+            _LOGGER.debug("%s Не удалось получить/распарсить runs catalog (%s): %s", self._log_prefix, self._runs_catalog_url, err)
             return None, None, None
 
     # ---------------------------------------------------------------------
@@ -303,6 +304,14 @@ class SilamCoordinator(DataUpdateCoordinator):
         # Засекаем начало выполнения (_fetch_) всего процесса
         start = time.monotonic()
 
+        # --- Диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
+        # full         : обычный полный сетевой фетч index/main
+        # synthetic    : пересборка только из кеша raw_merged (без сети)
+        # incremental  : кеш + частичный сетевой запрос (догрузка хвоста)
+        request_type = 'full'
+        tail_fetch_attempted = False
+        tail_fetch_success = None
+
         # Определяем координаты: если используются ручные координаты, то берем их,
         # иначе извлекаем координаты из зоны 'home'.
         if self._manual_coordinates and self._manual_latitude is not None and self._manual_longitude is not None:
@@ -316,25 +325,18 @@ class SilamCoordinator(DataUpdateCoordinator):
             longitude = zone.attributes.get("longitude")
 
         index_url = self._build_index_url(latitude, longitude)
-        _LOGGER.debug("Вызов API для index: %s", index_url)
-
+        
         data = {}
-
-        # --- Диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
-        # full         : обычный полный сетевой фетч index/main
-        # synthetic    : пересборка только из кеша raw_merged (без сети)
-        # incremental  : кеш + частичный сетевой запрос (догрузка хвоста)
-        request_type = 'full'
-        tail_fetch_attempted = False
-        tail_fetch_success = None
 
         try:
             async with aiohttp.ClientSession() as session:
                 # --- runs catalog (диагностика свежести) ---
+                _LOGGER.debug("%s Шаг 1: проверка свежести (runs catalog): %s", self._log_prefix, self._runs_catalog_url)
                 run_id, run_start, run_end = await self._fetch_latest_run_info(session)
                 self._latest_run_id = run_id
                 self._latest_run_start = run_start
                 self._latest_run_end = run_end
+                _LOGGER.debug("%s Шаг 1: runs catalog результат: run_id=%s start=%s end=%s", self._log_prefix, run_id, run_start, run_end)
 
                 # -----------------------------------------------------------------
                 # Шаг 2: если run_id не изменился, пересобираем из кеша raw_merged
@@ -393,21 +395,19 @@ class SilamCoordinator(DataUpdateCoordinator):
 
                             if tail_start_dt is None:
                                 _LOGGER.debug(
-                                    "Шаг 2b: хвост не нужен (tail_start уже за окном): max_dt=%s window_end=%s",
+                                    "%s Шаг 2b: хвост не нужен (tail_start уже за окном): max_dt=%s window_end=%s",
+                                    self._log_prefix,
                                     max_dt,
                                     window_end,
                                 )
                             else:
                                 _LOGGER.debug(
-                                    "Шаг 2b: догружаем хвост кеша: start=%s, duration=%s (missing_hours=%s)",
+                                    "%s Шаг 2b: догружаем хвост кеша: start=%s, duration=%s (missing_hours=%s)",
+                                    self._log_prefix,
                                     tail_time_start,
                                     tail_time_duration,
                                     missing_hours,
                                 )
-
-                                # --- фиксация попытки догрузки хвоста (для диагностики) ---
-                                tail_fetch_attempted = True
-                                tail_fetch_success = False
 
                                 # --- tail: index ---
                                 tail_index_params = [
@@ -422,13 +422,23 @@ class SilamCoordinator(DataUpdateCoordinator):
                                 ]
                                 tail_index_url = self._base_url + "?" + "&".join(tail_index_params)
 
+                                # --- Диагностика: инкрементальный сетевой запрос хвоста ---
+                                tail_fetch_attempted = True
+                                _LOGGER.debug("%s Шаг 2b: tail index URL: %s", self._log_prefix, tail_index_url)
+
                                 tail_index_xml = None
                                 async with session.get(tail_index_url) as resp:
-                                    _LOGGER.debug("Шаг 2b: tail index HTTP %s", resp.status)
+                                    _LOGGER.debug("%s Шаг 2b: tail index HTTP %s", self._log_prefix, resp.status)
                                     if resp.status == 200:
                                         async with async_timeout.timeout(10):
                                             tail_index_text = await resp.text()
                                         tail_index_xml = ET.fromstring(tail_index_text)
+                                        tail_fetch_success = True
+
+
+                                if tail_fetch_attempted and tail_fetch_success is None:
+                                    # Запрос хвоста был, но HTTP!=200 или парсинг не удался
+                                    tail_fetch_success = False
 
                                 # --- tail: main (только если есть аллергены) ---
                                 tail_main_xml = None
@@ -448,8 +458,10 @@ class SilamCoordinator(DataUpdateCoordinator):
                                     ]
                                     tail_main_url = self._base_url + "?" + "&".join(tail_main_params)
 
+                                    _LOGGER.debug("%s Шаг 2b: tail main URL: %s", self._log_prefix, tail_main_url)
+
                                     async with session.get(tail_main_url) as resp:
-                                        _LOGGER.debug("Шаг 2b: tail main HTTP %s", resp.status)
+                                        _LOGGER.debug("%s Шаг 2b: tail main HTTP %s", self._log_prefix, resp.status)
                                         if resp.status == 200:
                                             async with async_timeout.timeout(10):
                                                 tail_main_text = await resp.text()
@@ -470,10 +482,12 @@ class SilamCoordinator(DataUpdateCoordinator):
                                     tail_raw = tail_merged.get("raw_merged") or {}
                                     if tail_raw:
                                         raw_all.update(tail_raw)
-                                        tail_fetch_success = True
-                                        _LOGGER.debug("Шаг 2b: добавлено точек в кеш: %s", len(tail_raw))
+                                        _LOGGER.debug("%s Шаг 2b: добавлено точек в кеш: %s", self._log_prefix, len(tail_raw))
                     except Exception as err:
-                        _LOGGER.debug("Шаг 2b: ошибка догрузки хвоста (пропускаем): %s", err)
+                        _LOGGER.debug("%s Шаг 2b: ошибка догрузки хвоста (пропускаем): %s", self._log_prefix, err)
+
+                        if tail_fetch_attempted and tail_fetch_success is None:
+                            tail_fetch_success = False
 
                     raw_view = {}
                     for k, v in raw_all.items():
@@ -484,15 +498,19 @@ class SilamCoordinator(DataUpdateCoordinator):
                             raw_view[k] = v
 
                     if raw_view:
+                        # Если хвост не догружали — это чисто синтетическая пересборка из кеша.
+                        # Если хвост догружали — это инкрементальный режим (кеш + частичный сетевой фетч).
+                        request_type = 'incremental' if tail_fetch_attempted else 'synthetic'
+
                         _LOGGER.debug(
-                            "Шаг 2: инкрементальный режим (run_id=%s). "
-                            "Пересобираем из кеша %s/%s точек и пропускаем сетевые запросы.",
+                            "%s Шаг 2: %s режим (run_id=%s). Пересобираем из кеша %s/%s точек.",
+                            self._log_prefix,
+                            request_type,
                             run_id,
                             len(raw_view),
                             len(raw_all),
                         )
                         data["index"] = self._build_station_features_xml_from_raw_merged(raw_view)
-                        request_type = 'incremental' if tail_fetch_attempted else 'synthetic'
                         # На шаге 2 main не запрашиваем: мы пересобираем всё из кеша как «единый» индекс XML.
                         # Догрузка хвоста/доп.точек будет на следующем шаге.
                         # (Начиная с шага 2b хвост может догружаться прямо здесь, если окно прогноза уехало дальше кеша.)
@@ -501,26 +519,27 @@ class SilamCoordinator(DataUpdateCoordinator):
                 # Если инкрементальный режим не сработал — выполняем текущую (старую) логику запросов
                 if not use_incremental:
                     # Запрос для index
+                    _LOGGER.debug("%s Вызов API для index: %s", self._log_prefix, index_url)
                     async with session.get(index_url) as response:
-                        _LOGGER.debug("Ответ для index с кодом %s", response.status)
+                        _LOGGER.debug("%s Ответ для index с кодом %s", self._log_prefix, response.status)
                         if response.status != 200:
                             raise UpdateFailed(f"HTTP error (index): {response.status}")
                         async with async_timeout.timeout(10):
                             text = await response.text()
-                            _LOGGER.debug("Получен ответ для index: %s", text[:200])
+                            _LOGGER.debug("%s Получен ответ для index: %s", self._log_prefix, text[:200])
                             data["index"] = ET.fromstring(text)
 
                     # Если var_list задан, выполняем запрос для main
                     if self._var_list:
                         main_url = self._build_main_url(latitude, longitude)
-                        _LOGGER.debug("Вызов API для main: %s", main_url)
+                        _LOGGER.debug("%s Вызов API для main: %s", self._log_prefix, main_url)
                         async with session.get(main_url) as response:
-                            _LOGGER.debug("Ответ для main с кодом %s", response.status)
+                            _LOGGER.debug("%s Ответ для main с кодом %s", self._log_prefix, response.status)
                             if response.status != 200:
                                 raise UpdateFailed(f"HTTP error (main): {response.status}")
                             async with async_timeout.timeout(10):
                                 text = await response.text()
-                                _LOGGER.debug("Получен ответ для main: %s", text[:200])
+                                _LOGGER.debug("%s Получен ответ для main: %s", self._log_prefix, text[:200])
                                 data["main"] = ET.fromstring(text)
 
                     # --- Шаг 2: фиксируем, на каком run_id построен актуальный кеш ---
@@ -554,17 +573,18 @@ class SilamCoordinator(DataUpdateCoordinator):
             merged["latest_run_start"] = self._latest_run_start
             merged["latest_run_end"] = self._latest_run_end
 
-            # --- диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
+            # --- Диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
             merged["request_type"] = request_type
             merged["tail_fetch_attempted"] = tail_fetch_attempted
             merged["tail_fetch_success"] = tail_fetch_success
 
             _LOGGER.debug(
-                "Сформированные объединённые данные (fetch duration: %.3fs): %s",
+                "%s Сформированные объединённые данные (fetch duration: %.3fs): %s",
+                self._log_prefix,
                 duration,
                 merged,
             )
             self.merged_data = {**merged}
         except Exception as err:
-            _LOGGER.error("Ошибка при объединении или обработке прогнозных данных: %s", err)
+            _LOGGER.error("%s Ошибка при объединении или обработке прогнозных данных: %s", self._log_prefix, err)
             self.merged_data = {}
