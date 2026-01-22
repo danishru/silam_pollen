@@ -6188,7 +6188,8 @@ class AbsoluteForecastCard extends HTMLElement {
 
               items.forEach((i, idx) => {
                 const amount = i.precipitation;                 // может быть undefined
-                const isSnow = snowyStates.has(i.condition);
+                const t = Number.isFinite(+i.temperature) ? +i.temperature : Number.isFinite(+i.templow) ? +i.templow : +i.temphigh;
+                const isSnow = snowyStates.has(i.condition) || ((+i.precipitation > 0) && Number.isFinite(t) && t <= 0);
                 const lvl    = precipLevel(amount ?? 0, hSlot, isSnow); // как и раньше
                 const has    = (typeof amount === "number" && amount > 0 && lvl > 0);
 
@@ -6740,11 +6741,11 @@ class AbsoluteForecastCard extends HTMLElement {
                   }
 
                   // небольшая «мертвая зона» от шума датчика (доп. к TREND_EPS)
-                  const deadband = Number(this._cfg?.pressure_trend_deadband_hpa ?? 0.02);
+                  const deadband = Number(this._cfg?.pressure_trend_deadband_hpa ?? 0.03);
                   let arrow = "=";
                   if (Number.isFinite(delta)) {
-                    if (delta > (TREND_EPS + deadband)) arrow = "🡩";
-                    else if (delta < -(TREND_EPS + deadband)) arrow = "🡫";
+                    if (delta > (TREND_EPS + deadband)) arrow = "➚";
+                    else if (delta < -(TREND_EPS + deadband)) arrow = "➘";
                   }
                   trendBox.textContent = arrow;
 
@@ -6753,8 +6754,8 @@ class AbsoluteForecastCard extends HTMLElement {
                     left:0; right:0;
                     bottom:${TREND_H}px;
                     height:${TREND_H}px;
-                    display:flex; align-items:center; justify-content:center;
-                    font-size:.62em; line-height:1;
+                    display:flex; align-items:flex-end; justify-content:center;
+                    font-size:0.95em; line-height:1;
                     background: linear-gradient(
                       to right,
                       ${colPrev} 0%,
