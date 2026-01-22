@@ -36,6 +36,28 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 
 ## 🆕 What’s new
 
+### v0.3.1 🧠 Smarter data updates.
+
+Version v0.3.1 introduces a major internal improvement in how SILAM Pollen **detects and updates forecast data**.
+
+![image](https://github.com/user-attachments/assets/b5e654e7-77b6-43e5-a082-3dec4457a80f)
+
+The integration is now **run-aware** and checks the SILAM **runs catalog** before fetching data. This allows it to reliably determine whether a **new model run is actually available**, instead of blindly re-downloading the same dataset.
+
+If the current run hasn’t changed:
+- cached data is safely reused,
+- full XML downloads are skipped,
+- and only genuinely missing forecast hours are fetched when the forecast window moves forward.
+
+This results in:
+- significantly fewer unnecessary network requests,
+- faster and more predictable updates,
+- reduced load on both Home Assistant and the SILAM data infrastructure.
+
+These changes are especially important ahead of the pollen season, ensuring timely updates while keeping the integration efficient and robust.
+
+[![More in release v0.3.1](https://img.shields.io/badge/More--in--release-v0.3.1-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.3.1)
+
 ### v0.3.0 🚀 One glance — the full picture of weather and pollen.
 v0.3.0 delivers a cohesive experience: one card brings together weather and pollen with a familiar look, fast response, and clear presentation. The integration now ships **with the dashboard card included**: a local JS module is bundled — no CDN or external dependencies (you only need to add it once under “Resources”). The Basic panel preserves the simplicity of the stock Weather card, while the Extended panel unfolds all forecast and allergen layers — tidy, informative, and straight to the point.
 
