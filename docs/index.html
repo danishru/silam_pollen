@@ -87,13 +87,9 @@
       }
       .legend-control input[type="checkbox"] {
         margin: 0;
-      }
-      .legend-swatch {
-        width: 12px;
-        height: 12px;
-        border: 1px solid rgba(0,0,0,.6);
-        border-radius: 2px;
-        flex: 0 0 auto;
+        /* цвет задаём inline через accent-color */
+        width: 14px;
+        height: 14px;
       }
       .legend-control .name {
         opacity: 0.95;
@@ -250,9 +246,8 @@
 
               const rowsHtml = items.map((it) => `
                 <div class="row">
-                  <label>
-                    <input type="checkbox" data-layer-id="${it.id}" checked />
-                    <span class="legend-swatch" style="background:${it.color};"></span>
+                  <label class="row">
+                    <input type="checkbox" data-layer-id="${it.id}" checked style="accent-color:${it.color};" />
                     <span class="name">${it.name}</span>
                   </label>
                 </div>
