@@ -13,6 +13,12 @@
         width: 100%;
         height: 100%;
       }
+
+      :root {
+        --ui-font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        --ui-font-size: 12px;
+        --ui-line-height: 1.2;
+      }
       .map {
         width: 100%;
         height: 100%;
@@ -22,11 +28,11 @@
       .info-window {
         position: absolute;
         pointer-events: none;
-        padding: 4px 6px;
+        padding: 4px 4px;
         background: rgba(255, 255, 255, 0.8);
-        font-size: 14px;
+        font: var(--ui-font-size)/var(--ui-line-height) var(--ui-font-family);
         border: 1px solid #ccc;
-        border-radius: 2px;
+        border-radius: 6px;
         white-space: nowrap;
         z-index: 1000;
       }
@@ -61,61 +67,68 @@
         left: .5em !important;
         top: .5em !important;
       }
+
       .legend-control {
         top: .5em;
-        left: 3.6em; /* чуть правее zoom */
+        left: 3.6em; /* правее zoom */
         right: auto;
         background: rgba(255, 255, 255, 0.92);
         border: 1px solid rgba(0,0,0,0.25);
         border-radius: 6px;
-        padding: 8px 10px;
-        font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        padding: 1px 5px; /* компактнее */
+        font: var(--ui-font-size)/var(--ui-line-height) var(--ui-font-family);
         color: #111;
         box-shadow: 0 1px 3px rgba(0,0,0,0.15);
       }
-      .legend-control .title {
-        font-weight: 600;
-        margin-bottom: 6px;
-        opacity: 0.9;
-      }
+
       .legend-control .row {
         display: flex;
         align-items: center;
-        gap: 6px;
-        margin: 4px 0;
+        gap: 5px;
+        margin: 1px 0;
         white-space: nowrap;
       }
+
       .legend-control input[type="checkbox"] {
         margin: 0;
-        /* цвет задаём inline через accent-color */
-        width: 14px;
-        height: 14px;
+        width: 13px;
+        height: 13px;
       }
+
       .legend-control .name {
         opacity: 0.95;
       }
 
       /* info-window внутри легенды (мобильный режим) */
-      .legend-control .info-window.info-in-legend {
+      .legend-control .legend-info {
         position: static !important;
+        transform: none !important;
         left: auto !important;
         top: auto !important;
-        transform: none !important;
+
+        margin-top: 2px;
+        padding-top: 2px;
+        border-top: 2px solid rgba(0,0,0,0.35);
+        box-shadow: 0 -1px 0 rgba(255,255,255,0.6) inset;
+
         background: transparent !important;
         border: 0 !important;
-        padding: 4px 0 0 0 !important;
-        margin: 2px 0 0 0 !important;
-        font-size: 12px !important;
-        white-space: normal !important;
+        border-radius: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        white-space: normal;
+        pointer-events: none;
+        opacity: 0.95;
+        width: 100%;
       }
 
-      /* На мобиле делаем легенду чуть компактнее */
+      /* На мобиле просто чуть ужимаем легенду, позиция остаётся рядом с zoom */
       @media (max-width: 767px) {
-        .legend-control { padding: 6px 8px; top: 4.2em; left: .5em; right: auto; }
-        .legend-control .title { margin-bottom: 4px; }
+        .legend-control {
+          padding: 2px 6px;
+        }
       }
-
-    </style>
+</style>
   </head>
   <body>
     <div id="map" class="map">
@@ -285,11 +298,11 @@
                   const target = items.find((x) => x.id === id);
                   if (target && target.layer) {
                     target.layer.setVisible(cb.checked);
-
-              return el;
                   }
                 });
               });
+
+              return el;
             }
 
             // Создаем карту с базовым и векторными слоями
@@ -301,28 +314,30 @@
                 zoom: defaultZoom
               })
             });
+
+            // Элемент для отображения информации
+            const infoWindow = document.getElementById('info-window');
+            if (isMobile) {
+              // на мобильном: отображаем координаты внутри легенды (внизу, после зон)
+              infoWindow.classList.add('legend-info');
+            }
+
             
 
 
             // Добавляем легенду/переключатели слоёв (справа сверху)
             const legendItems = [
-              { id: 'europe',   name: 'SILAM Europe (v6.1/v6.0)',     color: 'rgba(255,200,0,1)', layer: vectorLayer },
               { id: 'regional', name: 'SILAM Northern Europe (v5.9.1)', color: 'rgba(0,255,0,1)',   layer: regionalVectorLayer },
+              { id: 'europe',   name: 'SILAM Europe (v6.1/v6.0)',     color: 'rgba(255,200,0,1)', layer: vectorLayer },
             ];
             if (hiresVectorLayer) {
               legendItems.unshift({ id: 'hires', name: 'SILAM Finland (v6.1)', color: 'rgba(0,120,255,1)', layer: hiresVectorLayer });
             }
             const legendEl = addCoverageLegend(map, legendItems);
 
-            // На мобиле переносим блок координат внутрь легенды, чтобы ничего не перекрывалось
+            // На мобиле переносим координаты внутрь легенды (после списка зон)
             if (isMobile && legendEl) {
-              infoWindow.classList.add('info-in-legend');
               legendEl.appendChild(infoWindow);
-            }
-            // Элемент для отображения информации
-            const infoWindow = document.getElementById('info-window');
-            if (isMobile) {
-              // на мобиле info-window будет размещён внутри легенды
             }
             
             // Функция для обновления информации (координаты и легенда)
@@ -347,10 +362,29 @@
               
               let legendHtml = '';
               if (layerDesc) {
-                legendHtml = `<div style="margin-bottom:3px;">
-                  <span style="display:inline-block;width:14px;height:14px;background-color:${squareColor};vertical-align:middle;margin-right:5px;border:1px solid #000;"></span>
-                  <span>${layerDesc}</span>
-                </div>`;
+                if (isMobile) {
+                  // на мобиле: цвет зоны — фоном "плашки" с названием
+                  const badgeBg = (typeof squareColor === 'string' && squareColor.startsWith('rgba('))
+                    ? squareColor.replace(/rgba\((\s*\d+\s*),(\s*\d+\s*),(\s*\d+\s*),\s*([0-9.]+)\s*\)/, 'rgba($1,$2,$3,0.22)')
+                    : squareColor;
+
+                  legendHtml = `<div style="margin-bottom:4px;">
+                    <span style="display:inline-block;padding:2px 6px;border-radius:6px;background:${badgeBg};border:1px solid rgba(0,0,0,0.15);">
+                      ${layerDesc}
+                    </span>
+                  </div>`;
+                } else {
+                  // на десктопе: тоже "плашка" с названием (как на мобиле)
+                  const badgeBg = (typeof squareColor === 'string' && squareColor.startsWith('rgba('))
+                    ? squareColor.replace(/rgba\((\s*\d+\s*),(\s*\d+\s*),(\s*\d+\s*),\s*([0-9.]+)\s*\)/, 'rgba($1,$2,$3,0.22)')
+                    : squareColor;
+
+                  legendHtml = `<div style="margin-bottom:4px;">
+                    <span style="display:inline-block;padding:2px 6px;border-radius:6px;background:${badgeBg};border:1px solid rgba(0,0,0,0.15);">
+                      ${layerDesc}
+                    </span>
+                  </div>`;
+                }
               }
               
               const coordText = `${i18next.t('lat')}: ${coordinate[1].toFixed(3)}, ${i18next.t('lon')}: ${coordinate[0].toFixed(3)}`;
