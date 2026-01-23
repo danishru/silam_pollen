@@ -20,6 +20,7 @@ from .const import (
     DOMAIN,
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_ALTITUDE,
+    BASE_URL_HIRES_V6_1,            # NEW: SILAM Finland (v6.1)
     BASE_URL_REGIONAL_V5_9_1,
     BASE_URL_EUROPE_V6_0,
     BASE_URL_EUROPE_V6_1,
@@ -195,7 +196,9 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         base_data["base_url"] = chosen_url
 
         # Сохраняем версию набора данных (нужна для дефолта в OptionsFlow)
-        if "silam_regional_pollen_v5_9_1" in chosen_url:
+        if "silam_hires_pollen_v6_1" in chosen_url:               # NEW: Finland
+            base_data["version"] = "v6_1_fi"
+        elif "silam_regional_pollen_v5_9_1" in chosen_url:
             base_data["version"] = "v5_9_1"
         elif "silam_europe_pollen_v6_1" in chosen_url:
             base_data["version"] = "v6_1"
@@ -211,13 +214,14 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         Вспомогательный метод для проверки доступности API с использованием введённых координат.
 
         Порядок:
-        1) BASE_URL_REGIONAL_V5_9_1 (если покрывает координаты — приоритетнее)
-        2) BASE_URL_EUROPE_V6_1 (новый дефолт Europe)
-        3) BASE_URL_EUROPE_V6_0 (legacy fallback)
+        1) BASE_URL_HIRES_V6_1 (если покрывает координаты — приоритетнее)    # NEW: Finland (v6.1)
+        2) BASE_URL_REGIONAL_V5_9_1 (если покрывает координаты — приоритетнее)
+        3) BASE_URL_EUROPE_V6_1 (новый дефолт Europe)
+        4) BASE_URL_EUROPE_V6_0 (legacy fallback)
 
         Если один из базовых URL возвращает статус 200, метод возвращает True, None и выбранный URL.
         """
-        urls = [BASE_URL_REGIONAL_V5_9_1, BASE_URL_EUROPE_V6_1, BASE_URL_EUROPE_V6_0]
+        urls = [BASE_URL_HIRES_V6_1, BASE_URL_REGIONAL_V5_9_1, BASE_URL_EUROPE_V6_1, BASE_URL_EUROPE_V6_0]  # NEW order
         last_response = ""
         chosen_url = None
 
@@ -268,7 +272,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             new_version = user_input.get("version")
             new_data["version"] = new_version
 
-            if new_version == "v5_9_1":
+            if new_version == "v6_1_fi":                           # NEW: Finland (v6.1)
+                new_data["base_url"] = BASE_URL_HIRES_V6_1
+            elif new_version == "v5_9_1":
                 new_data["base_url"] = BASE_URL_REGIONAL_V5_9_1
             elif new_version == "v6_1":
                 new_data["base_url"] = BASE_URL_EUROPE_V6_1
@@ -284,7 +290,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         # Если user_input is None – показываем форму с предустановленным значением версии.
         # Определяем значение автоматически по base_url из записи (для старых entry).
         base_url = self.config_entry.data.get("base_url", "")
-        if "silam_europe_pollen_v6_1" in base_url:
+        if "silam_hires_pollen_v6_1" in base_url:                  # NEW: Finland
+            default_version = "v6_1_fi"
+        elif "silam_europe_pollen_v6_1" in base_url:
             default_version = "v6_1"
         elif "silam_europe_pollen_v6_0" in base_url:
             default_version = "v6_0"
@@ -297,6 +305,26 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         lat = self.config_entry.data.get("latitude")
         lon = self.config_entry.data.get("longitude")
         device_name = self.config_entry.title  # Имя устройства
+
+        # NEW: Тестируем доступность BASE_URL_HIRES_V6_1 (Finland) с использованием координат из записи.
+        v6_1_fi_available = False
+        if lat is not None and lon is not None:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with async_timeout.timeout(10):
+                        test_url = BASE_URL_HIRES_V6_1 + f"?var=POLI&latitude={lat}&longitude={lon}&time=present&accept=xml"
+                        async with session.get(test_url) as response:
+                            if response.status == 200:
+                                v6_1_fi_available = True
+                                _LOGGER.debug(
+                                    "Successful check: URL %s is available for device %s",
+                                    test_url, device_name
+                                )
+            except Exception as err:
+                _LOGGER.debug(
+                    "Test request for v6_1_fi failed for device %s on URL %s: %s",
+                    device_name, test_url, err
+                )
 
         v5_9_1_available = False
         if lat is not None and lon is not None:
@@ -313,7 +341,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                                 )
             except Exception as err:
                 _LOGGER.debug(
-                    "Test request for v5_9_1 failed for device %s on URL %s: %s",
+                    "Test request for v5.9.1 failed for device %s on URL %s: %s",
                     device_name, test_url, err
                 )
 
@@ -321,11 +349,29 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         # - Europe v6.1 (default)
         # - Europe v6.0 (legacy)
         # - Regional v5.9.1 (только если доступен по координатам)
-        if v5_9_1_available:
+        # - Finland v6.1 (только если доступен по координатам)                      # NEW
+        if v6_1_fi_available and v5_9_1_available:
+            version_options = [
+                {"value": "v6_1_fi", "label": "SILAM Finland (v6.1)"},
+                {"value": "v5_9_1", "label": "SILAM Northern Europe (v5.9.1)"},
+                {"value": "v6_1", "label": "SILAM Europe (v6.1)"},
+                {"value": "v6_0", "label": "SILAM Europe (v6.0, legacy)"},
+            ]
+        elif v6_1_fi_available:
+            version_options = [
+                {"value": "v6_1_fi", "label": "SILAM Finland (v6.1)"},
+                {"value": "v6_1", "label": "SILAM Europe (v6.1)"},
+                {"value": "v6_0", "label": "SILAM Europe (v6.0, legacy)"},
+            ]
+            # Если ранее стоял regional или неизвестно что — по умолчанию для Europe ставим v6.1
+            # (но если Finland доступен — пусть дефолт будет Finland)
+            if default_version in ("v5_9_1", "unknown"):
+                default_version = "v6_1_fi"
+        elif v5_9_1_available:
             version_options = [
                 {"value": "v6_1", "label": "SILAM Europe (v6.1)"},
                 {"value": "v6_0", "label": "SILAM Europe (v6.0, legacy)"},
-                {"value": "v5_9_1", "label": "SILAM Regional (v5.9.1)"},
+                {"value": "v5_9_1", "label": "SILAM Northern Europe (v5.9.1)"},
             ]
         else:
             version_options = [
@@ -333,7 +379,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 {"value": "v6_0", "label": "SILAM Europe (v6.0, legacy)"},
             ]
             # Если ранее стоял regional или неизвестно что — по умолчанию для Europe ставим v6.1
-            if default_version in ("v5_9_1", "unknown"):
+            if default_version in ("v5_9_1", "unknown", "v6_1_fi"):
                 default_version = "v6_1"
 
         data_schema = vol.Schema({

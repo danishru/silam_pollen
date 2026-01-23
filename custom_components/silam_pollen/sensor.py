@@ -172,18 +172,24 @@ class SilamPollenSensor(SensorEntity):
 
         # Определяем используемый набор данных по base_url
         base_url = getattr(self.coordinator, "_base_url", "") or ""
-        if "silam_europe_pollen_v6_1" in base_url:
+
+        # NEW: Finland (hires v6.1) — в UI показываем как "SILAM Finland (v6.1)"
+        if "silam_hires_pollen_v6_1" in base_url:
+            dataset = "Finland v6.1"
+            region_url = "hires"
+        elif "silam_europe_pollen_v6_1" in base_url:
             dataset = "Europe v6.1"
             region_url = "europe"
         elif "silam_europe_pollen_v6_0" in base_url:
             dataset = "Europe v6.0"
             region_url = "europe"
         elif "silam_regional_pollen" in base_url:
-            dataset = "Regional v5.9.1"
+            dataset = "Northern Europe v5.9.1"
             region_url = "regional"
         else:
             dataset = "unknown"
             region_url = "europe"
+
             
         # Получаем версию SILAM из координатора
         sw_version = self.coordinator.silam_version.replace("_", ".")

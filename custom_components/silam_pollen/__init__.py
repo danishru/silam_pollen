@@ -218,14 +218,15 @@ async def update_listener(hass, entry):
             and entity.unique_id not in expected_ids
         ):
             registry.async_remove(entity.entity_id)
-            persistent_notification_async_create(
-                hass,
-                (
-                    f"Сущность {entity.entity_id} удалена, "
-                    "так как выбранный тип пыльцы или опции были изменены."
-                ),
-                title="SILAM Pollen",
-            )
+
+#            persistent_notification_async_create(
+#                hass,
+#                (
+#                    f"Сущность {entity.entity_id} удалена, "
+#                    "так как выбранный тип пыльцы или опции были изменены."
+#                ),
+#                title="SILAM Pollen",
+#            )
 
     await hass.config_entries.async_reload(entry.entry_id)
 

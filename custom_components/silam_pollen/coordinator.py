@@ -88,7 +88,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         self._active_run_id = None
 
         # Извлекаем версию SILAM из BASE_URL
-        match = re.search(r"pollen_v(\d+_\d+)", self._base_url)
+        match = re.search(r"pollen_v(\d+_\d+(?:_\d+)?)", self._base_url)
         if match:
             self.silam_version = match.group(1)
         else:
