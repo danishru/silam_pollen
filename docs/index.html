@@ -94,9 +94,24 @@
       .legend-control .name {
         opacity: 0.95;
       }
+
+      /* info-window внутри легенды (мобильный режим) */
+      .legend-control .info-window.info-in-legend {
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+        transform: none !important;
+        background: transparent !important;
+        border: 0 !important;
+        padding: 4px 0 0 0 !important;
+        margin: 2px 0 0 0 !important;
+        font-size: 12px !important;
+        white-space: normal !important;
+      }
+
       /* На мобиле делаем легенду чуть компактнее */
       @media (max-width: 767px) {
-        .legend-control { padding: 6px 8px; right: 3.4em; }
+        .legend-control { padding: 6px 8px; top: 4.2em; left: .5em; right: auto; }
         .legend-control .title { margin-bottom: 4px; }
       }
 
@@ -254,7 +269,6 @@
               `).join('');
 
               el.innerHTML = `
-                <div class="title">Coverage</div>
                 ${rowsHtml}
               `;
 
@@ -271,6 +285,8 @@
                   const target = items.find((x) => x.id === id);
                   if (target && target.layer) {
                     target.layer.setVisible(cb.checked);
+
+              return el;
                   }
                 });
               });
@@ -296,11 +312,17 @@
             if (hiresVectorLayer) {
               legendItems.unshift({ id: 'hires', name: 'SILAM Finland (v6.1)', color: 'rgba(0,120,255,1)', layer: hiresVectorLayer });
             }
-            addCoverageLegend(map, legendItems);
+            const legendEl = addCoverageLegend(map, legendItems);
+
+            // На мобиле переносим блок координат внутрь легенды, чтобы ничего не перекрывалось
+            if (isMobile && legendEl) {
+              infoWindow.classList.add('info-in-legend');
+              legendEl.appendChild(infoWindow);
+            }
             // Элемент для отображения информации
             const infoWindow = document.getElementById('info-window');
             if (isMobile) {
-              infoWindow.classList.add('mobile-info');
+              // на мобиле info-window будет размещён внутри легенды
             }
             
             // Функция для обновления информации (координаты и легенда)
@@ -347,8 +369,10 @@
               map.on('pointermove', function(evt) {
                 const coord = ol.proj.toLonLat(evt.coordinate);
                 updateInfo(coord, evt.pixel);
-                infoWindow.style.left = (evt.pixel[0] + 15) + 'px';
-                infoWindow.style.top = (evt.pixel[1] + 15) + 'px';
+                if (!isMobile) {
+                  infoWindow.style.left = (evt.pixel[0] + 15) + 'px';
+                  infoWindow.style.top = (evt.pixel[1] + 15) + 'px';
+                }
               });
             }
             
