@@ -15,20 +15,23 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
 )
+
 from .const import (
     DOMAIN,
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_ALTITUDE,
-    BASE_URL_V5_9_1,
-    BASE_URL_V6_0,
+    BASE_URL_REGIONAL_V5_9_1,
+    BASE_URL_EUROPE_V6_0,
+    BASE_URL_EUROPE_V6_1,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """
     Конфигурационный мастер для интеграции SILAM Pollen с двумя шагами.
-    
+
     Шаг 1: Пользователь выбирает базовые параметры – зону наблюдения, типы пыльцы (опционально)
            и интервал обновления.
     Шаг 2: Отображаются координаты выбранной зоны и предлагается ввести (или исправить)
@@ -49,8 +52,10 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             zones = {"zone.home": "Home"}
         default_zone = "zone.home" if "zone.home" in zones else list(zones.keys())[0]
         default_altitude = getattr(self.hass.config, "elevation", DEFAULT_ALTITUDE)
+
         # Создаем список опций из словаря zones
         zone_options = [{"value": zone_id, "label": name} for zone_id, name in zones.items()]
+
         data_schema = vol.Schema({
             vol.Required("zone_id", default=default_zone): SelectSelector(
                 SelectSelectorConfig(
@@ -59,7 +64,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     mode="dropdown"
                 )
             ),
-            #vol.Required("altitude", default=default_altitude): vol.Coerce(float),
+            # vol.Required("altitude", default=default_altitude): vol.Coerce(float),
             vol.Optional("var", default=[]): SelectSelector(
                 SelectSelectorConfig(
                     options=[
@@ -89,6 +94,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
             ),  # Длительность прогноза в часах (36–120), по умолчанию 36
         })
+
         if user_input is None:
             return self.async_show_form(
                 step_id="user",
@@ -114,6 +120,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 default_longitude = self.hass.config.longitude
                 default_zone_name = "Home"
             base_data = self.context.get("base_data", {})
+
             # Если выбрана зона "zone.home", берем высоту из hass.config.elevation,
             # иначе используем DEFAULT_ALTITUDE из const.py.
             if zone_id == "zone.home":
@@ -144,6 +151,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         altitude_input = user_input.get("altitude")
         if altitude_input in (None, ""):
             altitude_input = getattr(self.hass.config, "elevation", DEFAULT_ALTITUDE)
+
         base_data = self.context.get("base_data", {})
         base_data["latitude"] = latitude
         base_data["longitude"] = longitude
@@ -151,10 +159,12 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         base_data["zone_name"] = user_input.get("zone_name")
         base_data["manual_coordinates"] = True
         base_data["title"] = "SILAM Pollen - {zone_name}".format(zone_name=base_data["zone_name"])
+
         # Сохранение параметров прогноза из первого шага
         base_data["legacy"] = self.context.get("base_data", {}).get("legacy", False)
         base_data["forecast"] = self.context.get("base_data", {}).get("forecast", False)
         base_data["forecast_duration"] = self.context.get("base_data", {}).get("forecast_duration", 36)
+
         # Добавляем уникальный идентификатор на основе координат.
         # (Можно использовать другую логику для генерации уникального идентификатора)
         unique_id = f"{latitude}_{longitude}"
@@ -180,19 +190,37 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors=errors,
                 description_placeholders={"altitude": "Altitude above sea level"}
             )
+
         # Сохраняем выбранный базовый URL в конфигурационных данных.
         base_data["base_url"] = chosen_url
+
+        # Сохраняем версию набора данных (нужна для дефолта в OptionsFlow)
+        if "silam_regional_pollen_v5_9_1" in chosen_url:
+            base_data["version"] = "v5_9_1"
+        elif "silam_europe_pollen_v6_1" in chosen_url:
+            base_data["version"] = "v6_1"
+        elif "silam_europe_pollen_v6_0" in chosen_url:
+            base_data["version"] = "v6_0"
+        else:
+            base_data["version"] = "unknown"
+
         return self.async_create_entry(title=base_data["title"], data=base_data)
 
     async def _test_api(self, latitude, longitude):
         """
         Вспомогательный метод для проверки доступности API с использованием введённых координат.
-        Сначала пытается запрос к BASE_URL_V5_9_1, если статус не равен 200 – обращается к BASE_URL_V6_0.
+
+        Порядок:
+        1) BASE_URL_REGIONAL_V5_9_1 (если покрывает координаты — приоритетнее)
+        2) BASE_URL_EUROPE_V6_1 (новый дефолт Europe)
+        3) BASE_URL_EUROPE_V6_0 (legacy fallback)
+
         Если один из базовых URL возвращает статус 200, метод возвращает True, None и выбранный URL.
         """
-        urls = [BASE_URL_V5_9_1, BASE_URL_V6_0]
+        urls = [BASE_URL_REGIONAL_V5_9_1, BASE_URL_EUROPE_V6_1, BASE_URL_EUROPE_V6_0]
         last_response = ""
         chosen_url = None
+
         for url in urls:
             test_url = url + f"?var=POLI&latitude={latitude}&longitude={longitude}&time=present&accept=xml"
             try:
@@ -209,6 +237,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except Exception as err:
                 last_response = str(err)
                 _LOGGER.debug("Exception when requesting %s: %s", url, str(err))
+
         return False, last_response, None
 
     @staticmethod
@@ -218,56 +247,63 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Возвращаем OptionsFlowHandler без передачи config_entry
         return OptionsFlowHandler()
 
+
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Обработчик Options Flow для интеграции SILAM Pollen."""
 
     async def async_step_init(self, user_input=None):
         """Первый и единственный шаг Options Flow."""
         if user_input is not None:
-            
+
             # Если пользователь выбрал forecast_daily, то автоматически устанавливаем forecast_hourly в True
             if user_input.get("forecast_daily"):
                 user_input["forecast_hourly"] = True
-                
+
             # Обновляем опции
             new_options = dict(self.config_entry.options)
             new_options.update(user_input)
-            
+
             # Обновляем данные: base_url хранится в data и используется координатором
             new_data = dict(self.config_entry.data)
             new_version = user_input.get("version")
             new_data["version"] = new_version
+
             if new_version == "v5_9_1":
-                new_data["base_url"] = BASE_URL_V5_9_1
+                new_data["base_url"] = BASE_URL_REGIONAL_V5_9_1
+            elif new_version == "v6_1":
+                new_data["base_url"] = BASE_URL_EUROPE_V6_1
             elif new_version == "v6_0":
-                new_data["base_url"] = BASE_URL_V6_0
+                new_data["base_url"] = BASE_URL_EUROPE_V6_0
             else:
                 new_data["base_url"] = "unknown"
-            
+
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data, options=new_options)
             await self.hass.config_entries.async_reload(self.config_entry.entry_id)
             return self.async_create_entry(title="", data=user_input)
 
         # Если user_input is None – показываем форму с предустановленным значением версии.
-        # Определяем значение автоматически по base_url из записи.
+        # Определяем значение автоматически по base_url из записи (для старых entry).
         base_url = self.config_entry.data.get("base_url", "")
-        if "silam_europe_pollen" in base_url:
+        if "silam_europe_pollen_v6_1" in base_url:
+            default_version = "v6_1"
+        elif "silam_europe_pollen_v6_0" in base_url:
             default_version = "v6_0"
         elif "silam_regional_pollen" in base_url:
             default_version = "v5_9_1"
         else:
             default_version = "unknown"
 
-        # Тестируем доступность BASE_URL_V5_9_1 с использованием координат из записи.
+        # Тестируем доступность BASE_URL_REGIONAL_V5_9_1 с использованием координат из записи.
         lat = self.config_entry.data.get("latitude")
         lon = self.config_entry.data.get("longitude")
         device_name = self.config_entry.title  # Имя устройства
+
         v5_9_1_available = False
         if lat is not None and lon is not None:
             try:
                 async with aiohttp.ClientSession() as session:
                     async with async_timeout.timeout(10):
-                        test_url = BASE_URL_V5_9_1 + f"?var=POLI&latitude={lat}&longitude={lon}&time=present&accept=xml"
+                        test_url = BASE_URL_REGIONAL_V5_9_1 + f"?var=POLI&latitude={lat}&longitude={lon}&time=present&accept=xml"
                         async with session.get(test_url) as response:
                             if response.status == 200:
                                 v5_9_1_available = True
@@ -281,17 +317,24 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     device_name, test_url, err
                 )
 
-        # Если тест v5_9_1 не прошёл, вариант выбора будет только v6_0.
+        # Варианты выбора датасетов:
+        # - Europe v6.1 (default)
+        # - Europe v6.0 (legacy)
+        # - Regional v5.9.1 (только если доступен по координатам)
         if v5_9_1_available:
             version_options = [
-                {"value": "v6_0", "label": "SILAM Europe (v6.0)"},
-                {"value": "v5_9_1", "label": "SILAM Regional (v5.9.1)"}
+                {"value": "v6_1", "label": "SILAM Europe (v6.1)"},
+                {"value": "v6_0", "label": "SILAM Europe (v6.0, legacy)"},
+                {"value": "v5_9_1", "label": "SILAM Regional (v5.9.1)"},
             ]
         else:
             version_options = [
-                {"value": "v6_0", "label": "SILAM Europe (v6.0)"}
+                {"value": "v6_1", "label": "SILAM Europe (v6.1)"},
+                {"value": "v6_0", "label": "SILAM Europe (v6.0, legacy)"},
             ]
-            default_version = "v6_0"
+            # Если ранее стоял regional или неизвестно что — по умолчанию для Europe ставим v6.1
+            if default_version in ("v5_9_1", "unknown"):
+                default_version = "v6_1"
 
         data_schema = vol.Schema({
             vol.Optional(
@@ -315,11 +358,17 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ),
             vol.Optional(
                 "update_interval",
-                default=self.config_entry.options.get("update_interval", self.config_entry.data.get("update_interval", DEFAULT_UPDATE_INTERVAL))
+                default=self.config_entry.options.get(
+                    "update_interval",
+                    self.config_entry.data.get("update_interval", DEFAULT_UPDATE_INTERVAL)
+                )
             ): vol.All(vol.Coerce(int), vol.Range(min=30)),
             vol.Optional(
                 "version",
-                default=self.config_entry.options.get("version", self.config_entry.data.get("version", default_version))
+                default=self.config_entry.options.get(
+                    "version",
+                    self.config_entry.data.get("version", default_version)
+                )
             ): SelectSelector(
                 SelectSelectorConfig(
                     options=version_options,
@@ -354,4 +403,5 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 )
             ): bool,
         })
+
         return self.async_show_form(step_id="init", data_schema=data_schema)

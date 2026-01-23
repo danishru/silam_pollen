@@ -34,7 +34,7 @@ from .const import (
     DOMAIN,
     RESPONSIBLE_MAPPING,
     INDEX_MAPPING,
-    URL_VAR_MAPPING,
+    resolve_silam_var_name,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -206,8 +206,9 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
             self._extra_attributes["date"] = now_entry.get("date")
 
             # 2 c) концентрации по выбранным аллергенам
+            base_url = getattr(self.coordinator, "_base_url", "") or ""
             for allergen in getattr(self.coordinator, "_var_list", []):
-                full_var = URL_VAR_MAPPING.get(allergen, allergen)
+                full_var = resolve_silam_var_name(allergen, base_url)
                 elem = data_now.get(full_var)
 
                 val = None

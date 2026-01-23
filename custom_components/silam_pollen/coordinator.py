@@ -26,7 +26,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from .const import URL_VAR_MAPPING, BASE_URL_V6_0  # Импортируем маппинг для преобразования переменных
+from .const import URL_VAR_MAPPING, resolve_silam_var_name  # Импортируем маппинг для преобразования переменных
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -282,7 +282,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         query_params = []
         if self._var_list:
             for allergen in self._var_list:
-                full_allergen = URL_VAR_MAPPING.get(allergen, allergen)
+                full_allergen = resolve_silam_var_name(allergen, self._base_url)
                 query_params.append(f"var={full_allergen}")
         query_params.append(f"latitude={latitude}")
         query_params.append(f"longitude={longitude}")
@@ -445,7 +445,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                                 if self._var_list:
                                     tail_main_params = []
                                     for allergen in self._var_list:
-                                        full_allergen = URL_VAR_MAPPING.get(allergen, allergen)
+                                        full_allergen = self._resolve_main_var_name(allergen)
                                         tail_main_params.append(f"var={full_allergen}")
 
                                     tail_main_params += [
@@ -475,6 +475,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                                         tail_index_xml,
                                         tail_main_xml,
                                         hass=self.hass,
+                                        base_url=self._base_url,
                                         forecast_enabled=True,
                                         selected_allergens=self._var_list,
                                         forecast_duration=self._forecast_duration,
@@ -559,6 +560,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                 data.get("index"),
                 data.get("main"),
                 hass=self.hass,
+                base_url=self._base_url,
                 forecast_enabled=self._forecast_enabled,
                 selected_allergens=self._var_list,
                 forecast_duration=self._forecast_duration,

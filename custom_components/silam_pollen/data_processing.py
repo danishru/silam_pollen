@@ -3,7 +3,7 @@ import statistics, math
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from math import ceil
-from .const import INDEX_MAPPING, URL_VAR_MAPPING
+from .const import INDEX_MAPPING, URL_VAR_MAPPING, resolve_silam_var_name
 
 # -------------------------------------------------------------------------
 # 0) ВСПОМОГАТЕЛЬНАЯ «СТУПЕНЧАТАЯ» ФУНКЦИЯ ПРОЦЕНТИЛЯ ----------------------
@@ -33,10 +33,12 @@ def merge_station_features(
     main_xml:  ET.Element | None = None,
     *,
     hass,
+    base_url:           str | None = None,
     forecast_enabled:   bool        = False,
     selected_allergens: list[str]   = None,
     forecast_duration:  int         = 36,
 ) -> dict:
+
     """
     Объединяет данные из XML-ответов для 'index' и 'main' по атрибуту date и формирует итоговый словарь.
     
@@ -226,7 +228,7 @@ def merge_station_features(
         allergens = {}
         if selected_allergens:
             for orig in selected_allergens:
-                real = URL_VAR_MAPPING.get(orig, orig)
+                real = resolve_silam_var_name(orig, base_url)
                 key  = f"pollen_{orig.split('_')[0].lower()}"
                 v    = entry["data"].get(real, {}).get("value")
                 allergens[key] = int(float(v)) if v not in (None, "") else None

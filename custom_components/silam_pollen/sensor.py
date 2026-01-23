@@ -31,6 +31,7 @@ from .const import (
     INDEX_MAPPING,
     RESPONSIBLE_MAPPING,
     URL_VAR_MAPPING,
+    resolve_silam_var_name,
 )
 from .coordinator import SilamCoordinator  # Импорт координатора интеграции
 from .diagnostics import (
@@ -170,8 +171,11 @@ class SilamPollenSensor(SensorEntity):
             coordinates = f"GPS - {self._manual_latitude}, {self._manual_longitude}"
 
         # Определяем используемый набор данных по base_url
-        base_url = self.coordinator._base_url
-        if "silam_europe_pollen" in base_url:
+        base_url = getattr(self.coordinator, "_base_url", "") or ""
+        if "silam_europe_pollen_v6_1" in base_url:
+            dataset = "Europe v6.1"
+            region_url = "europe"
+        elif "silam_europe_pollen_v6_0" in base_url:
             dataset = "Europe v6.0"
             region_url = "europe"
         elif "silam_regional_pollen" in base_url:
@@ -179,6 +183,7 @@ class SilamPollenSensor(SensorEntity):
             region_url = "regional"
         else:
             dataset = "unknown"
+            region_url = "europe"
             
         # Получаем версию SILAM из координатора
         sw_version = self.coordinator.silam_version.replace("_", ".")
@@ -303,7 +308,8 @@ class SilamPollenSensor(SensorEntity):
                     self._extra_attributes["index_tomorrow"] = condition_tomorrow
 
         elif self._sensor_type == "main":
-            full_var = URL_VAR_MAPPING.get(self._var, self._var)
+            base_url = getattr(self.coordinator, "_base_url", "") or ""
+            full_var = resolve_silam_var_name(self._var, base_url)
             data_element = entry["data"].get(full_var)
             state_value = None
             main_data = {}
