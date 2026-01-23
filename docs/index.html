@@ -53,6 +53,57 @@
           display: none;
         }
       }
+    
+      /* --- Legend + layer toggles (top-right) --- */
+      /* Move default zoom control to the top-right so the legend can sit рядом */
+      .ol-zoom {
+        right: auto !important;
+        left: .5em !important;
+        top: .5em !important;
+      }
+      .legend-control {
+        top: .5em;
+        left: 3.6em; /* чуть правее zoom */
+        right: auto;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(0,0,0,0.25);
+        border-radius: 6px;
+        padding: 8px 10px;
+        font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        color: #111;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      }
+      .legend-control .title {
+        font-weight: 600;
+        margin-bottom: 6px;
+        opacity: 0.9;
+      }
+      .legend-control .row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 4px 0;
+        white-space: nowrap;
+      }
+      .legend-control input[type="checkbox"] {
+        margin: 0;
+      }
+      .legend-swatch {
+        width: 12px;
+        height: 12px;
+        border: 1px solid rgba(0,0,0,.6);
+        border-radius: 2px;
+        flex: 0 0 auto;
+      }
+      .legend-control .name {
+        opacity: 0.95;
+      }
+      /* На мобиле делаем легенду чуть компактнее */
+      @media (max-width: 767px) {
+        .legend-control { padding: 6px 8px; right: 3.4em; }
+        .legend-control .title { margin-bottom: 4px; }
+      }
+
     </style>
   </head>
   <body>
@@ -189,6 +240,47 @@
               layersArr.push(hiresVectorLayer);
             }
             
+
+            // -----------------------------------------------------------------
+            // Legend + layer toggles (top-right)
+            // -----------------------------------------------------------------
+            function addCoverageLegend(map, items) {
+              const el = document.createElement('div');
+              el.className = 'ol-unselectable ol-control legend-control';
+
+              const rowsHtml = items.map((it) => `
+                <div class="row">
+                  <label>
+                    <input type="checkbox" data-layer-id="${it.id}" checked />
+                    <span class="legend-swatch" style="background:${it.color};"></span>
+                    <span class="name">${it.name}</span>
+                  </label>
+                </div>
+              `).join('');
+
+              el.innerHTML = `
+                <div class="title">Coverage</div>
+                ${rowsHtml}
+              `;
+
+              // чтобы клики по чекбоксам не тащили карту
+              el.addEventListener('mousedown', (e) => e.stopPropagation());
+              el.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+
+              const control = new ol.control.Control({ element: el });
+              map.addControl(control);
+
+              el.querySelectorAll('input[type="checkbox"][data-layer-id]').forEach((cb) => {
+                cb.addEventListener('change', () => {
+                  const id = cb.getAttribute('data-layer-id');
+                  const target = items.find((x) => x.id === id);
+                  if (target && target.layer) {
+                    target.layer.setVisible(cb.checked);
+                  }
+                });
+              });
+            }
+
             // Создаем карту с базовым и векторными слоями
             const map = new ol.Map({
               target: 'map',
@@ -199,6 +291,17 @@
               })
             });
             
+
+
+            // Добавляем легенду/переключатели слоёв (справа сверху)
+            const legendItems = [
+              { id: 'europe',   name: 'SILAM Europe (v6.1/v6.0)',     color: 'rgba(255,200,0,1)', layer: vectorLayer },
+              { id: 'regional', name: 'SILAM Northern Europe (v5.9.1)', color: 'rgba(0,255,0,1)',   layer: regionalVectorLayer },
+            ];
+            if (hiresVectorLayer) {
+              legendItems.unshift({ id: 'hires', name: 'SILAM Finland (v6.1)', color: 'rgba(0,120,255,1)', layer: hiresVectorLayer });
+            }
+            addCoverageLegend(map, legendItems);
             // Элемент для отображения информации
             const infoWindow = document.getElementById('info-window');
             if (isMobile) {
@@ -211,15 +314,15 @@
               let squareColor = '';
               map.forEachFeatureAtPixel(pixel, function(feature, layer) {
                 if (hiresVectorLayer && layer === hiresVectorLayer) {
-                  layerDesc = 'SILAM Hires (v6.1)';
+                  layerDesc = 'SILAM Finland (v6.1)';
                   squareColor = 'rgba(0,120,255,1)';
                   return true;
                 } else if (layer === regionalVectorLayer) {
-                  layerDesc = 'SILAM Regional (v5.9.1)';
+                  layerDesc = 'SILAM Northern Europe (v5.9.1)';
                   squareColor = 'rgba(0,255,0,1)';
                   return true;
                 } else if (layer === vectorLayer) {
-                  layerDesc = 'SILAM Europe (v6.0)';
+                  layerDesc = 'SILAM Europe (v6.1/v6.0)';
                   squareColor = 'rgba(255,200,0,1)';
                   return true;
                 }
