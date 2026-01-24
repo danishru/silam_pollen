@@ -59,6 +59,10 @@ These changes are especially important ahead of the pollen season, ensuring time
 
 [![More in release v0.3.1](https://img.shields.io/badge/More--in--release-v0.3.1-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.3.1)
 
+## Previous updates
+<details>
+<summary>Show</summary>
+
 ### v0.3.0 🚀 One glance — the full picture of weather and pollen.
 v0.3.0 delivers a cohesive experience: one card brings together weather and pollen with a familiar look, fast response, and clear presentation. The integration now ships **with the dashboard card included**: a local JS module is bundled — no CDN or external dependencies (you only need to add it once under “Resources”). The Basic panel preserves the simplicity of the stock Weather card, while the Extended panel unfolds all forecast and allergen layers — tidy, informative, and straight to the point.
 
@@ -116,10 +120,6 @@ v0.3.0 delivers a cohesive experience: one card brings together weather and poll
 > If you relied on the previous index or legacy allergen aggregation, review and adjust thresholds in your automations and scripts.
 
 [![More in release v0.3.0](https://img.shields.io/badge/More--in--release-v0.3.0-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.3.0)
-
-## Previous updates
-<details>
-<summary>Show</summary>
 
 ### v0.2.7 🚀 Major update of the "Pollen Forecast BETA" sensor!
 After its beta period, the forecast sensor is heading for a stable release—bringing more accuracy, data and possibilities for your dashboards.
