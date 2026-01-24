@@ -636,34 +636,46 @@ Its attribute **`forecast_duration`** reveals the *requested* forecast length in
 
 ## Dashboard Card
 
-Great news for dashboard enthusiasts — you can now display the pollen forecast with a beautiful card!  
-The [pollenprognos-card](https://github.com/krissen/pollenprognos-card) has supported **SILAM Pollen** integration since [v2.3.0](https://github.com/krissen/pollenprognos-card/releases/tag/v2.3.0), and in [v2.3.3](https://github.com/krissen/pollenprognos-card/releases/tag/v2.3.3) it added:
+### Built-in card (recommended)
 
-- hourly and twice-a-day forecasts;  
-- localization in multiple languages;  
-- other useful enhancements.  
+Starting from **v0.3.0**, **SILAM Pollen** includes a built-in Lovelace card —  
+**Absolute Forecast Card** (local build), developed as part of the project.
 
-Starting with [v2.4.1](https://github.com/krissen/pollenprognos-card/releases/tag/v2.4.1):
+The card provides a compact, at-a-glance view of **weather and pollen** in a single dashboard element.
 
-- added **daily-forecast support** (via `weather.get_forecasts`) — up to 5 days ahead.
+![image](https://github.com/user-attachments/assets/15a81dae-7c99-4418-9525-08411045bd56)
+
+**Key features:**
+- Dedicated **allergen layer** with SILAM pollen concentrations (core feature)
+- Individual forecast lines for each allergen with **peak highlighting** and **trend indicators**
+- Integrated **pollen + full weather forecast** in a single, unified timeline
+- Multiple forecast display modes (**Standard / Focus / Minimal**) with configurable layouts
+- Fully interactive: tap / hold / double actions on forecast elements
+- Local, self-contained card — **no CDN**, works fully offline
 
 > [!IMPORTANT]  
-> **Version compatibility:**  
-> pollenprognos-card **≥ v2.4.1** requires silam_pollen **≥ v0.2.7** (older card versions work with silam_pollen ≥ v0.2.5).
+> To use the built-in card, add the JavaScript module manually:
+> 
+> [![Open your Home Assistant instance and show your dashboard resources.](https://my.home-assistant.io/badges/lovelace_resources.svg)](https://my.home-assistant.io/redirect/lovelace_resources/)  
+> **Settings → Dashboards → Resources → Add** → URL: `/local/absolute-forecast-card.js` → **Resource type: JavaScript Module**.
 
-Huge thanks to [@krissen](https://github.com/krissen) for this work!
+➡️ Detailed overview, screenshots, and change log:  
+**SILAM Pollen v0.3.0 Release Notes**  
+https://github.com/danishru/silam_pollen/releases/tag/v0.3.0
 
-The card is available in the **default HACS repository**.  
+### Third-party card (optional)
+
+SILAM Pollen entities can also be used with community dashboard cards.
+
+One such option is **pollenprognos-card**, which supports SILAM Pollen entities and is available via **HACS**.
+
+- Repository: https://github.com/krissen/pollenprognos-card
+
 To install, click **Download** in the card’s menu:
 
 [![HACS Repository Badge](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=krissen&repository=pollenprognos-card)
 
-### See it in action:
-
-![pollenprognos-card preview](https://github.com/user-attachments/assets/0bfb5c3e-7e85-474e-9aa6-fe8282a23520)
-
-For more information and documentation, visit the repository. If you enjoy the card, don’t forget to give it a ⭐ and open an issue for bugs or feature requests:  
-https://github.com/krissen/pollenprognos-card  
+Huge thanks to [@krissen](https://github.com/krissen) for supporting SILAM Pollen!
 
 ## Additional Resources
 
