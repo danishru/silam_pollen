@@ -151,6 +151,37 @@ async def async_setup_entry(hass, entry):
     )
     base_url = entry.data["base_url"]
 
+    # ---------------------------------------------------------------------
+    # Политика выбора датасета (SMART vs фиксированный)
+    # - SMART: координатор (сейчас/в будущем) сможет пере-выбирать лучший датасет
+    #   и затем (позже) догружать недостающие данные из других наборов.
+    # - Фиксированный: использовать только выбранный датасет, без попыток альтернатив.
+    # ---------------------------------------------------------------------
+    dataset_selection = entry.options.get("version", entry.data.get("version", "smart"))
+
+    # Кандидаты для SMART (в порядке приоритета).
+    # Важно: не добавляем устаревшие BASE_URL_V5_9_1 / BASE_URL_V6_0 — они будут удалены.
+    candidates: list[str] = []
+    try:
+        from . import const as _const  # локальный импорт, чтобы не плодить циклы
+        for _name in (
+            "BASE_URL_HIRES_V6_1",
+            "BASE_URL_REGIONAL_V5_9_1",
+            "BASE_URL_EUROPE_V6_1",
+            "BASE_URL_EUROPE_V6_0",
+        ):
+            _v = getattr(_const, _name, None)
+            if isinstance(_v, str) and _v and _v not in candidates:
+                candidates.append(_v)
+    except Exception:
+        # Если по какой-то причине не смогли собрать кандидатов — не падаем,
+        # координатор хотя бы получит текущий base_url ниже.
+        pass
+
+    # Гарантируем, что текущий base_url есть в списке (на случай кастомных/будущих URL).
+    if isinstance(base_url, str) and base_url and base_url not in candidates:
+        candidates.insert(0, base_url)
+
     # Создаём координатор
     coordinator = SilamCoordinator(
         hass,
@@ -162,6 +193,8 @@ async def async_setup_entry(hass, entry):
         desired_altitude,
         update_interval,
         base_url,
+        dataset_selection=dataset_selection,
+        smart_candidates=candidates,
         forecast=forecast_enabled,
         forecast_duration=forecast_duration,
     )
@@ -219,16 +252,18 @@ async def update_listener(hass, entry):
         ):
             registry.async_remove(entity.entity_id)
 
-#            persistent_notification_async_create(
-#                hass,
-#                (
-#                    f"Сущность {entity.entity_id} удалена, "
-#                    "так как выбранный тип пыльцы или опции были изменены."
-#                ),
-#                title="SILAM Pollen",
-#            )
+            # NOTE: у тебя этот блок был закомментирован — оставляю так же.
+            # persistent_notification_async_create(
+            #     hass,
+            #     (
+            #         f"Сущность {entity.entity_id} удалена, "
+            #         "так как выбранный тип пыльцы или опции были изменены."
+            #     ),
+            #     title="SILAM Pollen",
+            # )
 
     await hass.config_entries.async_reload(entry.entry_id)
+
 
 async def async_get_options_flow(config_entry):
     """Вернуть обработчик Options Flow."""

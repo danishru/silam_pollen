@@ -50,6 +50,9 @@ class SilamCoordinator(DataUpdateCoordinator):
         base_url,
         forecast=False,
         forecast_duration: int = 36,
+        *,
+        dataset_selection="smart",
+        smart_candidates=None,
     ):
         """
         Инициализирует координатор.
@@ -65,6 +68,8 @@ class SilamCoordinator(DataUpdateCoordinator):
         :param base_url: базовый URL для запросов.
         :param forecast: включает режим прогноза (определяет длительность запроса).
         :param forecast_duration: длительность прогноза в часах (от 36 до 120).
+        :param dataset_selection: политика выбора датасета ('smart' или фиксированный режим).
+        :param smart_candidates: список кандидатов base_url для SMART (в порядке приоритета).
         """
         self._base_device_name = base_device_name
         self._log_prefix = f"[{base_device_name}]"
@@ -74,6 +79,23 @@ class SilamCoordinator(DataUpdateCoordinator):
         self._manual_longitude = manual_longitude
         self._desired_altitude = desired_altitude
         self._base_url = base_url
+
+        # ---------------------------------------------------------------------
+        # Политика выбора датасета (SMART vs фиксированный)
+        # - SMART: координатор при старте может выбрать "лучший" датасет из списка кандидатов.
+        # - Фиксированный: используем только текущий base_url, без попыток альтернатив.
+        #
+        # Сейчас реализуем только выбор "лучшего" датасета при старте/первом обновлении.
+        # Догрузку недостающих данных из других наборов добавим позже отдельным шагом.
+        # ---------------------------------------------------------------------
+        self._dataset_selection = (dataset_selection or "smart").lower()
+        self._smart_candidates = list(smart_candidates or [])
+        if self._base_url and self._base_url not in self._smart_candidates:
+            self._smart_candidates.insert(0, self._base_url)
+
+        # Чтобы SMART-выбор выполнялся один раз на жизненный цикл координатора
+        self._smart_probe_done = False
+
         self._forecast_enabled = forecast
         self._forecast_duration = forecast_duration
 
@@ -162,6 +184,76 @@ class SilamCoordinator(DataUpdateCoordinator):
         except Exception as err:
             _LOGGER.debug("%s Не удалось получить/распарсить runs catalog (%s): %s", self._log_prefix, self._runs_catalog_url, err)
             return None, None, None
+
+    # ---------------------------------------------------------------------
+    # SMART-выбор датасета (Шаг 3 — основа под будущие улучшения)
+    # ---------------------------------------------------------------------
+
+    def _set_base_url(self, new_base_url: str) -> None:
+        """Аккуратно переключает координатор на другой base_url.
+
+        Важно: при смене датасета сбрасываем run_id и кеш merged_data, чтобы не смешивать источники.
+        """
+        if not new_base_url or new_base_url == self._base_url:
+            return
+
+        old = self._base_url
+        self._base_url = new_base_url
+
+        # Пересчитываем runs catalog URL и SILAM-версию, так как они зависят от base_url
+        self._runs_catalog_url = self._derive_runs_catalog_url()
+
+        match = re.search(r"pollen_v(\d+_\d+(?:_\d+)?)", self._base_url)
+        self.silam_version = match.group(1) if match else "unknown"
+
+        # Сбрасываем привязку к активному run_id и кеш, чтобы шаг 2 не использовал старые данные
+        self._active_run_id = None
+        self.merged_data = {}
+
+        _LOGGER.info("%s SMART: base_url switched: %s -> %s", self._log_prefix, old, new_base_url)
+
+    async def _smart_probe_best_base_url(self, session, latitude, longitude) -> str | None:
+        """Проверяет кандидатов и возвращает первый доступный base_url (HTTP 200)."""
+        candidates = self._smart_candidates or [self._base_url]
+        for url in candidates:
+            if not url:
+                continue
+
+            # Лёгкий тест-доступности через минимальный запрос NCSS (без прогноза)
+            test_url = (
+                f"{url}?var=POLI&latitude={latitude}&longitude={longitude}"
+                f"&time_start=present&time_duration=PT0H&accept=xml"
+            )
+            try:
+                async with async_timeout.timeout(10):
+                    async with session.get(test_url) as resp:
+                        if resp.status == 200:
+                            return url
+            except Exception as err:
+                _LOGGER.debug("%s SMART probe failed for %s: %s", self._log_prefix, url, err)
+
+        return None
+
+    async def _apply_smart_selection_if_needed(self, session, latitude, longitude) -> None:
+        """Применяет политику SMART: выбирает лучший датасет один раз на старте."""
+        if self._dataset_selection != "smart":
+            return
+        if self._smart_probe_done:
+            return
+
+        self._smart_probe_done = True
+
+        chosen = await self._smart_probe_best_base_url(session, latitude, longitude)
+        if chosen and chosen != self._base_url:
+            self._set_base_url(chosen)
+
+        # Пишем минимальную диагностическую инфу (дальше можно вывести в diagnostics сенсор)
+        try:
+            if isinstance(self.merged_data, dict):
+                self.merged_data["dataset_selection"] = "smart"
+                self.merged_data["effective_base_url"] = self._base_url
+        except Exception:
+            pass
 
     # ---------------------------------------------------------------------
     # Шаг 2: вспомогательные функции для «инкрементального» режима
@@ -325,11 +417,14 @@ class SilamCoordinator(DataUpdateCoordinator):
             longitude = zone.attributes.get("longitude")
 
         index_url = self._build_index_url(latitude, longitude)
-        
+
         data = {}
 
         try:
             async with aiohttp.ClientSession() as session:
+                # --- Шаг 3: SMART-выбор датасета (один раз на старте/первом обновлении) ---
+                await self._apply_smart_selection_if_needed(session, latitude, longitude)
+
                 # --- runs catalog (диагностика свежести) ---
                 _LOGGER.debug("%s Шаг 1: проверка свежести (runs catalog): %s", self._log_prefix, self._runs_catalog_url)
                 run_id, run_start, run_end = await self._fetch_latest_run_info(session)
@@ -434,7 +529,6 @@ class SilamCoordinator(DataUpdateCoordinator):
                                             tail_index_text = await resp.text()
                                         tail_index_xml = ET.fromstring(tail_index_text)
                                         tail_fetch_success = True
-
 
                                 if tail_fetch_attempted and tail_fetch_success is None:
                                     # Запрос хвоста был, но HTTP!=200 или парсинг не удался

@@ -246,7 +246,7 @@
         "data": {
           "update_interval": "Update Interval (minutes, minimum 30)",
           "var": "Pollen type",
-          "version": "Dataset",
+          "version": "Dataset (current: {effective_dataset})",
           "forecast": "Enable pollen forecast?",
           "legacy": "Enable legacy index sensor (deprecated)",
           "forecast_duration": "Desired forecast duration (36–120 h; default 36)"

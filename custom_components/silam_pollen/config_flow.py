@@ -84,7 +84,6 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             vol.Required("update_interval", default=DEFAULT_UPDATE_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=30)),
             vol.Optional("forecast", default=False): bool,
-            vol.Optional("legacy", default=False): bool,
             vol.Optional("forecast_duration", default=36): NumberSelector(
                 NumberSelectorConfig(
                     min=36,
@@ -162,7 +161,6 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         base_data["title"] = "SILAM Pollen - {zone_name}".format(zone_name=base_data["zone_name"])
 
         # Сохранение параметров прогноза из первого шага
-        base_data["legacy"] = self.context.get("base_data", {}).get("legacy", False)
         base_data["forecast"] = self.context.get("base_data", {}).get("forecast", False)
         base_data["forecast_duration"] = self.context.get("base_data", {}).get("forecast_duration", 36)
 
@@ -195,17 +193,14 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Сохраняем выбранный базовый URL в конфигурационных данных.
         base_data["base_url"] = chosen_url
 
-        # Сохраняем версию набора данных (нужна для дефолта в OptionsFlow)
-        if "silam_hires_pollen_v6_1" in chosen_url:               # NEW: Finland
-            base_data["version"] = "v6_1_fi"
-        elif "silam_regional_pollen_v5_9_1" in chosen_url:
-            base_data["version"] = "v5_9_1"
-        elif "silam_europe_pollen_v6_1" in chosen_url:
-            base_data["version"] = "v6_1"
-        elif "silam_europe_pollen_v6_0" in chosen_url:
-            base_data["version"] = "v6_0"
-        else:
-            base_data["version"] = "unknown"
+        # Политика выбора набора данных:
+        # По умолчанию для новых записей используем SMART — далее интеграция сможет
+        # пере-выбирать лучший набор данных при обновлениях и (в будущем) догружать
+        # недостающие данные из других наборов.
+        #
+        # При этом base_url мы сохраняем уже сейчас (chosen_url), чтобы сервис начал
+        # работать сразу после создания записи.
+        base_data["version"] = "smart"
 
         return self.async_create_entry(title=base_data["title"], data=base_data)
 
@@ -255,6 +250,47 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Обработчик Options Flow для интеграции SILAM Pollen."""
 
+    # ---------------------------------------------------------------------
+    # Минимальные helpers для SMART + UI (без изменений остальной логики)
+    # ---------------------------------------------------------------------
+    @staticmethod
+    def _effective_dataset_label(base_url: str | None) -> str:
+        """Человекочитаемое имя датасета по текущему base_url (для UI/описаний)."""
+        if not base_url:
+            return "unknown"
+        if "silam_hires_pollen_v6_1" in base_url:
+            return "SILAM Finland (v6.1)"
+        if "silam_regional_pollen_v5_9_1" in base_url:
+            return "SILAM Northern Europe (v5.9.1)"
+        if "silam_europe_pollen_v6_1" in base_url:
+            return "SILAM Europe (v6.1)"
+        if "silam_europe_pollen_v6_0" in base_url:
+            return "SILAM Europe (v6.0, legacy)"
+        return "unknown"
+
+    async def _probe_best_base_url(self, latitude, longitude) -> str | None:
+        """
+        Подбор лучшего base_url по координатам (тот же порядок, что в _test_api).
+        Возвращает URL или None.
+        """
+        if latitude is None or longitude is None:
+            return None
+
+        urls = [BASE_URL_HIRES_V6_1, BASE_URL_REGIONAL_V5_9_1, BASE_URL_EUROPE_V6_1, BASE_URL_EUROPE_V6_0]
+
+        async with aiohttp.ClientSession() as session:
+            for url in urls:
+                test_url = url + f"?var=POLI&latitude={latitude}&longitude={longitude}&time=present&accept=xml"
+                try:
+                    async with async_timeout.timeout(10):
+                        async with session.get(test_url) as response:
+                            if response.status == 200:
+                                return url
+                except Exception as err:
+                    _LOGGER.debug("SMART probe exception when requesting %s: %s", url, str(err))
+
+        return None
+
     async def async_step_init(self, user_input=None):
         """Первый и единственный шаг Options Flow."""
         if user_input is not None:
@@ -272,7 +308,17 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             new_version = user_input.get("version")
             new_data["version"] = new_version
 
-            if new_version == "v6_1_fi":                           # NEW: Finland (v6.1)
+            if new_version == "smart":
+                # SMART: выбираем лучший доступный набор по координатам (тот же приоритет, что при создании записи).
+                lat = new_data.get("latitude")
+                lon = new_data.get("longitude")
+                chosen_url = await self._probe_best_base_url(lat, lon)
+                # Если координаты отсутствуют или probe не дал результата — не ломаем запись:
+                # оставляем текущий base_url как есть.
+                if chosen_url:
+                    new_data["base_url"] = chosen_url
+
+            elif new_version == "v6_1_fi":                           # NEW: Finland (v6.1)
                 new_data["base_url"] = BASE_URL_HIRES_V6_1
             elif new_version == "v5_9_1":
                 new_data["base_url"] = BASE_URL_REGIONAL_V5_9_1
@@ -281,25 +327,32 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             elif new_version == "v6_0":
                 new_data["base_url"] = BASE_URL_EUROPE_V6_0
             else:
-                new_data["base_url"] = "unknown"
+                # Не меняем base_url при неизвестном значении version, чтобы не ломать запись.
+                _LOGGER.debug("Unknown dataset version in options: %s", new_version)
 
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data, options=new_options)
             await self.hass.config_entries.async_reload(self.config_entry.entry_id)
             return self.async_create_entry(title="", data=user_input)
 
         # Если user_input is None – показываем форму с предустановленным значением версии.
-        # Определяем значение автоматически по base_url из записи (для старых entry).
+        # Сначала пытаемся взять сохранённую политику (options/data), иначе — определяем по base_url.
         base_url = self.config_entry.data.get("base_url", "")
-        if "silam_hires_pollen_v6_1" in base_url:                  # NEW: Finland
-            default_version = "v6_1_fi"
-        elif "silam_europe_pollen_v6_1" in base_url:
-            default_version = "v6_1"
-        elif "silam_europe_pollen_v6_0" in base_url:
-            default_version = "v6_0"
-        elif "silam_regional_pollen" in base_url:
-            default_version = "v5_9_1"
+
+        stored_version = self.config_entry.options.get("version", self.config_entry.data.get("version"))
+        if stored_version in ("smart", "v6_1_fi", "v5_9_1", "v6_1", "v6_0"):
+            default_version = stored_version
         else:
-            default_version = "unknown"
+            # Определяем значение автоматически по base_url из записи (для старых entry).
+            if "silam_hires_pollen_v6_1" in base_url:                  # NEW: Finland
+                default_version = "v6_1_fi"
+            elif "silam_europe_pollen_v6_1" in base_url:
+                default_version = "v6_1"
+            elif "silam_europe_pollen_v6_0" in base_url:
+                default_version = "v6_0"
+            elif "silam_regional_pollen" in base_url:
+                default_version = "v5_9_1"
+            else:
+                default_version = "unknown"
 
         # Тестируем доступность BASE_URL_REGIONAL_V5_9_1 с использованием координат из записи.
         lat = self.config_entry.data.get("latitude")
@@ -382,6 +435,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             if default_version in ("v5_9_1", "unknown", "v6_1_fi"):
                 default_version = "v6_1"
 
+        # SMART доступен всегда — это политика "интеллектуального выбора" набора данных.
+        version_options.insert(0, {"value": "smart", "label": "Smart selection (recommended)"})
+
         data_schema = vol.Schema({
             vol.Optional(
                 "var",
@@ -445,9 +501,16 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 "legacy",
                 default=self.config_entry.options.get(
                     "legacy",
-                    self.config_entry.data.get("legacy", True)
+                    self.config_entry.data.get("legacy", False)
                 )
             ): bool,
         })
 
-        return self.async_show_form(step_id="init", data_schema=data_schema)
+        # Для описания в OptionsFlow: показываем текущий "эффективный" датасет (по base_url).
+        effective_dataset = self._effective_dataset_label(base_url)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=data_schema,
+            description_placeholders={"effective_dataset": effective_dataset},
+        )
