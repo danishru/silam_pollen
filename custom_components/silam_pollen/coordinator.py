@@ -256,7 +256,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         # Пишем минимальную диагностическую инфу (дальше можно вывести в diagnostics сенсор)
         try:
             if isinstance(self.merged_data, dict):
-                self.merged_data["dataset_selection"] = "smart"
+                self.merged_data["dataset_selection"] = self._dataset_selection
                 self.merged_data["effective_base_url"] = self._base_url
         except Exception:
             pass
@@ -679,6 +679,10 @@ class SilamCoordinator(DataUpdateCoordinator):
             merged["request_type"] = request_type
             merged["tail_fetch_attempted"] = tail_fetch_attempted
             merged["tail_fetch_success"] = tail_fetch_success
+
+            # --- Runtime effective dataset info (для OptionsFlow/diagnostics) ---
+            merged["dataset_selection"] = self._dataset_selection
+            merged["effective_base_url"] = self._base_url
 
             _LOGGER.debug(
                 "%s Сформированные объединённые данные (fetch duration: %.3fs): %s",

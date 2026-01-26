@@ -28,31 +28,40 @@ async def async_migrate_entry(hass, config_entry):
       - Для отображения в UI мы обновляем И data, И options (Options Flow берёт приоритет из options).
     """
 
+    new_data = dict(config_entry.data)
+    new_options = dict(config_entry.options)
+
+    # Префикс логов как в координаторе: [<имя службы>]
+    # Пытаемся извлечь "человеческое" имя; fallback — title/entry_id.
+    base_device_name = (
+        new_data.get("base_device_name")
+        or new_data.get("name")
+        or getattr(config_entry, "title", None)
+        or config_entry.entry_id
+    )
+    log_prefix = f"[{base_device_name}]"
+
     _LOGGER.debug(
-        "Starting migration for entry %s: version %s, minor_version %s",
+        "%s Starting migration for entry %s: version %s, minor_version %s",
+        log_prefix,
         config_entry.entry_id,
         config_entry.version,
         config_entry.minor_version,
     )
 
-    new_data = dict(config_entry.data)
-    new_options = dict(config_entry.options)
-
     # Текущий minor записи (что уже было применено ранее)
     current_minor = int(config_entry.minor_version or 0)
 
-    # Базовый расчёт целевого minor_version
-    new_minor_version = current_minor
-    if config_entry.version == 1 and new_minor_version < 2:
-        # Старый формат → фиксируем предыдущую миграцию как минимум 2
-        new_minor_version = 2
+    # Чистая модель миграции: за один шаг приводим запись к version=3 / minor_version=4.
+    target_version = 3
+    target_minor_version = 4
 
     # ---------------------------------------------------------------------
     # ВАЖНО: "принудительные фиксы" (SMART + legacy=False) делаем ТОЛЬКО ОДИН РАЗ
     # при переходе на minor_version=4 (то есть если current_minor < 4).
     # Если уже >=4 — НЕ трогаем выбор пользователя и не перетираем настройки.
     # ---------------------------------------------------------------------
-    do_force_defaults_v4 = current_minor < 4
+    do_force_defaults_v4 = current_minor < target_minor_version
 
     # ---------------------------------------------------------------------
     # Достаём актуальные URL-кандидаты из const.py (без жёстких импортов).
@@ -98,22 +107,22 @@ async def async_migrate_entry(hass, config_entry):
                                 _ = await response.text()
                                 if response.status == 200:
                                     chosen_url = url
-                                    _LOGGER.debug("URL %s passed probe (HTTP 200)", url)
+                                    _LOGGER.debug("%s URL %s passed probe (HTTP 200)", log_prefix, url)
                                     break
-                                _LOGGER.debug("URL %s returned HTTP %s", url, response.status)
+                                _LOGGER.debug("%s URL %s returned HTTP %s", log_prefix, url, response.status)
                     except Exception as err:
-                        _LOGGER.debug("Error probing URL %s: %s", url, err)
+                        _LOGGER.debug("%s Error probing URL %s: %s", log_prefix, url, err)
         else:
-            _LOGGER.debug("Coordinates missing or no URL candidates available; skipping URL probing.")
+            _LOGGER.debug("%s Coordinates missing or no URL candidates available; skipping URL probing.", log_prefix)
 
         # Fallback: если ничего не выбрали — берём первый кандидат (если есть)
         if chosen_url is None and url_candidates:
             chosen_url = url_candidates[0]
-            _LOGGER.debug("No URL responded with HTTP 200; falling back to %s", chosen_url)
+            _LOGGER.debug("%s No URL responded with HTTP 200; falling back to %s", log_prefix, chosen_url)
 
         if chosen_url:
             new_data["base_url"] = chosen_url
-            _LOGGER.debug("Selected base URL: %s", chosen_url)
+            _LOGGER.debug("%s Selected base URL: %s", log_prefix, chosen_url)
 
     # 2) forecast — по умолчанию False, если отсутствует
     if "forecast" not in new_data:
@@ -126,7 +135,7 @@ async def async_migrate_entry(hass, config_entry):
         if latitude is not None and longitude is not None:
             unique_id = f"{latitude}_{longitude}"
             new_data["unique_id"] = unique_id
-            _LOGGER.debug("Set unique_id: %s", unique_id)
+            _LOGGER.debug("%s Set unique_id: %s", log_prefix, unique_id)
 
     # ---------------------------------------------------------------------
     # ОДНОРАЗОВОЕ ПРИНУДИТЕЛЬНОЕ ИЗМЕНЕНИЕ (только при current_minor < 4)
@@ -136,19 +145,19 @@ async def async_migrate_entry(hass, config_entry):
         prev_v_opt = new_options.get("version")
         if prev_v_data != "smart":
             new_data["version"] = "smart"
-            _LOGGER.debug("Forced data version='smart' (was %s).", prev_v_data)
+            _LOGGER.debug("%s Forced data version='smart' (was %s).", log_prefix, prev_v_data)
         if prev_v_opt != "smart":
             new_options["version"] = "smart"
-            _LOGGER.debug("Forced options version='smart' (was %s).", prev_v_opt)
+            _LOGGER.debug("%s Forced options version='smart' (was %s).", log_prefix, prev_v_opt)
 
         prev_l_data = new_data.get("legacy")
         prev_l_opt = new_options.get("legacy")
         if prev_l_data is not False:
             new_data["legacy"] = False
-            _LOGGER.debug("Forced data legacy=False (was %s).", prev_l_data)
+            _LOGGER.debug("%s Forced data legacy=False (was %s).", log_prefix, prev_l_data)
         if prev_l_opt is not False:
             new_options["legacy"] = False
-            _LOGGER.debug("Forced options legacy=False (was %s).", prev_l_opt)
+            _LOGGER.debug("%s Forced options legacy=False (was %s).", log_prefix, prev_l_opt)
 
     # ---------------------------------------------------------------------
     # НОВОЕ: автоматически удаляем устаревший сенсор index из entity registry
@@ -163,18 +172,18 @@ async def async_migrate_entry(hass, config_entry):
                 continue
             if ent.unique_id == legacy_index_unique_id:
                 _LOGGER.debug(
-                    "Removing deprecated legacy index entity: %s (unique_id=%s)",
+                    "%s Removing deprecated legacy index entity: %s (unique_id=%s)",
+                    log_prefix,
                     ent.entity_id,
                     ent.unique_id,
                 )
                 registry.async_remove(ent.entity_id)
     except Exception as err:
         # Миграция не должна падать из-за удаления сущности
-        _LOGGER.debug("Failed to remove deprecated legacy index entity: %s", err)
+        _LOGGER.debug("%s Failed to remove deprecated legacy index entity: %s", log_prefix, err)
 
-    # Фиксируем, что эта миграция применена (новый minor)
-    if new_minor_version < 4:
-        new_minor_version = 4
+    # Фиксируем, что эта миграция применена (version/minor)
+    new_minor_version = target_minor_version
 
     # ---------------------------------------------------------------------
     # No-op guard: не обновляем запись, если ничего не изменилось
@@ -184,11 +193,11 @@ async def async_migrate_entry(hass, config_entry):
         new_data != config_entry.data
         or new_options != config_entry.options
         or int(config_entry.minor_version or 0) != new_minor_version
-        or config_entry.version != 3
+        or config_entry.version != target_version
     )
 
     if not changed:
-        _LOGGER.debug("Migration no-op for entry %s (no changes).", config_entry.entry_id)
+        _LOGGER.debug("%s Migration no-op for entry %s (no changes).", log_prefix, config_entry.entry_id)
         return True
 
     hass.config_entries.async_update_entry(
@@ -196,9 +205,9 @@ async def async_migrate_entry(hass, config_entry):
         data=new_data,
         options=new_options,
         minor_version=new_minor_version,
-        version=3,
+        version=target_version,
     )
 
-    _LOGGER.debug("Migration successful, new data: %s", new_data)
-    _LOGGER.debug("Migration successful, new options: %s", new_options)
+    _LOGGER.debug("%s Migration successful, new data: %s", log_prefix, new_data)
+    _LOGGER.debug("%s Migration successful, new options: %s", log_prefix, new_options)
     return True

@@ -40,7 +40,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
            Итоговое имя интеграции формируется как "SILAM Pollen - {zone_name}".
     """
     VERSION = 3
-    MINOR_VERSION = 3
+    MINOR_VERSION = 4
 
     async def async_step_user(self, user_input=None):
         """Шаг 1: базовые параметры (без координат)."""
@@ -516,7 +516,18 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ): bool,
         })
 
-        # Для описания в OptionsFlow: показываем текущий "эффективный" датасет (по base_url).
+        # 2) runtime-first — если координатор уже есть, берём активный effective_base_url
+        try:
+            coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+            if coordinator:
+                md = getattr(coordinator, "merged_data", None)
+                if isinstance(md, dict):
+                    base_url = md.get("effective_base_url") or base_url
+                else:
+                    base_url = getattr(coordinator, "_base_url", base_url)
+        except Exception:
+            pass
+
         effective_dataset = self._effective_dataset_label(base_url)
 
         return self.async_show_form(

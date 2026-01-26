@@ -17,9 +17,6 @@ from .config_flow import OptionsFlowHandler as SilamPollenOptionsFlow
 from .coordinator import SilamCoordinator
 from .migration import async_migrate_entry  # ядро вызовет при необходимости
 
-# Актуальная версия схемы записи ConfigEntry
-CONFIG_VERSION = 3
-
 _LOGGER = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
@@ -178,9 +175,10 @@ async def async_setup_entry(hass, entry):
         # координатор хотя бы получит текущий base_url ниже.
         pass
 
-    # Гарантируем, что текущий base_url есть в списке (на случай кастомных/будущих URL).
+    # Гарантируем, что текущий base_url есть в списке (на случай кастомных/будущих URL),
+    # но НЕ первым — иначе SMART никогда не переключится на более подходящий датасет.
     if isinstance(base_url, str) and base_url and base_url not in candidates:
-        candidates.insert(0, base_url)
+        candidates.append(base_url)
 
     # Создаём координатор
     coordinator = SilamCoordinator(
