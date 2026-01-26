@@ -81,7 +81,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         _LOGGER.error("Координатор для записи %s не найден!", entry.entry_id)
         return
     # читаем флаг legacy
-    legacy_enabled = entry.options.get("legacy", entry.data.get("legacy", True))
+    legacy_enabled = entry.options.get("legacy", entry.data.get("legacy", False))
 
     sensors = []
     # Индекс — только если включён legacy

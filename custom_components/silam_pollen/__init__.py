@@ -225,7 +225,7 @@ async def update_listener(hass, entry):
     # Опции/данные
     var_list = entry.options.get("var", entry.data.get("var", []))
     forecast_enabled = entry.options.get("forecast", entry.data.get("forecast", False))
-    legacy_enabled = entry.options.get("legacy", entry.data.get("legacy", True))
+    legacy_enabled = entry.options.get("legacy", entry.data.get("legacy", False))
 
     # Ожидаемые unique_id
     expected_ids: set[str] = {f"{entry.entry_id}_fetch_duration"}
