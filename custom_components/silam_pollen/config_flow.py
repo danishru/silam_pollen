@@ -303,9 +303,20 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             new_options = dict(self.config_entry.options)
             new_options.update(user_input)
 
+            # --- FIX (минимально): гарантируем сохранение выбора version в options ---
+            # Бывает, что HA может не передать optional-поле "version" в user_input,
+            # или оно может потеряться при мердже. Тогда UI откатывается на data["version"] (smart).
+            # Здесь аккуратно закрепляем выбранную версию.
+            new_version = user_input.get("version")
+            if new_version is not None:
+                new_options["version"] = new_version
+            else:
+                # Если вдруг version не пришёл, оставляем уже сохранённое значение, иначе fallback на data
+                new_options.setdefault("version", self.config_entry.options.get("version", self.config_entry.data.get("version")))
+
             # Обновляем данные: base_url хранится в data и используется координатором
             new_data = dict(self.config_entry.data)
-            new_version = user_input.get("version")
+            new_version = new_options.get("version")
             new_data["version"] = new_version
 
             if new_version == "smart":
@@ -332,7 +343,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data, options=new_options)
             await self.hass.config_entries.async_reload(self.config_entry.entry_id)
-            return self.async_create_entry(title="", data=user_input)
+
+            # FIX: возвращаем итоговые options, а не user_input (иначе выбор "version" может не закрепиться)
+            return self.async_create_entry(title="", data=new_options)
 
         # Если user_input is None – показываем форму с предустановленным значением версии.
         # Сначала пытаемся взять сохранённую политику (options/data), иначе — определяем по base_url.
@@ -467,10 +480,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ): vol.All(vol.Coerce(int), vol.Range(min=30)),
             vol.Optional(
                 "version",
-                default=self.config_entry.options.get(
-                    "version",
-                    self.config_entry.data.get("version", default_version)
-                )
+                default=self.config_entry.options.get("version", default_version)
             ): SelectSelector(
                 SelectSelectorConfig(
                     options=version_options,

@@ -90,8 +90,14 @@ class SilamCoordinator(DataUpdateCoordinator):
         # ---------------------------------------------------------------------
         self._dataset_selection = (dataset_selection or "smart").lower()
         self._smart_candidates = list(smart_candidates or [])
+
+        # Если кандидаты не передали — пробуем хотя бы текущий base_url
+        if not self._smart_candidates and self._base_url:
+            self._smart_candidates = [self._base_url]
+
+        # Текущий base_url оставляем как fallback, но НЕ первым (иначе SMART никогда не переключится)
         if self._base_url and self._base_url not in self._smart_candidates:
-            self._smart_candidates.insert(0, self._base_url)
+            self._smart_candidates.append(self._base_url)
 
         # Чтобы SMART-выбор выполнялся один раз на жизненный цикл координатора
         self._smart_probe_done = False
