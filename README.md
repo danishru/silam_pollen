@@ -55,6 +55,8 @@ In practice, this means:
 - fewer cases of misleading or irrelevant pollen data,
 - smoother behaviour when datasets change between seasons.
 
+![image](https://github.com/user-attachments/assets/c4f6b8f8-93e0-4543-9eb3-4e598fd4d54a)
+
 Manual dataset selection is still available, but **SMART mode is recommended for everyday use**.
 
 #### 🌍 SILAM pollen v6.1 datasets
@@ -66,7 +68,8 @@ Compared to previous versions, v6.1 datasets provide:
 - a refreshed **European baseline** (SILAM Europe pollen v6.1),
 - a new **high-detail regional dataset** where available.
 
-- **SILAM Finland pollen v6.1** offers **much higher spatial resolution (up to 0.8 km)** and is especially useful for users in:
+- **SILAM Finland pollen v6.1** offers the **highest spatial detail** within its coverage area  
+  🟦 **Blue zone** — coverage of **SILAM Finland (v6.1)** with **up to 0.8 km resolution**, especially useful for users in:
   - Finland  
   - Saint Petersburg and Northwestern Russia  
   - Northern & eastern Sweden (including Stockholm)  
