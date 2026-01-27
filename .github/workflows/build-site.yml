@@ -13,7 +13,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,18 +32,37 @@ jobs:
 
       - name: Sync build to docs/site
         run: |
+          echo "== Before sync =="
+          ls -la
+          ls -la docs || true
+
+          mkdir -p docs
           rm -rf docs/site
           mkdir -p docs/site
           cp -R website/build/. docs/site/
+          touch docs/.nojekyll
+
+          echo "== After sync =="
+          ls -la docs
+          ls -la docs/site | head -n 200
+          test -f docs/site/index.html && echo "OK: docs/site/index.html exists" || (echo "ERROR: index.html missing" && exit 1)
+
+      - name: Git status / diff
+        run: |
+          git status
+          git diff --stat || true
 
       - name: Commit generated site
         run: |
-          if git diff --quiet; then
-            echo "No changes to commit."
+          git add -A docs/site docs/.nojekyll
+          git status
+
+          if git diff --cached --quiet; then
+            echo "No staged changes (nothing to commit)."
             exit 0
           fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/site
           git commit -m "build(site): update docs/site"
           git push
