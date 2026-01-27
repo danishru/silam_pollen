@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+    <channel>
+        <title>SILAM Pollen Blog</title>
+        <link>https://danishru.github.io/silam_pollen/site/ru/blog</link>
+        <description>SILAM Pollen Blog</description>
+        <lastBuildDate>Thu, 22 Jan 2026 00:00:00 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>https://github.com/jpmonette/feed</generator>
+        <language>ru</language>
+        <item>
+            <title><![CDATA[v0.3.1]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/ru/blog/2026/01/22/v0.3.1</link>
+            <guid>https://danishru.github.io/silam_pollen/site/ru/blog/2026/01/22/v0.3.1</guid>
+            <pubDate>Thu, 22 Jan 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.3.1 🧠 Smarter data updates.]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v031--smarter-data-updates">v0.3.1 🧠 Smarter data updates.<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/01/22/v0.3.1#v031--smarter-data-updates" class="hash-link" aria-label="Прямая ссылка на v0.3.1 🧠 Smarter data updates." title="Прямая ссылка на v0.3.1 🧠 Smarter data updates.">​</a></h3>
+<p>Version v0.3.1 introduces a major internal improvement in how SILAM Pollen <strong>detects and updates forecast data</strong>.</p>
+<p><img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/b5e654e7-77b6-43e5-a082-3dec4457a80f" alt="image" class="img_ev3q"></p>
+<p>The integration is now <strong>run-aware</strong> and checks the SILAM <strong>runs catalog</strong> before fetching data. This allows it to reliably determine whether a <strong>new model run is actually available</strong>, instead of blindly re-downloading the same dataset.</p>
+<p>If the current run hasn’t changed:</p>
+<ul>
+<li>cached data is safely reused,</li>
+<li>full XML downloads are skipped,</li>
+<li>and only genuinely missing forecast hours are fetched when the forecast window moves forward.</li>
+</ul>
+<p>This results in:</p>
+<ul>
+<li>significantly fewer unnecessary network requests,</li>
+<li>faster and more predictable updates,</li>
+<li>reduced load on both Home Assistant and the SILAM data infrastructure.</li>
+</ul>
+<p>These changes are especially important ahead of the pollen season, ensuring timely updates while keeping the integration efficient and robust.</p>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.3.1" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.3.1-blue?style=flat" alt="More in release v0.3.1" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
+    </channel>
+</rss>

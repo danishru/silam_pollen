@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksilam_pollen_site=self.webpackChunksilam_pollen_site||[]).push([[647],{7121(e,s,l){l.r(s),l.d(s,{default:()=>i});l(6540);var r=l(4164),a=l(7559),n=l(1213),t=l(2831),u=l(781),c=l(4848);function i(e){return(0,c.jsx)(n.e3,{className:(0,r.A)(a.G.wrapper.docsPages),children:(0,c.jsx)(u.A,{children:(0,t.v)(e.route.routes)})})}}}]);
