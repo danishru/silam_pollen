@@ -33,7 +33,13 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 >  
 > To evaluate coverage and choose the appropriate dataset, use the interactive map below.
 
-[![Interactive pollen coverage map](https://danishru.github.io/silam_pollen/pollen_area.webp)](https://danishru.github.io/silam_pollen/)
+<a href="https://danishru.github.io/silam_pollen/" target="_blank" rel="noopener">
+  <img
+    src="https://danishru.github.io/silam_pollen/pollen_area.webp"
+    alt="Interactive pollen coverage map"
+    style="max-width:100%; cursor:pointer;"
+  />
+</a>
 
 ## 🆕 What’s new
 
@@ -59,193 +65,11 @@ These changes are especially important ahead of the pollen season, ensuring time
 
 [![More in release v0.3.1](https://img.shields.io/badge/More--in--release-v0.3.1-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.3.1)
 
-## Previous updates
-<details>
-<summary>Show</summary>
+## All updates
 
-### v0.3.0 🚀 One glance — the full picture of weather and pollen.
-v0.3.0 delivers a cohesive experience: one card brings together weather and pollen with a familiar look, fast response, and clear presentation. The integration now ships **with the dashboard card included**: a local JS module is bundled — no CDN or external dependencies (you only need to add it once under “Resources”). The Basic panel preserves the simplicity of the stock Weather card, while the Extended panel unfolds all forecast and allergen layers — tidy, informative, and straight to the point.
-
-![image](https://github.com/user-attachments/assets/2ccdf8ff-5afe-446f-a775-9c842e5c5060)
-
-- 💠 **Experimental Lovelace card (local build)**  
-  - Self-contained JS bundle, **no CDN**, works offline.  
-  - Built-in visual editor (**LitElement**) — configure right in the UI.  
-  - **Live WebSocket updates** — no polling delays.  
-  - **Automatic i18n**: language, formats, and units from Home Assistant.  
-  - **Native MDI icons** and theme support.  
-  - **Compatible with any `weather.*`**, shines with `weather.silam_pollen_*_forecast`.
-
-- 🖼 **Basic panel**  
-  - Mirrors the stock Home Assistant Weather card for maximum visual consistency.  
-  - For current weather, shows current conditions and **one primary attribute of your choice** — just like the stock card — and additionally lets you select **an unlimited number of draggable** attributes (toggle **row** or **column** layout).  
-  - When forecast is enabled for **SILAM**, the **forecast row** shows the **pollen index icon and state** instead of weather condition and temperature; for other weather integrations, behavior is **identical to the stock card**.  
-  - Supports a **scrollable list of forecast slots** if they don’t fit horizontally.  
-  - **Number of slots** is configurable in the editor: up to **12** via slider or **unlimited** via manual input.  
-  - Selecting attributes in the **additional block** unlocks wide possibilities to visualize weather data the way you like.
-
-- 📊 **Extended forecast panel**  
-  - Modes: **Standard**, **Focus**, **Minimal**.
-  - 🌿 **Allergen-level forecasts**
-    ![image](https://github.com/user-attachments/assets/15a81dae-7c99-4418-9525-08411045bd56)
-    
-    - **A dedicated forecast line** for each selected allergen.  
-    - **Peak concentrations** highlighted in 12-hour and daily views.  
-    - **Show details on tap** on pollen blocks: opens the sensor card for the tapped allergen; behavior is configurable in the editor.  
-    - **Trend logic + icon** — clear up/down indication.
-  - ⛅ **Full forecast layers**
-    ![image](https://github.com/user-attachments/assets/b3d2b70a-fec7-4d37-b6b9-add38f4119a8)
-    
-    - **Temperature** and **apparent temperature**, **precipitation** (probability and amount), **UV index**, **wind** (speed, gust, direction), **cloud coverage**, **humidity**, **dew point**, **pressure**.  
-    - **Meteo risk strip (experimental)**: fog (radiation/advection), dew, frost, icing/freezing rain, heavy rain/snow, heat, wind chill, strong/storm wind, “barometric saw”.  
-    - Slim strips for **humidity** and **dew point**, clear labels, refined typography.  
-    - **Gestures**: **tap** / **hold** / **double tap** (navigate, link, call service, perform action).  
-
-> [!IMPORTANT]  
-> **After updating**, add the module manually:
-> 
-> [![Open your Home Assistant instance and show your dashboard resources.](https://my.home-assistant.io/badges/lovelace_resources.svg)](https://my.home-assistant.io/redirect/lovelace_resources/)  
-> **Settings → Dashboards → Resources → Add** → URL: `/local/absolute-forecast-card.js` → **Resource type: JavaScript Module**.
-
----
-
-### 🌿 Updated pollen sensor model
-- 🌸 **Pollen Forecast Sensor — now primary and out of beta**  
-- 🗂️ **Pollen Index — deprecated**  
-  - Marked as **deprecated**.  
-  - Available only via the **Legacy** toggle (**off by default** for new installs).  
-  - **Migration** preserves compatibility: existing entries get `legacy=true`.
-
-> [!NOTE]  
-> If you relied on the previous index or legacy allergen aggregation, review and adjust thresholds in your automations and scripts.
-
-[![More in release v0.3.0](https://img.shields.io/badge/More--in--release-v0.3.0-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.3.0)
-
-### v0.2.7 🚀 Major update of the "Pollen Forecast BETA" sensor!
-After its beta period, the forecast sensor is heading for a stable release—bringing more accuracy, data and possibilities for your dashboards.
-
-- 🔄 **Re-worked algorithms in "Pollen Forecast BETA"**  
-  - The `state` now reflects the **current** pollen index from the *now* block, not the first hourly step.  
-  - Hourly forecasts aggregate the index and allergen levels by **maximum** within each three-hour window (was median).  
-  - Daily and 12-hour values are calculated using an **observational percentile** (no interpolation):  
-    ≥ 18 points → 80th percentile · 12–17 points → 70th · < 12 points → maximum.
-
-- 🌸 **Forecast sensor is always created**  
-  Sensor `weather.silam_pollen_{Zone Name}_forecast` is present regardless of options—*now* data are always available; **hourly**, **twice-daily (12 h)** and **daily** forecasts appear **only when the forecast option is enabled**.
-
-- 🌅 **Daily forecast & allergen peaks**  
-  The sensor now includes a **daily forecast** (up to five days) based on the observational percentile.  
-  New attribute `allergen_peaks` reports **peak allergen concentrations** for both daily and twice-daily windows—shown when specific allergens are enabled.
-
-- ➕ **New attributes for "Pollen Forecast BETA"**  
-  `next_condition`, `pollen_<allergen>`, `altitude`, `date`, `responsible_elevated`—extra context for automations and dashboards.
-
-- ⏱️ **Diagnostic sensor “Forecast Horizon”**  
-  The new `sensor.silam_pollen_{Zone Name}_forecast_horizon` shows how many hours the current forecast (`state`) actually covers and what forecast length (`forecast_duration`) you asked for.
-
-- 🖼️ **Supported in pollenprognos-card v2.4.1+**  
-  The card now renders the daily forecast via `weather.get_forecasts`.  
-  > **Version compatibility**  
-  > • pollenprognos-card ≥ **v2.4.1** requires **silam_pollen ≥ v0.2.7**  
-  > • Older card versions (≤ v2.4.0) remain compatible with silam_pollen ≥ v0.2.5.
-
-> [!IMPORTANT]  
-> These new algorithms may affect automations that relied on the old index or allergen-level values. Review your scripts and adjust thresholds or conditions if needed.
-
-[![More in release v0.2.7](https://img.shields.io/badge/More--in--release-v0.2.7-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.7)
-
-### v0.2.6
-
-- 🆕 **`native_name` Attribute**  
-  All allergen sensors now include a `native_name` attribute that reflects the original SILAM API key (e.g. `alder_m22`, `grass_m32`, etc.), ensuring better compatibility with external tools and visualizations.
-
-- 🔧 **Unified `entity_id` Naming**  
-  Entity IDs (including defaults and resets) now correspond exactly to the keys in the localization files. For example, `sensor.silam_pollen_{Zone Name}_grass` remains identical across all languages and for every sensor in the integration.
-
-> [!IMPORTANT]  
-> To revert your entities to the new default names, follow the [device customization guide](https://www.home-assistant.io/docs/configuration/customizing-devices/) in the Home Assistant documentation.
-
-> [!NOTE]  
-> If you’ve already created automations or scripts, remember to update the referenced `entity_id` values.  
-> > If your Home Assistant system language is English or Russian, you can ignore this notice — entity IDs will remain unchanged for these languages.
-
-[![More in release v0.2.6](https://img.shields.io/badge/More--in--release-v0.2.6-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.6)
-
-### v0.2.5 🌟
-
-This is a truly significant update for **SILAM Pollen**!
-
-- 🎉 **Default HACS integration**  
-  Congratulations to us all — the integration is now included in the official HACS repository by default, making installation easier than ever!  
-
-- 🖼️ **Beautiful dashboards**  
-  Great news for dashboard lovers: [@krissen](https://github.com/krissen) has added **SILAM Pollen** support to the [pollenprognos-card](https://github.com/krissen/pollenprognos-card) (since v2.3.0) — now current conditions and pollen forecasts are available right on your dashboard!  
-  [Learn more here 👈](#dashboard-card)  
-
-- 📈 **Long-term statistics**  
-  Pollen sensors and the new diagnostic sensor now collect and display historical data.
-
-[![More in release v0.2.5](https://img.shields.io/badge/More--in--release-v0.2.5-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.5)
-  
-### v0.2.4
-
-- **📖 Default README in English**  
-  The README file is now presented in English by default.
-
-[![More in release v0.2.4](https://img.shields.io/badge/More--in--release-v0.2.4-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.4)
-
-### v0.2.3
-
-- **📦 Prepared for HACS publication**  
-  Changes made to host the integration in the default HACS catalog.
-- **🌐 Added Slovak translation**  
-  Thanks to [@misa1515](https://github.com/misa1515) for implementing the Slovak localization!
-- **🌐 Added Dutch translation**  
-  Thanks to [@rubdos](https://github.com/rubdos) for implementing the Dutch localization!
-
-[![More in release v0.2.3](https://img.shields.io/badge/More--in--release-v0.2.3-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.3)
-
-### v0.2.2
-
-- **⏱️ Forecast duration setting**  
-  When creating or modifying an entry, you can now choose the forecast duration from 36 to 120 hours (default is 36 h). As the hours increase, the number of forecast points twice a day increases proportionally.
-- **🛠️ Diagnostic sensor “fetch_duration”**  
-  A sensor to display the data update execution time (API requests, processing, calculations). Disabled by default.
-- **🌐 Added Czech translation**  
-  Thanks to [@kasparmir](https://github.com/kasparmir) for the first implementation of the Czech localization!
-
-[![More in release v0.2.2](https://img.shields.io/badge/More--in--release-v0.2.2-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.2)
-
-### v0.2.1
-
-**🌸 Pollen Forecast (BETA)**  
-- Hourly and twice-daily pollen forecasts now include values for selected allergens.  
-- For each pollen sensor, there is now an attribute with the forecast for the next day, showing the daily forecast for the next day, just like for the pollen index.
-
-[![More in release v0.2.1](https://img.shields.io/badge/More--in--release-v0.2.1-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.1)
-
-### v0.2.0
-  
-- **🌍 Support for two SILAM versions**  
-  Ability to choose between `SILAM Europe (v6.0)` and `SILAM Regional (v5.9.1)` — with an automatic availability check.  
-  `SILAM Regional (v5.9.1)` provides more **detailed and accurate forecasts** for Northern and Northwestern Europe.
-
-- **🌸 Pollen Forecast (BETA)**  
-  New weather sensor with hourly and twice-daily pollen forecasts via `weather.get_forecasts`.
-
-- **📊 Unified data handler + update service**  
-  All data are cached through `data_processing.py`.  
-  Added service `SILAM Pollen monitor: Manual Update` — can be called manually or in automations.
-
-- **🎨 Icons for integration and sensors**  
-  Visual indicators are clearer: each allergen now has its own icon.
-
-- **🌐 Localization (in 8 languages)**  
-  The interface is translated into: Russian, English, Finnish, Italian, Swedish, Norwegian, Danish, and German.
-
-[![More in release v0.2.0](https://img.shields.io/badge/More--in--release-v0.2.0-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.2.0)
-
-</details>
+<a href="https://danishru.github.io/silam_pollen/site/blog" target="_blank" rel="noopener">
+Release history and changelog archive ↗
+</a>
 
 ## Installation  
 
