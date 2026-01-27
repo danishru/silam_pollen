@@ -28,12 +28,12 @@ const config = {
         docs: {
           routeBasePath: "docs",
           sidebarPath: "./sidebars.js",
-          remarkPlugins: [remarkGithubAdmonitions],
+          beforeDefaultRemarkPlugins: [remarkGithubAdmonitions],
         },
         blog: {
           routeBasePath: "blog",
           showReadingTime: false,
-          remarkPlugins: [remarkGithubAdmonitions],
+          beforeDefaultRemarkPlugins: [remarkGithubAdmonitions],
         },
         theme: {
           customCss: "./src/css/custom.css"
