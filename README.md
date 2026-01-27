@@ -43,6 +43,45 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 
 ## 🆕 What’s new
 
+### v0.3.2 🧠 Smarter pollen updates for the new season
+
+Version **v0.3.2** strengthens the **SMART update logic**, making pollen forecasts more reliable and easier to use as the new season begins.
+
+With **SMART dataset selection**, SILAM Pollen no longer relies on a fixed configuration.  
+Instead, it **automatically chooses the most suitable pollen dataset for your location**, based on actual coverage — helping ensure that the forecast you see is relevant to where you live.
+
+In practice, this means:
+- less manual setup and guesswork,
+- fewer cases of misleading or irrelevant pollen data,
+- smoother behaviour when datasets change between seasons.
+
+Manual dataset selection is still available, but **SMART mode is recommended for everyday use**.
+
+#### 🌍 SILAM pollen v6.1 datasets
+
+This release introduces support for the **latest SILAM pollen v6.1 datasets**, which form the basis for forecasts in the upcoming pollen seasons.
+
+Compared to previous versions, v6.1 datasets provide:
+- updated **SILAM v6.1 model outputs** for the current season,
+- a refreshed **European baseline** (SILAM Europe pollen v6.1),
+- a new **high-detail regional dataset** where available.
+
+- **SILAM Finland pollen v6.1** offers **much higher spatial resolution (up to 0.8 km)** and is especially useful for users in:
+  - Finland  
+  - Saint Petersburg and Northwestern Russia  
+  - Northern & eastern Sweden (including Stockholm)  
+  - Northeastern Norway  
+  - Northern Estonia (including Tallinn and Narva)
+
+When available, this dataset is **automatically selected by SMART mode**, with manual selection still possible in the integration options.
+
+#### 📦 Release history & documentation
+
+The full history of SILAM Pollen updates is now published on the project website:  
+https://danishru.github.io/silam_pollen/site/blog
+
+[![More in release v0.3.2](https://img.shields.io/badge/More--in--release-v0.3.2-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.3.2)
+
 ### v0.3.1 🧠 Smarter data updates.
 
 Version v0.3.1 introduces a major internal improvement in how SILAM Pollen **detects and updates forecast data**.
