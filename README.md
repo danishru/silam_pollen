@@ -78,6 +78,12 @@ Compared to previous versions, v6.1 datasets provide:
 
 When available, this dataset is **automatically selected by SMART mode**, with manual selection still possible in the integration options.
 
+#### ⚠️ Deprecation
+
+> [!WARNING]  
+> 📉 **Pollen Index** sensor is now **legacy** and **disabled by default**.  
+> It is removed automatically on update and can be re-enabled via the **legacy toggle** in integration options.
+
 #### 📦 Release history & documentation
 
 The full history of SILAM Pollen updates is now published on the project website:  
