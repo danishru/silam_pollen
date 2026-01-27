@@ -33,5 +33,290 @@
 <p>These changes are especially important ahead of the pollen season, ensuring timely updates while keeping the integration efficient and robust.</p>
 <p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.3.1" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.3.1-blue?style=flat" alt="More in release v0.3.1" class="img_ev3q"></a></p>]]></content:encoded>
         </item>
+        <item>
+            <title><![CDATA[v0.3.0]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/blog/2025/09/05/v0.3.0</link>
+            <guid>https://danishru.github.io/silam_pollen/site/blog/2025/09/05/v0.3.0</guid>
+            <pubDate>Fri, 05 Sep 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.3.0 🚀 One glance — the full picture of weather and pollen.]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v030--one-glance--the-full-picture-of-weather-and-pollen">v0.3.0 🚀 One glance — the full picture of weather and pollen.<a href="https://danishru.github.io/silam_pollen/site/blog/2025/09/05/v0.3.0#v030--one-glance--the-full-picture-of-weather-and-pollen" class="hash-link" aria-label="Direct link to v0.3.0 🚀 One glance — the full picture of weather and pollen." title="Direct link to v0.3.0 🚀 One glance — the full picture of weather and pollen.">​</a></h3>
+<p>v0.3.0 delivers a cohesive experience: one card brings together weather and pollen with a familiar look, fast response, and clear presentation. The integration now ships <strong>with the dashboard card included</strong>: a local JS module is bundled — no CDN or external dependencies (you only need to add it once under “Resources”). The Basic panel preserves the simplicity of the stock Weather card, while the Extended panel unfolds all forecast and allergen layers — tidy, informative, and straight to the point.</p>
+<p><img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/2ccdf8ff-5afe-446f-a775-9c842e5c5060" alt="image" class="img_ev3q"></p>
+<ul>
+<li>
+<p>💠 <strong>Experimental Lovelace card (local build)</strong></p>
+<ul>
+<li>Self-contained JS bundle, <strong>no CDN</strong>, works offline.</li>
+<li>Built-in visual editor (<strong>LitElement</strong>) — configure right in the UI.</li>
+<li><strong>Live WebSocket updates</strong> — no polling delays.</li>
+<li><strong>Automatic i18n</strong>: language, formats, and units from Home Assistant.</li>
+<li><strong>Native MDI icons</strong> and theme support.</li>
+<li><strong>Compatible with any <code>weather.*</code></strong>, shines with <code>weather.silam_pollen_*_forecast</code>.</li>
+</ul>
+</li>
+<li>
+<p>🖼 <strong>Basic panel</strong></p>
+<ul>
+<li>Mirrors the stock Home Assistant Weather card for maximum visual consistency.</li>
+<li>For current weather, shows current conditions and <strong>one primary attribute of your choice</strong> — just like the stock card — and additionally lets you select <strong>an unlimited number of draggable</strong> attributes (toggle <strong>row</strong> or <strong>column</strong> layout).</li>
+<li>When forecast is enabled for <strong>SILAM</strong>, the <strong>forecast row</strong> shows the <strong>pollen index icon and state</strong> instead of weather condition and temperature; for other weather integrations, behavior is <strong>identical to the stock card</strong>.</li>
+<li>Supports a <strong>scrollable list of forecast slots</strong> if they don’t fit horizontally.</li>
+<li><strong>Number of slots</strong> is configurable in the editor: up to <strong>12</strong> via slider or <strong>unlimited</strong> via manual input.</li>
+<li>Selecting attributes in the <strong>additional block</strong> unlocks wide possibilities to visualize weather data the way you like.</li>
+</ul>
+</li>
+<li>
+<p>📊 <strong>Extended forecast panel</strong></p>
+<ul>
+<li>
+<p>Modes: <strong>Standard</strong>, <strong>Focus</strong>, <strong>Minimal</strong>.</p>
+</li>
+<li>
+<p>🌿 <strong>Allergen-level forecasts</strong>
+<img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/15a81dae-7c99-4418-9525-08411045bd56" alt="image" class="img_ev3q"></p>
+<ul>
+<li><strong>A dedicated forecast line</strong> for each selected allergen.</li>
+<li><strong>Peak concentrations</strong> highlighted in 12-hour and daily views.</li>
+<li><strong>Show details on tap</strong> on pollen blocks: opens the sensor card for the tapped allergen; behavior is configurable in the editor.</li>
+<li><strong>Trend logic + icon</strong> — clear up/down indication.</li>
+</ul>
+</li>
+<li>
+<p>⛅ <strong>Full forecast layers</strong>
+<img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/b3d2b70a-fec7-4d37-b6b9-add38f4119a8" alt="image" class="img_ev3q"></p>
+<ul>
+<li><strong>Temperature</strong> and <strong>apparent temperature</strong>, <strong>precipitation</strong> (probability and amount), <strong>UV index</strong>, <strong>wind</strong> (speed, gust, direction), <strong>cloud coverage</strong>, <strong>humidity</strong>, <strong>dew point</strong>, <strong>pressure</strong>.</li>
+<li><strong>Meteo risk strip (experimental)</strong>: fog (radiation/advection), dew, frost, icing/freezing rain, heavy rain/snow, heat, wind chill, strong/storm wind, “barometric saw”.</li>
+<li>Slim strips for <strong>humidity</strong> and <strong>dew point</strong>, clear labels, refined typography.</li>
+<li><strong>Gestures</strong>: <strong>tap</strong> / <strong>hold</strong> / <strong>double tap</strong> (navigate, link, call service, perform action).</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>[!IMPORTANT]<br>
+<strong>After updating</strong>, add the module manually:</p>
+<p><a href="https://my.home-assistant.io/redirect/lovelace_resources/" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://my.home-assistant.io/badges/lovelace_resources.svg" alt="Open your Home Assistant instance and show your dashboard resources." class="img_ev3q"></a><br>
+<strong>Settings → Dashboards → Resources → Add</strong> → URL: <code>/local/absolute-forecast-card.js</code> → <strong>Resource type: JavaScript Module</strong>.</p>
+</blockquote>
+<hr>
+<h3 class="anchor anchorWithStickyNavbar_LWe7" id="-updated-pollen-sensor-model">🌿 Updated pollen sensor model<a href="https://danishru.github.io/silam_pollen/site/blog/2025/09/05/v0.3.0#-updated-pollen-sensor-model" class="hash-link" aria-label="Direct link to 🌿 Updated pollen sensor model" title="Direct link to 🌿 Updated pollen sensor model">​</a></h3>
+<ul>
+<li>🌸 <strong>Pollen Forecast Sensor — now primary and out of beta</strong></li>
+<li>🗂️ <strong>Pollen Index — deprecated</strong>
+<ul>
+<li>Marked as <strong>deprecated</strong>.</li>
+<li>Available only via the <strong>Legacy</strong> toggle (<strong>off by default</strong> for new installs).</li>
+<li><strong>Migration</strong> preserves compatibility: existing entries get <code>legacy=true</code>.</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>[!NOTE]<br>
+<!-- -->If you relied on the previous index or legacy allergen aggregation, review and adjust thresholds in your automations and scripts.</p>
+</blockquote>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.3.0" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.3.0-blue?style=flat" alt="More in release v0.3.0" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[v0.2.7]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/blog/2025/07/15/v0.2.7</link>
+            <guid>https://danishru.github.io/silam_pollen/site/blog/2025/07/15/v0.2.7</guid>
+            <pubDate>Tue, 15 Jul 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.2.7 🚀 Major update of the "Pollen Forecast BETA" sensor!]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v027--major-update-of-the-pollen-forecast-beta-sensor">v0.2.7 🚀 Major update of the "Pollen Forecast BETA" sensor!<a href="https://danishru.github.io/silam_pollen/site/blog/2025/07/15/v0.2.7#v027--major-update-of-the-pollen-forecast-beta-sensor" class="hash-link" aria-label="Direct link to v0.2.7 🚀 Major update of the &quot;Pollen Forecast BETA&quot; sensor!" title="Direct link to v0.2.7 🚀 Major update of the &quot;Pollen Forecast BETA&quot; sensor!">​</a></h3>
+<p>After its beta period, the forecast sensor is heading for a stable release—bringing more accuracy, data and possibilities for your dashboards.</p>
+<ul>
+<li>
+<p>🔄 <strong>Re-worked algorithms in "Pollen Forecast BETA"</strong></p>
+<ul>
+<li>The <code>state</code> now reflects the <strong>current</strong> pollen index from the <em>now</em> block, not the first hourly step.</li>
+<li>Hourly forecasts aggregate the index and allergen levels by <strong>maximum</strong> within each three-hour window (was median).</li>
+<li>Daily and 12-hour values are calculated using an <strong>observational percentile</strong> (no interpolation):<br>
+<!-- -->≥ 18 points → 80th percentile · 12–17 points → 70th · &lt; 12 points → maximum.</li>
+</ul>
+</li>
+<li>
+<p>🌸 <strong>Forecast sensor is always created</strong><br>
+<!-- -->Sensor <code>weather.silam_pollen_{Zone Name}_forecast</code> is present regardless of options—<em>now</em> data are always available; <strong>hourly</strong>, <strong>twice-daily (12 h)</strong> and <strong>daily</strong> forecasts appear <strong>only when the forecast option is enabled</strong>.</p>
+</li>
+<li>
+<p>🌅 <strong>Daily forecast &amp; allergen peaks</strong><br>
+<!-- -->The sensor now includes a <strong>daily forecast</strong> (up to five days) based on the observational percentile.<br>
+<!-- -->New attribute <code>allergen_peaks</code> reports <strong>peak allergen concentrations</strong> for both daily and twice-daily windows—shown when specific allergens are enabled.</p>
+</li>
+<li>
+<p>➕ <strong>New attributes for "Pollen Forecast BETA"</strong><br>
+<code>next_condition</code>, <code>pollen_&lt;allergen&gt;</code>, <code>altitude</code>, <code>date</code>, <code>responsible_elevated</code>—extra context for automations and dashboards.</p>
+</li>
+<li>
+<p>⏱️ <strong>Diagnostic sensor “Forecast Horizon”</strong><br>
+<!-- -->The new <code>sensor.silam_pollen_{Zone Name}_forecast_horizon</code> shows how many hours the current forecast (<code>state</code>) actually covers and what forecast length (<code>forecast_duration</code>) you asked for.</p>
+</li>
+<li>
+<p>🖼️ <strong>Supported in pollenprognos-card v2.4.1+</strong><br>
+<!-- -->The card now renders the daily forecast via <code>weather.get_forecasts</code>.</p>
+<blockquote>
+<p><strong>Version compatibility</strong><br>
+<!-- -->• pollenprognos-card ≥ <strong>v2.4.1</strong> requires <strong>silam_pollen ≥ v0.2.7</strong><br>
+<!-- -->• Older card versions (≤ v2.4.0) remain compatible with silam_pollen ≥ v0.2.5.</p>
+</blockquote>
+</li>
+</ul>
+<blockquote>
+<p>[!IMPORTANT]<br>
+<!-- -->These new algorithms may affect automations that relied on the old index or allergen-level values. Review your scripts and adjust thresholds or conditions if needed.</p>
+</blockquote>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.7" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.7-blue?style=flat" alt="More in release v0.2.7" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[v0.2.6]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/blog/2025/07/05/v0.2.6</link>
+            <guid>https://danishru.github.io/silam_pollen/site/blog/2025/07/05/v0.2.6</guid>
+            <pubDate>Sat, 05 Jul 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.2.6]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v026">v0.2.6<a href="https://danishru.github.io/silam_pollen/site/blog/2025/07/05/v0.2.6#v026" class="hash-link" aria-label="Direct link to v0.2.6" title="Direct link to v0.2.6">​</a></h3>
+<ul>
+<li>
+<p>🆕 <strong><code>native_name</code> Attribute</strong><br>
+<!-- -->All allergen sensors now include a <code>native_name</code> attribute that reflects the original SILAM API key (e.g. <code>alder_m22</code>, <code>grass_m32</code>, etc.), ensuring better compatibility with external tools and visualizations.</p>
+</li>
+<li>
+<p>🔧 <strong>Unified <code>entity_id</code> Naming</strong><br>
+<!-- -->Entity IDs (including defaults and resets) now correspond exactly to the keys in the localization files. For example, <code>sensor.silam_pollen_{Zone Name}_grass</code> remains identical across all languages and for every sensor in the integration.</p>
+</li>
+</ul>
+<blockquote>
+<p>[!IMPORTANT]<br>
+<!-- -->To revert your entities to the new default names, follow the <a href="https://www.home-assistant.io/docs/configuration/customizing-devices/" target="_blank" rel="noopener noreferrer">device customization guide</a> in the Home Assistant documentation.</p>
+</blockquote>
+<blockquote>
+<p>[!NOTE]<br>
+<!-- -->If you’ve already created automations or scripts, remember to update the referenced <code>entity_id</code> values.</p>
+<blockquote>
+<p>If your Home Assistant system language is English or Russian, you can ignore this notice — entity IDs will remain unchanged for these languages.</p>
+</blockquote>
+</blockquote>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.6" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.6-blue?style=flat" alt="More in release v0.2.6" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[v0.2.5]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/blog/2025/07/03/v0.2.5</link>
+            <guid>https://danishru.github.io/silam_pollen/site/blog/2025/07/03/v0.2.5</guid>
+            <pubDate>Thu, 03 Jul 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.2.5 🌟]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v025-">v0.2.5 🌟<a href="https://danishru.github.io/silam_pollen/site/blog/2025/07/03/v0.2.5#v025-" class="hash-link" aria-label="Direct link to v0.2.5 🌟" title="Direct link to v0.2.5 🌟">​</a></h3>
+<p>This is a truly significant update for <strong>SILAM Pollen</strong>!</p>
+<ul>
+<li>
+<p>🎉 <strong>Default HACS integration</strong><br>
+<!-- -->Congratulations to us all — the integration is now included in the official HACS repository by default, making installation easier than ever!</p>
+</li>
+<li>
+<p>🖼️ <strong>Beautiful dashboards</strong><br>
+<!-- -->Great news for dashboard lovers: <a href="https://github.com/krissen" target="_blank" rel="noopener noreferrer">@krissen</a> has added <strong>SILAM Pollen</strong> support to the <a href="https://github.com/krissen/pollenprognos-card" target="_blank" rel="noopener noreferrer">pollenprognos-card</a> (since v2.3.0) — now current conditions and pollen forecasts are available right on your dashboard!<br>
+<a href="https://danishru.github.io/silam_pollen/site/blog/2025/07/03/v0.2.5#dashboard-card">Learn more here 👈</a></p>
+</li>
+<li>
+<p>📈 <strong>Long-term statistics</strong><br>
+<!-- -->Pollen sensors and the new diagnostic sensor now collect and display historical data.</p>
+</li>
+</ul>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.5" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.5-blue?style=flat" alt="More in release v0.2.5" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[v0.2.4]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/blog/2025/06/05/v0.2.4</link>
+            <guid>https://danishru.github.io/silam_pollen/site/blog/2025/06/05/v0.2.4</guid>
+            <pubDate>Thu, 05 Jun 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.2.4]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v024">v0.2.4<a href="https://danishru.github.io/silam_pollen/site/blog/2025/06/05/v0.2.4#v024" class="hash-link" aria-label="Direct link to v0.2.4" title="Direct link to v0.2.4">​</a></h3>
+<ul>
+<li><strong>📖 Default README in English</strong><br>
+<!-- -->The README file is now presented in English by default.</li>
+</ul>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.4" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.4-blue?style=flat" alt="More in release v0.2.4" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[v0.2.3]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/blog/2025/06/04/v0.2.3</link>
+            <guid>https://danishru.github.io/silam_pollen/site/blog/2025/06/04/v0.2.3</guid>
+            <pubDate>Wed, 04 Jun 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.2.3]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v023">v0.2.3<a href="https://danishru.github.io/silam_pollen/site/blog/2025/06/04/v0.2.3#v023" class="hash-link" aria-label="Direct link to v0.2.3" title="Direct link to v0.2.3">​</a></h3>
+<ul>
+<li><strong>📦 Prepared for HACS publication</strong><br>
+<!-- -->Changes made to host the integration in the default HACS catalog.</li>
+<li><strong>🌐 Added Slovak translation</strong><br>
+<!-- -->Thanks to <a href="https://github.com/misa1515" target="_blank" rel="noopener noreferrer">@misa1515</a> for implementing the Slovak localization!</li>
+<li><strong>🌐 Added Dutch translation</strong><br>
+<!-- -->Thanks to <a href="https://github.com/rubdos" target="_blank" rel="noopener noreferrer">@rubdos</a> for implementing the Dutch localization!</li>
+</ul>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.3" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.3-blue?style=flat" alt="More in release v0.2.3" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[v0.2.2]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/blog/2025/04/24/v0.2.2</link>
+            <guid>https://danishru.github.io/silam_pollen/site/blog/2025/04/24/v0.2.2</guid>
+            <pubDate>Thu, 24 Apr 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.2.2]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v022">v0.2.2<a href="https://danishru.github.io/silam_pollen/site/blog/2025/04/24/v0.2.2#v022" class="hash-link" aria-label="Direct link to v0.2.2" title="Direct link to v0.2.2">​</a></h3>
+<ul>
+<li><strong>⏱️ Forecast duration setting</strong><br>
+<!-- -->When creating or modifying an entry, you can now choose the forecast duration from 36 to 120 hours (default is 36 h). As the hours increase, the number of forecast points twice a day increases proportionally.</li>
+<li><strong>🛠️ Diagnostic sensor “fetch_duration”</strong><br>
+<!-- -->A sensor to display the data update execution time (API requests, processing, calculations). Disabled by default.</li>
+<li><strong>🌐 Added Czech translation</strong><br>
+<!-- -->Thanks to <a href="https://github.com/kasparmir" target="_blank" rel="noopener noreferrer">@kasparmir</a> for the first implementation of the Czech localization!</li>
+</ul>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.2" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.2-blue?style=flat" alt="More in release v0.2.2" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[v0.2.1]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/blog/2025/04/10/v0.2.1</link>
+            <guid>https://danishru.github.io/silam_pollen/site/blog/2025/04/10/v0.2.1</guid>
+            <pubDate>Thu, 10 Apr 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.2.1]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v021">v0.2.1<a href="https://danishru.github.io/silam_pollen/site/blog/2025/04/10/v0.2.1#v021" class="hash-link" aria-label="Direct link to v0.2.1" title="Direct link to v0.2.1">​</a></h3>
+<p><strong>🌸 Pollen Forecast (BETA)</strong></p>
+<ul>
+<li>Hourly and twice-daily pollen forecasts now include values for selected allergens.</li>
+<li>For each pollen sensor, there is now an attribute with the forecast for the next day, showing the daily forecast for the next day, just like for the pollen index.</li>
+</ul>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.1" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.1-blue?style=flat" alt="More in release v0.2.1" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[v0.2.0]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/blog/2025/03/27/v0.2.0</link>
+            <guid>https://danishru.github.io/silam_pollen/site/blog/2025/03/27/v0.2.0</guid>
+            <pubDate>Thu, 27 Mar 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.2.0]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v020">v0.2.0<a href="https://danishru.github.io/silam_pollen/site/blog/2025/03/27/v0.2.0#v020" class="hash-link" aria-label="Direct link to v0.2.0" title="Direct link to v0.2.0">​</a></h3>
+<ul>
+<li>
+<p><strong>🌍 Support for two SILAM versions</strong><br>
+<!-- -->Ability to choose between <code>SILAM Europe (v6.0)</code> and <code>SILAM Regional (v5.9.1)</code> — with an automatic availability check.<br>
+<code>SILAM Regional (v5.9.1)</code> provides more <strong>detailed and accurate forecasts</strong> for Northern and Northwestern Europe.</p>
+</li>
+<li>
+<p><strong>🌸 Pollen Forecast (BETA)</strong><br>
+<!-- -->New weather sensor with hourly and twice-daily pollen forecasts via <code>weather.get_forecasts</code>.</p>
+</li>
+<li>
+<p><strong>📊 Unified data handler + update service</strong><br>
+<!-- -->All data are cached through <code>data_processing.py</code>.<br>
+<!-- -->Added service <code>SILAM Pollen monitor: Manual Update</code> — can be called manually or in automations.</p>
+</li>
+<li>
+<p><strong>🎨 Icons for integration and sensors</strong><br>
+<!-- -->Visual indicators are clearer: each allergen now has its own icon.</p>
+</li>
+<li>
+<p><strong>🌐 Localization (in 8 languages)</strong><br>
+<!-- -->The interface is translated into: Russian, English, Finnish, Italian, Swedish, Norwegian, Danish, and German.</p>
+</li>
+</ul>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.0" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.0-blue?style=flat" alt="More in release v0.2.0" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
     </channel>
 </rss>
