@@ -94,12 +94,9 @@
 </ul>
 </li>
 </ul>
-<blockquote>
-<p>[!IMPORTANT]<br>
-<strong>После обновления</strong> добавьте модуль вручную:</p>
-<p><a href="https://my.home-assistant.io/redirect/lovelace_resources/" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://my.home-assistant.io/badges/lovelace_resources.svg" alt="Open your Home Assistant instance and show your dashboard resources." class="img_ev3q"></a><br>
-<strong>Настройки → Панели → Ресурсы → Добавить</strong> → URL: <code>/local/absolute-forecast-card.js</code> → Тип ресурса: Модуль JavaScript.</p>
-</blockquote>
+<div><p><br>
+<strong>После обновления</strong> добавьте модуль вручную:</p><p><a href="https://my.home-assistant.io/redirect/lovelace_resources/" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://my.home-assistant.io/badges/lovelace_resources.svg" alt="Open your Home Assistant instance and show your dashboard resources." class="img_ev3q"></a><br>
+<strong>Настройки → Панели → Ресурсы → Добавить</strong> → URL: <code>/local/absolute-forecast-card.js</code> → Тип ресурса: Модуль JavaScript.</p></div>
 <hr>
 <h3 class="anchor anchorWithStickyNavbar_LWe7" id="-обновлённая-модель-сенсоров-пыльцы">🌿 Обновлённая модель сенсоров пыльцы<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2025/09/05/v0.3.0#-%D0%BE%D0%B1%D0%BD%D0%BE%D0%B2%D0%BB%D1%91%D0%BD%D0%BD%D0%B0%D1%8F-%D0%BC%D0%BE%D0%B4%D0%B5%D0%BB%D1%8C-%D1%81%D0%B5%D0%BD%D1%81%D0%BE%D1%80%D0%BE%D0%B2-%D0%BF%D1%8B%D0%BB%D1%8C%D1%86%D1%8B" class="hash-link" aria-label="Прямая ссылка на 🌿 Обновлённая модель сенсоров пыльцы" title="Прямая ссылка на 🌿 Обновлённая модель сенсоров пыльцы">​</a></h3>
 <ul>
@@ -112,10 +109,8 @@
 </ul>
 </li>
 </ul>
-<blockquote>
-<p>[!NOTE]<br>
-<!-- -->Если вы полагались на прежний индекс или старую агрегацию аллергенов, проверьте пороги в автоматизациях и сценариях.</p>
-</blockquote>
+<div><p><br>
+<!-- -->Если вы полагались на прежний индекс или старую агрегацию аллергенов, проверьте пороги в автоматизациях и сценариях.</p></div>
 <p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.3.0" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/%D0%9F%D0%BE%D0%B4%D1%80%D0%BE%D0%B1%D0%BD%D0%B5%D0%B5--%D0%B2--%D1%80%D0%B5%D0%BB%D0%B8%D0%B7%D0%B5-v0.3.0-blue?style=flat" alt="Подробнее в релизе v0.3.0" class="img_ev3q"></a></p>]]></content:encoded>
         </item>
         <item>
@@ -163,10 +158,8 @@
 </blockquote>
 </li>
 </ul>
-<blockquote>
-<p>[!IMPORTANT]<br>
-<!-- -->Обновлённые алгоритмы могут повлиять на работу ваших существующих автоматизаций, если они опирались на предыдущие значения индекса пыльцы или уровней аллергенов. Проверьте сценарии и при необходимости скорректируйте пороги или условия.</p>
-</blockquote>
+<div><p><br>
+<!-- -->Обновлённые алгоритмы могут повлиять на работу ваших существующих автоматизаций, если они опирались на предыдущие значения индекса пыльцы или уровней аллергенов. Проверьте сценарии и при необходимости скорректируйте пороги или условия.</p></div>
 <p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.7" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/%D0%9F%D0%BE%D0%B4%D1%80%D0%BE%D0%B1%D0%BD%D0%B5%D0%B5--%D0%B2--%D1%80%D0%B5%D0%BB%D0%B8%D0%B7%D0%B5-v0.2.7-blue?style=flat-square" alt="Подробнее в релизе v0.2.7" class="img_ev3q"></a></p>]]></content:encoded>
         </item>
         <item>
@@ -186,17 +179,12 @@
 <!-- -->ID сущностей (в том числе при сбросе) теперь точно соответствуют ключам в файлах локализации, например <code>sensor.silam_pollen_{Zone Name}_grass</code> остаётся одинаковым во всех языках и для всех сенсоров интеграции.</p>
 </li>
 </ul>
-<blockquote>
-<p>[!IMPORTANT]<br>
-<!-- -->Чтобы вернуть имена сущностей к новым значениям по умолчанию, следуйте инструкции по <a href="https://www.home-assistant.io/docs/configuration/customizing-devices/" target="_blank" rel="noopener noreferrer">кастомизации устройств</a> в документации Home Assistant.</p>
-</blockquote>
-<blockquote>
-<p>[!NOTE]<br>
-<!-- -->Если вы уже создали автоматизации или скрипты, не забудьте обновить в них соответствующие <code>entity_id</code>.</p>
-<blockquote>
+<div><p><br>
+<!-- -->Чтобы вернуть имена сущностей к новым значениям по умолчанию, следуйте инструкции по <a href="https://www.home-assistant.io/docs/configuration/customizing-devices/" target="_blank" rel="noopener noreferrer">кастомизации устройств</a> в документации Home Assistant.</p></div>
+<div><p><br>
+<!-- -->Если вы уже создали автоматизации или скрипты, не забудьте обновить в них соответствующие <code>entity_id</code>.</p><blockquote>
 <p>Если ваш системный язык Home Assistant на русском или английском, можете игнорировать это уведомление — для этих языков ничего не изменится.</p>
-</blockquote>
-</blockquote>
+</blockquote></div>
 <p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.6" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/%D0%9F%D0%BE%D0%B4%D1%80%D0%BE%D0%B1%D0%BD%D0%B5%D0%B5--%D0%B2--%D1%80%D0%B5%D0%BB%D0%B8%D0%B7%D0%B5-v0.2.6-blue?style=flat-square" alt="Подробнее в релизе v0.2.6" class="img_ev3q"></a></p>]]></content:encoded>
         </item>
         <item>

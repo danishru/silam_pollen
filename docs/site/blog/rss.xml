@@ -94,12 +94,9 @@
 </ul>
 </li>
 </ul>
-<blockquote>
-<p>[!IMPORTANT]<br>
-<strong>After updating</strong>, add the module manually:</p>
-<p><a href="https://my.home-assistant.io/redirect/lovelace_resources/" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://my.home-assistant.io/badges/lovelace_resources.svg" alt="Open your Home Assistant instance and show your dashboard resources." class="img_ev3q"></a><br>
-<strong>Settings → Dashboards → Resources → Add</strong> → URL: <code>/local/absolute-forecast-card.js</code> → <strong>Resource type: JavaScript Module</strong>.</p>
-</blockquote>
+<div><p><br>
+<strong>After updating</strong>, add the module manually:</p><p><a href="https://my.home-assistant.io/redirect/lovelace_resources/" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://my.home-assistant.io/badges/lovelace_resources.svg" alt="Open your Home Assistant instance and show your dashboard resources." class="img_ev3q"></a><br>
+<strong>Settings → Dashboards → Resources → Add</strong> → URL: <code>/local/absolute-forecast-card.js</code> → <strong>Resource type: JavaScript Module</strong>.</p></div>
 <hr>
 <h3 class="anchor anchorWithStickyNavbar_LWe7" id="-updated-pollen-sensor-model">🌿 Updated pollen sensor model<a href="https://danishru.github.io/silam_pollen/site/blog/2025/09/05/v0.3.0#-updated-pollen-sensor-model" class="hash-link" aria-label="Direct link to 🌿 Updated pollen sensor model" title="Direct link to 🌿 Updated pollen sensor model">​</a></h3>
 <ul>
@@ -112,10 +109,8 @@
 </ul>
 </li>
 </ul>
-<blockquote>
-<p>[!NOTE]<br>
-<!-- -->If you relied on the previous index or legacy allergen aggregation, review and adjust thresholds in your automations and scripts.</p>
-</blockquote>
+<div><p><br>
+<!-- -->If you relied on the previous index or legacy allergen aggregation, review and adjust thresholds in your automations and scripts.</p></div>
 <p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.3.0" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.3.0-blue?style=flat" alt="More in release v0.3.0" class="img_ev3q"></a></p>]]></content:encoded>
         </item>
         <item>
@@ -163,10 +158,8 @@
 </blockquote>
 </li>
 </ul>
-<blockquote>
-<p>[!IMPORTANT]<br>
-<!-- -->These new algorithms may affect automations that relied on the old index or allergen-level values. Review your scripts and adjust thresholds or conditions if needed.</p>
-</blockquote>
+<div><p><br>
+<!-- -->These new algorithms may affect automations that relied on the old index or allergen-level values. Review your scripts and adjust thresholds or conditions if needed.</p></div>
 <p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.7" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.7-blue?style=flat" alt="More in release v0.2.7" class="img_ev3q"></a></p>]]></content:encoded>
         </item>
         <item>
@@ -186,17 +179,12 @@
 <!-- -->Entity IDs (including defaults and resets) now correspond exactly to the keys in the localization files. For example, <code>sensor.silam_pollen_{Zone Name}_grass</code> remains identical across all languages and for every sensor in the integration.</p>
 </li>
 </ul>
-<blockquote>
-<p>[!IMPORTANT]<br>
-<!-- -->To revert your entities to the new default names, follow the <a href="https://www.home-assistant.io/docs/configuration/customizing-devices/" target="_blank" rel="noopener noreferrer">device customization guide</a> in the Home Assistant documentation.</p>
-</blockquote>
-<blockquote>
-<p>[!NOTE]<br>
-<!-- -->If you’ve already created automations or scripts, remember to update the referenced <code>entity_id</code> values.</p>
-<blockquote>
+<div><p><br>
+<!-- -->To revert your entities to the new default names, follow the <a href="https://www.home-assistant.io/docs/configuration/customizing-devices/" target="_blank" rel="noopener noreferrer">device customization guide</a> in the Home Assistant documentation.</p></div>
+<div><p><br>
+<!-- -->If you’ve already created automations or scripts, remember to update the referenced <code>entity_id</code> values.</p><blockquote>
 <p>If your Home Assistant system language is English or Russian, you can ignore this notice — entity IDs will remain unchanged for these languages.</p>
-</blockquote>
-</blockquote>
+</blockquote></div>
 <p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.6" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.6-blue?style=flat" alt="More in release v0.2.6" class="img_ev3q"></a></p>]]></content:encoded>
         </item>
         <item>
