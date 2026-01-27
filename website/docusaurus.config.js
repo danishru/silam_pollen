@@ -1,4 +1,5 @@
 import { themes as prismThemes } from "prism-react-renderer";
+import remarkGithubAdmonitions from "remark-github-admonitions-to-directives";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -26,11 +27,13 @@ const config = {
       {
         docs: {
           routeBasePath: "docs",
-          sidebarPath: "./sidebars.js"
+          sidebarPath: "./sidebars.js",
+          remarkPlugins: [remarkGithubAdmonitions],
         },
         blog: {
           routeBasePath: "blog",
-          showReadingTime: false
+          showReadingTime: false,
+          remarkPlugins: [remarkGithubAdmonitions],
         },
         theme: {
           customCss: "./src/css/custom.css"
