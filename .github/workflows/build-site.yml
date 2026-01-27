@@ -1,0 +1,50 @@
+name: Build Docusaurus site
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "website/**"
+      - ".github/workflows/build-site.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: website
+        run: npm install
+
+      - name: Build site
+        working-directory: website
+        run: npm run build
+
+      - name: Sync build to docs/site
+        run: |
+          rm -rf docs/site
+          mkdir -p docs/site
+          cp -R website/build/. docs/site/
+
+      - name: Commit generated site
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/site
+          git commit -m "build(site): update docs/site"
+          git push
