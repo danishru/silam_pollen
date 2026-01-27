@@ -196,7 +196,7 @@
         "data": {
           "update_interval": "Opdateringsinterval (minutter, minimum 30)",
           "var": "Pollentype",
-          "version": "Datasæt",
+          "version": "Datasæt (nuværende: {effective_dataset})",
           "forecast": "Aktiver pollenprognose?",
           "forecast_duration": "Ønsket prognosevarighed (36–120 timer; standard 36)"
         },

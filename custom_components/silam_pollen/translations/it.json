@@ -230,7 +230,7 @@
         "data": {
           "update_interval": "Intervallo di aggiornamento (minuti, minimo 30)",
           "var": "Tipo di polline",
-          "version": "Dataset",
+          "version": "Dataset (corrente: {effective_dataset})",
           "forecast": "Abilita la previsione del polline?",
           "forecast_duration": "Durata previsione desiderata (36–120 ore; predefinito 36)"
         },

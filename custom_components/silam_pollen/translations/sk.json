@@ -190,7 +190,7 @@
         "data": {
           "update_interval": "Interval aktualizácií (minúty, min. 30)",
           "var": "Typ peľu",
-          "version": "Dataset",
+          "version": "Dátová sada (aktuálna: {effective_dataset})",
           "forecast": "Povoliť peľovú predpoveď?",
           "forecast_duration": "Požadovaná dĺžka predpovede (36 – 120 h; predvolené 36)"
         },

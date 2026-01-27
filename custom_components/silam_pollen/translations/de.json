@@ -230,7 +230,7 @@
         "data": {
           "update_interval": "Aktualisierungsintervall (Minuten, mindestens 30)",
           "var": "Pollenart",
-          "version": "Datensatz",
+          "version": "Datensatz (aktuell: {effective_dataset})",
           "forecast": "Pollenprognose aktivieren?",
           "forecast_duration": "Prognosedauer (36–120 Stunden; Standard 36)"
         },

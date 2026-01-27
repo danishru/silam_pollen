@@ -244,7 +244,7 @@
         "data": {
           "update_interval": "Oppdateringsintervall (minutter, minst 30)",
           "var": "Pollentype",
-          "version": "Datasett",
+          "version": "Datasett (gjeldende: {effective_dataset})",
           "forecast": "Aktiver pollenprognose?",
           "forecast_duration": "Ønsket prognosevarighet (36–120 timer; standard 36)"
         },

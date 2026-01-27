@@ -244,7 +244,7 @@
         "data": {
           "update_interval": "Uppdateringsintervall (minuter, minst 30)",
           "var": "Pollentyp",
-          "version": "Datamängd",
+          "version": "Datamängd (aktuell: {effective_dataset})",
           "forecast": "Aktivera pollenprognos?",
           "forecast_duration": "Önskad prognoslängd (36–120 timmar; standard 36)"
         },

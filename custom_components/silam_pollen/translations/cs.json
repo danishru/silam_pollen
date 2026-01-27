@@ -220,7 +220,7 @@
         "data": {
           "update_interval": "Interval aktualizací (minuty, minimálně 30)",
           "var": "Typ pylu",
-          "version": "Datová sada",
+          "version": "Datová sada (aktuální: {effective_dataset})",
           "forecast": "Povolit pylovou předpověď?",
           "forecast_duration": "Požadovaná délka předpovědi (36–120 h; výchozí 36)"
         },

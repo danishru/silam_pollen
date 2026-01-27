@@ -230,7 +230,7 @@
         "data": {
           "update_interval": "Päivitysväli (minuutteina, vähintään 30)",
           "var": "Siitepölyn laji",
-          "version": "Aineisto",
+          "version": "Aineisto (nykyinen: {effective_dataset})",
           "forecast": "Ota siitepölyennuste käyttöön?",
           "forecast_duration": "Haluttu ennusteen kesto (36–120 h; oletus 36)"
         },

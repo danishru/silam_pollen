@@ -230,7 +230,7 @@
         "data": {
           "update_interval": "Update-interval (minuten, minimum 30)",
           "var": "Pollen­type",
-          "version": "Dataset",
+          "version": "Dataset (huidig: {effective_dataset})",
           "forecast": "Pollen­voorspelling inschakelen?",
           "forecast_duration": "Gewenste voorspellingstermijn (36–120 u; standaard 36)"
         },
