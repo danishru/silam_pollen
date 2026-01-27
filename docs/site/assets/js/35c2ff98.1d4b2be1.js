@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksilam_pollen_site=self.webpackChunksilam_pollen_site||[]).push([[95],{4901(e){e.exports=JSON.parse('{"metadata":{"permalink":"/silam_pollen/site/blog/page/2","page":2,"postsPerPage":10,"totalPages":2,"totalCount":11,"previousPage":"/silam_pollen/site/blog","blogDescription":"Blog","blogTitle":"Blog"}}')}}]);

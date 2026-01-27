@@ -2,11 +2,61 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://danishru.github.io/silam_pollen/site/blog</id>
     <title>SILAM Pollen Blog</title>
-    <updated>2026-01-22T00:00:00.000Z</updated>
+    <updated>2026-01-27T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://danishru.github.io/silam_pollen/site/blog"/>
     <subtitle>SILAM Pollen Blog</subtitle>
     <icon>https://danishru.github.io/silam_pollen/site/img/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[v0.3.2]]></title>
+        <id>https://danishru.github.io/silam_pollen/site/blog/2026/01/27/v0.3.2</id>
+        <link href="https://danishru.github.io/silam_pollen/site/blog/2026/01/27/v0.3.2"/>
+        <updated>2026-01-27T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[v0.3.2 🧠 Smarter pollen updates for the new season]]></summary>
+        <content type="html"><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v032--smarter-pollen-updates-for-the-new-season">v0.3.2 🧠 Smarter pollen updates for the new season<a href="https://danishru.github.io/silam_pollen/site/blog/2026/01/27/v0.3.2#v032--smarter-pollen-updates-for-the-new-season" class="hash-link" aria-label="Direct link to v0.3.2 🧠 Smarter pollen updates for the new season" title="Direct link to v0.3.2 🧠 Smarter pollen updates for the new season">​</a></h3>
+<p>Version <strong>v0.3.2</strong> strengthens the <strong>SMART update logic</strong>, making pollen forecasts more reliable and easier to use as the new season begins.</p>
+<p>With <strong>SMART dataset selection</strong>, SILAM Pollen no longer relies on a fixed configuration.<br>
+<!-- -->Instead, it <strong>automatically chooses the most suitable pollen dataset for your location</strong>, based on actual coverage — helping ensure that the forecast you see is relevant to where you live.</p>
+<p>In practice, this means:</p>
+<ul>
+<li>less manual setup and guesswork,</li>
+<li>fewer cases of misleading or irrelevant pollen data,</li>
+<li>smoother behaviour when datasets change between seasons.</li>
+</ul>
+<p><img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/c4f6b8f8-93e0-4543-9eb3-4e598fd4d54a" alt="image" class="img_ev3q"></p>
+<p>Manual dataset selection is still available, but <strong>SMART mode is recommended for everyday use</strong>.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-silam-pollen-v61-datasets">🌍 SILAM pollen v6.1 datasets<a href="https://danishru.github.io/silam_pollen/site/blog/2026/01/27/v0.3.2#-silam-pollen-v61-datasets" class="hash-link" aria-label="Direct link to 🌍 SILAM pollen v6.1 datasets" title="Direct link to 🌍 SILAM pollen v6.1 datasets">​</a></h4>
+<p>This release introduces support for the <strong>latest SILAM pollen v6.1 datasets</strong>, which form the basis for forecasts in the upcoming pollen seasons.</p>
+<p>Compared to previous versions, v6.1 datasets provide:</p>
+<ul>
+<li>
+<p>updated <strong>SILAM v6.1 model outputs</strong> for the current season,</p>
+</li>
+<li>
+<p>a refreshed <strong>European baseline</strong> (SILAM Europe pollen v6.1),</p>
+</li>
+<li>
+<p>a new <strong>high-detail regional dataset</strong> where available.</p>
+</li>
+<li>
+<p><strong>SILAM Finland pollen v6.1</strong> offers the <strong>highest spatial detail</strong> within its coverage area<br>
+<!-- -->🟦 <strong>Blue zone</strong> — coverage of <strong>SILAM Finland (v6.1)</strong> with <strong>up to 0.8 km resolution</strong>, especially useful for users in:</p>
+<ul>
+<li>Finland</li>
+<li>Saint Petersburg and Northwestern Russia</li>
+<li>Northern &amp; eastern Sweden (including Stockholm)</li>
+<li>Northeastern Norway</li>
+<li>Northern Estonia (including Tallinn and Narva)</li>
+</ul>
+</li>
+</ul>
+<p>When available, this dataset is <strong>automatically selected by SMART mode</strong>, with manual selection still possible in the integration options.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="️-deprecation">⚠️ Deprecation<a href="https://danishru.github.io/silam_pollen/site/blog/2026/01/27/v0.3.2#%EF%B8%8F-deprecation" class="hash-link" aria-label="Direct link to ⚠️ Deprecation" title="Direct link to ⚠️ Deprecation">​</a></h4>
+<div class="theme-admonition theme-admonition-warning admonition_xJq3 alert alert--warning"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>warning</div><div class="admonitionContent_BuS1"><p><br>
+<!-- -->📉 <strong>Pollen Index</strong> sensor is now <strong>legacy</strong> and <strong>disabled by default</strong>.<br>
+<!-- -->It is removed automatically on update and can be re-enabled via the <strong>legacy toggle</strong> in integration options.</p></div></div>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.3.2" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.3.2-blue?style=flat" alt="More in release v0.3.2" class="img_ev3q"></a></p>]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[v0.3.1]]></title>
         <id>https://danishru.github.io/silam_pollen/site/blog/2026/01/22/v0.3.1</id>
