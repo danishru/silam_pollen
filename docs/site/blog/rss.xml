@@ -94,9 +94,9 @@
 </ul>
 </li>
 </ul>
-<div><p><br>
+<div class="theme-admonition theme-admonition-info admonition_xJq3 alert alert--info"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_BuS1"><p><br>
 <strong>After updating</strong>, add the module manually:</p><p><a href="https://my.home-assistant.io/redirect/lovelace_resources/" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://my.home-assistant.io/badges/lovelace_resources.svg" alt="Open your Home Assistant instance and show your dashboard resources." class="img_ev3q"></a><br>
-<strong>Settings → Dashboards → Resources → Add</strong> → URL: <code>/local/absolute-forecast-card.js</code> → <strong>Resource type: JavaScript Module</strong>.</p></div>
+<strong>Settings → Dashboards → Resources → Add</strong> → URL: <code>/local/absolute-forecast-card.js</code> → <strong>Resource type: JavaScript Module</strong>.</p></div></div>
 <hr>
 <h3 class="anchor anchorWithStickyNavbar_LWe7" id="-updated-pollen-sensor-model">🌿 Updated pollen sensor model<a href="https://danishru.github.io/silam_pollen/site/blog/2025/09/05/v0.3.0#-updated-pollen-sensor-model" class="hash-link" aria-label="Direct link to 🌿 Updated pollen sensor model" title="Direct link to 🌿 Updated pollen sensor model">​</a></h3>
 <ul>
@@ -109,8 +109,8 @@
 </ul>
 </li>
 </ul>
-<div><p><br>
-<!-- -->If you relied on the previous index or legacy allergen aggregation, review and adjust thresholds in your automations and scripts.</p></div>
+<div class="theme-admonition theme-admonition-note admonition_xJq3 alert alert--secondary"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"></path></svg></span>note</div><div class="admonitionContent_BuS1"><p><br>
+<!-- -->If you relied on the previous index or legacy allergen aggregation, review and adjust thresholds in your automations and scripts.</p></div></div>
 <p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.3.0" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.3.0-blue?style=flat" alt="More in release v0.3.0" class="img_ev3q"></a></p>]]></content:encoded>
         </item>
         <item>
@@ -158,8 +158,8 @@
 </blockquote>
 </li>
 </ul>
-<div><p><br>
-<!-- -->These new algorithms may affect automations that relied on the old index or allergen-level values. Review your scripts and adjust thresholds or conditions if needed.</p></div>
+<div class="theme-admonition theme-admonition-info admonition_xJq3 alert alert--info"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_BuS1"><p><br>
+<!-- -->These new algorithms may affect automations that relied on the old index or allergen-level values. Review your scripts and adjust thresholds or conditions if needed.</p></div></div>
 <p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.7" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.7-blue?style=flat" alt="More in release v0.2.7" class="img_ev3q"></a></p>]]></content:encoded>
         </item>
         <item>
@@ -179,12 +179,12 @@
 <!-- -->Entity IDs (including defaults and resets) now correspond exactly to the keys in the localization files. For example, <code>sensor.silam_pollen_{Zone Name}_grass</code> remains identical across all languages and for every sensor in the integration.</p>
 </li>
 </ul>
-<div><p><br>
-<!-- -->To revert your entities to the new default names, follow the <a href="https://www.home-assistant.io/docs/configuration/customizing-devices/" target="_blank" rel="noopener noreferrer">device customization guide</a> in the Home Assistant documentation.</p></div>
-<div><p><br>
+<div class="theme-admonition theme-admonition-info admonition_xJq3 alert alert--info"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_BuS1"><p><br>
+<!-- -->To revert your entities to the new default names, follow the <a href="https://www.home-assistant.io/docs/configuration/customizing-devices/" target="_blank" rel="noopener noreferrer">device customization guide</a> in the Home Assistant documentation.</p></div></div>
+<div class="theme-admonition theme-admonition-note admonition_xJq3 alert alert--secondary"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"></path></svg></span>note</div><div class="admonitionContent_BuS1"><p><br>
 <!-- -->If you’ve already created automations or scripts, remember to update the referenced <code>entity_id</code> values.</p><blockquote>
 <p>If your Home Assistant system language is English or Russian, you can ignore this notice — entity IDs will remain unchanged for these languages.</p>
-</blockquote></div>
+</blockquote></div></div>
 <p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.2.6" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.2.6-blue?style=flat" alt="More in release v0.2.6" class="img_ev3q"></a></p>]]></content:encoded>
         </item>
         <item>
