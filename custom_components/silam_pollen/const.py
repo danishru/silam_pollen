@@ -30,6 +30,16 @@ BASE_URL_HIRES_V6_1 = (
     "silam_hires_pollen_v6_1_best.ncd"
 )
 
+
+# Короткие ключи источников для SMART-склейки (raw_merged[*]["s"] и merged["src"])
+# Значения задаём явно, чтобы ключи были стабильными и без вычислений.
+DATASET_SRC_KEYS = {
+    "silam_europe_pollen_v6_1": "sep61",
+    "silam_europe_pollen_v6_0": "sep60",
+    "silam_regional_pollen_v5_9_1": "srp591",
+    "silam_hires_pollen_v6_1": "shp61",
+}
+
 # --- Backward-compatible aliases (keep for now) ---
 BASE_URL_V6_0 = BASE_URL_EUROPE_V6_0
 BASE_URL_V5_9_1 = BASE_URL_REGIONAL_V5_9_1

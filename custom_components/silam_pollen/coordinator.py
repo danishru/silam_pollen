@@ -26,7 +26,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from .const import URL_VAR_MAPPING, resolve_silam_var_name  # Импортируем маппинг для преобразования переменных
+from .const import URL_VAR_MAPPING, resolve_silam_var_name, DATASET_SRC_KEYS  # Импортируем маппинг для преобразования переменных
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -124,6 +124,11 @@ class SilamCoordinator(DataUpdateCoordinator):
 
         # Инициализируем merged_data (будет заполняться после обновления)
         self.merged_data = {}
+        # --- Источники данных по временным точкам (для SMART-склейки) ---
+        # Ключи задаём через const.DATASET_SRC_KEYS (без URL, только имя датасета).
+        # reverse: 'sep61' -> 'silam_europe_pollen_v6_1'
+        self._src_reverse = {v: k for k, v in DATASET_SRC_KEYS.items()}
+
 
         super().__init__(
             hass,
@@ -285,6 +290,37 @@ class SilamCoordinator(DataUpdateCoordinator):
         except Exception:
             return None
 
+
+    def _dataset_name_from_base_url(self, base_url: str | None) -> str:
+        """Возвращает имя датасета из NCSS grid base_url (без URL-частей)."""
+        if not base_url:
+            return "-"
+        try:
+            u = urlparse(base_url)
+            parts = [p for p in (u.path or "").split("/") if p]
+            # ... /thredds/ncss/grid/<dataset>/<file>.ncd
+            if "grid" in parts:
+                gi = parts.index("grid")
+                if gi + 1 < len(parts):
+                    return parts[gi + 1]
+            return "-"
+        except Exception:
+            return "-"
+
+    def _src_key_for_dataset(self, dataset_name: str) -> str:
+        """Короткий ключ источника: берём из DATASET_SRC_KEYS, иначе используем само имя датасета."""
+        if not dataset_name or dataset_name == "-":
+            return "-"
+        return DATASET_SRC_KEYS.get(dataset_name, dataset_name)
+
+    def _apply_src_to_raw(self, raw: dict | None, src_key: str) -> None:
+        """Проставляет src_key в каждом таймслоте raw_merged как payload['s']."""
+        if not isinstance(raw, dict):
+            return
+        for _, payload in raw.items():
+            if isinstance(payload, dict):
+                payload.setdefault("s", src_key)
+
     def _build_station_features_xml_from_raw_merged(self, raw_merged: dict) -> ET.Element:
         """Строит минимальный XML в формате NCSS (stationFeature/station/data) из raw_merged.
 
@@ -410,6 +446,8 @@ class SilamCoordinator(DataUpdateCoordinator):
         tail_fetch_attempted = False
         tail_fetch_success = None
 
+        raw_view = None  # используется для восстановления меток источника 's' при инкрементальной пересборке
+
         # Определяем координаты: если используются ручные координаты, то берем их,
         # иначе извлекаем координаты из зоны 'home'.
         if self._manual_coordinates and self._manual_latitude is not None and self._manual_longitude is not None:
@@ -431,6 +469,10 @@ class SilamCoordinator(DataUpdateCoordinator):
                 # --- Шаг 3: SMART-выбор датасета (один раз на старте/первом обновлении) ---
                 await self._apply_smart_selection_if_needed(session, latitude, longitude)
 
+                # --- Источник данных (коротко) для SMART-склейки ---
+                src_ds = self._dataset_name_from_base_url(self._base_url)
+                src_key = self._src_key_for_dataset(src_ds)
+
                 # --- runs catalog (диагностика свежести) ---
                 _LOGGER.debug("%s Шаг 1: проверка свежести (runs catalog): %s", self._log_prefix, self._runs_catalog_url)
                 run_id, run_start, run_end = await self._fetch_latest_run_info(session)
@@ -451,6 +493,9 @@ class SilamCoordinator(DataUpdateCoordinator):
                     and isinstance(self.merged_data.get("raw_merged"), dict)
                 ):
                     raw_all = self.merged_data.get("raw_merged") or {}
+
+                    # Проставляем источник для старых кешей, где меток ещё не было
+                    self._apply_src_to_raw(raw_all, src_key)
 
                     # «Сдвигаем окно» по текущему времени:
                     # - чуть захватываем прошлое (1 час), чтобы не ломать текущую семантику "now"
@@ -582,6 +627,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                                     )
                                     tail_raw = tail_merged.get("raw_merged") or {}
                                     if tail_raw:
+                                        self._apply_src_to_raw(tail_raw, src_key)
                                         raw_all.update(tail_raw)
                                         _LOGGER.debug("%s Шаг 2b: добавлено точек в кеш: %s", self._log_prefix, len(tail_raw))
                     except Exception as err:
@@ -665,6 +711,37 @@ class SilamCoordinator(DataUpdateCoordinator):
                 selected_allergens=self._var_list,
                 forecast_duration=self._forecast_duration,
             )
+
+            # --- Источник данных по временным точкам (для SMART-склейки) ---
+            merged_raw = merged.get("raw_merged")
+            if isinstance(merged_raw, dict):
+                if raw_view:
+                    # Инкрементальная пересборка: восстанавливаем 's' из raw_view по ключу datetime
+                    for dt_s, payload in merged_raw.items():
+                        if not isinstance(payload, dict):
+                            continue
+                        src_payload = raw_view.get(dt_s) if isinstance(raw_view, dict) else None
+                        if isinstance(src_payload, dict) and "s" in src_payload:
+                            payload["s"] = src_payload["s"]
+                        else:
+                            payload.setdefault("s", src_key)
+                else:
+                    # Полный фетч: весь merged_raw относится к текущему датасету
+                    self._apply_src_to_raw(merged_raw, src_key)
+
+                # Собираем только реально использованные источники в этом merged
+                used_src: dict[str, str] = {}
+                for payload in merged_raw.values():
+                    if isinstance(payload, dict):
+                        k = payload.get("s")
+                        if not k:
+                            continue
+                        ds = self._src_reverse.get(k) if isinstance(self._src_reverse, dict) else None
+                        # Если ключ не из справочника, считаем, что это уже имя датасета (fallback)
+                        used_src[k] = ds or k
+                merged["src"] = used_src
+            else:
+                merged["src"] = {src_key: src_ds}
             # Засекаем конец и вычисляем длительность фетча
             duration = time.monotonic() - start
             merged["last_fetch_duration"] = round(duration, 3)
