@@ -40,10 +40,6 @@ DATASET_SRC_KEYS = {
     "silam_hires_pollen_v6_1": "shp61",
 }
 
-# --- Backward-compatible aliases (keep for now) ---
-BASE_URL_V6_0 = BASE_URL_EUROPE_V6_0
-BASE_URL_V5_9_1 = BASE_URL_REGIONAL_V5_9_1
-
 # Маппинг типов пыльцы: ключ – внутреннее название, значение – дефолтное (англ.) имя
 VAR_OPTIONS = {
     "alder_m22": "alder",

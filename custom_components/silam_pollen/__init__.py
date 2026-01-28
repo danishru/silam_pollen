@@ -157,7 +157,6 @@ async def async_setup_entry(hass, entry):
     dataset_selection = entry.options.get("version", entry.data.get("version", "smart"))
 
     # Кандидаты для SMART (в порядке приоритета).
-    # Важно: не добавляем устаревшие BASE_URL_V5_9_1 / BASE_URL_V6_0 — они будут удалены.
     candidates: list[str] = []
     try:
         from . import const as _const  # локальный импорт, чтобы не плодить циклы
