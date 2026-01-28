@@ -106,6 +106,7 @@ class SilamPollenFetchDurationSensor(SensorEntity):
             "latest_run_end": md.get("latest_run_end"),
             # полезно для отладки догрузки хвоста
             "tail_fetch_attempted": md.get("tail_fetch_attempted"),
+            "tail_fetch_network": md.get("tail_fetch_network"),
             "tail_fetch_success": md.get("tail_fetch_success"),
         }
 

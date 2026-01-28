@@ -26,13 +26,16 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from .const import URL_VAR_MAPPING, resolve_silam_var_name, DATASET_SRC_KEYS  # Импортируем маппинг для преобразования переменных
+from .const import (
+    DOMAIN,
+    RUNS_CATALOG_MANAGER,
+    URL_VAR_MAPPING,
+    resolve_silam_var_name,
+    DATASET_SRC_KEYS,
+)  # Импортируем константы и маппинг
+
 
 _LOGGER = logging.getLogger(__name__)
-
-# THREDDS catalog namespace
-_THREDDS_NS = {"t": "http://www.unidata.ucar.edu/namespaces/thredds/InvCatalog/v1.0"}
-
 
 class SilamCoordinator(DataUpdateCoordinator):
     """Координатор для интеграции SILAM Pollen."""
@@ -111,6 +114,9 @@ class SilamCoordinator(DataUpdateCoordinator):
         self._latest_run_start = None
         self._latest_run_end = None
 
+        # Общий менеджер runs catalog (domain-level) из hass.data[DOMAIN]
+        self._runs_manager = hass.data.get(DOMAIN, {}).get(RUNS_CATALOG_MANAGER)
+
         # --- Шаг 2: «активный» run_id, на котором построен текущий кеш raw_merged ---
         # Нужен, чтобы понимать: «набор данных тот же» -> можно пересобрать из кеша без полного запроса.
         self._active_run_id = None
@@ -166,34 +172,45 @@ class SilamCoordinator(DataUpdateCoordinator):
     async def _fetch_latest_run_info(self, session):
         """Возвращает (run_id, start, end) из runs/catalog.xml.
 
-        На этом шаге это *только диагностика* (не влияет на логику фетча).
+        Теперь источник только один: общий RunsCatalogManager (кэш + дедуп).
         """
         if not self._runs_catalog_url:
             return None, None, None
 
+        if self._runs_manager is None:
+            _LOGGER.debug(
+                "%s runs catalog: RunsCatalogManager не инициализирован (url=%s)",
+                self._log_prefix,
+                self._runs_catalog_url,
+            )
+            return None, None, None
+
         try:
-            async with session.get(self._runs_catalog_url) as response:
-                if response.status != 200:
-                    _LOGGER.debug("%s runs catalog HTTP %s", self._log_prefix, response.status)
-                    return None, None, None
-                async with async_timeout.timeout(10):
-                    xml_text = await response.text()
+            latest = await self._runs_manager.async_get_latest(self._runs_catalog_url)
+            if latest and latest.run_id:
+                _LOGGER.debug(
+                    "%s Шаг 1: runs catalog (manager): run=%s start=%s end=%s",
+                    self._log_prefix,
+                    latest.run_id,
+                    latest.start,
+                    latest.end,
+                )
+                return latest.run_id, latest.start, latest.end
 
-            root = ET.fromstring(xml_text)
-            parent = root.find(".//t:dataset[@name='Forecast Model Run']", _THREDDS_NS)
-            latest = parent.find("t:dataset", _THREDDS_NS) if parent is not None else None
-            if latest is None:
-                return None, None, None
-
-            run_id = latest.get("name")
-            start_el = latest.find("t:timeCoverage/t:start", _THREDDS_NS)
-            end_el = latest.find("t:timeCoverage/t:end", _THREDDS_NS)
-            start = start_el.text.strip() if (start_el is not None and start_el.text) else None
-            end = end_el.text.strip() if (end_el is not None and end_el.text) else None
-            return run_id, start, end
+            _LOGGER.debug(
+                "%s Шаг 1: runs catalog (manager): нет latest run (url=%s)",
+                self._log_prefix,
+                self._runs_catalog_url,
+            )
+            return None, None, None
 
         except Exception as err:
-            _LOGGER.debug("%s Не удалось получить/распарсить runs catalog (%s): %s", self._log_prefix, self._runs_catalog_url, err)
+            _LOGGER.debug(
+                "%s Шаг 1: runs catalog (manager) ошибка (%s): %s",
+                self._log_prefix,
+                self._runs_catalog_url,
+                err,
+            )
             return None, None, None
 
     # ---------------------------------------------------------------------
@@ -269,6 +286,45 @@ class SilamCoordinator(DataUpdateCoordinator):
     # ---------------------------------------------------------------------
     # Шаг 2: вспомогательные функции для «инкрементального» режима
     # ---------------------------------------------------------------------
+    def _catalog_allows_tail(
+        self,
+        *,
+        cache_max_dt: datetime | None,
+        window_end: datetime,
+    ) -> bool:
+        """
+        Возвращает True, если в runs/catalog.xml есть данные,
+        которые можно догрузить после cache_max_dt.
+        """
+        catalog_end_dt = self._parse_dt_utc(self._latest_run_end)
+        if not catalog_end_dt:
+            # Нет информации из каталога — ведём себя как раньше
+            return True
+
+        # В каталоге данных дальше кеша нет
+        if cache_max_dt and cache_max_dt >= catalog_end_dt:
+            _LOGGER.debug(
+                "%s Шаг 2b: хвост запрещён каталогом "
+                "(cache_max=%s, catalog_end=%s)",
+                self._log_prefix,
+                cache_max_dt,
+                catalog_end_dt,
+            )
+            return False
+
+        # Даже с учётом окна догружать нечего
+        wanted_end = min(window_end, catalog_end_dt)
+        if cache_max_dt and cache_max_dt >= wanted_end:
+            _LOGGER.debug(
+                "%s Шаг 2b: хвост не нужен (кеш покрывает окно каталога) "
+                "(cache_max=%s, wanted_end=%s)",
+                self._log_prefix,
+                cache_max_dt,
+                wanted_end,
+            )
+            return False
+
+        return True
 
     def _parse_dt_utc(self, dt_str: str):
         """Парсит ISO-строку времени в aware datetime (UTC).
@@ -444,6 +500,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         # incremental  : кеш + частичный сетевой запрос (догрузка хвоста)
         request_type = 'full'
         tail_fetch_attempted = False
+        tail_fetch_network = False
         tail_fetch_success = None
 
         raw_view = None  # используется для восстановления меток источника 's' при инкрементальной пересборке
@@ -523,9 +580,16 @@ class SilamCoordinator(DataUpdateCoordinator):
                             if (max_dt is None) or (dt > max_dt):
                                 max_dt = dt
 
-                        # Если кеш не дотягивает до конца окна — догружаем
-                        # (порог 30 минут, чтобы не дёргаться из-за погрешностей)
-                        if max_dt and (max_dt < (window_end - timedelta(minutes=30))):
+                        # Если кеш не дотягивает до конца окна — потенциально догружаем
+                        # НО сначала проверяем, разрешает ли это runs/catalog.xml
+                        if (
+                            max_dt
+                            and (max_dt < (window_end - timedelta(minutes=30)))
+                            and self._catalog_allows_tail(
+                                cache_max_dt=max_dt,
+                                window_end=window_end,
+                            )
+                        ):
                             tail_start_dt = max_dt + timedelta(hours=1)
 
                             # Если после +1ч старт уже за пределами окна — хвост не нужен
@@ -570,6 +634,7 @@ class SilamCoordinator(DataUpdateCoordinator):
 
                                 # --- Диагностика: инкрементальный сетевой запрос хвоста ---
                                 tail_fetch_attempted = True
+                                tail_fetch_network = True
                                 _LOGGER.debug("%s Шаг 2b: tail index URL: %s", self._log_prefix, tail_index_url)
 
                                 tail_index_xml = None
@@ -590,7 +655,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                                 if self._var_list:
                                     tail_main_params = []
                                     for allergen in self._var_list:
-                                        full_allergen = self._resolve_main_var_name(allergen)
+                                        full_allergen = resolve_silam_var_name(allergen)
                                         tail_main_params.append(f"var={full_allergen}")
 
                                     tail_main_params += [
@@ -630,6 +695,13 @@ class SilamCoordinator(DataUpdateCoordinator):
                                         self._apply_src_to_raw(tail_raw, src_key)
                                         raw_all.update(tail_raw)
                                         _LOGGER.debug("%s Шаг 2b: добавлено точек в кеш: %s", self._log_prefix, len(tail_raw))
+                        else:
+                            tail_fetch_attempted = True
+                            tail_fetch_success = False  # не ошибка, а осознанный skip
+                            _LOGGER.debug(
+                                "%s Шаг 2b: догрузка хвоста пропущена (каталог ограничивает окно)",
+                                self._log_prefix,
+                            )                    
                     except Exception as err:
                         _LOGGER.debug("%s Шаг 2b: ошибка догрузки хвоста (пропускаем): %s", self._log_prefix, err)
 
@@ -647,7 +719,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                     if raw_view:
                         # Если хвост не догружали — это чисто синтетическая пересборка из кеша.
                         # Если хвост догружали — это инкрементальный режим (кеш + частичный сетевой фетч).
-                        request_type = 'incremental' if tail_fetch_attempted else 'synthetic'
+                        request_type = 'incremental' if tail_fetch_network else 'synthetic'
 
                         _LOGGER.debug(
                             "%s Шаг 2: %s режим (run_id=%s). Пересобираем из кеша %s/%s точек.",
@@ -755,6 +827,7 @@ class SilamCoordinator(DataUpdateCoordinator):
             # --- Диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
             merged["request_type"] = request_type
             merged["tail_fetch_attempted"] = tail_fetch_attempted
+            merged["tail_fetch_network"] = tail_fetch_network
             merged["tail_fetch_success"] = tail_fetch_success
 
             # --- Runtime effective dataset info (для OptionsFlow/diagnostics) ---

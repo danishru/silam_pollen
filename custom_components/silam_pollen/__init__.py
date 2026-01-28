@@ -12,7 +12,8 @@ from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import SupportsResponse
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 
-from .const import DOMAIN
+from .const import DOMAIN, RUNS_CATALOG_MANAGER, RUNS_CATALOG_TTL_SECONDS
+from .runs_catalog import RunsCatalogManager
 from .config_flow import OptionsFlowHandler as SilamPollenOptionsFlow
 from .coordinator import SilamCoordinator
 from .migration import async_migrate_entry  # ядро вызовет при необходимости
@@ -178,6 +179,15 @@ async def async_setup_entry(hass, entry):
     # но НЕ первым — иначе SMART никогда не переключится на более подходящий датасет.
     if isinstance(base_url, str) and base_url and base_url not in candidates:
         candidates.append(base_url)
+
+    # Инициализируем общий RunsCatalogManager (один на DOMAIN)
+    domain_data = hass.data.setdefault(DOMAIN, {})
+    if RUNS_CATALOG_MANAGER not in domain_data:
+        domain_data[RUNS_CATALOG_MANAGER] = RunsCatalogManager(
+            hass,
+            ttl_seconds=RUNS_CATALOG_TTL_SECONDS,
+        )
+        _LOGGER.debug("SILAM Pollen: initialized RunsCatalogManager")
 
     # Создаём координатор
     coordinator = SilamCoordinator(

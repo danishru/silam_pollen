@@ -1,5 +1,15 @@
 # const.py
 DOMAIN = "silam_pollen"
+
+# hass.data[DOMAIN] key for shared runs catalog manager
+RUNS_CATALOG_MANAGER = "runs_catalog_manager"
+
+# THREDDS catalog namespace (для runs/catalog.xml)
+THREDDS_CATALOG_NS = {"t": "http://www.unidata.ucar.edu/namespaces/thredds/InvCatalog/v1.0"}
+
+# TTL кэша runs/catalog.xml (по умолчанию 45 минут)
+RUNS_CATALOG_TTL_SECONDS = 45 * 60
+
 DEFAULT_UPDATE_INTERVAL = 60
 DEFAULT_ALTITUDE = 275
 
