@@ -18,12 +18,12 @@ async def async_migrate_entry(hass, config_entry):
       - Автоматически удалить устаревшую сущность index из entity registry.
 
     Дополнительно (как и раньше):
-      - base_url: если отсутствует — пытаемся подобрать из актуальных констант (если они есть).
+      - base_url: если отсутствует — пытаемся подобрать из актуальных датасетов (через DATASETS).
       - forecast: по умолчанию False, если отсутствует.
       - unique_id: если отсутствует, формируется на основе координат.
 
     Важно:
-      - Все URL-кандидаты берём через getattr из const.py, чтобы можно было безопасно удалить старые константы.
+      - Кандидаты URL берём только из DATASETS (iter_datasets_for_probe + dataset_base_url).
       - Для отображения в UI мы обновляем И data, И options (Options Flow берёт приоритет из options).
     """
 
@@ -63,18 +63,22 @@ async def async_migrate_entry(hass, config_entry):
     do_force_defaults_v4 = current_minor < target_minor_version
 
     # ---------------------------------------------------------------------
-    # Достаём актуальные URL-кандидаты из const.py (без жёстких импортов).
+    # Достаём актуальные URL-кандидаты из const.py (DATASETS).
     # ---------------------------------------------------------------------
     try:
-        from . import const as _const
-    except Exception:
-        _const = None
+        from .const import dataset_base_url, iter_datasets_for_probe
+    except Exception as err:
+        # Без этого миграция не сможет корректно подобрать base_url.
+        _LOGGER.error("%s Failed to import DATASETS helpers from const.py: %s", log_prefix, err)
+        return False
 
-    def _get_const_url(name: str):
-        if _const is None:
-            return None
-        v = getattr(_const, name, None)
-        return v if isinstance(v, str) and v else None
+    def _build_url_candidates() -> list[str]:
+        urls: list[str] = []
+        for dataset_name in iter_datasets_for_probe():
+            u = dataset_base_url(dataset_name)
+            if isinstance(u, str) and u and u not in urls:
+                urls.append(u)
+        return urls
 
     # 1) base_url — автоподбор по отклику API, если отсутствует
     if "base_url" not in new_data:
@@ -83,13 +87,7 @@ async def async_migrate_entry(hass, config_entry):
         chosen_url = None
 
         # В порядке приоритета (актуальные наборы)
-        url_candidates = [
-            _get_const_url("BASE_URL_HIRES_V6_1"),
-            _get_const_url("BASE_URL_REGIONAL_V5_9_1"),
-            _get_const_url("BASE_URL_EUROPE_V6_1"),
-            _get_const_url("BASE_URL_EUROPE_V6_0"),
-        ]
-        url_candidates = [u for u in url_candidates if u]
+        url_candidates = _build_url_candidates()
 
         if latitude is not None and longitude is not None and url_candidates:
             async with aiohttp.ClientSession() as session:
@@ -109,12 +107,12 @@ async def async_migrate_entry(hass, config_entry):
                                     _LOGGER.debug("%s URL %s passed probe (HTTP 200)", log_prefix, url)
                                     break
                                 _LOGGER.debug("%s URL %s returned HTTP %s", log_prefix, url, response.status)
-                    except Exception as err:
-                        _LOGGER.debug("%s Error probing URL %s: %s", log_prefix, url, err)
+                    except Exception as probe_err:
+                        _LOGGER.debug("%s Error probing URL %s: %s", log_prefix, url, probe_err)
         else:
             _LOGGER.debug("%s Coordinates missing or no URL candidates available; skipping URL probing.", log_prefix)
 
-        # Fallback: если ничего не выбрали — берём первый кандидат (если есть)
+        # Fallback внутри DATASETS: если ничего не выбрали — берём первый кандидат (если есть)
         if chosen_url is None and url_candidates:
             chosen_url = url_candidates[0]
             _LOGGER.debug("%s No URL responded with HTTP 200; falling back to %s", log_prefix, chosen_url)

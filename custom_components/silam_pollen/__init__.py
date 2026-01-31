@@ -160,14 +160,11 @@ async def async_setup_entry(hass, entry):
     # Кандидаты для SMART (в порядке приоритета).
     candidates: list[str] = []
     try:
-        from . import const as _const  # локальный импорт, чтобы не плодить циклы
-        for _name in (
-            "BASE_URL_HIRES_V6_1",
-            "BASE_URL_REGIONAL_V5_9_1",
-            "BASE_URL_EUROPE_V6_1",
-            "BASE_URL_EUROPE_V6_0",
-        ):
-            _v = getattr(_const, _name, None)
+        # Локальный импорт, чтобы не плодить циклы и не тянуть лишнее при unit-тестах
+        from .const import dataset_base_url, iter_datasets_for_probe
+
+        for dataset_name in iter_datasets_for_probe():
+            _v = dataset_base_url(dataset_name)
             if isinstance(_v, str) and _v and _v not in candidates:
                 candidates.append(_v)
     except Exception:

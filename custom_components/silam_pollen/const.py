@@ -114,17 +114,6 @@ def iter_datasets_for_probe() -> tuple[str, ...]:
     items.sort(key=lambda x: x[1].probe_priority)  # меньше = выше приоритет
     return tuple(name for name, _ in items)
 
-
-# ---------------------------------------------------------------------------
-# Базовые URL (оставляем как публичный API для остального кода)
-# ---------------------------------------------------------------------------
-
-BASE_URL_EUROPE_V6_1 = dataset_base_url("silam_europe_pollen_v6_1")
-BASE_URL_EUROPE_V6_0 = dataset_base_url("silam_europe_pollen_v6_0")
-BASE_URL_REGIONAL_V5_9_1 = dataset_base_url("silam_regional_pollen_v5_9_1")
-BASE_URL_HIRES_V6_1 = dataset_base_url("silam_hires_pollen_v6_1")
-
-
 # ---------------------------------------------------------------------------
 # Короткие ключи источников для SMART-склейки (raw_merged[*]["s"] и merged["src"])
 # Значения src задаём явно в DATASETS, а здесь оставляем удобный словарь.
