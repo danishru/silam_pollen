@@ -1,4 +1,8 @@
 # const.py
+from __future__ import annotations
+
+from dataclasses import dataclass
+
 DOMAIN = "silam_pollen"
 
 # hass.data[DOMAIN] key for shared runs catalog manager
@@ -16,39 +20,118 @@ DEFAULT_ALTITUDE = 275
 # Базовые URL для запросов API SILAM (THREDDS NCSS grid)
 THREDDS_NCSS_GRID_BASE = "https://thredds.silam.fmi.fi/thredds/ncss/grid"
 
-# Europe pollen (new default)
-BASE_URL_EUROPE_V6_1 = (
-    f"{THREDDS_NCSS_GRID_BASE}/silam_europe_pollen_v6_1/"
-    "silam_europe_pollen_v6_1_best.ncd"
-)
 
-# Europe pollen (legacy)
-BASE_URL_EUROPE_V6_0 = (
-    f"{THREDDS_NCSS_GRID_BASE}/silam_europe_pollen_v6_0/"
-    "silam_europe_pollen_v6_0_best.ncd"
-)
+# ---------------------------------------------------------------------------
+# DATASETS: единый справочник датасетов (источник правды)
+# - src: короткий ключ источника (raw_merged[*]["s"] и merged["src"])
+# - path/file: из них строим base_url
+# - label: человекочитаемое имя (для UI)
+# - probe_priority: порядок приоритета для SMART-проверки доступности по координатам
+#                   (меньше = выше приоритет)
+# - ui_enabled: показывать ли датасет в ручном выборе OptionsFlow
+# - ui_requires_probe: показывать только если датасет доступен по координатам
+# - ui_order: порядок в dropdown OptionsFlow (меньше = выше)
+# ---------------------------------------------------------------------------
 
-# Regional pollen
-BASE_URL_REGIONAL_V5_9_1 = (
-    f"{THREDDS_NCSS_GRID_BASE}/silam_regional_pollen_v5_9_1/"
-    "silam_regional_pollen_v5_9_1_best.ncd"
-)
+@dataclass(frozen=True, slots=True)
+class DatasetMeta:
+    """Метаданные датасета SILAM/THREDDS."""
+    src: str
+    path: str
+    file: str
+    label: str | None = None
 
-# HIRES pollen (future, not enabled in UI yet)
-BASE_URL_HIRES_V6_1 = (
-    f"{THREDDS_NCSS_GRID_BASE}/silam_hires_pollen_v6_1/"
-    "silam_hires_pollen_v6_1_best.ncd"
-)
+    # SMART/probe приоритет
+    probe_priority: int | None = None
+
+    # UI политика (OptionsFlow)
+    ui_enabled: bool = True
+    ui_requires_probe: bool = False
+    ui_order: int | None = None
 
 
-# Короткие ключи источников для SMART-склейки (raw_merged[*]["s"] и merged["src"])
-# Значения задаём явно, чтобы ключи были стабильными и без вычислений.
-DATASET_SRC_KEYS = {
-    "silam_europe_pollen_v6_1": "sep61",
-    "silam_europe_pollen_v6_0": "sep60",
-    "silam_regional_pollen_v5_9_1": "srp591",
-    "silam_hires_pollen_v6_1": "shp61",
+DATASETS: dict[str, DatasetMeta] = {
+    # Europe pollen (v6.1) — новый основной датасет для Европы (дефолт)
+    "silam_europe_pollen_v6_1": DatasetMeta(
+        src="sep61",
+        path="silam_europe_pollen_v6_1",
+        file="silam_europe_pollen_v6_1_best.ncd",
+        label="SILAM Europe (v6.1)",
+        probe_priority=30,
+        ui_enabled=True,
+        ui_requires_probe=False,
+        ui_order=30,
+    ),
+
+    # Europe pollen (v6.0) — устаревший датасет (legacy)
+    "silam_europe_pollen_v6_0": DatasetMeta(
+        src="sep60",
+        path="silam_europe_pollen_v6_0",
+        file="silam_europe_pollen_v6_0_best.ncd",
+        label="SILAM Europe (v6.0, legacy)",
+        probe_priority=40,
+        ui_enabled=True,
+        ui_requires_probe=False,
+        ui_order=40,
+    ),
+
+    # Regional pollen (v5.9.1) — региональный датасет (Северная Европа)
+    "silam_regional_pollen_v5_9_1": DatasetMeta(
+        src="srp591",
+        path="silam_regional_pollen_v5_9_1",
+        file="silam_regional_pollen_v5_9_1_best.ncd",
+        label="SILAM Northern Europe (v5.9.1)",
+        probe_priority=20,
+        ui_enabled=True,
+        ui_requires_probe=True,   # показываем в UI только если доступен по координатам
+        ui_order=20,
+    ),
+
+    # HIRES pollen (v6.1) — высокодетальный датасет (Finland / северные широты)
+    # Уже используется в интеграции (доступен по покрытию координат).
+    "silam_hires_pollen_v6_1": DatasetMeta(
+        src="shp61",
+        path="silam_hires_pollen_v6_1",
+        file="silam_hires_pollen_v6_1_best.ncd",
+        label="SILAM Finland (v6.1)",
+        probe_priority=10,
+        ui_enabled=True,
+        ui_requires_probe=True,   # показываем в UI только если доступен по координатам
+        ui_order=10,
+    ),
 }
+
+
+def dataset_base_url(dataset_name: str) -> str:
+    """Строит NCSS grid base_url по имени датасета (silam_...)."""
+    meta = DATASETS[dataset_name]  # KeyError = проблема конфигурации/опечатка
+    return f"{THREDDS_NCSS_GRID_BASE}/{meta.path}/{meta.file}"
+
+
+def iter_datasets_for_probe() -> tuple[str, ...]:
+    """Возвращает датасеты в порядке приоритета для SMART-probe по координатам."""
+    items = [(name, meta) for name, meta in DATASETS.items() if meta.probe_priority is not None]
+    items.sort(key=lambda x: x[1].probe_priority)  # меньше = выше приоритет
+    return tuple(name for name, _ in items)
+
+
+# ---------------------------------------------------------------------------
+# Базовые URL (оставляем как публичный API для остального кода)
+# ---------------------------------------------------------------------------
+
+BASE_URL_EUROPE_V6_1 = dataset_base_url("silam_europe_pollen_v6_1")
+BASE_URL_EUROPE_V6_0 = dataset_base_url("silam_europe_pollen_v6_0")
+BASE_URL_REGIONAL_V5_9_1 = dataset_base_url("silam_regional_pollen_v5_9_1")
+BASE_URL_HIRES_V6_1 = dataset_base_url("silam_hires_pollen_v6_1")
+
+
+# ---------------------------------------------------------------------------
+# Короткие ключи источников для SMART-склейки (raw_merged[*]["s"] и merged["src"])
+# Значения src задаём явно в DATASETS, а здесь оставляем удобный словарь.
+# ---------------------------------------------------------------------------
+
+DATASET_SRC_KEYS = {name: meta.src for name, meta in DATASETS.items()}
+
 
 # Маппинг типов пыльцы: ключ – внутреннее название, значение – дефолтное (англ.) имя
 VAR_OPTIONS = {
@@ -58,7 +141,7 @@ VAR_OPTIONS = {
     "hazel_m23": "hazel",
     "mugwort_m18": "mugwort",
     "olive_m28": "olive",
-    "ragweed_m18": "ragweed"
+    "ragweed_m18": "ragweed",
 }
 
 URL_VAR_MAPPING = {
@@ -68,8 +151,9 @@ URL_VAR_MAPPING = {
     "hazel_m23": "cnc_POLLEN_HAZEL_m23",
     "mugwort_m18": "cnc_POLLEN_MUGWORT_m18",
     "olive_m28": "cnc_POLLEN_OLIVE_m28",
-    "ragweed_m18": "cnc_POLLEN_RAGWEED_m18"
+    "ragweed_m18": "cnc_POLLEN_RAGWEED_m18",
 }
+
 
 def resolve_silam_var_name(allergen: str, base_url: str | None = None) -> str:
     """
@@ -85,13 +169,15 @@ def resolve_silam_var_name(allergen: str, base_url: str | None = None) -> str:
 
     return URL_VAR_MAPPING.get(allergen, allergen)
 
+
 INDEX_MAPPING = {
     1: "very_low",
     2: "low",
     3: "moderate",
     4: "high",
-    5: "very_high"
+    5: "very_high",
 }
+
 RESPONSIBLE_MAPPING = {
     -1: "missing",
     1: "alder",
@@ -100,5 +186,5 @@ RESPONSIBLE_MAPPING = {
     4: "olive",
     5: "mugwort",
     6: "ragweed",
-    7: "hazel"
+    7: "hazel",
 }
