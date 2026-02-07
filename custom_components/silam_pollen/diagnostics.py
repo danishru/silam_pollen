@@ -97,17 +97,25 @@ class SilamPollenFetchDurationSensor(SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         """Диагностические атрибуты последнего фетча."""
-        md = self.coordinator.merged_data
+        md = (self.coordinator.merged_data or {}).get("diag", {})
+
+        req = md.get("request", {})
+        runs = md.get("runs_catalog", {})
+        ds = md.get("dataset", {})
+
         return {
-            "request_type": md.get("request_type"),
-            "runs_catalog_url": md.get("runs_catalog_url"),
-            "latest_run_id": md.get("latest_run_id"),
-            "latest_run_start": md.get("latest_run_start"),
-            "latest_run_end": md.get("latest_run_end"),
+            "request_type": req.get("type"),
+            "runs_catalog_url": runs.get("url"),
+            "latest_run_id": runs.get("latest_run_id"),
+            "latest_run_start": runs.get("latest_run_start"),
+            "latest_run_end": runs.get("latest_run_end"),
             # полезно для отладки догрузки хвоста
-            "tail_fetch_attempted": md.get("tail_fetch_attempted"),
-            "tail_fetch_network": md.get("tail_fetch_network"),
-            "tail_fetch_success": md.get("tail_fetch_success"),
+            "tail_fetch_attempted": req.get("tail_fetch_attempted"),
+            "tail_fetch_network": req.get("tail_fetch_network"),
+            "tail_fetch_success": req.get("tail_fetch_success"),
+            "dataset_selection": ds.get("selection"),
+            "effective_base_url": ds.get("effective_base_url"),
+            "preferred_base_url": ds.get("preferred_base_url"),
         }
 
 # -------------------------------------------------------------------------

@@ -5,19 +5,27 @@
 Использует DataUpdateCoordinator для обновления данных для всех сенсоров интеграции.
 
 Шаг 1 (аккуратное внедрение):
-- Добавлена лёгкая проверка "свежести" через THREDDS runs/catalog.xml.
-- На этом шаге информация используется только как диагностика (не влияет на логику фетча).
+- Добавлена лёгкая проверка "свежести" через THREDDS runs/catalog.xml (RunsCatalogManager).
+- Данные каталога сохраняются в merged_data для диагностики.
 
 Шаг 2 (аккуратное внедрение, без лишних изменений):
 - Добавлен «инкрементальный» режим: если новый набор данных НЕ появился (run_id не изменился),
   то мы НЕ делаем полный запрос index/main, а пересобираем результат из уже сохранённого raw_merged.
 - Шаг 2b (очень аккуратно): добавлена опциональная догрузка «хвоста» в инкрементальном режиме,
   если окно прогноза уехало дальше, чем максимальная дата в кеше.
+
+Шаг 3 (SMART управление датасетом, только выбор источника — без догрузки):
+- На старте SMART выбирается preferred-датасет по координатам (лёгкий NCSS probe).
+- При деградации текущего датасета (catalog horizon < now + SMART_MIN_COVERAGE_HOURS)
+  выполняется переоценка и переключение на fallback (через _set_base_url).
+- При восстановлении preferred (по каталогу + подтверждение probe) выполняется возврат.
+- В merged_data сохраняются effective_base_url и preferred_base_url для UI/диагностики.
 """
 
 import math
 
 import logging
+import asyncio
 import re
 import time
 import aiohttp
@@ -32,6 +40,8 @@ from .const import (
     URL_VAR_MAPPING,
     resolve_silam_var_name,
     DATASET_SRC_KEYS,
+    SMART_MIN_COVERAGE_HOURS,
+    SMART_NCSS_FAIL_STREAK_SWITCH,
 )  # Импортируем константы и маппинг
 
 
@@ -104,6 +114,13 @@ class SilamCoordinator(DataUpdateCoordinator):
 
         # Чтобы SMART-выбор выполнялся один раз на жизненный цикл координатора
         self._smart_probe_done = False
+        # Текущий preferred для координат (для UI/диагностики). Обновляется при SMART-probe/возврате.
+        self._preferred_base_url = None
+        # --- SMART: контроль проверок preferred на fallback ---
+        # Чтобы не проверять восстановление каждый апдейт:
+        # проверяем только если в preferred catalog появился новый run_id.
+        self._preferred_last_seen_run_id: str | None = None
+        self._preferred_last_checked_run_id: str | None = None
 
         self._forecast_enabled = forecast
         self._forecast_duration = forecast_duration
@@ -120,6 +137,13 @@ class SilamCoordinator(DataUpdateCoordinator):
         # --- Шаг 2: «активный» run_id, на котором построен текущий кеш raw_merged ---
         # Нужен, чтобы понимать: «набор данных тот же» -> можно пересобрать из кеша без полного запроса.
         self._active_run_id = None
+        # подряд ошибки NCSS при появлении нового run_id (SMART) ---
+        # Используем _active_run_id как базу сравнения: если в каталоге новый run_id,
+        # но NCSS временно падает — первый раз не переключаемся, копим streak.
+        self._smart_ncss_fail_streak = 0
+        # --- Шаг 4 (SMART): кеш гео-покрытия кандидатов по координатам ---
+        # base_url -> True/False (True = NCSS probe подтвердил, False = детерминированно "не покрывает")
+        self._smart_coord_ok: dict[str, bool] = {}
 
         # Извлекаем версию SILAM из BASE_URL
         match = re.search(r"pollen_v(\d+_\d+(?:_\d+)?)", self._base_url)
@@ -144,6 +168,23 @@ class SilamCoordinator(DataUpdateCoordinator):
             always_update=True,
         )
 
+    # ---------------------------------------------------------------------
+    # Lightweight profiling helpers (DEBUG-only)
+    # ---------------------------------------------------------------------
+    def _prof_start(self) -> float:
+        """Start profiling timer (monotonic)."""
+        return time.monotonic()
+
+    def _prof(self, t0: float, label: str) -> None:
+        """Log elapsed time since t0 (DEBUG-only)."""
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(
+                "%s PROF: %s: %.3fs",
+                self._log_prefix,
+                label,
+                time.monotonic() - t0,
+            )
+
     async def async_request_refresh(self, context=None):
         """
         Переопределённый метод принудительного обновления.
@@ -163,6 +204,19 @@ class SilamCoordinator(DataUpdateCoordinator):
             u = urlparse(self._base_url)
             parts = [p for p in u.path.split("/") if p]
             # ... thredds / ncss / grid / <dataset> / <file>
+            grid_idx = parts.index("grid")
+            dataset = parts[grid_idx + 1]
+            return f"{u.scheme}://{u.netloc}/thredds/catalog/{dataset}/runs/catalog.xml"
+        except Exception:
+            return None
+
+    def _derive_runs_catalog_url_for_base_url(self, base_url: str | None) -> str | None:
+        """Строит URL runs/catalog.xml по произвольному base_url (NCSS grid)."""
+        if not base_url:
+            return None
+        try:
+            u = urlparse(base_url)
+            parts = [p for p in u.path.split("/") if p]
             grid_idx = parts.index("grid")
             dataset = parts[grid_idx + 1]
             return f"{u.scheme}://{u.netloc}/thredds/catalog/{dataset}/runs/catalog.xml"
@@ -238,14 +292,71 @@ class SilamCoordinator(DataUpdateCoordinator):
         self._active_run_id = None
         self.merged_data = {}
 
-        _LOGGER.info("%s SMART: base_url switched: %s -> %s", self._log_prefix, old, new_base_url)
+        _LOGGER.debug("%s SMART: base_url switched: %s -> %s", self._log_prefix, old, new_base_url)
 
-    async def _smart_probe_best_base_url(self, session, latitude, longitude) -> str | None:
-        """Проверяет кандидатов и возвращает первый доступный base_url (HTTP 200)."""
+    async def _smart_select_base_url(
+        self,
+        session,
+        latitude,
+        longitude,
+        *,
+        require_catalog_coverage: bool,
+    ) -> str | None:
+        """Единый SMART-селектор (общая логика).
+
+        - require_catalog_coverage=True:
+            кандидат должен покрывать now+SMART_MIN_COVERAGE_HOURS по runs/catalog.xml,
+            и пройти лёгкий NCSS-probe (PT0H).
+        - require_catalog_coverage=False:
+            только лёгкий NCSS-probe (PT0H) для определения preferred по координатам.
+        """
         candidates = self._smart_candidates or [self._base_url]
+
+        now_utc = datetime.now(timezone.utc)
+        min_end_dt = now_utc + timedelta(hours=SMART_MIN_COVERAGE_HOURS)
+
         for url in candidates:
             if not url:
                 continue
+
+            # --- SMART candidate gate: проверяем, что runs/catalog.xml у кандидата покрывает now+SMART_MIN_COVERAGE_HOURS ---
+            if require_catalog_coverage and self._runs_manager is not None:
+                try:
+                    # Собираем runs/catalog.xml для base_url кандидата
+                    u = urlparse(url)
+                    parts = [p for p in u.path.split("/") if p]
+
+                    # Ожидаем путь вида: .../thredds/ncss/grid/<dataset>/<file>
+                    grid_idx = parts.index("grid")
+                    dataset = parts[grid_idx + 1]
+
+                    candidate_catalog_url = (
+                        f"{u.scheme}://{u.netloc}/thredds/catalog/{dataset}/runs/catalog.xml"
+                    )
+
+                    latest = await self._runs_manager.async_get_latest(candidate_catalog_url)
+                    end_dt = self._parse_dt_utc(latest.end) if latest else None
+
+                    # Если нет end_dt или покрытие меньше порога — кандидат не подходит
+                    if not end_dt or end_dt < min_end_dt:
+                        _LOGGER.debug(
+                            "%s SMART probe skip %s: catalog_end=%s < min_end=%s",
+                            self._log_prefix,
+                            url,
+                            end_dt,
+                            min_end_dt,
+                        )
+                        continue
+
+                except Exception as err:
+                    # Любая проблема с разбором URL/каталога — просто пропускаем кандидата
+                    _LOGGER.debug(
+                        "%s SMART catalog check failed for %s: %s",
+                        self._log_prefix,
+                        url,
+                        err,
+                    )
+                    continue
 
             # Лёгкий тест-доступности через минимальный запрос NCSS (без прогноза)
             test_url = (
@@ -262,6 +373,77 @@ class SilamCoordinator(DataUpdateCoordinator):
 
         return None
 
+    async def _smart_probe_best_base_url(self, session, latitude, longitude) -> str | None:
+        """Fallback-селектор: кандидат должен пройти gate по каталогу + probe по координатам."""
+        return await self._smart_select_base_url(
+            session, latitude, longitude, require_catalog_coverage=True
+        )
+
+    async def _smart_get_preferred_base_url(self, session, latitude, longitude) -> str | None:
+        """Preferred base_url для текущих координат.
+
+        Preferred = первый кандидат из self._smart_candidates,
+        который проходит лёгкий NCSS-probe (PT0H).
+        """
+        return await self._smart_select_base_url(
+            session, latitude, longitude, require_catalog_coverage=False
+        )
+
+    async def _smart_probe_coord_coverage(
+        self,
+        session: aiohttp.ClientSession,
+        base_url: str,
+        latitude: float,
+        longitude: float,
+    ) -> bool:
+        """Лёгкий probe: покрывает ли датасет координаты (без привязки к forecast).
+
+        Важно:
+        - сетевые/временные ошибки НЕ считаем "False" (не кэшируем как непокрытие)
+        - детерминированные ответы (200 + валидный XML) => True
+        - HTTP 400/404 (часто "point outside grid") => False
+        """
+        # Если уже знаем — возвращаем сразу
+        if base_url in self._smart_coord_ok:
+            return self._smart_coord_ok[base_url]
+
+        # Минимальный index probe на PT0H (как в SMART)
+        probe_params = [
+            "var=POLI",
+            "var=POLISRC",
+            "var=temp_2m",
+            f"latitude={latitude}",
+            f"longitude={longitude}",
+            "time_start=present",
+            "time_duration=PT0H",
+            "accept=xml",
+        ]
+        probe_url = base_url + "?" + "&".join(probe_params)
+
+        try:
+            async with session.get(probe_url) as resp:
+                st = resp.status
+
+                # Детерминированное "нет покрытия" (обычно координата вне области)
+                if st in (400, 404):
+                    self._smart_coord_ok[base_url] = False
+                    return False
+
+                if st != 200:
+                    # временная проблема (5xx/429/etc) — не кэшируем
+                    return True
+
+                async with async_timeout.timeout(10):
+                    txt = await resp.text()
+                # Пробуем распарсить XML, если получилось — это покрытие
+                ET.fromstring(txt)
+                self._smart_coord_ok[base_url] = True
+                return True
+
+        except Exception:
+            # Любая сетевуха/таймаут — не делаем вывод "не покрывает"
+            return True
+
     async def _apply_smart_selection_if_needed(self, session, latitude, longitude) -> None:
         """Применяет политику SMART: выбирает лучший датасет один раз на старте."""
         if self._dataset_selection != "smart":
@@ -271,9 +453,13 @@ class SilamCoordinator(DataUpdateCoordinator):
 
         self._smart_probe_done = True
 
-        chosen = await self._smart_probe_best_base_url(session, latitude, longitude)
+        # На старте выбираем preferred по координатам (единая логика с UI/возвратом).
+        chosen = await self._smart_get_preferred_base_url(session, latitude, longitude)
+        self._preferred_base_url = chosen
         if chosen and chosen != self._base_url:
             self._set_base_url(chosen)
+        # preferred мог измениться — сбросим маркер проверенного run_id
+        self._preferred_last_checked_run_id = None
 
         # Пишем минимальную диагностическую инфу (дальше можно вывести в diagnostics сенсор)
         try:
@@ -282,6 +468,71 @@ class SilamCoordinator(DataUpdateCoordinator):
                 self.merged_data["effective_base_url"] = self._base_url
         except Exception:
             pass
+
+    async def _smart_handle_ncss_http_error(
+        self,
+        *,
+        kind: str,
+        status: int,
+        session,
+        latitude: float,
+        longitude: float,
+        run_id: str | None,
+        run_start: str | None,
+        run_end: str | None,
+        expect_new_run_fetch: bool,
+    ) -> None:
+        """Шаг 1 (SMART): обработка HTTP!=200 на NCSS (index/main) при появлении нового run_id.
+
+        Поведение:
+        - Если не expect_new_run_fetch -> просто UpdateFailed (как раньше).
+        - Если expect_new_run_fetch -> копим streak, 1-я ошибка без перевыбора,
+        при достижении порога делаем SMART-switch через _set_base_url(), затем всё равно UpdateFailed
+        (чтобы сохранить старые данные и повторить на следующем цикле).
+        """
+        if not expect_new_run_fetch:
+            raise UpdateFailed(f"HTTP error ({kind}): {status}")
+
+        self._smart_ncss_fail_streak += 1
+        _LOGGER.debug(
+            "%s SMART: NCSS %s HTTP=%s на новом run_id=%s (active=%s), streak=%s/%s. "
+            "Перевыбор датасета пропускаем до порога.",
+            self._log_prefix,
+            kind,
+            status,
+            run_id,
+            self._active_run_id,
+            self._smart_ncss_fail_streak,
+            SMART_NCSS_FAIL_STREAK_SWITCH,
+        )
+
+        # До порога — не переключаемся
+        if self._smart_ncss_fail_streak < SMART_NCSS_FAIL_STREAK_SWITCH:
+            raise UpdateFailed(f"HTTP error ({kind}): {status}")
+
+        # Достигли порога — пробуем выбрать рабочий датасет
+        chosen = await self._smart_probe_best_base_url(session, latitude, longitude)
+        if chosen and chosen != self._base_url:
+            self._set_base_url(chosen)
+
+            _LOGGER.debug(
+                "%s Шаг 1: runs catalog после SMART-switch (NCSS errors): %s",
+                self._log_prefix,
+                self._runs_catalog_url,
+            )
+
+            # Обновим информацию о run для нового base_url (чтобы диагностика не вела в заблуждение)
+            new_run_id, new_run_start, new_run_end = await self._fetch_latest_run_info(session)
+            self._latest_run_id = new_run_id
+            self._latest_run_start = new_run_start
+            self._latest_run_end = new_run_end
+
+        # Сбрасываем streak, чтобы следующий цикл начал "с чистого листа"
+        self._smart_ncss_fail_streak = 0
+
+        # На этом цикле всё равно оставляем старые данные (UpdateFailed),
+        # а уже следующий апдейт отработает на новом base_url (если переключились).
+        raise UpdateFailed(f"HTTP error ({kind}): {status}")
 
     # ---------------------------------------------------------------------
     # Шаг 2: вспомогательные функции для «инкрементального» режима
@@ -326,6 +577,80 @@ class SilamCoordinator(DataUpdateCoordinator):
 
         return True
 
+    async def _fetch_raw_range_from_base_url(
+        self,
+        session: aiohttp.ClientSession,
+        base_url: str,
+        latitude: float,
+        longitude: float,
+        time_start: str,
+        time_duration: str,
+        src_key: str,
+    ) -> dict:
+        """Загружает диапазон (index + main) и возвращает raw_merged (с проставленным src_key)."""
+
+        # --- index ---
+        index_params = [
+            "var=POLI",
+            "var=POLISRC",
+            "var=temp_2m",
+            f"latitude={latitude}",
+            f"longitude={longitude}",
+            f"time_start={time_start}",
+            f"time_duration={time_duration}",
+            "accept=xml",
+        ]
+        index_url = base_url + "?" + "&".join(index_params)
+
+        index_xml = None
+        async with session.get(index_url) as resp:
+            if resp.status != 200:
+                return {}
+            async with async_timeout.timeout(10):
+                t = await resp.text()
+            index_xml = ET.fromstring(t)
+
+        # --- main (если есть аллергены) ---
+        main_xml = None
+        if self._var_list:
+            main_params = []
+            for allergen in self._var_list:
+                full_allergen = resolve_silam_var_name(allergen)
+                main_params.append(f"var={full_allergen}")
+
+            main_params += [
+                f"latitude={latitude}",
+                f"longitude={longitude}",
+                f"time_start={time_start}",
+                f"time_duration={time_duration}",
+                f"vertCoord={self._desired_altitude}",
+                "accept=xml",
+            ]
+            main_url = base_url + "?" + "&".join(main_params)
+
+            async with session.get(main_url) as resp:
+                if resp.status != 200:
+                    return {}
+                async with async_timeout.timeout(10):
+                    t = await resp.text()
+                main_xml = ET.fromstring(t)
+
+        from .data_processing import merge_station_features
+
+        merged = merge_station_features(
+            index_xml,
+            main_xml,
+            hass=self.hass,
+            base_url=base_url,
+            forecast_enabled=True,
+            selected_allergens=self._var_list,
+            forecast_duration=self._forecast_duration,
+        )
+        raw = merged.get("raw_merged") or {}
+        if raw:
+            self._apply_src_to_raw(raw, src_key)
+        return raw
+
     def _parse_dt_utc(self, dt_str: str):
         """Парсит ISO-строку времени в aware datetime (UTC).
 
@@ -346,6 +671,13 @@ class SilamCoordinator(DataUpdateCoordinator):
         except Exception:
             return None
 
+    def _normalize_dt_key_to_z(self, dt_key: str) -> str:
+        """Приводит любую ISO-строку к каноническому ключу UTC в формате ...Z."""
+        dt = self._parse_dt_utc(dt_key)
+        if dt is None:
+            return dt_key
+        dt = dt.astimezone(timezone.utc).replace(microsecond=0)
+        return dt.isoformat().replace("+00:00", "Z")
 
     def _dataset_name_from_base_url(self, base_url: str | None) -> str:
         """Возвращает имя датасета из NCSS grid base_url (без URL-частей)."""
@@ -494,6 +826,14 @@ class SilamCoordinator(DataUpdateCoordinator):
         # Засекаем начало выполнения (_fetch_) всего процесса
         start = time.monotonic()
 
+        # --- PROF: общий таймер для точечных меток ---
+        t0 = self._prof_start()
+        self._prof(t0, "start")
+
+        # даём циклу событий шанс выполнить ожидающие callback'и
+        await asyncio.sleep(0)
+        self._prof(t0, "after_yield_0")
+
         # --- Диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
         # full         : обычный полный сетевой фетч index/main
         # synthetic    : пересборка только из кеша raw_merged (без сети)
@@ -504,6 +844,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         tail_fetch_success = None
 
         raw_view = None  # используется для восстановления меток источника 's' при инкрементальной пересборке
+        raw_all_ref = None  # ссылка на кеш raw_merged, если работали в incremental/synthetic ветке
 
         # Определяем координаты: если используются ручные координаты, то берем их,
         # иначе извлекаем координаты из зоны 'home'.
@@ -517,6 +858,7 @@ class SilamCoordinator(DataUpdateCoordinator):
             latitude = zone.attributes.get("latitude")
             longitude = zone.attributes.get("longitude")
 
+        # index_url строим заранее, но после SMART-переключений его пересчитаем (см. ниже)
         index_url = self._build_index_url(latitude, longitude)
 
         data = {}
@@ -526,21 +868,161 @@ class SilamCoordinator(DataUpdateCoordinator):
                 # --- Шаг 3: SMART-выбор датасета (один раз на старте/первом обновлении) ---
                 await self._apply_smart_selection_if_needed(session, latitude, longitude)
 
-                # --- Источник данных (коротко) для SMART-склейки ---
-                src_ds = self._dataset_name_from_base_url(self._base_url)
-                src_key = self._src_key_for_dataset(src_ds)
+                # После SMART выбора на старте пересчитываем index_url (base_url мог измениться)
+                index_url = self._build_index_url(latitude, longitude)
 
                 # --- runs catalog (диагностика свежести) ---
+                self._prof(t0, "before_step1_runs_catalog")
                 _LOGGER.debug("%s Шаг 1: проверка свежести (runs catalog): %s", self._log_prefix, self._runs_catalog_url)
                 run_id, run_start, run_end = await self._fetch_latest_run_info(session)
                 self._latest_run_id = run_id
                 self._latest_run_start = run_start
                 self._latest_run_end = run_end
+                self._prof(t0, "after_step1_runs_catalog")
                 _LOGGER.debug("%s Шаг 1: runs catalog результат: run_id=%s start=%s end=%s", self._log_prefix, run_id, run_start, run_end)
+
+                # -----------------------------------------------------------------
+                # Шаг 3: SMART управление датасетом
+                #
+                # Логика:
+                # 1) Если текущий датасет не покрывает now + SMART_MIN_COVERAGE_HOURS
+                #    → переоценка и переход на fallback
+                # 2) ИНАЧЕ, если мы на fallback и preferred восстановился
+                #    → возврат на preferred
+                # -----------------------------------------------------------------
+                if self._dataset_selection == "smart":
+                    now_utc = datetime.now(timezone.utc)
+                    threshold_dt = now_utc + timedelta(hours=SMART_MIN_COVERAGE_HOURS)
+
+                    catalog_end_dt = self._parse_dt_utc(run_end)
+                    no_data = (
+                        run_id is None
+                        or (catalog_end_dt is not None and catalog_end_dt < threshold_dt)
+                    )
+
+                    # -------------------------------------------------------------
+                    # 1) Деградация: текущий датасет не покрывает окно
+                    # -------------------------------------------------------------
+                    if no_data:
+                        _LOGGER.debug(
+                            "%s SMART: текущий датасет не покрывает окно "
+                            "(run_id=%s, end=%s < threshold=%s). Переоценка...",
+                            self._log_prefix,
+                            run_id,
+                            run_end,
+                            threshold_dt,
+                        )
+
+                        chosen = await self._smart_probe_best_base_url(
+                            session, latitude, longitude
+                        )
+                        if chosen and chosen != self._base_url:
+                            self._set_base_url(chosen)
+
+                            # После SMART-switch пересчитываем index_url (base_url изменился)
+                            index_url = self._build_index_url(latitude, longitude)
+
+                            # Обновляем runs catalog после переключения
+                            _LOGGER.debug(
+                                "%s Шаг 1: runs catalog после SMART-switch: %s",
+                                self._log_prefix,
+                                self._runs_catalog_url,
+                            )
+                            run_id, run_start, run_end = await self._fetch_latest_run_info(session)
+                            self._latest_run_id = run_id
+                            self._latest_run_start = run_start
+                            self._latest_run_end = run_end
+
+                    # -------------------------------------------------------------
+                    # 2) Восстановление: возврат на preferred (только на fallback и только при новом run_id в каталоге preferred)
+                    # -------------------------------------------------------------
+                    elif self._smart_candidates:
+                        preferred = self._preferred_base_url
+
+                        # Если preferred ещё не определён (редко: например, старый объект/миграция),
+                        # определяем один раз (может быть сетевой probe) — но только если мы вообще в SMART.
+                        if not preferred:
+                            preferred = await self._smart_get_preferred_base_url(session, latitude, longitude)
+                            self._preferred_base_url = preferred
+
+                        # Проверяем восстановление только если мы реально на fallback
+                        if preferred and preferred != self._base_url and self._runs_manager is not None:
+                            try:
+                                preferred_catalog_url = self._derive_runs_catalog_url_for_base_url(preferred)
+                                if preferred_catalog_url:
+                                    latest_pref = await self._runs_manager.async_get_latest(preferred_catalog_url)
+
+                                    pref_run_id = getattr(latest_pref, "run_id", None) if latest_pref else None
+                                    pref_end = getattr(latest_pref, "end", None) if latest_pref else None
+
+                                    # запоминаем “последний увиденный” run_id у preferred
+                                    if pref_run_id:
+                                        self._preferred_last_seen_run_id = pref_run_id
+
+                                    # Ключевое правило: НИЧЕГО не делаем, пока run_id не изменился
+                                    if not pref_run_id or pref_run_id == self._preferred_last_checked_run_id:
+                                        # нет нового run_id — значит нет смысла проверять восстановление
+                                        pass
+                                    else:
+                                        # появился новый run_id у preferred — теперь можно проверить восстановление один раз
+                                        self._preferred_last_checked_run_id = pref_run_id
+
+                                        pref_end_dt = self._parse_dt_utc(pref_end)
+                                        if pref_end_dt and pref_end_dt >= threshold_dt:
+                                            # опционально (и желательно): проверить, что preferred действительно покрывает координаты (кешируется)
+                                            ok = await self._smart_probe_coord_coverage(session, preferred, latitude, longitude)
+                                            if ok:
+                                                _LOGGER.debug(
+                                                    "%s SMART: preferred обновился (new run_id=%s) и покрывает окно "
+                                                    "(end=%s >= threshold=%s). Возврат.",
+                                                    self._log_prefix,
+                                                    pref_run_id,
+                                                    pref_end_dt,
+                                                    threshold_dt,
+                                                )
+
+                                                self._set_base_url(preferred)
+
+                                                # После возврата пересчитываем index_url (base_url изменился)
+                                                index_url = self._build_index_url(latitude, longitude)
+
+                                                # Обновляем runs catalog после возврата (для диагностики)
+                                                _LOGGER.debug(
+                                                    "%s Шаг 1: runs catalog после возврата на preferred: %s",
+                                                    self._log_prefix,
+                                                    self._runs_catalog_url,
+                                                )
+                                                run_id, run_start, run_end = await self._fetch_latest_run_info(session)
+                                                self._latest_run_id = run_id
+                                                self._latest_run_start = run_start
+                                                self._latest_run_end = run_end
+
+                            except Exception as err:
+                                _LOGGER.debug("%s SMART: ошибка проверки preferred (%s)", self._log_prefix, err)
+
+                # --- Источник данных (коротко) для SMART-склейки ---
+                src_ds = self._dataset_name_from_base_url(self._base_url)
+                src_key = self._src_key_for_dataset(src_ds)
+
+                # PROF: после SMART-управления датасетом
+                self._prof(t0, "after_smart_dataset_mgmt")
+                # --- Шаг 1 (SMART): ожидаем обновление на новом run_id (без привязки к forecast) ---
+                # Триггерим "мягкую" политику ошибок только если:
+                # - SMART включён
+                # - в каталоге уже новый run_id (run_id != _active_run_id)
+                # - и каталог обещает окно хотя бы SMART_MIN_COVERAGE_HOURS вперёд
+                expect_new_run_fetch = False
+                if self._dataset_selection == "smart" and run_id and self._active_run_id and run_id != self._active_run_id:
+                    now_utc = datetime.now(timezone.utc)
+                    threshold_dt = now_utc + timedelta(hours=SMART_MIN_COVERAGE_HOURS)
+                    catalog_end_dt = self._parse_dt_utc(run_end)
+                    if catalog_end_dt is not None and catalog_end_dt >= threshold_dt:
+                        expect_new_run_fetch = True
 
                 # -----------------------------------------------------------------
                 # Шаг 2: если run_id не изменился, пересобираем из кеша raw_merged
                 # -----------------------------------------------------------------
+                self._prof(t0, "before_incremental_if")
                 use_incremental = False
                 if (
                     self._forecast_enabled
@@ -549,7 +1031,9 @@ class SilamCoordinator(DataUpdateCoordinator):
                     and isinstance(self.merged_data, dict)
                     and isinstance(self.merged_data.get("raw_merged"), dict)
                 ):
+                    self._prof(t0, "entered_incremental_if")
                     raw_all = self.merged_data.get("raw_merged") or {}
+                    raw_all_ref = raw_all  # важно: дальше Шаг 2b/Шаг 4 расширяют именно этот dict
 
                     # Проставляем источник для старых кешей, где меток ещё не было
                     self._apply_src_to_raw(raw_all, src_key)
@@ -701,12 +1185,154 @@ class SilamCoordinator(DataUpdateCoordinator):
                             _LOGGER.debug(
                                 "%s Шаг 2b: догрузка хвоста пропущена (каталог ограничивает окно)",
                                 self._log_prefix,
-                            )                    
+                            )
                     except Exception as err:
                         _LOGGER.debug("%s Шаг 2b: ошибка догрузки хвоста (пропускаем): %s", self._log_prefix, err)
 
                         if tail_fetch_attempted and tail_fetch_success is None:
                             tail_fetch_success = False
+                    ####
+                    # -----------------------------------------------------------------
+                    # Шаг 4 (SMART): дозаполнение missing-times из других датасетов
+                    # Только если:
+                    # - SMART режим
+                    # - forecast включён (есть целевой горизонт)
+                    # -----------------------------------------------------------------
+                    if self._dataset_selection == "smart" and self._forecast_enabled:
+                        try:
+                            # 1) Собираем целевые слоты (почасовые) в окне window_start..window_end
+                            # Используем UTC и ISO-ключи как в raw_merged
+                            slots: list[str] = []
+                            cur = window_start.replace(minute=0, second=0, microsecond=0)
+                            end = window_end.replace(minute=0, second=0, microsecond=0)
+
+                            # чуть аккуратнее: если window_start был "минус 1 час", мы всё равно строим слоты на весь горизонт
+                            while cur <= end:
+                                slots.append(cur.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"))
+                                cur += timedelta(hours=1)
+
+                            # Нормализованное множество "что уже есть" — только для сравнения.
+                            # raw_all не трогаем (там пусть остаётся как пришло из XML, т.е. ...Z).
+                            present_norm = {self._normalize_dt_key_to_z(k) for k in raw_all.keys()}
+
+                            missing = [s for s in slots if s not in present_norm]
+
+                            if missing:
+                                _LOGGER.debug("%s Шаг 4: missing-times до дозаполнения: %s", self._log_prefix, len(missing))
+
+                                # 2) Сегменты missing (непрерывные по часу)
+                                missing_dts = []
+                                for s in missing:
+                                    dt = self._parse_dt_utc(s)
+                                    if dt is not None:
+                                        missing_dts.append(dt)
+                                missing_dts.sort()
+
+                                segments: list[tuple[datetime, datetime]] = []
+                                seg_start = None
+                                prev = None
+                                for dt in missing_dts:
+                                    if seg_start is None:
+                                        seg_start = dt
+                                        prev = dt
+                                        continue
+                                    if dt == prev + timedelta(hours=1):
+                                        prev = dt
+                                    else:
+                                        segments.append((seg_start, prev))
+                                        seg_start = dt
+                                        prev = dt
+                                if seg_start is not None and prev is not None:
+                                    segments.append((seg_start, prev))
+
+                                # 3) Для каждого сегмента ищем первый подходящий кандидат по приоритету
+                                for seg_a, seg_b in segments:
+                                    # берем длительность (в часах) включая край
+                                    hours = int((seg_b - seg_a).total_seconds() // 3600) + 1
+                                    if hours <= 0:
+                                        continue
+
+                                    seg_time_start = seg_a.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+                                    seg_time_duration = f"PT{hours}H"
+
+                                    filled = False
+
+                                    for cand in (self._smart_candidates or []):
+                                        if not cand or cand == self._base_url:
+                                            continue
+
+                                        # 3.1) (A) runs_catalog: должен пересекаться по времени
+                                        cand_catalog_url = self._derive_runs_catalog_url_for_base_url(cand)
+                                        if not cand_catalog_url or self._runs_manager is None:
+                                            continue
+
+                                        info = await self._runs_manager.async_get_latest(cand_catalog_url)
+                                        if not info:
+                                            continue
+
+                                        cand_end = self._parse_dt_utc(getattr(info, "end", None))
+                                        cand_start = self._parse_dt_utc(getattr(info, "start", None))
+                                        if cand_end is None or cand_start is None:
+                                            continue
+
+                                        # если кандидат не покрывает сегмент по времени — пропускаем
+                                        if cand_end < seg_a or cand_start > seg_b:
+                                            continue
+
+                                        # 3.2) (B) geo probe: покрывает ли координаты (лениво + кеш)
+                                        ok = await self._smart_probe_coord_coverage(session, cand, latitude, longitude)
+                                        if not ok:
+                                            continue
+
+                                        # 3.3) src_key для кандидата (если есть в справочнике — используем, иначе делаем fallback key)
+                                        cand_ds = self._dataset_name_from_base_url(cand)
+                                        cand_src = self._src_key_for_dataset(cand_ds)
+
+                                        raw_seg = await self._fetch_raw_range_from_base_url(
+                                            session=session,
+                                            base_url=cand,
+                                            latitude=latitude,
+                                            longitude=longitude,
+                                            time_start=seg_time_start,
+                                            time_duration=seg_time_duration,
+                                            src_key=cand_src,
+                                        )
+
+                                        if raw_seg:
+                                            # 4) НЕ ПЕРЕТИРАЕМ primary: добавляем только отсутствующие ключи
+                                            add_cnt = 0
+                                            for k, v in raw_seg.items():
+                                                nk = self._normalize_dt_key_to_z(k)
+
+                                                # не создаём дубликат "Z vs +00:00": проверяем по нормализованному множеству
+                                                if nk in present_norm:
+                                                    continue
+
+                                                raw_all[nk] = v
+                                                present_norm.add(nk)
+                                                add_cnt += 1
+
+                                            _LOGGER.debug(
+                                                "%s Шаг 4: сегмент %s..%s дозаполнен из кандидата (%s): +%s",
+                                                self._log_prefix,
+                                                seg_a,
+                                                seg_b,
+                                                cand_src,
+                                                add_cnt,
+                                            )
+                                            filled = True
+                                            break
+
+                                    if not filled:
+                                        _LOGGER.debug(
+                                            "%s Шаг 4: не удалось дозаполнить сегмент %s..%s (нет подходящих кандидатов)",
+                                            self._log_prefix,
+                                            seg_a,
+                                            seg_b,
+                                        )
+
+                        except Exception as err:
+                            _LOGGER.debug("%s Шаг 4: ошибка SMART дозаполнения (пропускаем): %s", self._log_prefix, err)
 
                     raw_view = {}
                     for k, v in raw_all.items():
@@ -742,7 +1368,18 @@ class SilamCoordinator(DataUpdateCoordinator):
                     async with session.get(index_url) as response:
                         _LOGGER.debug("%s Ответ для index с кодом %s", self._log_prefix, response.status)
                         if response.status != 200:
-                            raise UpdateFailed(f"HTTP error (index): {response.status}")
+                            await self._smart_handle_ncss_http_error(
+                                kind="index",
+                                status=response.status,
+                                session=session,
+                                latitude=latitude,
+                                longitude=longitude,
+                                run_id=run_id,
+                                run_start=run_start,
+                                run_end=run_end,
+                                expect_new_run_fetch=expect_new_run_fetch,
+                            )
+
                         async with async_timeout.timeout(10):
                             text = await response.text()
                             _LOGGER.debug("%s Получен ответ для index: %s", self._log_prefix, text[:200])
@@ -755,7 +1392,18 @@ class SilamCoordinator(DataUpdateCoordinator):
                         async with session.get(main_url) as response:
                             _LOGGER.debug("%s Ответ для main с кодом %s", self._log_prefix, response.status)
                             if response.status != 200:
-                                raise UpdateFailed(f"HTTP error (main): {response.status}")
+                                await self._smart_handle_ncss_http_error(
+                                    kind="main",
+                                    status=response.status,
+                                    session=session,
+                                    latitude=latitude,
+                                    longitude=longitude,
+                                    run_id=run_id,
+                                    run_start=run_start,
+                                    run_end=run_end,
+                                    expect_new_run_fetch=expect_new_run_fetch,
+                                )
+
                             async with async_timeout.timeout(10):
                                 text = await response.text()
                                 _LOGGER.debug("%s Получен ответ для main: %s", self._log_prefix, text[:200])
@@ -765,6 +1413,8 @@ class SilamCoordinator(DataUpdateCoordinator):
                     # Обновляем только после успешного «полного» фетча (чтобы не закрепить битый/частичный результат).
                     if run_id:
                         self._active_run_id = run_id
+                        # Успешно обновились — сбрасываем streak ошибок NCSS
+                        self._smart_ncss_fail_streak = 0
 
         except Exception as err:
             raise UpdateFailed(f"Ошибка при получении или обработке XML: {err}")
@@ -783,6 +1433,11 @@ class SilamCoordinator(DataUpdateCoordinator):
                 selected_allergens=self._var_list,
                 forecast_duration=self._forecast_duration,
             )
+            # Если обновление шло через synthetic/incremental (кеш + опциональные догрузки),
+            # то авторитетный raw_merged — это raw_all (который мы расширяли на шаге 2b/4).
+            # Иначе merge_station_features может "потерять" добавленные точки при пересборке из index XML.
+            if use_incremental and isinstance(raw_all_ref, dict):
+                merged["raw_merged"] = raw_all_ref
 
             # --- Источник данных по временным точкам (для SMART-склейки) ---
             merged_raw = merged.get("raw_merged")
@@ -818,27 +1473,35 @@ class SilamCoordinator(DataUpdateCoordinator):
             duration = time.monotonic() - start
             merged["last_fetch_duration"] = round(duration, 3)
 
+            merged["diag"] = {
             # --- runs catalog (диагностика) ---
-            merged["runs_catalog_url"] = self._runs_catalog_url
-            merged["latest_run_id"] = self._latest_run_id
-            merged["latest_run_start"] = self._latest_run_start
-            merged["latest_run_end"] = self._latest_run_end
-
+            "runs_catalog": {
+                "url": self._runs_catalog_url,
+                "latest_run_id": self._latest_run_id,
+                "latest_run_start": self._latest_run_start,
+                "latest_run_end": self._latest_run_end,
+            },
             # --- Диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
-            merged["request_type"] = request_type
-            merged["tail_fetch_attempted"] = tail_fetch_attempted
-            merged["tail_fetch_network"] = tail_fetch_network
-            merged["tail_fetch_success"] = tail_fetch_success
-
+            "request": {
+                "type": request_type,
+                "tail_fetch_attempted": tail_fetch_attempted,
+                "tail_fetch_network": tail_fetch_network,
+                "tail_fetch_success": tail_fetch_success,
+            },
             # --- Runtime effective dataset info (для OptionsFlow/diagnostics) ---
-            merged["dataset_selection"] = self._dataset_selection
-            merged["effective_base_url"] = self._base_url
+            "dataset": {
+                "selection": self._dataset_selection,
+                "effective_base_url": self._base_url,
+                "preferred_base_url": self._preferred_base_url,
+            },
+            }
 
             _LOGGER.debug(
                 "%s Сформированные объединённые данные (fetch duration: %.3fs): %s",
                 self._log_prefix,
                 duration,
-                merged,
+                #merged,
+                merged.get("diag"),
             )
             self.merged_data = {**merged}
         except Exception as err:

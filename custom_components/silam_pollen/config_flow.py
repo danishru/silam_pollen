@@ -569,7 +569,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             if coordinator:
                 md = getattr(coordinator, "merged_data", None)
                 if isinstance(md, dict):
-                    base_url = md.get("effective_base_url") or base_url
+                    base_url = md.get("diag", {}).get("dataset", {}).get("effective_base_url") or base_url
                 else:
                     base_url = getattr(coordinator, "_base_url", base_url)
         except Exception:
