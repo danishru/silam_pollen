@@ -51,9 +51,9 @@ async def async_migrate_entry(hass, config_entry):
     # Текущий minor записи (что уже было применено ранее)
     current_minor = int(config_entry.minor_version or 0)
 
-    # Чистая модель миграции: за один шаг приводим запись к version=3 / minor_version=4.
+    # Чистая модель миграции: за один шаг приводим запись к version=3 / minor_version=5.
     target_version = 3
-    target_minor_version = 4
+    target_minor_version = 5
 
     # ---------------------------------------------------------------------
     # ВАЖНО: "принудительные фиксы" (SMART + legacy=False) делаем ТОЛЬКО ОДИН РАЗ
@@ -155,6 +155,24 @@ async def async_migrate_entry(hass, config_entry):
         if prev_l_opt is not False:
             new_options["legacy"] = False
             _LOGGER.debug("%s Forced options legacy=False (was %s).", log_prefix, prev_l_opt)
+
+    # ---------------------------------------------------------------------
+    # ОДНОРАЗОВОЕ ОБНОВЛЕНИЕ base_url v6_0 → v6_1 (только при current_minor < 5)
+    # v6_0 is legacy; v6_1 is the current default dataset.
+    # Without this, SMART mode detects v6_1 on every poll cycle and logs
+    # a URL switch, but the stored base_url is never persisted — causing
+    # an endless switching loop in the logs.
+    # ---------------------------------------------------------------------
+    if current_minor < 5:
+        cur_url = new_data.get("base_url", "")
+        if "silam_europe_pollen_v6_0" in cur_url:
+            new_url = cur_url.replace(
+                "silam_europe_pollen_v6_0", "silam_europe_pollen_v6_1"
+            )
+            new_data["base_url"] = new_url
+            _LOGGER.debug(
+                "%s Migrated base_url from v6_0 to v6_1: %s", log_prefix, new_url
+            )
 
     # ---------------------------------------------------------------------
     # НОВОЕ: автоматически удаляем устаревший сенсор index из entity registry
