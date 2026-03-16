@@ -248,8 +248,12 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         async with session.get(test_url) as response:
                             text = await response.text()
                             if response.status == 200:
-                                chosen_url = url
-                                return True, None, chosen_url
+                                if text and text.strip():
+                                    chosen_url = url
+                                    return True, None, chosen_url
+                                else:
+                                    _LOGGER.debug("API returned 200 but empty response from %s", url)
+                                    last_response = "HTTP 200 but empty response (coordinates outside grid?)"
                             else:
                                 last_response = text
                                 _LOGGER.debug("API returned %s from %s: %s", response.status, url, text)
@@ -357,7 +361,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     async with async_timeout.timeout(10):
                         async with session.get(test_url) as response:
                             if response.status == 200:
-                                return url
+                                text = await response.text()
+                                if text and text.strip():
+                                    return url
+                                _LOGGER.debug("SMART probe: 200 but empty response from %s", url)
                 except Exception as err:
                     _LOGGER.debug("SMART probe exception when requesting %s: %s", url, str(err))
 
@@ -377,7 +384,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         try:
             async with async_timeout.timeout(10):
                 async with session.get(test_url) as response:
-                    return response.status == 200
+                    if response.status != 200:
+                        return False
+                    text = await response.text()
+                    return bool(text and text.strip())
         except Exception as err:
             _LOGGER.debug("Availability check failed for %s (%s): %s", dataset_name, test_url, err)
             return False

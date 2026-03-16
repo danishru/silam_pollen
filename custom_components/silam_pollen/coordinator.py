@@ -367,7 +367,21 @@ class SilamCoordinator(DataUpdateCoordinator):
                 async with async_timeout.timeout(10):
                     async with session.get(test_url) as resp:
                         if resp.status == 200:
-                            return url
+                            txt = await resp.text()
+                            if txt and txt.strip():
+                                try:
+                                    ET.fromstring(txt)
+                                    return url
+                                except ET.ParseError:
+                                    _LOGGER.debug(
+                                        "%s SMART probe skip %s: HTTP 200 but invalid XML",
+                                        self._log_prefix, url,
+                                    )
+                            else:
+                                _LOGGER.debug(
+                                    "%s SMART probe skip %s: HTTP 200 but empty response",
+                                    self._log_prefix, url,
+                                )
             except Exception as err:
                 _LOGGER.debug("%s SMART probe failed for %s: %s", self._log_prefix, url, err)
 
@@ -435,8 +449,28 @@ class SilamCoordinator(DataUpdateCoordinator):
 
                 async with async_timeout.timeout(10):
                     txt = await resp.text()
+
+                # HTTP 200 but empty/whitespace-only body means the
+                # coordinates fall outside the dataset's spatial grid.
+                if not txt or not txt.strip():
+                    _LOGGER.debug(
+                        "%s SMART coord probe: HTTP 200 but empty response for %s",
+                        self._log_prefix, base_url,
+                    )
+                    self._smart_coord_ok[base_url] = False
+                    return False
+
                 # Пробуем распарсить XML, если получилось — это покрытие
-                ET.fromstring(txt)
+                try:
+                    ET.fromstring(txt)
+                except ET.ParseError:
+                    _LOGGER.debug(
+                        "%s SMART coord probe: HTTP 200 but invalid XML for %s",
+                        self._log_prefix, base_url,
+                    )
+                    self._smart_coord_ok[base_url] = False
+                    return False
+
                 self._smart_coord_ok[base_url] = True
                 return True
 
