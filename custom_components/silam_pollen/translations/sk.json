@@ -41,35 +41,51 @@
           }
         }
       },
-      "fetch_duration": { "name": "Trvanie načítania" },
+      "fetch_duration": {
+	"name": "Trvanie načítania" 
+      },
       "forecast_horizon": {
         "name": "Predikčný horizont",
         "state_attributes": {
-          "forecast_duration": { "name": "Požadovaná dĺžka predpovede" }
+          "forecast_duration": {
+	    "name": "Požadovaná dĺžka predpovede"
+	  }
         }
       },
       "alder": {
         "name": "Jelša",
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
-          "altitude": { "name": "Nadmorská výška (nad morom)" },
-          "tomorrow": { "name": "Predpoveď na zajtra" }
+          "altitude": {
+	    "name": "Nadmorská výška (nad morom)"
+	  },
+          "tomorrow": {
+	    "name": "Predpoveď na zajtra"
+	  }
         }
       },
       "birch": {
         "name": "Breza",
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
-          "altitude": { "name": "Nadmorská výška (nad morom)" },
-          "tomorrow": { "name": "Predpoveď na zajtra" }
+          "altitude": {
+	    "name": "Nadmorská výška (nad morom)"
+	  },
+          "tomorrow": {
+	    "name": "Predpoveď na zajtra" 
+	  }
         }
       },
       "grass": {
         "name": "Tráva",
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
-          "altitude": { "name": "Nadmorská výška (nad morom)" },
-          "tomorrow": { "name": "Predpoveď na zajtra" }
+          "altitude": {
+	    "name": "Nadmorská výška (nad morom)" 
+	  },
+          "tomorrow": {
+	    "name": "Predpoveď na zajtra" 
+	  }
         }
       },
       "hazel": {
@@ -84,24 +100,36 @@
         "name": "Palina",
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
-          "altitude": { "name": "Nadmorská výška (nad morom)" },
-          "tomorrow": { "name": "Predpoveď na zajtra" }
+          "altitude": {
+	    "name": "Nadmorská výška (nad morom)"
+	  },
+          "tomorrow": {
+	    "name": "Predpoveď na zajtra"
+	  }
         }
       },
       "olive": {
         "name": "Olivovník",
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
-          "altitude": { "name": "Nadmorská výška (nad morom)" },
-          "tomorrow": { "name": "Predpoveď na zajtra" }
+          "altitude": {
+	    "name": "Nadmorská výška (nad morom)"
+	  },
+          "tomorrow": {
+	    "name": "Predpoveď na zajtra" 
+	  }
         }
       },
       "ragweed": {
         "name": "Ambrózia",
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
-          "altitude": { "name": "Nadmorská výška (nad morom)" },
-          "tomorrow": { "name": "Predpoveď na zajtra" }
+          "altitude": {
+	    "name": "Nadmorská výška (nad morom)" 
+	  },
+          "tomorrow": {
+	    "name": "Predpoveď na zajtra"
+	  }
         }
       }
     },
@@ -131,7 +159,9 @@
               "unknown": "Neznámy"
             }
           },
-          "date": { "name": "Dátum a čas predpovede" },
+          "date": {
+            "name": "Dátum a čas predpovede"
+	  },
           "next_condition": {
             "name": "Ďalší index",
             "state": {
@@ -143,15 +173,33 @@
               "unknown": "Neznámy"
             }
           },
-          "altitude": { "name": "Nadmorská výška (nad morom)" },
-          "attribution": { "name": "Zdroj dát" },
-          "pollen_alder": { "name": "Jelša" },
-          "pollen_birch": { "name": "Breza" },
-          "pollen_grass": { "name": "Tráva" },
-          "pollen_olive": { "name": "Olivovník" },
-          "pollen_mugwort": { "name": "Palina" },
-          "pollen_ragweed": { "name": "Ambrózia" },
-          "pollen_hazel": { "name": "Lieska" }
+          "altitude": {
+	    "name": "Nadmorská výška (nad morom)"
+	  },
+          "attribution": {
+	    "name": "Zdroj dát"
+	  },
+          "pollen_alder": {
+	    "name": "Jelša"
+	  },
+          "pollen_birch": {
+	    "name": "Breza"
+	  },
+          "pollen_grass": {
+	    "name": "Tráva"
+	  },
+          "pollen_olive": {
+	    "name": "Olivovník"
+	  },
+          "pollen_mugwort": {
+	    "name": "Palina"
+	  },
+          "pollen_ragweed": {
+	    "name": "Ambrózia"
+	  },
+          "pollen_hazel": {
+	    "name": "Lieska"
+	  }
         }
       }
     }
@@ -169,6 +217,7 @@
         },
         "data_description": {
           "forecast": "Funkcia predpovede môže výrazne zvýšiť čas odozvy API."
+	  "legacy": "Zastarané: bude odstránené v budúcej verzii."
         },
         "title": "Vytvorenie služby SILAM Peľ",
         "description": "Nakonfigurujte nižšie uvedené parametre.\nPredpovede sú určené na vedecké účely; presnosť nie je zaručená."
@@ -192,10 +241,12 @@
           "var": "Typ peľu",
           "version": "Dátová sada (aktuálna: {effective_dataset})",
           "forecast": "Povoliť peľovú predpoveď?",
+	  "legacy": "Povoliť starší indexový senzor (zastarané)",
           "forecast_duration": "Požadovaná dĺžka predpovede (36 – 120 h; predvolené 36)"
         },
         "data_description": {
           "forecast": "Funkcia predpovede môže výrazne zvýšiť čas odozvy API."
+          "legacy": "Zastarané: bude odstránené v budúcej verzii. Ponechajte povolené iba v prípade, že používate staré automatizácie alebo dashboardy."
         },
         "title": "Možnosti SILAM Peľ"
       }
@@ -225,5 +276,23 @@
         }
       }
     }
+  },
+  "common": {
+    "advanced_options": "Rozšírené možnosti",
+    "only_silam": "Len SILAM",
+    "debug_forecast": "Debug: nespracovaná predpoveď",
+    "show_decimals": "Zobraziť desatiny",
+    "pollen_more_info_on_tap": "Otvoriť kartu peľového senzora klepnutím",
+    "value_attributes_left": "Ľavý stĺpec",
+    "value_attributes_right": "Pravý stĺpec",
+    "value_attributes_as_rows": "Vykresliť atribúty ako riadky",
+    "additional_forecast": "Ďalšie atribúty",
+    "additional_only": "Zobraziť iba ďalší blok",
+    "additional_forecast_mode": "Dodatočný blokový režim",
+    "additional_forecast_mode_standard": "Štandard",
+    "additional_forecast_mode_focus": "Focus",
+    "additional_forecast_mode_minimal": "Minimal",
+    "meteo_risk": "Meteo Risk (experimentálne)",
+    "display_attribute": "Atribút zobrazenia"
   }
 }
