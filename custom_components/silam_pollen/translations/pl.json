@@ -1,0 +1,305 @@
+{
+  "title": "Monitor pyłków SILAM",
+  "entity": {
+    "sensor": {
+      "index": {
+        "name": "Indeks pyłków (stary)",
+        "state": {
+          "very_low": "Bardzo niski",
+          "low": "Niski",
+          "moderate": "Umiarkowany",
+          "high": "Wysoki",
+          "very_high": "Bardzo wysoki",
+          "unknown": "Nieznany"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Główny alergen",
+            "state": {
+              "missing": "Brak danych",
+              "alder": "Olcha",
+              "birch": "Brzoza",
+              "grass": "Trawy",
+              "olive": "Oliwka",
+              "mugwort": "Bylica",
+              "ragweed": "Ambrozja",
+              "hazel": "Leszczyna",
+              "unknown": "Nieznany"
+            }
+          },
+          "date": {
+            "name": "Data i godzina prognozy"
+          },
+          "index_tomorrow": {
+            "name": "Prognoza na jutro",
+            "state": {
+              "very_low": "Bardzo niski",
+              "low": "Niski",
+              "moderate": "Umiarkowany",
+              "high": "Wysoki",
+              "very_high": "Bardzo wysoki",
+              "unknown": "Nieznany"
+            }
+          }
+        }
+      },
+      "fetch_duration": {
+        "name": "Czas pobierania"
+      },
+      "forecast_horizon": {
+        "name": "Horyzont prognozy",
+        "state_attributes": {
+          "forecast_duration": {
+            "name": "Żądany czas prognozy"
+          }
+        }
+      },
+      "alder": {
+        "name": "Olcha",
+        "unit_of_measurement": "ziaren/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Wysokość nad poziomem morza"
+          },
+          "tomorrow": {
+            "name": "Prognoza na jutro"
+          }
+        }
+      },
+      "birch": {
+        "name": "Brzoza",
+        "unit_of_measurement": "ziaren/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Wysokość nad poziomem morza"
+          },
+          "tomorrow": {
+            "name": "Prognoza na jutro"
+          }
+        }
+      },
+      "grass": {
+        "name": "Trawy",
+        "unit_of_measurement": "ziaren/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Wysokość nad poziomem morza"
+          },
+          "tomorrow": {
+            "name": "Prognoza na jutro"
+          }
+        }
+      },
+      "hazel": {
+        "name": "Leszczyna",
+        "unit_of_measurement": "ziaren/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Wysokość nad poziomem morza"
+          },
+          "tomorrow": {
+            "name": "Prognoza na jutro"
+          }
+        }
+      },
+      "mugwort": {
+        "name": "Bylica",
+        "unit_of_measurement": "ziaren/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Wysokość nad poziomem morza"
+          },
+          "tomorrow": {
+            "name": "Prognoza na jutro"
+          }
+        }
+      },
+      "olive": {
+        "name": "Oliwka",
+        "unit_of_measurement": "ziaren/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Wysokość nad poziomem morza"
+          },
+          "tomorrow": {
+            "name": "Prognoza na jutro"
+          }
+        }
+      },
+      "ragweed": {
+        "name": "Ambrozja",
+        "unit_of_measurement": "ziaren/m³",
+        "state_attributes": {
+          "altitude": {
+            "name": "Wysokość nad poziomem morza"
+          },
+          "tomorrow": {
+            "name": "Prognoza na jutro"
+          }
+        }
+      }
+    },
+    "weather": {
+      "forecast": {
+        "name": "Prognoza pyłków",
+        "state": {
+          "very_low": "Bardzo niski",
+          "low": "Niski",
+          "moderate": "Umiarkowany",
+          "high": "Wysoki",
+          "very_high": "Bardzo wysoki",
+          "unknown": "Nieznany"
+        },
+        "state_attributes": {
+          "responsible_elevated": {
+            "name": "Główny alergen",
+            "state": {
+              "missing": "Brak danych",
+              "alder": "Olcha",
+              "birch": "Brzoza",
+              "grass": "Trawy",
+              "olive": "Oliwka",
+              "mugwort": "Bylica",
+              "ragweed": "Ambrozja",
+              "hazel": "Leszczyna",
+              "unknown": "Nieznany"
+            }
+          },
+          "date": {
+            "name": "Data i godzina prognozy"
+          },
+          "next_condition": {
+            "name": "Następny indeks",
+            "state": {
+              "very_low": "Bardzo niski",
+              "low": "Niski",
+              "moderate": "Umiarkowany",
+              "high": "Wysoki",
+              "very_high": "Bardzo wysoki",
+              "unknown": "Nieznany"
+            }
+          },
+          "altitude": {
+            "name": "Wysokość nad poziomem morza"
+          },
+          "attribution": {
+            "name": "Źródło danych"
+          },
+          "pollen_alder": {
+            "name": "Olcha"
+          },
+          "pollen_birch": {
+            "name": "Brzoza"
+          },
+          "pollen_grass": {
+            "name": "Trawy"
+          },
+          "pollen_olive": {
+            "name": "Oliwka"
+          },
+          "pollen_mugwort": {
+            "name": "Bylica"
+          },
+          "pollen_ragweed": {
+            "name": "Ambrozja"
+          },
+          "pollen_hazel": {
+            "name": "Leszczyna"
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "zone_id": "Strefa obserwacji",
+          "altitude": "Wysokość nad poziomem morza",
+          "var": "Typ pyłku",
+          "update_interval": "Interwał aktualizacji (minuty, minimum 30)",
+          "forecast": "Włączyć prognozę pyłków?",
+          "legacy": "Włączyć stary czujnik indeksu (przestarzały)",
+          "forecast_duration": "Żądany czas prognozy (36–120 h; domyślnie 36)"
+        },
+        "data_description": {
+          "forecast": "Funkcja prognozy może znacząco zwiększyć czas odpowiedzi API.",
+          "legacy": "Przestarzałe: zostanie usunięte w przyszłej wersji."
+        },
+        "title": "Utwórz usługę pyłków SILAM",
+        "description": "Skonfiguruj poniższe parametry.\nPrognozy mają charakter naukowy; dokładność nie jest gwarantowana."
+      },
+      "manual_coords": {
+        "data": {
+          "zone_name": "Nazwa strefy",
+          "location": "Lokalizacja",
+          "altitude": "Wysokość nad poziomem morza"
+        },
+        "title": "Utwórz usługę pyłków SILAM",
+        "description": "Wprowadź nazwę strefy i w razie potrzeby dostosuj współrzędne.\n[Sprawdź mapę zasięgu usługi](https://danishru.github.io/silam_pollen/)."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Interwał aktualizacji (minuty, minimum 30)",
+          "var": "Typ pyłku",
+          "version": "Zbiór danych (aktualny: {effective_dataset})",
+          "forecast": "Włączyć prognozę pyłków?",
+          "legacy": "Włączyć stary czujnik indeksu (przestarzały)",
+          "forecast_duration": "Żądany czas prognozy (36–120 h; domyślnie 36)"
+        },
+        "data_description": {
+          "forecast": "Funkcja prognozy może znacząco zwiększyć czas odpowiedzi API.",
+          "legacy": "Przestarzałe: zostanie usunięte w przyszłej wersji. Pozostaw włączone tylko jeśli używasz starych automatyzacji lub dashboardów."
+        },
+        "title": "Opcje pyłków SILAM"
+      }
+    }
+  },
+  "selector": {
+    "config_pollen": {
+      "options": {
+        "alder_m22": "Olcha",
+        "birch_m22": "Brzoza",
+        "grass_m32": "Trawy",
+        "hazel_m23": "Leszczyna",
+        "mugwort_m18": "Bylica",
+        "olive_m28": "Oliwka",
+        "ragweed_m18": "Ambrozja"
+      }
+    }
+  },
+  "services": {
+    "manual_update": {
+      "name": "Ręczna aktualizacja",
+      "description": "Ręcznie wymuś odświeżenie danych dla wybranych elementów integracji SILAM Pollen.",
+      "fields": {
+        "targets": {
+          "name": "Cele",
+          "description": "Wybierz jedno lub więcej urządzeń lub encji do aktualizacji."
+        }
+      }
+    }
+  },
+  "common": {
+    "advanced_options": "Opcje zaawansowane",
+    "only_silam": "Tylko SILAM",
+    "debug_forecast": "Debug: surowa prognoza",
+    "show_decimals": "Pokazuj części dziesiętne",
+    "pollen_more_info_on_tap": "Otwórz kartę sensora pyłków po kliknięciu",
+    "value_attributes_left": "Lewa kolumna",
+    "value_attributes_right": "Prawa kolumna",
+    "value_attributes_as_rows": "Wyświetl atrybuty jako wiersze",
+    "additional_forecast": "Dodatkowe atrybuty",
+    "additional_only": "Pokaż tylko blok dodatkowy",
+    "additional_forecast_mode": "Tryb dodatkowego bloku",
+    "additional_forecast_mode_standard": "Standardowy",
+    "additional_forecast_mode_focus": "Skupiony",
+    "additional_forecast_mode_minimal": "Minimalny",
+    "meteo_risk": "Ryzyko meteo (eksperymentalne)",
+    "display_attribute": "Wyświetlany atrybut"
+  }
+}

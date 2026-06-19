@@ -48,8 +48,8 @@
         "name": "Predikčný horizont",
         "state_attributes": {
           "forecast_duration": {
-	    "name": "Požadovaná dĺžka predpovede"
-	  }
+            "name": "Požadovaná dĺžka predpovede"
+          }
         }
       },
       "alder": {
@@ -57,11 +57,11 @@
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
           "altitude": {
-	    "name": "Nadmorská výška (nad morom)"
-	  },
+            "name": "Nadmorská výška (nad morom)"
+          },
           "tomorrow": {
-	    "name": "Predpoveď na zajtra"
-	  }
+            "name": "Predpoveď na zajtra"
+          }
         }
       },
       "birch": {
@@ -69,11 +69,11 @@
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
           "altitude": {
-	    "name": "Nadmorská výška (nad morom)"
-	  },
+            "name": "Nadmorská výška (nad morom)"
+          },
           "tomorrow": {
-	    "name": "Predpoveď na zajtra" 
-	  }
+            "name": "Predpoveď na zajtra" 
+          }
         }
       },
       "grass": {
@@ -81,11 +81,11 @@
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
           "altitude": {
-	    "name": "Nadmorská výška (nad morom)" 
-	  },
+            "name": "Nadmorská výška (nad morom)" 
+          },
           "tomorrow": {
-	    "name": "Predpoveď na zajtra" 
-	  }
+            "name": "Predpoveď na zajtra" 
+          }
         }
       },
       "hazel": {
@@ -101,11 +101,11 @@
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
           "altitude": {
-	    "name": "Nadmorská výška (nad morom)"
-	  },
+            "name": "Nadmorská výška (nad morom)"
+          },
           "tomorrow": {
-	    "name": "Predpoveď na zajtra"
-	  }
+            "name": "Predpoveď na zajtra"
+          }
         }
       },
       "olive": {
@@ -113,11 +113,11 @@
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
           "altitude": {
-	    "name": "Nadmorská výška (nad morom)"
-	  },
+            "name": "Nadmorská výška (nad morom)"
+          },
           "tomorrow": {
-	    "name": "Predpoveď na zajtra" 
-	  }
+            "name": "Predpoveď na zajtra" 
+          }
         }
       },
       "ragweed": {
@@ -125,11 +125,11 @@
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
           "altitude": {
-	    "name": "Nadmorská výška (nad morom)" 
-	  },
+            "name": "Nadmorská výška (nad morom)" 
+          },
           "tomorrow": {
-	    "name": "Predpoveď na zajtra"
-	  }
+            "name": "Predpoveď na zajtra"
+          }
         }
       }
     },
@@ -161,7 +161,7 @@
           },
           "date": {
             "name": "Dátum a čas predpovede"
-	  },
+            },
           "next_condition": {
             "name": "Ďalší index",
             "state": {
@@ -174,32 +174,32 @@
             }
           },
           "altitude": {
-	    "name": "Nadmorská výška (nad morom)"
-	  },
+            "name": "Nadmorská výška (nad morom)"
+          },
           "attribution": {
-	    "name": "Zdroj dát"
-	  },
+            "name": "Zdroj dát"
+          },
           "pollen_alder": {
-	    "name": "Jelša"
-	  },
+            "name": "Jelša"
+          },
           "pollen_birch": {
-	    "name": "Breza"
-	  },
+            "name": "Breza"
+          },
           "pollen_grass": {
-	    "name": "Tráva"
-	  },
+            "name": "Tráva"
+          },
           "pollen_olive": {
-	    "name": "Olivovník"
-	  },
+            "name": "Olivovník"
+          },
           "pollen_mugwort": {
-	    "name": "Palina"
-	  },
+            "name": "Palina"
+          },
           "pollen_ragweed": {
-	    "name": "Ambrózia"
-	  },
+            "name": "Ambrózia"
+          },
           "pollen_hazel": {
-	    "name": "Lieska"
-	  }
+            "name": "Lieska"
+          }
         }
       }
     }
@@ -216,8 +216,8 @@
           "forecast_duration": "Požadovaná dĺžka predpovede (36 – 120 h; predvolené 36)"
         },
         "data_description": {
-          "forecast": "Funkcia predpovede môže výrazne zvýšiť čas odozvy API."
-	  "legacy": "Zastarané: bude odstránené v budúcej verzii."
+          "forecast": "Funkcia predpovede môže výrazne zvýšiť čas odozvy API.",
+          "legacy": "Zastarané: bude odstránené v budúcej verzii."
         },
         "title": "Vytvorenie služby SILAM Peľ",
         "description": "Nakonfigurujte nižšie uvedené parametre.\nPredpovede sú určené na vedecké účely; presnosť nie je zaručená."
@@ -241,11 +241,11 @@
           "var": "Typ peľu",
           "version": "Dátová sada (aktuálna: {effective_dataset})",
           "forecast": "Povoliť peľovú predpoveď?",
-	  "legacy": "Povoliť starší indexový senzor (zastarané)",
+          "legacy": "Povoliť starší indexový senzor (zastarané)",
           "forecast_duration": "Požadovaná dĺžka predpovede (36 – 120 h; predvolené 36)"
         },
         "data_description": {
-          "forecast": "Funkcia predpovede môže výrazne zvýšiť čas odozvy API."
+          "forecast": "Funkcia predpovede môže výrazne zvýšiť čas odozvy API.",
           "legacy": "Zastarané: bude odstránené v budúcej verzii. Ponechajte povolené iba v prípade, že používate staré automatizácie alebo dashboardy."
         },
         "title": "Možnosti SILAM Peľ"
