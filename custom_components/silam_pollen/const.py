@@ -84,16 +84,28 @@ DATASETS: dict[str, DatasetMeta] = {
         ui_order=40,
     ),
 
-    # Regional pollen (v5.9.1) — региональный датасет (Северная Европа)
-    "silam_regional_pollen_v5_9_1": DatasetMeta(
-        src="srp591",
-        path="silam_regional_pollen_v5_9_1",
-        file="silam_regional_pollen_v5_9_1_best.ncd",
-        label="SILAM Northern Europe (v5.9.1)",
+    # Regional pollen (v6.1) — актуальный региональный датасет (Северная Европа)
+    "silam_regional_pollen_v6_1": DatasetMeta(
+        src="srp61",
+        path="silam_regional_pollen_v6_1",
+        file="silam_regional_pollen_v6_1_best.ncd",
+        label="SILAM Northern Europe (v6.1)",
         probe_priority=20,
         ui_enabled=True,
         ui_requires_probe=True,   # показываем в UI только если доступен по координатам
         ui_order=20,
+    ),
+
+    # Regional pollen (v5.9.1) — устаревший региональный датасет (legacy)
+    "silam_regional_pollen_v5_9_1": DatasetMeta(
+        src="srp591",
+        path="silam_regional_pollen_v5_9_1",
+        file="silam_regional_pollen_v5_9_1_best.ncd",
+        label="SILAM Northern Europe (v5.9.1, legacy)",
+        probe_priority=50,
+        ui_enabled=True,
+        ui_requires_probe=True,   # показываем в UI только если доступен по координатам
+        ui_order=50,
     ),
 
     # HIRES pollen (v6.1) — высокодетальный датасет (Finland / северные широты)
@@ -159,10 +171,17 @@ def resolve_silam_var_name(allergen: str, base_url: str | None = None) -> str:
 
     На данном этапе:
     - UI/опции: остаётся 'olive_m28'
-    - Для v6.1 (Europe/Hires): фактическая переменная = cnc_POLLEN_OLIVE_m20
+    - Для v6.1 (Europe/Regional/Hires): фактическая переменная = cnc_POLLEN_OLIVE_m20
     """
     if allergen == "olive_m28" and base_url:
-        if "silam_europe_pollen_v6_1" in base_url or "silam_hires_pollen_v6_1" in base_url:
+        if any(
+            dataset_name in base_url
+            for dataset_name in (
+                "silam_europe_pollen_v6_1",
+                "silam_regional_pollen_v6_1",
+                "silam_hires_pollen_v6_1",
+            )
+        ):
             return "cnc_POLLEN_OLIVE_m20"
 
     return URL_VAR_MAPPING.get(allergen, allergen)

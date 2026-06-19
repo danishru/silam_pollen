@@ -40,7 +40,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
            Итоговое имя интеграции формируется как "SILAM Pollen - {zone_name}".
     """
     VERSION = 3
-    MINOR_VERSION = 4
+    MINOR_VERSION = 5
 
     @staticmethod
     def _iter_probe_datasets_fallback() -> tuple[str, ...]:

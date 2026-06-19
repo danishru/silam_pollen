@@ -11,10 +11,14 @@ async def async_migrate_entry(hass, config_entry):
     """
     Миграция ConfigEntry для SILAM Pollen.
 
-    Цели этой миграции (при обновлении интеграции):
-      - Для ВСЕХ существующих записей принудительно:
+    Цели миграций:
+      - До minor_version=4 однократно:
         * legacy = False (устаревший index-сенсор выключаем по умолчанию)
         * version = "smart" (политика выбора датасета по умолчанию — SMART)
+      - До minor_version=5:
+        * фиксированный Europe v6.0 заменить на Europe v6.1;
+        * фиксированный Regional v5.9.1 заменить на Regional v6.1;
+        * SMART-настройки не изменять.
       - Автоматически удалить устаревшую сущность index из entity registry.
 
     Дополнительно (как и раньше):
@@ -51,22 +55,46 @@ async def async_migrate_entry(hass, config_entry):
     # Текущий minor записи (что уже было применено ранее)
     current_minor = int(config_entry.minor_version or 0)
 
-    # Чистая модель миграции: за один шаг приводим запись к version=3 / minor_version=4.
+    # Чистая модель миграции: за один шаг приводим запись к version=3 / minor_version=5.
     target_version = 3
-    target_minor_version = 4
+    target_minor_version = 5
 
     # ---------------------------------------------------------------------
     # ВАЖНО: "принудительные фиксы" (SMART + legacy=False) делаем ТОЛЬКО ОДИН РАЗ
     # при переходе на minor_version=4 (то есть если current_minor < 4).
     # Если уже >=4 — НЕ трогаем выбор пользователя и не перетираем настройки.
     # ---------------------------------------------------------------------
-    do_force_defaults_v4 = current_minor < target_minor_version
+    do_force_defaults_v4 = current_minor < 4
+    do_migrate_fixed_datasets_v5 = current_minor < 5
+
+    # Сохраняем исходный эффективный выбор до миграции 3.4. Это позволяет
+    # корректно мигрировать фиксированный legacy-датасет даже при обновлении
+    # сразу с minor_version < 4 на minor_version 5.
+    selected_version_v5 = new_options.get("version")
+    if not selected_version_v5:
+        selected_version_v5 = new_data.get("version")
+
+    fixed_dataset_migrations_v5 = {
+        # Europe v6.0 -> Europe v6.1
+        "sep60": "silam_europe_pollen_v6_1",
+        "v6_0": "silam_europe_pollen_v6_1",
+        "silam_europe_pollen_v6_0": "silam_europe_pollen_v6_1",
+        # Regional v5.9.1 -> Regional v6.1
+        "srp591": "silam_regional_pollen_v6_1",
+        "v5_9_1": "silam_regional_pollen_v6_1",
+        "silam_regional_pollen_v5_9_1": "silam_regional_pollen_v6_1",
+    }
+    target_dataset_name_v5 = (
+        fixed_dataset_migrations_v5.get(selected_version_v5)
+        if do_migrate_fixed_datasets_v5
+        else None
+    )
 
     # ---------------------------------------------------------------------
     # Достаём актуальные URL-кандидаты из const.py (DATASETS).
     # ---------------------------------------------------------------------
     try:
-        from .const import dataset_base_url, iter_datasets_for_probe
+        from .const import DATASETS, dataset_base_url, iter_datasets_for_probe
     except Exception as err:
         # Без этого миграция не сможет корректно подобрать base_url.
         _LOGGER.error("%s Failed to import DATASETS helpers from const.py: %s", log_prefix, err)
@@ -81,7 +109,7 @@ async def async_migrate_entry(hass, config_entry):
         return urls
 
     # 1) base_url — автоподбор по отклику API, если отсутствует
-    if "base_url" not in new_data:
+    if "base_url" not in new_data and target_dataset_name_v5 is None:
         latitude = new_data.get("latitude")
         longitude = new_data.get("longitude")
         chosen_url = None
@@ -155,6 +183,48 @@ async def async_migrate_entry(hass, config_entry):
         if prev_l_opt is not False:
             new_options["legacy"] = False
             _LOGGER.debug("%s Forced options legacy=False (was %s).", log_prefix, prev_l_opt)
+
+    # ---------------------------------------------------------------------
+    # МИГРАЦИЯ 3.5: прямые замены устаревших ФИКСИРОВАННЫХ датасетов.
+    #
+    # Важно:
+    # - options["version"] имеет приоритет над data["version"], как в Options Flow;
+    # - SMART не трогаем, даже если сохранённый base_url указывает на старый датасет;
+    # - режим пользователя сохраняем: fixed остаётся fixed;
+    # - сетевой probe не выполняем: это детерминированная замена версии.
+    # ---------------------------------------------------------------------
+    if do_migrate_fixed_datasets_v5:
+        if target_dataset_name_v5 is not None:
+            target_meta = DATASETS.get(target_dataset_name_v5)
+            if target_meta is None:
+                _LOGGER.error(
+                    "%s Dataset migration 3.5 failed: target %s is missing.",
+                    log_prefix,
+                    target_dataset_name_v5,
+                )
+                return False
+
+            target_version_key = target_meta.src
+            target_base_url = dataset_base_url(target_dataset_name_v5)
+
+            previous_base_url = new_data.get("base_url")
+            new_data["version"] = target_version_key
+            new_options["version"] = target_version_key
+            new_data["base_url"] = target_base_url
+
+            _LOGGER.info(
+                "%s Migrated fixed dataset %s -> %s (base_url: %s -> %s).",
+                log_prefix,
+                selected_version_v5,
+                target_version_key,
+                previous_base_url,
+                target_base_url,
+            )
+        elif selected_version_v5 == "smart":
+            _LOGGER.debug(
+                "%s Dataset migration 3.5 skipped: selection is SMART.",
+                log_prefix,
+            )
 
     # ---------------------------------------------------------------------
     # НОВОЕ: автоматически удаляем устаревший сенсор index из entity registry
