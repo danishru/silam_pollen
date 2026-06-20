@@ -4,10 +4,67 @@
         <title>SILAM Pollen Blog</title>
         <link>https://danishru.github.io/silam_pollen/site/blog</link>
         <description>SILAM Pollen Blog</description>
-        <lastBuildDate>Tue, 27 Jan 2026 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Sun, 21 Jun 2026 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[v0.4.0]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0</link>
+            <guid>https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0</guid>
+            <pubDate>Sun, 21 Jun 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.4.0 🧠 Smarter forecasts that adapt automatically]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v040--smarter-forecasts-that-adapt-automatically">v0.4.0 🧠 Smarter forecasts that adapt automatically<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0#v040--smarter-forecasts-that-adapt-automatically" class="hash-link" aria-label="Direct link to v0.4.0 🧠 Smarter forecasts that adapt automatically" title="Direct link to v0.4.0 🧠 Smarter forecasts that adapt automatically">​</a></h3>
+<p>Version <strong>v0.4.0</strong> takes SMART dataset selection to the next level.</p>
+<p>SILAM Pollen now monitors which forecast data is actually available and can automatically adapt when the preferred dataset is temporarily incomplete.</p>
+<p>This means:</p>
+<ul>
+<li>fewer gaps during SILAM dataset updates,</li>
+<li>less manual dataset management,</li>
+<li>fewer unnecessary downloads,</li>
+<li>more stable and predictable pollen forecasts.</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="️-shared-runs-catalog-manager">🗂️ Shared runs catalog manager<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0#%EF%B8%8F-shared-runs-catalog-manager" class="hash-link" aria-label="Direct link to 🗂️ Shared runs catalog manager" title="Direct link to 🗂️ Shared runs catalog manager">​</a></h4>
+<p>SILAM Pollen now uses a shared catalog manager for all configured locations.</p>
+<p>Catalog information is cached and reused, reducing duplicate requests and providing a consistent view of the latest available SILAM data.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-coverage-aware-smart-dataset-management">🧠 Coverage-aware SMART dataset management<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0#-coverage-aware-smart-dataset-management" class="hash-link" aria-label="Direct link to 🧠 Coverage-aware SMART dataset management" title="Direct link to 🧠 Coverage-aware SMART dataset management">​</a></h4>
+<p>SMART mode now manages datasets continuously while the integration is running.</p>
+<p>If the preferred dataset cannot provide the required forecast range, SMART can:</p>
+<ul>
+<li>switch to another suitable dataset,</li>
+<li>keep the forecast updating automatically,</li>
+<li>return to the preferred dataset when new data becomes available.</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="️-dataset-source-tracking">🏷️ Dataset source tracking<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0#%EF%B8%8F-dataset-source-tracking" class="hash-link" aria-label="Direct link to 🏷️ Dataset source tracking" title="Direct link to 🏷️ Dataset source tracking">​</a></h4>
+<p>Forecast data now keeps track of which dataset it came from.</p>
+<p>This allows SILAM Pollen to combine data from multiple sources safely while preserving higher-priority forecast values.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-forecast-completion-from-multiple-datasets">🧩 Forecast completion from multiple datasets<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0#-forecast-completion-from-multiple-datasets" class="hash-link" aria-label="Direct link to 🧩 Forecast completion from multiple datasets" title="Direct link to 🧩 Forecast completion from multiple datasets">​</a></h4>
+<p>When the preferred dataset does not provide the complete forecast window, SILAM Pollen can fill the missing period using other available datasets.</p>
+<p>Only missing forecast data is added, without overwriting values already received from the primary source.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-silam-northern-europe-v61">🌍 SILAM Northern Europe (v6.1)<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0#-silam-northern-europe-v61" class="hash-link" aria-label="Direct link to 🌍 SILAM Northern Europe (v6.1)" title="Direct link to 🌍 SILAM Northern Europe (v6.1)">​</a></h4>
+<p>The regional <strong>SILAM Northern Europe</strong> dataset has been updated to <strong>v6.1</strong> and now includes all improvements introduced with the SILAM pollen v6.1 generation.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="️-legacy-datasets-retired">🗑️ Legacy datasets retired<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0#%EF%B8%8F-legacy-datasets-retired" class="hash-link" aria-label="Direct link to 🗑️ Legacy datasets retired" title="Direct link to 🗑️ Legacy datasets retired">​</a></h4>
+<p>The following legacy datasets are no longer available for SMART or manual selection:</p>
+<ul>
+<li><strong>SILAM Europe (v6.0, legacy)</strong></li>
+<li><strong>SILAM Northern Europe (v5.9.1)</strong></li>
+</ul>
+<div class="theme-admonition theme-admonition-info admonition_xJq3 alert alert--info"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_BuS1"><p><br>
+<!-- -->Existing integrations using these datasets are migrated automatically:</p><ul>
+<li>SILAM Europe (v6.0) → SILAM Europe (v6.1)</li>
+<li>SILAM Northern Europe (v5.9.1) → SILAM Northern Europe (v6.1)</li>
+</ul><p>Manual dataset mode is preserved during migration, while existing SMART configurations remain in SMART mode.</p></div></div>
+<p>The migration approach proposed in <a href="https://github.com/danishru/silam_pollen/pull/23" target="_blank" rel="noopener noreferrer">PR #23</a> was expanded to cover all supported legacy dataset replacements.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-safer-and-clearer-setup">🩺 Safer and clearer setup<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0#-safer-and-clearer-setup" class="hash-link" aria-label="Direct link to 🩺 Safer and clearer setup" title="Direct link to 🩺 Safer and clearer setup">​</a></h4>
+<p>When a new integration is added, SILAM Pollen now checks whether the SILAM service and pollen catalogs are available.</p>
+<p>The setup interface shows a clear status and provides localized guidance when the service, network connection, or selected location cannot be validated.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="️-expanded-language-support">🗣️ Expanded language support<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0#%EF%B8%8F-expanded-language-support" class="hash-link" aria-label="Direct link to 🗣️ Expanded language support" title="Direct link to 🗣️ Expanded language support">​</a></h4>
+<ul>
+<li>Added a <strong>Polish translation</strong>, contributed through <a href="https://github.com/danishru/silam_pollen/issues/24" target="_blank" rel="noopener noreferrer">issue #24</a> by <a href="https://github.com/ArekKubacki" target="_blank" rel="noopener noreferrer">@ArekKubacki</a>.</li>
+<li>Updated the <strong>Slovak translation</strong> through <a href="https://github.com/danishru/silam_pollen/pull/27" target="_blank" rel="noopener noreferrer">PR #27</a> by <a href="https://github.com/misa1515" target="_blank" rel="noopener noreferrer">@misa1515</a>.</li>
+</ul>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.4.0" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.4.0-blue?style=flat" alt="More in release v0.4.0" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
         <item>
             <title><![CDATA[v0.3.2]]></title>
             <link>https://danishru.github.io/silam_pollen/site/blog/2026/01/27/v0.3.2</link>

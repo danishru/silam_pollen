@@ -4,10 +4,67 @@
         <title>SILAM Pollen Blog</title>
         <link>https://danishru.github.io/silam_pollen/site/ru/blog</link>
         <description>SILAM Pollen Blog</description>
-        <lastBuildDate>Tue, 27 Jan 2026 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Sun, 21 Jun 2026 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>ru</language>
+        <item>
+            <title><![CDATA[v0.4.0]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0</link>
+            <guid>https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0</guid>
+            <pubDate>Sun, 21 Jun 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.4.0 🧠 Умные прогнозы, которые адаптируются автоматически]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v040--умные-прогнозы-которые-адаптируются-автоматически">v0.4.0 🧠 Умные прогнозы, которые адаптируются автоматически<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0#v040--%D1%83%D0%BC%D0%BD%D1%8B%D0%B5-%D0%BF%D1%80%D0%BE%D0%B3%D0%BD%D0%BE%D0%B7%D1%8B-%D0%BA%D0%BE%D1%82%D0%BE%D1%80%D1%8B%D0%B5-%D0%B0%D0%B4%D0%B0%D0%BF%D1%82%D0%B8%D1%80%D1%83%D1%8E%D1%82%D1%81%D1%8F-%D0%B0%D0%B2%D1%82%D0%BE%D0%BC%D0%B0%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8" class="hash-link" aria-label="Прямая ссылка на v0.4.0 🧠 Умные прогнозы, которые адаптируются автоматически" title="Прямая ссылка на v0.4.0 🧠 Умные прогнозы, которые адаптируются автоматически">​</a></h3>
+<p>Версия <strong>v0.4.0</strong> выводит SMART-управление датасетами на новый уровень.</p>
+<p>SILAM Pollen теперь отслеживает, какие прогнозные данные действительно доступны, и автоматически адаптируется, если предпочтительный датасет временно содержит неполный прогноз.</p>
+<p>Это означает:</p>
+<ul>
+<li>меньше пропусков во время обновления данных SILAM;</li>
+<li>меньше ручного управления датасетами;</li>
+<li>меньше лишних загрузок;</li>
+<li>более стабильные и предсказуемые прогнозы пыльцы.</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="️-общий-менеджер-каталогов-запусков">🗂️ Общий менеджер каталогов запусков<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0#%EF%B8%8F-%D0%BE%D0%B1%D1%89%D0%B8%D0%B9-%D0%BC%D0%B5%D0%BD%D0%B5%D0%B4%D0%B6%D0%B5%D1%80-%D0%BA%D0%B0%D1%82%D0%B0%D0%BB%D0%BE%D0%B3%D0%BE%D0%B2-%D0%B7%D0%B0%D0%BF%D1%83%D1%81%D0%BA%D0%BE%D0%B2" class="hash-link" aria-label="Прямая ссылка на 🗂️ Общий менеджер к�аталогов запусков" title="Прямая ссылка на 🗂️ Общий менеджер каталогов запусков">​</a></h4>
+<p>SILAM Pollen теперь использует общий менеджер каталогов для всех настроенных местоположений.</p>
+<p>Информация о доступных данных кэшируется и используется повторно, что уменьшает количество одинаковых запросов и обеспечивает согласованную работу всех экземпляров интеграции.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-smart-управление-с-учётом-прогнозного-покрытия">🧠 SMART-управление с учётом прогнозного покрытия<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0#-smart-%D1%83%D0%BF%D1%80%D0%B0%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5-%D1%81-%D1%83%D1%87%D1%91%D1%82%D0%BE%D0%BC-%D0%BF%D1%80%D0%BE%D0%B3%D0%BD%D0%BE%D0%B7%D0%BD%D0%BE%D0%B3%D0%BE-%D0%BF%D0%BE%D0%BA%D1%80%D1%8B%D1%82%D0%B8%D1%8F" class="hash-link" aria-label="Прямая ссылка на 🧠 SMART-управление с учётом прогнозного покрытия" title="Прямая ссылка на 🧠 SMART-управление с учётом прогнозного покрытия">​</a></h4>
+<p>Теперь SMART управляет датасетами непрерывно во время работы интеграции.</p>
+<p>Если предпочтительный датасет не может предоставить нужный диапазон прогноза, SMART может:</p>
+<ul>
+<li>переключиться на другой подходящий датасет;</li>
+<li>продолжить обновление прогноза автоматически;</li>
+<li>вернуться к предпочтительному датасету после появления новых данных.</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="️-отслеживание-источника-данных">🏷️ Отслеживание источника данных<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0#%EF%B8%8F-%D0%BE%D1%82%D1%81%D0%BB%D0%B5%D0%B6%D0%B8%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5-%D0%B8%D1%81%D1%82%D0%BE%D1%87%D0%BD%D0%B8%D0%BA%D0%B0-%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D1%85" class="hash-link" aria-label="Прямая ссылка на 🏷️ Отслеживание источника данных" title="Прямая ссылка на 🏷️ Отслеживание источника данных">​</a></h4>
+<p>Теперь SILAM Pollen сохраняет информацию о том, из какого датасета были получены данные прогноза.</p>
+<p>Это позволяет безопасно объединять данные из нескольких источников, сохраняя значения из более приоритетного датасета.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-дополнение-прогноза-из-нескольких-датасетов">🧩 Дополнение прогноза из нескольких датасетов<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0#-%D0%B4%D0%BE%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%B8%D0%B5-%D0%BF%D1%80%D0%BE%D0%B3%D0%BD%D0%BE%D0%B7%D0%B0-%D0%B8%D0%B7-%D0%BD%D0%B5%D1%81%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%B8%D1%85-%D0%B4%D0%B0%D1%82%D0%B0%D1%81%D0%B5%D1%82%D0%BE%D0%B2" class="hash-link" aria-label="Прямая ссылка на 🧩 Дополнение прогноза из нескольких датасетов" title="Прямая ссылка на 🧩 Дополнение прогноза из нескольких датасетов">​</a></h4>
+<p>Если предпочтительный датасет не покрывает весь прогнозный диапазон, SILAM Pollen может дополнить недостающий период данными из других доступных датасетов.</p>
+<p>Добавляются только отсутствующие данные без перезаписи значений, уже полученных из основного источника.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-silam-northern-europe-v61">🌍 SILAM Northern Europe (v6.1)<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0#-silam-northern-europe-v61" class="hash-link" aria-label="П�рямая ссылка на 🌍 SILAM Northern Europe (v6.1)" title="Прямая ссылка на 🌍 SILAM Northern Europe (v6.1)">​</a></h4>
+<p>Региональный датасет <strong>SILAM Northern Europe</strong> обновлён до версии <strong>v6.1</strong> и получил все улучшения поколения SILAM pollen v6.1.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="️-отключение-устаревших-датасетов">🗑️ Отключение устаревших датасетов<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0#%EF%B8%8F-%D0%BE%D1%82%D0%BA%D0%BB%D1%8E%D1%87%D0%B5%D0%BD%D0%B8%D0%B5-%D1%83%D1%81%D1%82%D0%B0%D1%80%D0%B5%D0%B2%D1%88%D0%B8%D1%85-%D0%B4%D0%B0%D1%82%D0%B0%D1%81%D0%B5%D1%82%D0%BE%D0%B2" class="hash-link" aria-label="Прямая ссылка на 🗑️ Отключение устаревших датасетов" title="Прямая ссылка на 🗑️ Отключение устаревших датасетов">​</a></h4>
+<p>Следующие устаревшие датасеты больше не доступны для SMART и ручного выбора:</p>
+<ul>
+<li><strong>SILAM Europe (v6.0, legacy)</strong></li>
+<li><strong>SILAM Northern Europe (v5.9.1)</strong></li>
+</ul>
+<div class="theme-admonition theme-admonition-info admonition_xJq3 alert alert--info"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>к сведению</div><div class="admonitionContent_BuS1"><p><br>
+<!-- -->Существующие интеграции, использующие эти датасеты, будут автоматически перенесены:</p><ul>
+<li>SILAM Europe (v6.0) → SILAM Europe (v6.1)</li>
+<li>SILAM Northern Europe (v5.9.1) → SILAM Northern Europe (v6.1)</li>
+</ul><p>При миграции ручной режим выбора датасета сохраняется, а существующие конфигурации SMART остаются в режиме SMART.</p></div></div>
+<p>Подход к миграции, предложенный в <a href="https://github.com/danishru/silam_pollen/pull/23" target="_blank" rel="noopener noreferrer">PR #23</a>, был расширен на все поддерживаемые замены устаревших датасетов.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-более-надёжная-и-понятная-настройка">🩺 Более надёжная и понятная настройка<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0#-%D0%B1%D0%BE%D0%BB%D0%B5%D0%B5-%D0%BD%D0%B0%D0%B4%D1%91%D0%B6%D0%BD%D0%B0%D1%8F-%D0%B8-%D0%BF%D0%BE%D0%BD%D1%8F%D1%82%D0%BD%D0%B0%D1%8F-%D0%BD%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B0" class="hash-link" aria-label="Прямая ссылка на 🩺 Более надёжная и понятная настройка" title="Прямая ссылка на 🩺 Более надёжная и понятная настройка">​</a></h4>
+<p>При добавлении новой интеграции SILAM Pollen теперь проверяет доступность службы SILAM и каталогов с данными о пыльце.</p>
+<p>Интерфейс показывает понятный статус и локализованные рекомендации, если не удалось проверить службу, сетевое подключение или выбранное местоположение.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="️-расширенная-языковая-поддержка">🗣️ Расширенная языковая поддержка<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0#%EF%B8%8F-%D1%80%D0%B0%D1%81%D1%88%D0%B8%D1%80%D0%B5%D0%BD%D0%BD%D0%B0%D1%8F-%D1%8F%D0%B7%D1%8B%D0%BA%D0%BE%D0%B2%D0%B0%D1%8F-%D0%BF%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%BA%D0%B0" class="hash-link" aria-label="Прямая ссылка на 🗣️ Расширенная языковая поддержка" title="Прямая ссылка на 🗣️ Расширенная языковая поддержка">​</a></h4>
+<ul>
+<li>Добавлен <strong>польский перевод</strong>, предоставленный через <a href="https://github.com/danishru/silam_pollen/issues/24" target="_blank" rel="noopener noreferrer">issue #24</a> пользователем <a href="https://github.com/ArekKubacki" target="_blank" rel="noopener noreferrer">@ArekKubacki</a>.</li>
+<li>Обновлён <strong>словацкий перевод</strong> из <a href="https://github.com/danishru/silam_pollen/pull/27" target="_blank" rel="noopener noreferrer">PR #27</a>, подготовленного пользователем <a href="https://github.com/misa1515" target="_blank" rel="noopener noreferrer">@misa1515</a>.</li>
+</ul>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.4.0" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/%D0%9F%D0%BE%D0%B4%D1%80%D0%BE%D0%B1%D0%BD%D0%B5%D0%B5--%D0%B2--%D0%B2%D1%8B%D0%BF%D1%83%D1%81%D0%BA%D0%B5-v0.4.0-blue?style=flat" alt="Подробнее в выпуске v0.4.0" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
         <item>
             <title><![CDATA[v0.3.2]]></title>
             <link>https://danishru.github.io/silam_pollen/site/ru/blog/2026/01/27/v0.3.2</link>
