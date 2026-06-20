@@ -20,6 +20,12 @@ DEFAULT_ALTITUDE = 275
 # Базовые URL для запросов API SILAM (THREDDS NCSS grid)
 THREDDS_NCSS_GRID_BASE = "https://thredds.silam.fmi.fi/thredds/ncss/grid"
 
+# Корневой каталог THREDDS для проверки доступности службы в Config Flow
+THREDDS_ROOT_CATALOG_URL = "https://thredds.silam.fmi.fi/thredds/catalog/catalog.xml"
+THREDDS_ROOT_CATALOG_NAME = "FMI SILAM CATALOG"
+THREDDS_ROOT_CATALOG_TIMEOUT_SECONDS = 3
+THREDDS_ROOT_CATALOG_WAIT_SECONDS = 3
+
 # ---------------------------------------------------------------------------
 # SMART: пороги переоценки датасета
 # ---------------------------------------------------------------------------

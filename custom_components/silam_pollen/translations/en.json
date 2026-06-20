@@ -236,8 +236,25 @@
           "altitude": "Altitude above sea level"
         },
         "title": "Create SILAM Pollen Service",
-        "description": "Enter the zone name and adjust the coordinates if necessary.\n[Check out the service coverage map](https://danishru.github.io/silam_pollen/)."
+        "description": "✅ **The SILAM service is available**\n\nEnter the zone name and adjust the coordinates if necessary.\n[Check out the service coverage map](https://danishru.github.io/silam_pollen/)."
+      },
+      "manual_coords_warning": {
+        "data": {
+          "zone_name": "Zone Name",
+          "location": "Location",
+          "altitude": "Altitude above sea level"
+        },
+        "title": "Create SILAM Pollen Service",
+        "description": "⚠️ **The availability of the SILAM service could not be confirmed**\n\nYou can continue setup — the selected location will still be checked next.\n\nEnter the zone name and adjust the coordinates if necessary.\n[Check out the service coverage map](https://danishru.github.io/silam_pollen/)."
       }
+    },
+    "error": {
+      "silam_ssl_error": "A secure connection to SILAM could not be established. Check the Home Assistant date and time, system certificates, and whether HTTPS traffic is being intercepted.",
+      "silam_connection_error": "Could not connect to SILAM. Check the internet connection, DNS, and access to thredds.silam.fmi.fi.",
+      "silam_catalog_error": "The server responded, but the SILAM data catalog has an invalid format or contains no pollen catalogs. Try again later.",
+      "silam_check_unconfirmed": "The check did not finish in time or an unknown error occurred. Try again later.",
+      "silam_location_unavailable": "The selected location is outside the SILAM coverage area. Select another location.",
+      "silam_location_check_failed": "Unable to check SILAM data availability for the selected location. Check your internet connection and try again."
     }
   },
   "options": {

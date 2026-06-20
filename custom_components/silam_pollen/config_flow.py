@@ -1,12 +1,15 @@
+import asyncio
 import collections
 import voluptuous as vol
 import aiohttp
 import async_timeout
 import xml.etree.ElementTree as ET
 import logging
+import ssl
 
 from homeassistant import config_entries
 from homeassistant.core import callback
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     LocationSelector,
     LocationSelectorConfig,
@@ -20,6 +23,11 @@ from .const import (
     DOMAIN,
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_ALTITUDE,
+    THREDDS_CATALOG_NS,
+    THREDDS_ROOT_CATALOG_NAME,
+    THREDDS_ROOT_CATALOG_TIMEOUT_SECONDS,
+    THREDDS_ROOT_CATALOG_URL,
+    THREDDS_ROOT_CATALOG_WAIT_SECONDS,
     # dataset table
     DATASETS,
     dataset_base_url,
@@ -41,6 +49,181 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """
     VERSION = 3
     MINOR_VERSION = 5
+
+    @staticmethod
+    def _new_catalog_check_result(
+        *,
+        completed: bool = True,
+        error: str | None = None,
+    ) -> dict:
+        """Создать пустой результат проверки каталога SILAM."""
+        return {
+            "completed": completed,
+            "http_ok": False,
+            "http_status": None,
+            "ssl_ok": None,
+            "catalog_name_ok": None,
+            "catalog_name": None,
+            "pollen_catalogs_ok": None,
+            "pollen_catalogs": None,
+            "error": error,
+        }
+
+    def _ensure_catalog_check_task(self) -> None:
+        """Запустить фоновую проверку корневого каталога SILAM один раз."""
+        if getattr(self, "_catalog_check_task", None) is None:
+            self._catalog_check_task = self.hass.async_create_task(
+                self._async_check_root_catalog()
+            )
+
+    async def _async_check_root_catalog(self) -> dict:
+        """Проверить HTTP, SSL, имя корневого каталога и pollen-каталоги."""
+        result = self._new_catalog_check_result()
+        session = async_get_clientsession(self.hass)
+
+        try:
+            async with async_timeout.timeout(THREDDS_ROOT_CATALOG_TIMEOUT_SECONDS):
+                async with session.get(THREDDS_ROOT_CATALOG_URL) as response:
+                    # Полученный HTTPS-ответ означает, что стандартная SSL-проверка
+                    # общей aiohttp-сессии Home Assistant успешно пройдена.
+                    result["ssl_ok"] = True
+                    result["http_status"] = response.status
+                    result["http_ok"] = response.status == 200
+
+                    if response.status != 200:
+                        result["error"] = "http_error"
+                        return result
+
+                    text = await response.text()
+
+        except (
+            aiohttp.ClientConnectorCertificateError,
+            aiohttp.ClientConnectorSSLError,
+            ssl.CertificateError,
+            ssl.SSLError,
+        ) as err:
+            result["ssl_ok"] = False
+            result["error"] = "ssl_error"
+            _LOGGER.debug("SILAM catalog SSL check failed: %s", err)
+            return result
+        except asyncio.CancelledError:
+            raise
+        except (asyncio.TimeoutError, aiohttp.ClientError) as err:
+            result["error"] = "connection_error"
+            _LOGGER.debug("SILAM catalog availability check failed: %s", err)
+            return result
+        except Exception as err:
+            result["error"] = "unknown_error"
+            _LOGGER.debug("Unexpected SILAM catalog check error: %s", err)
+            return result
+
+        try:
+            root = ET.fromstring(text)
+        except ET.ParseError as err:
+            result["error"] = "invalid_xml"
+            _LOGGER.debug("SILAM root catalog returned invalid XML: %s", err)
+            return result
+
+        catalog_name = root.attrib.get("name")
+        result["catalog_name"] = catalog_name
+        result["catalog_name_ok"] = catalog_name == THREDDS_ROOT_CATALOG_NAME
+
+        pollen_catalogs = sorted(
+            {
+                catalog_ref.attrib.get("name", "")
+                for catalog_ref in root.findall(".//t:catalogRef", THREDDS_CATALOG_NS)
+                if "pollen" in catalog_ref.attrib.get("name", "").lower()
+            }
+        )
+        result["pollen_catalogs"] = pollen_catalogs
+        result["pollen_catalogs_ok"] = bool(pollen_catalogs)
+
+        return result
+
+    async def _async_wait_catalog_check(self) -> dict:
+        """Дождаться фоновой проверки, но не более четырёх секунд."""
+        self._ensure_catalog_check_task()
+        task = self._catalog_check_task
+
+        if task.cancelled():
+            return self._new_catalog_check_result(
+                completed=False,
+                error="timeout",
+            )
+
+        try:
+            return await asyncio.wait_for(
+                task,
+                timeout=THREDDS_ROOT_CATALOG_WAIT_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            _LOGGER.debug(
+                "SILAM catalog check did not finish within %s seconds",
+                THREDDS_ROOT_CATALOG_WAIT_SECONDS,
+            )
+            return self._new_catalog_check_result(
+                completed=False,
+                error="timeout",
+            )
+        except asyncio.CancelledError:
+            raise
+        except Exception as err:
+            _LOGGER.debug("SILAM catalog task failed while waiting: %s", err)
+            return self._new_catalog_check_result(error="unknown_error")
+
+    @staticmethod
+    def _catalog_check_is_ok(result: dict) -> bool:
+        """Вернуть True, только если успешно пройдены все проверки каталога."""
+        return all(
+            result.get(key) is True
+            for key in (
+                "http_ok",
+                "ssl_ok",
+                "catalog_name_ok",
+                "pollen_catalogs_ok",
+            )
+        )
+
+    @staticmethod
+    def _catalog_check_error_key(result: dict) -> str | None:
+        """Вернуть локализованный ключ ошибки проверки SILAM."""
+        if SilamPollenConfigFlow._catalog_check_is_ok(result):
+            return None
+
+        error = result.get("error")
+
+        if error == "ssl_error" or result.get("ssl_ok") is False:
+            return "silam_ssl_error"
+
+        if error in ("connection_error", "http_error"):
+            return "silam_connection_error"
+
+        if (
+            error == "invalid_xml"
+            or result.get("catalog_name_ok") is False
+            or result.get("pollen_catalogs_ok") is False
+        ):
+            return "silam_catalog_error"
+
+        return "silam_check_unconfirmed"
+
+    @staticmethod
+    def _log_catalog_check_result(result: dict) -> None:
+        """Записать подробный результат проверки только в DEBUG-лог."""
+        _LOGGER.debug(
+            "SILAM catalog check: completed=%s http_ok=%s http_status=%s "
+            "ssl_ok=%s catalog_name_ok=%s catalog_name=%s "
+            "pollen_catalogs_ok=%s pollen_catalogs=%s error=%s",
+            result.get("completed"),
+            result.get("http_ok"),
+            result.get("http_status"),
+            result.get("ssl_ok"),
+            result.get("catalog_name_ok"),
+            result.get("catalog_name"),
+            result.get("pollen_catalogs_ok"),
+            result.get("pollen_catalogs"),
+            result.get("error"),
+        )
 
     @staticmethod
     def _iter_probe_datasets_fallback() -> tuple[str, ...]:
@@ -115,18 +298,56 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         })
 
         if user_input is None:
+            # Проверка стартует сразу при открытии первого шага и выполняется
+            # параллельно с заполнением формы пользователем.
+            self._ensure_catalog_check_task()
             return self.async_show_form(
                 step_id="user",
                 data_schema=data_schema
             )
 
+        # Если фоновая проверка ещё не завершилась, ждём не более 4 секунд.
+        catalog_result = await self._async_wait_catalog_check()
+        self.context["catalog_check_result"] = catalog_result
+        self._log_catalog_check_result(catalog_result)
+
         # Сохраняем данные первого шага в context
         self.context["base_data"] = user_input.copy()
         self.context["zone_id"] = user_input.get("zone_id")
-        return await self.async_step_manual_coords()
+
+        service_error = self._catalog_check_error_key(catalog_result)
+        self.context["catalog_check_error"] = service_error
+
+        step_id = "manual_coords" if service_error is None else "manual_coords_warning"
+        return await self._async_step_manual_coords(
+            None,
+            step_id=step_id,
+            service_error=service_error,
+        )
 
     async def async_step_manual_coords(self, user_input=None):
-        """Шаг 2: ввод координат и названия зоны."""
+        """Шаг 2: ввод координат при доступной службе SILAM."""
+        return await self._async_step_manual_coords(
+            user_input,
+            step_id="manual_coords",
+        )
+
+    async def async_step_manual_coords_warning(self, user_input=None):
+        """Шаг 2: ввод координат, когда доступность SILAM не подтверждена."""
+        return await self._async_step_manual_coords(
+            user_input,
+            step_id="manual_coords_warning",
+            service_error=self.context.get("catalog_check_error"),
+        )
+
+    async def _async_step_manual_coords(
+        self,
+        user_input,
+        *,
+        step_id: str,
+        service_error: str | None = None,
+    ):
+        """Общая реализация шага ввода координат."""
         if user_input is None:
             zone_id = self.context.get("zone_id", "zone.home")
             zone = self.hass.states.get(zone_id)
@@ -157,9 +378,12 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             data_schema = vol.Schema(schema_fields)
             return self.async_show_form(
-                step_id="manual_coords",
+                step_id=step_id,
                 data_schema=data_schema,
-                description_placeholders={"altitude": "Altitude above sea level"}
+                errors={"base": service_error} if service_error else {},
+                description_placeholders={
+                    "altitude": "Altitude above sea level",
+                },
             )
 
         # Обработка введённых данных
@@ -193,7 +417,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if not valid:
             errors = {"base": error}
             return self.async_show_form(
-                step_id="manual_coords",
+                step_id=step_id,
                 data_schema=vol.Schema({
                     vol.Optional("zone_name", default=base_data["zone_name"]): str,
                     vol.Required("altitude", default=altitude_input): vol.Coerce(float),
@@ -204,7 +428,9 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     }): LocationSelector(LocationSelectorConfig(radius=True)),
                 }),
                 errors=errors,
-                description_placeholders={"altitude": "Altitude above sea level"}
+                description_placeholders={
+                    "altitude": "Altitude above sea level",
+                }
             )
 
         # Сохраняем выбранный базовый URL в конфигурационных данных.
@@ -225,6 +451,10 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """
         Проверка доступности API с использованием введённых координат.
         Порядок берём из iter_datasets_for_probe() (const.py).
+
+        Возвращает локализованный ключ ошибки вместо сырого ответа SILAM:
+        - silam_location_unavailable: все ответившие датасеты вернули HTTP 400;
+        - silam_location_check_failed: сетевая, серверная или неизвестная ошибка.
         """
         dataset_names = iter_datasets_for_probe()
         if not dataset_names:
@@ -237,8 +467,8 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except Exception:
                 continue
 
-        last_response = ""
-        chosen_url = None
+        saw_location_error = False
+        saw_service_error = False
 
         for url in urls:
             test_url = url + f"?var=POLI&latitude={latitude}&longitude={longitude}&time=present&accept=xml"
@@ -246,18 +476,35 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 async with aiohttp.ClientSession() as session:
                     async with async_timeout.timeout(10):
                         async with session.get(test_url) as response:
-                            text = await response.text()
-                            if response.status == 200:
-                                chosen_url = url
-                                return True, None, chosen_url
-                            else:
-                                last_response = text
-                                _LOGGER.debug("API returned %s from %s: %s", response.status, url, text)
-            except Exception as err:
-                last_response = str(err)
-                _LOGGER.debug("Exception when requesting %s: %s", url, str(err))
+                            response_text = await response.text()
 
-        return False, last_response, None
+                            if response.status == 200:
+                                return True, None, url
+
+                            if response.status == 400:
+                                saw_location_error = True
+                            else:
+                                saw_service_error = True
+
+                            _LOGGER.debug(
+                                "Location probe returned HTTP %s from %s: %s",
+                                response.status,
+                                url,
+                                response_text,
+                            )
+            except Exception as err:
+                saw_service_error = True
+                _LOGGER.debug("Location probe exception when requesting %s: %s", url, err)
+
+        # Если хотя бы один запрос завершился сетевой/серверной ошибкой,
+        # нельзя достоверно считать местоположение находящимся вне зоны покрытия.
+        if saw_service_error:
+            return False, "silam_location_check_failed", None
+
+        if saw_location_error:
+            return False, "silam_location_unavailable", None
+
+        return False, "silam_location_check_failed", None
 
     @staticmethod
     @callback
