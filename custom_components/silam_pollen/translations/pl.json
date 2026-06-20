@@ -236,7 +236,7 @@
           "altitude": "Wysokość nad poziomem morza"
         },
         "title": "Utwórz usługę pyłków SILAM",
-        "description": "Wprowadź nazwę strefy i w razie potrzeby dostosuj współrzędne.\n[Sprawdź mapę zasięgu usługi](https://danishru.github.io/silam_pollen/)."
+        "description": "Wprowadź nazwę strefy i w razie potrzeby dostosuj współrzędne.\n[Sprawdź mapę zasięgu usługi]({coverage_url})."
       }
     }
   },

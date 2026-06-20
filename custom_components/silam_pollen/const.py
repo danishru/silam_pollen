@@ -26,6 +26,8 @@ THREDDS_ROOT_CATALOG_NAME = "FMI SILAM CATALOG"
 THREDDS_ROOT_CATALOG_TIMEOUT_SECONDS = 3
 THREDDS_ROOT_CATALOG_WAIT_SECONDS = 3
 
+# Карта покрытия SILAM для ссылки в Config Flow
+COVERAGE_MAP_URL = "https://danishru.github.io/silam_pollen/"
 # ---------------------------------------------------------------------------
 # SMART: пороги переоценки датасета
 # ---------------------------------------------------------------------------

@@ -210,7 +210,7 @@
           "altitude": "Nadmořská výška"
         },
         "title": "Vytvoření služby SILAM Pyl",
-        "description": "Zadejte název zóny a případně upravte souřadnice.\n[Zobrazit mapu pokrytí služby](https://danishru.github.io/silam_pollen/)."
+        "description": "Zadejte název zóny a případně upravte souřadnice.\n[Zobrazit mapu pokrytí služby]({coverage_url})."
       }
     }
   },

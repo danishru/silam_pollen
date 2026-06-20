@@ -234,7 +234,7 @@
           "altitude": "Höjd (över havet)"
         },
         "title": "Skapa SILAM Pollen-tjänst",
-        "description": "Ange zonnamnet och justera koordinaterna vid behov.\n[Kolla in tjänstens täckningskarta](https://danishru.github.io/silam_pollen/)."
+        "description": "Ange zonnamnet och justera koordinaterna vid behov.\n[Kolla in tjänstens täckningskarta]({coverage_url})."
       }
     }
   },

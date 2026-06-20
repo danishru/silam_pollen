@@ -234,7 +234,7 @@
           "altitude": "Høyde over havnivået"
         },
         "title": "Opprett SILAM Pollen-tjeneste",
-        "description": "Angi sonenavn og juster koordinatene om nødvendig.\n[Se dekningskartet](https://danishru.github.io/silam_pollen/)."
+        "description": "Angi sonenavn og juster koordinatene om nødvendig.\n[Se dekningskartet]({coverage_url})."
       }
     }
   },

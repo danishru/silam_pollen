@@ -236,7 +236,7 @@
           "altitude": "Altitude above sea level"
         },
         "title": "Create SILAM Pollen Service",
-        "description": "✅ **The SILAM service is available**\n\nEnter the zone name and adjust the coordinates if necessary.\n[Check out the service coverage map](https://danishru.github.io/silam_pollen/)."
+        "description": "✅ **The SILAM service is available**\n\nEnter the zone name and adjust the coordinates if necessary.\n[Check out the service coverage map]({coverage_url})."
       },
       "manual_coords_warning": {
         "data": {
@@ -245,7 +245,7 @@
           "altitude": "Altitude above sea level"
         },
         "title": "Create SILAM Pollen Service",
-        "description": "⚠️ **The availability of the SILAM service could not be confirmed**\n\nYou can continue setup — the selected location will still be checked next.\n\nEnter the zone name and adjust the coordinates if necessary.\n[Check out the service coverage map](https://danishru.github.io/silam_pollen/)."
+        "description": "⚠️ **The availability of the SILAM service could not be confirmed**\n\nYou can continue setup — the selected location will still be checked next.\n\nEnter the zone name and adjust the coordinates if necessary.\n[Check out the service coverage map]({coverage_url})."
       }
     },
     "error": {

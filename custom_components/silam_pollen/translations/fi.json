@@ -220,7 +220,7 @@
           "altitude": "Korkeus merenpinnasta"
         },
         "title": "Luo SILAM Siitepölypalvelu",
-        "description": "Anna vyöhykkeen nimi ja säädä koordinaatteja tarvittaessa.\n[Tarkastele palvelun peittoaluetta kartalla](https://danishru.github.io/silam_pollen/)."
+        "description": "Anna vyöhykkeen nimi ja säädä koordinaatteja tarvittaessa.\n[Tarkastele palvelun peittoaluetta kartalla]({coverage_url})."
       }
     }
   },

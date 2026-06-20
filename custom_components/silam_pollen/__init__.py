@@ -19,6 +19,7 @@ from .coordinator import SilamCoordinator
 from .migration import async_migrate_entry  # ядро вызовет при необходимости
 
 _LOGGER = logging.getLogger(__name__)
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 # -----------------------------------------------------------------------------
 #  Глобальная инициализация: выполняется один раз при старте Home Assistant

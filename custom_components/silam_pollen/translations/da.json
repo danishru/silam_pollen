@@ -186,7 +186,7 @@
           "altitude": "Højde over havets overflade"
         },
         "title": "Opret SILAM Pollen-tjeneste",
-        "description": "Indtast zonens navn og juster koordinaterne om nødvendigt.\n[Tjek dækningskortet](https://danishru.github.io/silam_pollen/)."
+        "description": "Indtast zonens navn og juster koordinaterne om nødvendigt.\n[Tjek dækningskortet]({coverage_url})."
       }
     }
   },

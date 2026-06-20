@@ -220,7 +220,7 @@
           "altitude": "Höhe über dem Meeresspiegel"
         },
         "title": "SILAM-Pollen-Service erstellen",
-        "description": "Geben Sie den Zonen­namen ein und passen Sie bei Bedarf die Koordinaten an.\n[Service-Abdeckungskarte anzeigen](https://danishru.github.io/silam_pollen/)."
+        "description": "Geben Sie den Zonen­namen ein und passen Sie bei Bedarf die Koordinaten an.\n[Service-Abdeckungskarte anzeigen]({coverage_url})."
       }
     }
   },

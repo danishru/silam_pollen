@@ -220,7 +220,7 @@
           "altitude": "Hoogte boven zeeniveau"
         },
         "title": "SILAM Pollen­dienst aanmaken",
-        "description": "Voer de zonenaam in en pas de coördinaten aan indien nodig.\n[Bekijk de dekkingskaart](https://danishru.github.io/silam_pollen/)."
+        "description": "Voer de zonenaam in en pas de coördinaten aan indien nodig.\n[Bekijk de dekkingskaart]({coverage_url})."
       }
     }
   },

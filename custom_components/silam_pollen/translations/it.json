@@ -220,7 +220,7 @@
           "altitude": "Altitudine sopra il livello del mare"
         },
         "title": "Crea servizio SILAM Pollen",
-        "description": "Inserisci il nome della zona e regola le coordinate se necessario.\n[Consulta la mappa di copertura del servizio](https://danishru.github.io/silam_pollen/)."
+        "description": "Inserisci il nome della zona e regola le coordinate se necessario.\n[Consulta la mappa di copertura del servizio]({coverage_url})."
       }
     }
   },

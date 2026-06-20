@@ -23,6 +23,7 @@ from .const import (
     DOMAIN,
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_ALTITUDE,
+    COVERAGE_MAP_URL,
     THREDDS_CATALOG_NS,
     THREDDS_ROOT_CATALOG_NAME,
     THREDDS_ROOT_CATALOG_TIMEOUT_SECONDS,
@@ -383,6 +384,7 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors={"base": service_error} if service_error else {},
                 description_placeholders={
                     "altitude": "Altitude above sea level",
+                    "coverage_url": COVERAGE_MAP_URL,
                 },
             )
 
@@ -430,7 +432,8 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors=errors,
                 description_placeholders={
                     "altitude": "Altitude above sea level",
-                }
+                    "coverage_url": COVERAGE_MAP_URL,
+                },
             )
 
         # Сохраняем выбранный базовый URL в конфигурационных данных.

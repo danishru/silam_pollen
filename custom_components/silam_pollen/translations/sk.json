@@ -229,7 +229,7 @@
           "altitude": "Nadmorská výška"
         },
         "title": "Vytvorenie služby SILAM Peľ",
-        "description": "Zadajte názov zóny a upraviť súradnice podľa potreby.\n[Zobraziť mapu pokrytia služby](https://danishru.github.io/silam_pollen/)."
+        "description": "Zadajte názov zóny a upraviť súradnice podľa potreby.\n[Zobraziť mapu pokrytia služby]({coverage_url})."
       }
     }
   },
