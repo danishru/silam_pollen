@@ -28,8 +28,8 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 > [!NOTE]  
 > Please note: the coverage area is limited and depends on the selected dataset.  
 > 🟦 **Blue** — coverage zone of **SILAM Finland (v6.1)** (highest detail, **0.8 km** resolution).  
-> 🟩 **Green** — coverage zone of **SILAM Northern Europe (v5.9.1)** (more detailed, **2.5 km** resolution).  
-> 🟨 **Yellow** — coverage zone of **SILAM Europe (v6.1/v6.0)** (more general, **10 km** resolution).  
+> 🟩 **Green** — coverage zone of **SILAM Northern Europe (v6.1)** (more detailed, **2.5 km** resolution).  
+> 🟨 **Yellow** — coverage zone of **SILAM Europe (v6.1)** (more general, **10 km** resolution).  
 >  
 > To evaluate coverage and choose the appropriate dataset, use the interactive map below.
 
