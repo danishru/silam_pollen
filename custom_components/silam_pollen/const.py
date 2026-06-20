@@ -72,16 +72,16 @@ DATASETS: dict[str, DatasetMeta] = {
         ui_order=30,
     ),
 
-    # Europe pollen (v6.0) — устаревший датасет (legacy)
+    # Europe pollen (v6.0) — устаревший датасет (только для миграции)
     "silam_europe_pollen_v6_0": DatasetMeta(
         src="sep60",
         path="silam_europe_pollen_v6_0",
         file="silam_europe_pollen_v6_0_best.ncd",
         label="SILAM Europe (v6.0, legacy)",
-        probe_priority=40,
-        ui_enabled=True,
+        probe_priority=None,
+        ui_enabled=False,
         ui_requires_probe=False,
-        ui_order=40,
+        ui_order=None,
     ),
 
     # Regional pollen (v6.1) — актуальный региональный датасет (Северная Европа)
@@ -96,16 +96,16 @@ DATASETS: dict[str, DatasetMeta] = {
         ui_order=20,
     ),
 
-    # Regional pollen (v5.9.1) — устаревший региональный датасет (legacy)
+    # Regional pollen (v5.9.1) — устаревший датасет (только для миграции)
     "silam_regional_pollen_v5_9_1": DatasetMeta(
         src="srp591",
         path="silam_regional_pollen_v5_9_1",
         file="silam_regional_pollen_v5_9_1_best.ncd",
         label="SILAM Northern Europe (v5.9.1, legacy)",
-        probe_priority=50,
-        ui_enabled=True,
-        ui_requires_probe=True,   # показываем в UI только если доступен по координатам
-        ui_order=50,
+        probe_priority=None,
+        ui_enabled=False,
+        ui_requires_probe=False,
+        ui_order=None,
     ),
 
     # HIRES pollen (v6.1) — высокодетальный датасет (Finland / северные широты)

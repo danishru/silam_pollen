@@ -327,8 +327,8 @@
 
             // Добавляем легенду/переключатели слоёв (справа сверху)
             const legendItems = [
-              { id: 'regional', name: 'SILAM Northern Europe (v5.9.1)', color: 'rgba(0,255,0,1)',   layer: regionalVectorLayer },
-              { id: 'europe',   name: 'SILAM Europe (v6.1/v6.0)',     color: 'rgba(255,200,0,1)', layer: vectorLayer },
+              { id: 'regional', name: 'SILAM Northern Europe (v6.1)', color: 'rgba(0,255,0,1)',   layer: regionalVectorLayer },
+              { id: 'europe',   name: 'SILAM Europe (v6.1)',     color: 'rgba(255,200,0,1)', layer: vectorLayer },
             ];
             if (hiresVectorLayer) {
               legendItems.unshift({ id: 'hires', name: 'SILAM Finland (v6.1)', color: 'rgba(0,120,255,1)', layer: hiresVectorLayer });
@@ -350,11 +350,11 @@
                   squareColor = 'rgba(0,120,255,1)';
                   return true;
                 } else if (layer === regionalVectorLayer) {
-                  layerDesc = 'SILAM Northern Europe (v5.9.1)';
+                  layerDesc = 'SILAM Northern Europe (v6.1)';
                   squareColor = 'rgba(0,255,0,1)';
                   return true;
                 } else if (layer === vectorLayer) {
-                  layerDesc = 'SILAM Europe (v6.1/v6.0)';
+                  layerDesc = 'SILAM Europe (v6.1)';
                   squareColor = 'rgba(255,200,0,1)';
                   return true;
                 }
