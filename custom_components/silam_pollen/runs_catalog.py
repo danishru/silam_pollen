@@ -70,6 +70,18 @@ class RunsCatalogManager:
             return False
         return (datetime.utcnow() - st.last_ok) <= self._ttl
 
+    def get_last_error(self, catalog_url: str | None) -> Optional[str]:
+        """Вернуть последнюю ошибку refresh для указанного каталога.
+
+        Координатор использует это для раннего offline fallback: если latest run
+        не получен именно из-за сетевой ошибки, можно сразу восстановиться из
+        persistent cache и не ждать дополнительные таймауты index/main fetch.
+        """
+        if not catalog_url:
+            return None
+        st = self._states.get(catalog_url)
+        return st.last_error if st else None
+
     async def async_get_latest(self, catalog_url: str) -> LatestRunInfo:
         """Вернуть LatestRunInfo.
 

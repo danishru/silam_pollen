@@ -34,5 +34,5 @@ async def async_setup_entry(
                 base_device_name=base_device_name,
             )
         ],
-        update_before_add=True,  # карточка сразу покажет актуальное состояние
+        update_before_add=False,  # координатор уже обновлён; не запускаем второй refresh
     )

@@ -102,6 +102,7 @@ class SilamPollenFetchDurationSensor(SensorEntity):
         req = md.get("request", {})
         runs = md.get("runs_catalog", {})
         ds = md.get("dataset", {})
+        cache = md.get("cache", {})
 
         return {
             "request_type": req.get("type"),
@@ -116,6 +117,23 @@ class SilamPollenFetchDurationSensor(SensorEntity):
             "dataset_selection": ds.get("selection"),
             "effective_base_url": ds.get("effective_base_url"),
             "preferred_base_url": ds.get("preferred_base_url"),
+            # постоянный кэш raw_merged
+            "cache_source": req.get("cache_source"),
+            "offline_fallback": req.get("offline_fallback"),
+            "cache_store_enabled": cache.get("enabled"),
+            "cache_loaded": cache.get("loaded"),
+            "cache_compatible": cache.get("compatible"),
+            "cache_schema_version": cache.get("schema_version"),
+            "cache_saved_at": cache.get("saved_at"),
+            "cache_entry_title": cache.get("entry_title"),
+            "cache_active_run_id": cache.get("active_run_id"),
+            "cache_effective_base_url": cache.get("effective_base_url"),
+            "cache_preferred_base_url": cache.get("preferred_base_url"),
+            "cache_points": cache.get("points"),
+            "cache_current_available": cache.get("current_available"),
+            "cache_current_date": cache.get("current_date"),
+            "cache_current_data_points": cache.get("current_data_points"),
+            "cache_restore_payload_loaded": cache.get("restore_payload_loaded"),
         }
 
 # -------------------------------------------------------------------------

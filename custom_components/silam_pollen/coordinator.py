@@ -20,8 +20,15 @@
   выполняется переоценка и переключение на fallback (через _set_base_url).
 - При восстановлении preferred (по каталогу + подтверждение probe) выполняется возврат.
 - В merged_data сохраняются effective_base_url и preferred_base_url для UI/диагностики.
+
+Постоянный кэш:
+- После успешного обновления сохраняем финальный raw_merged в Store.
+- При старте используем совместимый persistent raw_merged, если latest run_id совпадает.
+- Если сеть недоступна, используем совместимый persistent raw_merged как offline fallback.
+- Для записей без прогноза сохраняем и восстанавливаем маленький current-кэш.
 """
 
+import copy
 import math
 
 import logging
@@ -33,7 +40,9 @@ import async_timeout
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
+from typing import Any
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from .cache_runtime import SilamPollenCacheRuntime
 from .const import (
     DOMAIN,
     RUNS_CATALOG_MANAGER,
@@ -66,6 +75,8 @@ class SilamCoordinator(DataUpdateCoordinator):
         *,
         dataset_selection="smart",
         smart_candidates=None,
+        cache_store=None,
+        cached_payload=None,
     ):
         """
         Инициализирует координатор.
@@ -83,6 +94,8 @@ class SilamCoordinator(DataUpdateCoordinator):
         :param forecast_duration: длительность прогноза в часах (от 36 до 120).
         :param dataset_selection: политика выбора датасета ('smart' или фиксированный режим).
         :param smart_candidates: список кандидатов base_url для SMART (в порядке приоритета).
+        :param cache_store: объект постоянного кэша для сохранения raw_merged.
+        :param cached_payload: совместимый payload постоянного кэша, загруженный при setup.
         """
         self._base_device_name = base_device_name
         self._log_prefix = f"[{base_device_name}]"
@@ -130,9 +143,18 @@ class SilamCoordinator(DataUpdateCoordinator):
         self._latest_run_id = None
         self._latest_run_start = None
         self._latest_run_end = None
+        # Последняя ошибка каталога нужна, чтобы отличать offline-сбой от пустого каталога.
+        self._last_runs_catalog_error = None
 
         # Общий менеджер runs catalog (domain-level) из hass.data[DOMAIN]
         self._runs_manager = hass.data.get(DOMAIN, {}).get(RUNS_CATALOG_MANAGER)
+
+        # Store постоянного кэша. Forecast-режим использует raw_merged,
+        # non-forecast режим использует маленький current-кэш с последним now.
+        # Runtime-логику восстановления/сохранения держим отдельно от координатора.
+        self._cache_store = cache_store
+        self._cached_payload = cached_payload if isinstance(cached_payload, dict) else None
+        self._cache_runtime = SilamPollenCacheRuntime(self)
 
         # --- Шаг 2: «активный» run_id, на котором построен текущий кеш raw_merged ---
         # Нужен, чтобы понимать: «набор данных тот же» -> можно пересобрать из кеша без полного запроса.
@@ -223,49 +245,80 @@ class SilamCoordinator(DataUpdateCoordinator):
         except Exception:
             return None
 
-    async def _fetch_latest_run_info(self, session):
-        """Возвращает (run_id, start, end) из runs/catalog.xml.
+    async def _fetch_latest_run_info_for_catalog_url(self, catalog_url: str | None):
+        """Вернуть (run_id, start, end) для указанного runs/catalog.xml.
 
-        Теперь источник только один: общий RunsCatalogManager (кэш + дедуп).
+        Метод дополнительно запоминает последнюю ошибку каталога. Это нужно,
+        чтобы ранний offline fallback включался только при сетевом сбое, а не
+        при обычном пустом каталоге без latest run.
         """
-        if not self._runs_catalog_url:
+        self._last_runs_catalog_error = None
+
+        if not catalog_url:
             return None, None, None
 
         if self._runs_manager is None:
             _LOGGER.debug(
-                "%s runs catalog: RunsCatalogManager не инициализирован (url=%s)",
+                "%s runs catalog: RunsCatalogManager is not initialized (url=%s)",
                 self._log_prefix,
-                self._runs_catalog_url,
+                catalog_url,
             )
             return None, None, None
 
         try:
-            latest = await self._runs_manager.async_get_latest(self._runs_catalog_url)
+            latest = await self._runs_manager.async_get_latest(catalog_url)
+
+            get_last_error = getattr(self._runs_manager, "get_last_error", None)
+            if callable(get_last_error):
+                self._last_runs_catalog_error = get_last_error(catalog_url)
+
             if latest and latest.run_id:
-                _LOGGER.debug(
-                    "%s Шаг 1: runs catalog (manager): run=%s start=%s end=%s",
-                    self._log_prefix,
-                    latest.run_id,
-                    latest.start,
-                    latest.end,
-                )
+                if self._last_runs_catalog_error:
+                    _LOGGER.debug(
+                        "%s runs catalog returned cached run after refresh error: "
+                        "run=%s error=%s",
+                        self._log_prefix,
+                        latest.run_id,
+                        self._last_runs_catalog_error,
+                    )
+                else:
+                    _LOGGER.debug(
+                        "%s runs catalog ok: run=%s start=%s end=%s",
+                        self._log_prefix,
+                        latest.run_id,
+                        latest.start,
+                        latest.end,
+                    )
                 return latest.run_id, latest.start, latest.end
 
-            _LOGGER.debug(
-                "%s Шаг 1: runs catalog (manager): нет latest run (url=%s)",
-                self._log_prefix,
-                self._runs_catalog_url,
-            )
+            if self._last_runs_catalog_error:
+                _LOGGER.debug(
+                    "%s runs catalog failed: url=%s error=%s",
+                    self._log_prefix,
+                    catalog_url,
+                    self._last_runs_catalog_error,
+                )
+            else:
+                _LOGGER.debug(
+                    "%s runs catalog has no latest run: url=%s",
+                    self._log_prefix,
+                    catalog_url,
+                )
             return None, None, None
 
         except Exception as err:
+            self._last_runs_catalog_error = str(err)
             _LOGGER.debug(
-                "%s Шаг 1: runs catalog (manager) ошибка (%s): %s",
+                "%s runs catalog failed: url=%s error=%s",
                 self._log_prefix,
-                self._runs_catalog_url,
+                catalog_url,
                 err,
             )
             return None, None, None
+
+    async def _fetch_latest_run_info(self, session):
+        """Вернуть (run_id, start, end) из текущего runs/catalog.xml."""
+        return await self._fetch_latest_run_info_for_catalog_url(self._runs_catalog_url)
 
     # ---------------------------------------------------------------------
     # SMART-выбор датасета (Шаг 3 — основа под будущие улучшения)
@@ -842,6 +895,10 @@ class SilamCoordinator(DataUpdateCoordinator):
         tail_fetch_attempted = False
         tail_fetch_network = False
         tail_fetch_success = None
+        offline_fallback = False
+        # Флаг меняется только когда raw_merged реально расширен сетевыми данными.
+        # Простая пересборка из RAM/persistent cache не должна перезаписывать Store.
+        persistent_cache_changed = False
 
         raw_view = None  # используется для восстановления меток источника 's' при инкрементальной пересборке
         raw_all_ref = None  # ссылка на кеш raw_merged, если работали в incremental/synthetic ветке
@@ -862,24 +919,85 @@ class SilamCoordinator(DataUpdateCoordinator):
         index_url = self._build_index_url(latitude, longitude)
 
         data = {}
+        cache_source = None
+        use_incremental = False
+        raw_all = None
+        merged_override = None
+        run_id = None
+        run_start = None
+        run_end = None
 
         try:
             async with aiohttp.ClientSession() as session:
-                # --- Шаг 3: SMART-выбор датасета (один раз на старте/первом обновлении) ---
-                await self._apply_smart_selection_if_needed(session, latitude, longitude)
+                # --- Раннее восстановление из persistent cache ---
+                # CacheRuntime сам решает, можно ли использовать forecast raw_merged,
+                # non-forecast current или stale fallback. Координатор только
+                # выполняет раннюю проверку каталога и применяет готовый результат.
+                cache_catalog_base_url = self._cache_runtime.early_catalog_base_url()
+                if cache_catalog_base_url:
+                    stale_catalog_url = self._derive_runs_catalog_url_for_base_url(
+                        cache_catalog_base_url
+                    )
+                    self._prof(t0, "before_early_runs_catalog")
+                    pre_run_id, _pre_run_start, _pre_run_end = (
+                        await self._fetch_latest_run_info_for_catalog_url(stale_catalog_url)
+                    )
+                    self._prof(t0, "after_early_runs_catalog")
 
-                # После SMART выбора на старте пересчитываем index_url (base_url мог измениться)
-                index_url = self._build_index_url(latitude, longitude)
+                    early_restore = self._cache_runtime.prepare_early_restore(
+                        pre_run_id=pre_run_id,
+                        run_start=_pre_run_start,
+                        run_end=_pre_run_end,
+                        catalog_error=self._last_runs_catalog_error,
+                    )
+                    if early_restore is not None:
+                        if early_restore.get("index") is not None:
+                            data["index"] = early_restore["index"]
+                        raw_all_ref = early_restore.get("raw_all_ref")
+                        raw_view = early_restore.get("raw_view")
+                        merged_override = early_restore.get("merged_override")
+                        src_ds = early_restore.get("src_ds")
+                        src_key = early_restore.get("src_key")
+                        run_id = early_restore.get("run_id")
+                        run_start = early_restore.get("run_start")
+                        run_end = early_restore.get("run_end")
 
-                # --- runs catalog (диагностика свежести) ---
-                self._prof(t0, "before_step1_runs_catalog")
-                _LOGGER.debug("%s Шаг 1: проверка свежести (runs catalog): %s", self._log_prefix, self._runs_catalog_url)
-                run_id, run_start, run_end = await self._fetch_latest_run_info(session)
-                self._latest_run_id = run_id
-                self._latest_run_start = run_start
-                self._latest_run_end = run_end
-                self._prof(t0, "after_step1_runs_catalog")
-                _LOGGER.debug("%s Шаг 1: runs catalog результат: run_id=%s start=%s end=%s", self._log_prefix, run_id, run_start, run_end)
+                        latest_run_id = early_restore.get("latest_run_id")
+                        if latest_run_id is not None:
+                            self._latest_run_id = latest_run_id
+                            self._latest_run_start = early_restore.get("latest_run_start")
+                            self._latest_run_end = early_restore.get("latest_run_end")
+
+                        active_run_id = early_restore.get("active_run_id")
+                        if active_run_id:
+                            self._active_run_id = active_run_id
+
+                        request_type = early_restore["request_type"]
+                        cache_source = early_restore["cache_source"]
+                        offline_fallback = early_restore["offline_fallback"]
+                        use_incremental = True
+                        tail_fetch_attempted = early_restore["tail_fetch_attempted"]
+                        tail_fetch_network = early_restore["tail_fetch_network"]
+                        tail_fetch_success = early_restore["tail_fetch_success"]
+
+                if not use_incremental:
+                    # --- Шаг 3: SMART-выбор датасета (один раз на старте/первом обновлении) ---
+                    self._prof(t0, "before_smart_selection")
+                    await self._apply_smart_selection_if_needed(session, latitude, longitude)
+                    self._prof(t0, "after_smart_selection")
+
+                    # После SMART выбора на старте пересчитываем index_url (base_url мог измениться)
+                    index_url = self._build_index_url(latitude, longitude)
+
+                    # --- runs catalog (диагностика свежести) ---
+                    self._prof(t0, "before_step1_runs_catalog")
+                    _LOGGER.debug("%s Шаг 1: проверка свежести (runs catalog): %s", self._log_prefix, self._runs_catalog_url)
+                    run_id, run_start, run_end = await self._fetch_latest_run_info(session)
+                    self._latest_run_id = run_id
+                    self._latest_run_start = run_start
+                    self._latest_run_end = run_end
+                    self._prof(t0, "after_step1_runs_catalog")
+                    _LOGGER.debug("%s Шаг 1: runs catalog результат: run_id=%s start=%s end=%s", self._log_prefix, run_id, run_start, run_end)
 
                 # -----------------------------------------------------------------
                 # Шаг 3: SMART управление датасетом
@@ -890,7 +1008,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                 # 2) ИНАЧЕ, если мы на fallback и preferred восстановился
                 #    → возврат на preferred
                 # -----------------------------------------------------------------
-                if self._dataset_selection == "smart":
+                if not use_incremental and self._dataset_selection == "smart":
                     now_utc = datetime.now(timezone.utc)
                     threshold_dt = now_utc + timedelta(hours=SMART_MIN_COVERAGE_HOURS)
 
@@ -1020,19 +1138,18 @@ class SilamCoordinator(DataUpdateCoordinator):
                         expect_new_run_fetch = True
 
                 # -----------------------------------------------------------------
-                # Шаг 2: если run_id не изменился, пересобираем из кеша raw_merged
+                # Шаг 2/3: если run_id не изменился, пересобираем из кеша raw_merged.
+                # Сначала используем runtime-кэш в памяти, а после рестарта HA —
+                # совместимый persistent cache, если его run_id совпадает с каталогом.
                 # -----------------------------------------------------------------
                 self._prof(t0, "before_incremental_if")
-                use_incremental = False
-                if (
-                    self._forecast_enabled
-                    and run_id
-                    and self._active_run_id == run_id
-                    and isinstance(self.merged_data, dict)
-                    and isinstance(self.merged_data.get("raw_merged"), dict)
-                ):
+                if not use_incremental:
+                    raw_all, cache_source = (
+                        self._cache_runtime.prepare_online_restore_candidate(run_id)
+                    )
+
+                if not use_incremental and isinstance(raw_all, dict) and raw_all:
                     self._prof(t0, "entered_incremental_if")
-                    raw_all = self.merged_data.get("raw_merged") or {}
                     raw_all_ref = raw_all  # важно: дальше Шаг 2b/Шаг 4 расширяют именно этот dict
 
                     # Проставляем источник для старых кешей, где меток ещё не было
@@ -1041,9 +1158,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                     # «Сдвигаем окно» по текущему времени:
                     # - чуть захватываем прошлое (1 час), чтобы не ломать текущую семантику "now"
                     # - конец окна = now + forecast_duration
-                    now_utc = datetime.now(timezone.utc)
-                    window_start = now_utc - timedelta(hours=1)
-                    window_end = now_utc + timedelta(hours=self._forecast_duration)
+                    window_start, window_end = self._cache_runtime.current_forecast_window()
 
                     # -----------------------------------------------------------------
                     # Шаг 2b: догрузка «хвоста» (опционально)
@@ -1178,6 +1293,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                                     if tail_raw:
                                         self._apply_src_to_raw(tail_raw, src_key)
                                         raw_all.update(tail_raw)
+                                        persistent_cache_changed = True
                                         _LOGGER.debug("%s Шаг 2b: добавлено точек в кеш: %s", self._log_prefix, len(tail_raw))
                         else:
                             tail_fetch_attempted = True
@@ -1312,6 +1428,9 @@ class SilamCoordinator(DataUpdateCoordinator):
                                                 present_norm.add(nk)
                                                 add_cnt += 1
 
+                                            if add_cnt > 0:
+                                                persistent_cache_changed = True
+
                                             _LOGGER.debug(
                                                 "%s Шаг 4: сегмент %s..%s дозаполнен из кандидата (%s): +%s",
                                                 self._log_prefix,
@@ -1334,28 +1453,34 @@ class SilamCoordinator(DataUpdateCoordinator):
                         except Exception as err:
                             _LOGGER.debug("%s Шаг 4: ошибка SMART дозаполнения (пропускаем): %s", self._log_prefix, err)
 
-                    raw_view = {}
-                    for k, v in raw_all.items():
-                        dt = self._parse_dt_utc(k)
-                        if dt is None:
-                            continue
-                        if window_start <= dt <= window_end:
-                            raw_view[k] = v
+                    rebuild = self._cache_runtime.prepare_synthetic_rebuild_from_raw(
+                        raw_all,
+                        run_id=run_id,
+                        window_start=window_start,
+                        window_end=window_end,
+                    )
+                    if rebuild is not None:
+                        raw_all_ref = rebuild["raw_all_ref"]
+                        raw_view = rebuild["raw_view"]
+                        src_ds = rebuild["src_ds"]
+                        src_key = rebuild["src_key"]
 
-                    if raw_view:
                         # Если хвост не догружали — это чисто синтетическая пересборка из кеша.
                         # Если хвост догружали — это инкрементальный режим (кеш + частичный сетевой фетч).
                         request_type = 'incremental' if tail_fetch_network else 'synthetic'
+                        if cache_source == "persistent":
+                            self._active_run_id = run_id
 
                         _LOGGER.debug(
-                            "%s Шаг 2: %s режим (run_id=%s). Пересобираем из кеша %s/%s точек.",
+                            "%s Cache rebuild mode=%s source=%s run_id=%s points=%s/%s",
                             self._log_prefix,
                             request_type,
+                            cache_source,
                             run_id,
-                            len(raw_view),
-                            len(raw_all),
+                            rebuild["points_view"],
+                            rebuild["points_total"],
                         )
-                        data["index"] = self._build_station_features_xml_from_raw_merged(raw_view)
+                        data["index"] = rebuild["index"]
                         # На шаге 2 main не запрашиваем: мы пересобираем всё из кеша как «единый» индекс XML.
                         # Догрузка хвоста/доп.точек будет на следующем шаге.
                         # (Начиная с шага 2b хвост может догружаться прямо здесь, если окно прогноза уехало дальше кеша.)
@@ -1417,22 +1542,52 @@ class SilamCoordinator(DataUpdateCoordinator):
                         self._smart_ncss_fail_streak = 0
 
         except Exception as err:
-            raise UpdateFailed(f"Ошибка при получении или обработке XML: {err}")
+            # Поздний fallback остаётся страховкой для ошибок после ранней
+            # проверки каталога: SMART probe, index/main fetch или tail fetch.
+            late_restore = self._cache_runtime.prepare_late_restore(err)
+            if late_restore is None:
+                raise UpdateFailed(f"Ошибка при получении или обработке XML: {err}") from err
+
+            if late_restore.get("index") is not None:
+                data["index"] = late_restore["index"]
+            raw_all_ref = late_restore.get("raw_all_ref")
+            raw_view = late_restore.get("raw_view")
+            merged_override = late_restore.get("merged_override")
+            src_ds = late_restore.get("src_ds")
+            src_key = late_restore.get("src_key")
+            run_id = late_restore.get("run_id")
+            run_start = late_restore.get("run_start")
+            run_end = late_restore.get("run_end")
+
+            active_run_id = late_restore.get("active_run_id")
+            if active_run_id:
+                self._active_run_id = active_run_id
+
+            request_type = late_restore["request_type"]
+            cache_source = late_restore["cache_source"]
+            offline_fallback = late_restore["offline_fallback"]
+            use_incremental = True
+            tail_fetch_attempted = late_restore["tail_fetch_attempted"]
+            tail_fetch_network = late_restore["tail_fetch_network"]
+            tail_fetch_success = late_restore["tail_fetch_success"]
 
         # Объединяем данные один раз и кешируем в merged_data,
         # при этом оригинальный словарь data возвращается как есть для совместимости
         try:
             from .data_processing import merge_station_features
 
-            merged = merge_station_features(
-                data.get("index"),
-                data.get("main"),
-                hass=self.hass,
-                base_url=self._base_url,
-                forecast_enabled=self._forecast_enabled,
-                selected_allergens=self._var_list,
-                forecast_duration=self._forecast_duration,
-            )
+            if isinstance(merged_override, dict):
+                merged = copy.deepcopy(merged_override)
+            else:
+                merged = merge_station_features(
+                    data.get("index"),
+                    data.get("main"),
+                    hass=self.hass,
+                    base_url=self._base_url,
+                    forecast_enabled=self._forecast_enabled,
+                    selected_allergens=self._var_list,
+                    forecast_duration=self._forecast_duration,
+                )
             # Если обновление шло через synthetic/incremental (кеш + опциональные догрузки),
             # то авторитетный raw_merged — это raw_all (который мы расширяли на шаге 2b/4).
             # Иначе merge_station_features может "потерять" добавленные точки при пересборке из index XML.
@@ -1484,6 +1639,8 @@ class SilamCoordinator(DataUpdateCoordinator):
             # --- Диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
             "request": {
                 "type": request_type,
+                "cache_source": cache_source,
+                "offline_fallback": offline_fallback,
                 "tail_fetch_attempted": tail_fetch_attempted,
                 "tail_fetch_network": tail_fetch_network,
                 "tail_fetch_success": tail_fetch_success,
@@ -1494,6 +1651,8 @@ class SilamCoordinator(DataUpdateCoordinator):
                 "effective_base_url": self._base_url,
                 "preferred_base_url": self._preferred_base_url,
             },
+            # --- Постоянный кэш (для диагностического сенсора) ---
+            "cache": self._cache_runtime.persistent_cache_diagnostics(cache_source),
             }
 
             _LOGGER.debug(
@@ -1504,6 +1663,22 @@ class SilamCoordinator(DataUpdateCoordinator):
                 merged.get("diag"),
             )
             self.merged_data = {**merged}
+
+            await self._cache_runtime.async_save_after_update(
+                merged=merged,
+                request_type=request_type,
+                cache_source=cache_source,
+                offline_fallback=offline_fallback,
+                tail_fetch_success=tail_fetch_success,
+                changed=persistent_cache_changed,
+            )
+
+            # После сетевого сохранения или offline fallback обновляем cache-диагностику,
+            # чтобы диагностический сенсор видел актуальный источник данных.
+            if isinstance(self.merged_data, dict):
+                diag = self.merged_data.get("diag")
+                if isinstance(diag, dict):
+                    diag["cache"] = self._cache_runtime.persistent_cache_diagnostics(cache_source)
         except Exception as err:
             _LOGGER.error("%s Ошибка при объединении или обработке прогнозных данных: %s", self._log_prefix, err)
             self.merged_data = {}

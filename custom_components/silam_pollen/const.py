@@ -8,6 +8,9 @@ DOMAIN = "silam_pollen"
 # hass.data[DOMAIN] key for shared runs catalog manager
 RUNS_CATALOG_MANAGER = "runs_catalog_manager"
 
+# hass.data[DOMAIN] key for per-entry persistent cache Store helpers
+CACHE_STORES = "cache_stores"
+
 # THREDDS catalog namespace (для runs/catalog.xml)
 THREDDS_CATALOG_NS = {"t": "http://www.unidata.ucar.edu/namespaces/thredds/InvCatalog/v1.0"}
 

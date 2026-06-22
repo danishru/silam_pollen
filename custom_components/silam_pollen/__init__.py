@@ -12,10 +12,11 @@ from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import SupportsResponse
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 
-from .const import DOMAIN, RUNS_CATALOG_MANAGER, RUNS_CATALOG_TTL_SECONDS
+from .const import CACHE_STORES, DOMAIN, RUNS_CATALOG_MANAGER, RUNS_CATALOG_TTL_SECONDS
 from .runs_catalog import RunsCatalogManager
 from .config_flow import OptionsFlowHandler as SilamPollenOptionsFlow
 from .coordinator import SilamCoordinator
+from .cache_store import SilamPollenCacheStore, async_remove_entry_cache
 from .migration import async_migrate_entry  # ядро вызовет при необходимости
 
 _LOGGER = logging.getLogger(__name__)
@@ -187,6 +188,24 @@ async def async_setup_entry(hass, entry):
         )
         _LOGGER.debug("SILAM Pollen: initialized RunsCatalogManager")
 
+    # Постоянный кэш для этой ConfigEntry:
+    # читаем совместимый payload при setup и передаём его координатору.
+    # Координатор сам решает, можно ли восстановиться после проверки run_id.
+    cache_store = SilamPollenCacheStore(
+        hass,
+        entry,
+        base_url=base_url,
+        selected_allergens=var_list,
+        forecast_enabled=forecast_enabled,
+        forecast_duration=forecast_duration,
+        dataset_selection=dataset_selection,
+        latitude=manual_latitude,
+        longitude=manual_longitude,
+        altitude=desired_altitude,
+    )
+    cached_payload = await cache_store.async_initialize()
+    domain_data.setdefault(CACHE_STORES, {})[entry.entry_id] = cache_store
+
     # Создаём координатор
     coordinator = SilamCoordinator(
         hass,
@@ -202,6 +221,8 @@ async def async_setup_entry(hass, entry):
         smart_candidates=candidates,
         forecast=forecast_enabled,
         forecast_duration=forecast_duration,
+        cache_store=cache_store,
+        cached_payload=cached_payload,
     )
     await coordinator.async_config_entry_first_refresh()
 
@@ -221,8 +242,27 @@ async def async_unload_entry(hass, entry):
     """Выключить платформы и убрать координатор при удалении записи."""
     await hass.config_entries.async_forward_entry_unload(entry, "sensor")
     await hass.config_entries.async_forward_entry_unload(entry, "weather")
-    hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
+    domain_data = hass.data.get(DOMAIN, {})
+    domain_data.pop(entry.entry_id, None)
+    domain_data.get(CACHE_STORES, {}).pop(entry.entry_id, None)
     return True
+
+
+
+async def async_remove_entry(hass, entry) -> None:
+    """Удалить файл постоянного кэша при удалении ConfigEntry пользователем."""
+    domain_data = hass.data.get(DOMAIN, {})
+    cache_store = domain_data.get(CACHE_STORES, {}).pop(entry.entry_id, None)
+
+    if cache_store is not None:
+        await cache_store.async_remove()
+        return
+
+    await async_remove_entry_cache(
+        hass,
+        entry.entry_id,
+        entry_title=getattr(entry, "title", None),
+    )
 
 
 async def update_listener(hass, entry):
@@ -257,7 +297,7 @@ async def update_listener(hass, entry):
         ):
             registry.async_remove(entity.entity_id)
 
-            # NOTE: у тебя этот блок был закомментирован — оставляю так же.
+            # ПРИМЕЧАНИЕ: у тебя этот блок был закомментирован — оставляю так же.
             # persistent_notification_async_create(
             #     hass,
             #     (
