@@ -292,11 +292,21 @@
   "services": {
     "manual_update": {
       "name": "Ручное обновление",
-      "description": "Ручной запуск обновления данных для выбранных целей интеграции SILAM Pollen.",
+      "description": "Ручной запуск обновления данных для выбранных служб SILAM Pollen.",
       "fields": {
-        "targets": {
-          "name": "Цели",
-          "description": "Выберите одно или несколько устройств или сущностей для обновления."
+        "device_id": {
+          "name": "Служба SILAM Pollen",
+          "description": "Выберите одну или несколько служб SILAM Pollen для обновления."
+        }
+      }
+    },
+    "full_refresh": {
+      "name": "Полное обновление",
+      "description": "Принудительный полный refresh данных для выбранных служб SILAM Pollen.",
+      "fields": {
+        "device_id": {
+          "name": "Служба SILAM Pollen",
+          "description": "Выберите одну или несколько служб SILAM Pollen для полного обновления."
         }
       }
     }

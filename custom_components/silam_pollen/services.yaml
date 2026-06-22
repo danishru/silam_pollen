@@ -1,15 +1,27 @@
 manual_update:
   description: >
-    Manually trigger an update for the selected SILAM Pollen integration device(s).
-    This service refreshes the pollen data from the SILAM API for the chosen targets.
+    Manually trigger an update for the selected SILAM Pollen service(s).
+    This service refreshes the pollen data from the SILAM API for the chosen SILAM Pollen service(s).
   fields:
-    targets:
-      name: "Targets"
-      description: "Select one or more devices or entities that belong to the SILAM Pollen integration."
+    device_id:
+      name: "SILAM Pollen service"
+      description: "Select one or more SILAM Pollen services."
       required: true
       selector:
-        target:
-          device:
-            integration: silam_pollen
-          entity:
-            integration: silam_pollen
+        device:
+          integration: silam_pollen
+          multiple: true
+
+full_refresh:
+  description: >
+    Force a full update for the selected SILAM Pollen service(s).
+    This service bypasses cached and incremental restore paths and fetches fresh data from the SILAM API.
+  fields:
+    device_id:
+      name: "SILAM Pollen service"
+      description: "Select one or more SILAM Pollen services."
+      required: true
+      selector:
+        device:
+          integration: silam_pollen
+          multiple: true

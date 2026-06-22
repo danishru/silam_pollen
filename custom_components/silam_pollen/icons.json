@@ -2,6 +2,9 @@
   "services": {
     "manual_update": {
       "service": "mdi:refresh"
+    },
+    "full_refresh": {
+      "service": "mdi:refresh-circle"
     }
   },
   "entity": {

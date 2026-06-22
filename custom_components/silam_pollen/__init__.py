@@ -38,10 +38,6 @@ async def async_setup(hass, _config):
     except Exception as e:
         _LOGGER.debug("ConfigFlow version check skipped: %s", e)
 
-    # Если сервис уже существует (hot-reload custom_component) — повторно не создаём
-    if hass.services.has_service(DOMAIN, "manual_update"):
-        return True
-
     if not hass.data.get("absolute_forecast_card_registered"):
         await hass.http.async_register_static_paths([
             StaticPathConfig(
@@ -55,78 +51,137 @@ async def async_setup(hass, _config):
     # Импорт внутри функции, чтобы не тащить зависимость при unit-тестах без HA
     from homeassistant.helpers.device_registry import async_get as async_get_device_registry
 
-    async def handle_manual_update(call):
-        """Обработчик ручного обновления выбранных устройств/сущностей."""
-        updated_data: dict[str, dict] = {}
+    update_devices_schema = vol.Schema(
+        {
+            vol.Required("device_id"): vol.All(cv.ensure_list, [str]),
+        }
+    )
 
-        targets = call.data.get("targets", {})
-        device_ids = targets.get("device_id", [])
-        entity_ids = targets.get("entity_id", [])
+    manual_update_schema = vol.Schema(
+        {
+            vol.Optional("device_id"): vol.All(cv.ensure_list, [str]),
+            # Легаси-совместимость: старые автоматизации могли передавать
+            # выбранные цели через поле `targets` из прежнего target selector.
+            # В UI это поле больше не показываем, но backend принимает его,
+            # чтобы не ломать существующие scripts/automations после обновления.
+            vol.Optional("targets"): {
+                vol.Optional("device_id"): vol.All(cv.ensure_list, [str]),
+                vol.Optional("entity_id"): vol.All(cv.ensure_list, [str]),
+            },
+        }
+    )
+
+    def _extract_update_targets(call):
+        """Получить новые device_id и легаси targets для manual_update."""
+        device_ids = list(call.data.get("device_id", []))
+        entity_ids: list[str] = []
+
+        # Легаси-совместимость: поддерживаем старый формат:
+        # data.targets.device_id / data.targets.entity_id.
+        legacy_targets = call.data.get("targets", {})
+        if legacy_targets:
+            _LOGGER.debug("manual_update: legacy targets payload used")
+            device_ids.extend(legacy_targets.get("device_id", []))
+            entity_ids.extend(legacy_targets.get("entity_id", []))
+
+        # Убираем повторы, сохраняя порядок. Это защищает от двойного refresh,
+        # если одна и та же служба SILAM Pollen выбрана и как device, и через entity.
+        return list(dict.fromkeys(device_ids)), list(dict.fromkeys(entity_ids))
+
+    async def _handle_update_service(call, *, force_full_refresh: bool):
+        """Обработать ручное обновление выбранных служб интеграции."""
+        updated_data: dict[str, dict] = {}
+        service_name = "full_refresh" if force_full_refresh else "manual_update"
+
+        if force_full_refresh:
+            device_ids = list(call.data.get("device_id", []))
+            entity_ids: list[str] = []
+        else:
+            device_ids, entity_ids = _extract_update_targets(call)
 
         if not device_ids and not entity_ids:
-            _LOGGER.warning("manual_update: цели не заданы")
+            _LOGGER.warning("%s: no SILAM Pollen services provided", service_name)
             return {"updated_entries": updated_data} if call.return_response else None
 
         device_registry = async_get_device_registry(hass)
-        registry = er.async_get(hass)
+        registry = er.async_get(hass) if entity_ids else None
+        refreshed_entries: set[str] = set()
 
         async def _refresh(entry_id: str) -> None:
-            """Запросить немедленное обновление у нужного координатора."""
+            """Запросить обновление у нужного координатора."""
+            if entry_id in refreshed_entries:
+                return
+            refreshed_entries.add(entry_id)
+
             coordinator: SilamCoordinator | None = hass.data.get(DOMAIN, {}).get(entry_id)
             if coordinator:
-                await coordinator.async_request_refresh()
+                if force_full_refresh:
+                    await coordinator.async_request_full_refresh()
+                else:
+                    await coordinator.async_request_refresh()
                 # _base_device_name — приватный атрибут; переедет в public-property позже
                 updated_data.setdefault(
                     coordinator._base_device_name, coordinator.merged_data  # noqa: SLF001
                 )
             else:
-                _LOGGER.error("Координатор для записи %s не найден", entry_id)
+                _LOGGER.error("Coordinator for entry %s not found", entry_id)
 
-        # ---------- Обработка устройств ----------
         for dev_id in device_ids:
             dev_entry = device_registry.async_get(dev_id)
             if not dev_entry:
-                _LOGGER.error("Устройство %s не найдено", dev_id)
+                _LOGGER.error("Device %s not found", dev_id)
                 continue
             for domain, entry_id in dev_entry.identifiers:
                 if domain == DOMAIN:
                     await _refresh(entry_id)
 
-        # ---------- Обработка сущностей ----------
-        for ent_id in entity_ids:
-            ent_entry = registry.async_get(ent_id)
-            if not ent_entry or not ent_entry.device_id:
-                _LOGGER.error("Сущность %s не связана с устройством", ent_id)
-                continue
-            dev_entry = device_registry.async_get(ent_entry.device_id)
-            if not dev_entry:
-                _LOGGER.error("Устройство для сущности %s не найдено", ent_id)
-                continue
-            for domain, entry_id in dev_entry.identifiers:
-                if domain == DOMAIN:
-                    await _refresh(entry_id)
+        # Легаси-совместимость: старый manual_update мог принимать entity_id
+        # через data.targets.entity_id. Новый UI больше не предлагает entity targets,
+        # но старые YAML scripts/automations должны продолжить работать.
+        if registry is not None:
+            for ent_id in entity_ids:
+                ent_entry = registry.async_get(ent_id)
+                if not ent_entry or not ent_entry.device_id:
+                    _LOGGER.error("Entity %s is not linked to a device", ent_id)
+                    continue
+                dev_entry = device_registry.async_get(ent_entry.device_id)
+                if not dev_entry:
+                    _LOGGER.error("Device for entity %s not found", ent_id)
+                    continue
+                for domain, entry_id in dev_entry.identifiers:
+                    if domain == DOMAIN:
+                        await _refresh(entry_id)
 
         # Возвращаем данные только если вызов сделан с return_response=True
         return {"updated_entries": updated_data} if call.return_response else None
 
-    # Пока оставляем «старую» схему: device_id / entity_id
-    hass.services.async_register(
-        DOMAIN,
-        "manual_update",
-        handle_manual_update,
-        schema=vol.Schema(
-            {
-                vol.Required("targets"): {
-                    vol.Optional("device_id"): vol.All(cv.ensure_list, [str]),
-                    vol.Optional("entity_id"): vol.All(cv.ensure_list, [str]),
-                }
-            }
-        ),
-        supports_response=SupportsResponse.OPTIONAL,
-    )
+    async def handle_manual_update(call):
+        """Обработчик обычного ручного обновления выбранных служб."""
+        return await _handle_update_service(call, force_full_refresh=False)
+
+    async def handle_full_refresh(call):
+        """Обработчик принудительного полного обновления выбранных служб."""
+        return await _handle_update_service(call, force_full_refresh=True)
+
+    if not hass.services.has_service(DOMAIN, "manual_update"):
+        hass.services.async_register(
+            DOMAIN,
+            "manual_update",
+            handle_manual_update,
+            schema=manual_update_schema,
+            supports_response=SupportsResponse.OPTIONAL,
+        )
+
+    if not hass.services.has_service(DOMAIN, "full_refresh"):
+        hass.services.async_register(
+            DOMAIN,
+            "full_refresh",
+            handle_full_refresh,
+            schema=update_devices_schema,
+            supports_response=SupportsResponse.OPTIONAL,
+        )
 
     return True
-
 
 # -----------------------------------------------------------------------------
 #  Настройка конкретной записи ConfigEntry

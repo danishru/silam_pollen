@@ -156,6 +156,11 @@ class SilamCoordinator(DataUpdateCoordinator):
         self._cached_payload = cached_payload if isinstance(cached_payload, dict) else None
         self._cache_runtime = SilamPollenCacheRuntime(self)
 
+        # Одноразовый флаг для service action full_refresh.
+        # При True координатор пропускает cache/synthetic/incremental пути
+        # и выполняет полный сетевой запрос.
+        self._force_full_refresh = False
+
         # --- Шаг 2: «активный» run_id, на котором построен текущий кеш raw_merged ---
         # Нужен, чтобы понимать: «набор данных тот же» -> можно пересобрать из кеша без полного запроса.
         self._active_run_id = None
@@ -214,6 +219,14 @@ class SilamCoordinator(DataUpdateCoordinator):
         """
         _LOGGER.debug("%s Запрошено обновление данных. Контекст: %s", self._log_prefix, context)
         return await super().async_request_refresh()
+
+    async def async_request_full_refresh(self):
+        """Принудительно выполнить полный сетевой refresh без cache/incremental путей."""
+        self._force_full_refresh = True
+        try:
+            return await self.async_request_refresh(context={"full_refresh": True})
+        finally:
+            self._force_full_refresh = False
 
     def _derive_runs_catalog_url(self):
         """Строит URL runs/catalog.xml по текущему self._base_url (NCSS grid).
@@ -889,9 +902,11 @@ class SilamCoordinator(DataUpdateCoordinator):
 
         # --- Диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
         # full         : обычный полный сетевой фетч index/main
+        # full_forced  : принудительный полный сетевой фетч через service action
         # synthetic    : пересборка только из кеша raw_merged (без сети)
         # incremental  : кеш + частичный сетевой запрос (догрузка хвоста)
-        request_type = 'full'
+        force_full_refresh = self._force_full_refresh
+        request_type = 'full_forced' if force_full_refresh else 'full'
         tail_fetch_attempted = False
         tail_fetch_network = False
         tail_fetch_success = None
@@ -933,7 +948,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                 # CacheRuntime сам решает, можно ли использовать forecast raw_merged,
                 # non-forecast current или stale fallback. Координатор только
                 # выполняет раннюю проверку каталога и применяет готовый результат.
-                cache_catalog_base_url = self._cache_runtime.early_catalog_base_url()
+                cache_catalog_base_url = None if force_full_refresh else self._cache_runtime.early_catalog_base_url()
                 if cache_catalog_base_url:
                     stale_catalog_url = self._derive_runs_catalog_url_for_base_url(
                         cache_catalog_base_url
@@ -1143,7 +1158,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                 # совместимый persistent cache, если его run_id совпадает с каталогом.
                 # -----------------------------------------------------------------
                 self._prof(t0, "before_incremental_if")
-                if not use_incremental:
+                if not use_incremental and not force_full_refresh:
                     raw_all, cache_source = (
                         self._cache_runtime.prepare_online_restore_candidate(run_id)
                     )
@@ -1542,6 +1557,9 @@ class SilamCoordinator(DataUpdateCoordinator):
                         self._smart_ncss_fail_streak = 0
 
         except Exception as err:
+            if force_full_refresh:
+                raise UpdateFailed(f"Ошибка при принудительном полном обновлении XML: {err}") from err
+
             # Поздний fallback остаётся страховкой для ошибок после ранней
             # проверки каталога: SMART probe, index/main fetch или tail fetch.
             late_restore = self._cache_runtime.prepare_late_restore(err)

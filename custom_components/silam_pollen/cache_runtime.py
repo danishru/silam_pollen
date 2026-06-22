@@ -139,7 +139,7 @@ class SilamPollenCacheRuntime:
         should_save = (
             not offline_fallback
             and (
-                request_type == "full"
+                request_type in ("full", "full_forced")
                 or tail_fetch_success is True
                 or changed
             )

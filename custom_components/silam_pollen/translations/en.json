@@ -292,11 +292,21 @@
   "services": {
     "manual_update": {
       "name": "Manual Update",
-      "description": "Manually trigger a data refresh for the selected SILAM Pollen integration targets.",
+      "description": "Manually trigger a data refresh for the selected SILAM Pollen services.",
       "fields": {
-        "targets": {
-          "name": "Targets",
-          "description": "Select one or more devices or entities to update."
+        "device_id": {
+          "name": "SILAM Pollen service",
+          "description": "Select one or more SILAM Pollen services to update."
+        }
+      }
+    },
+    "full_refresh": {
+      "name": "Full Refresh",
+      "description": "Force a full data refresh for the selected SILAM Pollen services.",
+      "fields": {
+        "device_id": {
+          "name": "SILAM Pollen service",
+          "description": "Select one or more SILAM Pollen services to fully refresh."
         }
       }
     }
