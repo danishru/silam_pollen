@@ -2,7 +2,6 @@
 const sidebars = {
   docs: [
     { type: "doc", id: "intro" },
-    { type: "doc", id: "stats" },
   ],
 };
 
