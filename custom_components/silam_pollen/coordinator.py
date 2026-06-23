@@ -35,6 +35,14 @@
   и датасет больше не опубликован, создаём Repair issue.
 - Для SMART Repair issue не создаётся: SMART просто пропускает такой кандидат.
 
+Шаг 7d (NCSS HTTP 200 body validation):
+- HTTP 200 от NCSS больше не считается успешным сам по себе.
+- Пустое тело, невалидный XML, HTML/ошибочный XML или XML без stationFeature
+  считаются ошибкой данных.
+- Для текущих point-запросов SILAM используем stationFeature как простой
+  и проверенный признак полезного NCSS XML payload.
+- Та же проверка применяется к основному index/main fetch, tail fetch и лёгким SMART-probe.
+
 Постоянный кэш:
 - После успешного обновления сохраняем финальный raw_merged в Store.
 - При старте используем совместимый persistent raw_merged, если latest run_id совпадает.
@@ -75,6 +83,16 @@ from .repairs import (
 
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class SilamNcssResponseError(UpdateFailed):
+    """Ошибка содержимого NCSS-ответа при HTTP 200."""
+
+    def __init__(self, *, kind: str, reason: str, message: str) -> None:
+        super().__init__(message)
+        self.kind = kind
+        self.reason = reason
+
 
 class SilamCoordinator(DataUpdateCoordinator):
     """Координатор для интеграции SILAM Pollen."""
@@ -400,6 +418,114 @@ class SilamCoordinator(DataUpdateCoordinator):
         """Вернуть (run_id, start, end) из текущего runs/catalog.xml."""
         return await self._fetch_latest_run_info_for_catalog_url(self._runs_catalog_url)
 
+    @staticmethod
+    def _xml_local_name(tag: str | None) -> str:
+        """Вернуть локальное имя XML-тега без namespace."""
+        if not tag:
+            return ""
+        return tag.rsplit("}", 1)[-1].lower()
+
+    @classmethod
+    def _has_error_xml_marker(cls, root: ET.Element) -> bool:
+        """Проверить XML на явные признаки ошибки/исключения THREDDS/NCSS."""
+        error_tags = {
+            "error",
+            "errormessage",
+            "exception",
+            "exceptionreport",
+            "serviceexception",
+            "serviceexceptionreport",
+        }
+
+        for elem in root.iter():
+            local = cls._xml_local_name(elem.tag)
+            if local in error_tags or "exception" in local:
+                return True
+
+        return False
+
+    @classmethod
+    def _has_ncss_payload(cls, root: ET.Element) -> bool:
+        """Проверить, что XML содержит полезный NCSS point payload.
+
+        Для текущих NCSS point-запросов SILAM во всех проверенных наборах
+        данных используется stationFeature/stationFeatureCollection. Поэтому
+        пока держим валидатор простым и подтверждаем полезный payload именно
+        по stationFeature.
+        """
+        root_tag = cls._xml_local_name(root.tag)
+        if root_tag in {"html", "body"}:
+            return False
+
+        for elem in root.iter():
+            if cls._xml_local_name(elem.tag) == "stationfeature":
+                return True
+
+        return False
+
+    async def _read_ncss_xml_response(
+        self,
+        response: aiohttp.ClientResponse,
+        *,
+        kind: str,
+    ) -> ET.Element:
+        """Прочитать и проверить NCSS XML-ответ с HTTP 200.
+
+        THREDDS/NCSS иногда может вернуть HTTP 200 даже тогда, когда тело
+        пустое, содержит HTML/ошибку THREDDS или не содержит полезный NCSS XML.
+        Поэтому HTTP код проверяется отдельно, а этот метод подтверждает именно
+        пригодность тела ответа для дальнейшей обработки.
+        """
+        async with async_timeout.timeout(10):
+            text = await response.text()
+
+        preview = (text or "")[:200].replace("\n", " ").replace("\r", " ")
+        _LOGGER.debug(
+            "%s NCSS %s HTTP 200 body preview: %s",
+            self._log_prefix,
+            kind,
+            preview,
+        )
+
+        if not text or not text.strip():
+            raise SilamNcssResponseError(
+                kind=kind,
+                reason="ncss_empty_body",
+                message=f"NCSS {kind} returned HTTP 200 with empty body",
+            )
+
+        try:
+            root = ET.fromstring(text)
+        except ET.ParseError as err:
+            raise SilamNcssResponseError(
+                kind=kind,
+                reason="ncss_invalid_response",
+                message=f"NCSS {kind} returned HTTP 200 with invalid XML: {err}",
+            ) from err
+
+        root_tag = self._xml_local_name(root.tag) or "unknown"
+        if root_tag in {"html", "body"} or self._has_error_xml_marker(root):
+            raise SilamNcssResponseError(
+                kind=kind,
+                reason="ncss_invalid_response",
+                message=(
+                    f"NCSS {kind} returned HTTP 200 with error/HTML XML "
+                    f"payload (root={root_tag})"
+                ),
+            )
+
+        if not self._has_ncss_payload(root):
+            raise SilamNcssResponseError(
+                kind=kind,
+                reason="ncss_invalid_response",
+                message=(
+                    f"NCSS {kind} returned HTTP 200 without stationFeature "
+                    f"payload (root={root_tag})"
+                ),
+            )
+
+        return root
+
     # ---------------------------------------------------------------------
     # SMART-выбор датасета (Шаг 3 — основа под будущие улучшения)
     # ---------------------------------------------------------------------
@@ -568,7 +694,17 @@ class SilamCoordinator(DataUpdateCoordinator):
                 async with async_timeout.timeout(10):
                     async with session.get(test_url) as resp:
                         if resp.status == 200:
-                            return url
+                            try:
+                                await self._read_ncss_xml_response(resp, kind="smart_probe")
+                                return url
+                            except SilamNcssResponseError as err:
+                                _LOGGER.debug(
+                                    "%s SMART probe returned invalid NCSS body for %s: %s",
+                                    self._log_prefix,
+                                    url,
+                                    err,
+                                )
+                                continue
             except Exception as err:
                 _LOGGER.debug("%s SMART probe failed for %s: %s", self._log_prefix, url, err)
 
@@ -634,10 +770,20 @@ class SilamCoordinator(DataUpdateCoordinator):
                     # временная проблема (5xx/429/etc) — не кэшируем
                     return True
 
-                async with async_timeout.timeout(10):
-                    txt = await resp.text()
-                # Пробуем распарсить XML, если получилось — это покрытие
-                ET.fromstring(txt)
+                try:
+                    await self._read_ncss_xml_response(resp, kind="smart_coord_probe")
+                except SilamNcssResponseError as err:
+                    # HTTP 200 с пустым/битым телом — это проблема NCSS, а не
+                    # доказательство того, что координата не покрывается датасетом.
+                    # Поэтому не кэшируем False и не делаем жёсткий вывод.
+                    _LOGGER.debug(
+                        "%s SMART coord probe returned invalid NCSS body for %s: %s",
+                        self._log_prefix,
+                        base_url,
+                        err,
+                    )
+                    return True
+
                 self._smart_coord_ok[base_url] = True
                 return True
 
@@ -807,9 +953,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         async with session.get(index_url) as resp:
             if resp.status != 200:
                 return {}
-            async with async_timeout.timeout(10):
-                t = await resp.text()
-            index_xml = ET.fromstring(t)
+            index_xml = await self._read_ncss_xml_response(resp, kind="range_index")
 
         # --- main (если есть аллергены) ---
         main_xml = None
@@ -832,9 +976,7 @@ class SilamCoordinator(DataUpdateCoordinator):
             async with session.get(main_url) as resp:
                 if resp.status != 200:
                     return {}
-                async with async_timeout.timeout(10):
-                    t = await resp.text()
-                main_xml = ET.fromstring(t)
+                main_xml = await self._read_ncss_xml_response(resp, kind="range_main")
 
         from .data_processing import merge_station_features
 
@@ -1250,6 +1392,9 @@ class SilamCoordinator(DataUpdateCoordinator):
     @staticmethod
     def _reason_from_fetch_error(err: Exception) -> str:
         """Определить service reason по ошибке сетевого/NCSS-запроса."""
+        if isinstance(err, SilamNcssResponseError):
+            return err.reason
+
         if isinstance(err, ET.ParseError):
             msg = str(err).lower()
             if "no element found" in msg:
@@ -1857,9 +2002,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                                 async with session.get(tail_index_url) as resp:
                                     _LOGGER.debug("%s Шаг 2b: tail index HTTP %s", self._log_prefix, resp.status)
                                     if resp.status == 200:
-                                        async with async_timeout.timeout(10):
-                                            tail_index_text = await resp.text()
-                                        tail_index_xml = ET.fromstring(tail_index_text)
+                                        tail_index_xml = await self._read_ncss_xml_response(resp, kind="tail_index")
                                         tail_fetch_success = True
 
                                 if tail_fetch_attempted and tail_fetch_success is None:
@@ -1889,9 +2032,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                                     async with session.get(tail_main_url) as resp:
                                         _LOGGER.debug("%s Шаг 2b: tail main HTTP %s", self._log_prefix, resp.status)
                                         if resp.status == 200:
-                                            async with async_timeout.timeout(10):
-                                                tail_main_text = await resp.text()
-                                            tail_main_xml = ET.fromstring(tail_main_text)
+                                            tail_main_xml = await self._read_ncss_xml_response(resp, kind="tail_main")
 
                                 # Если tail index получили — выжимаем raw_merged и добавляем в кеш
                                 if tail_index_xml is not None:
@@ -2128,10 +2269,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                                 expect_new_run_fetch=expect_new_run_fetch,
                             )
 
-                        async with async_timeout.timeout(10):
-                            text = await response.text()
-                            _LOGGER.debug("%s Получен ответ для index: %s", self._log_prefix, text[:200])
-                            data["index"] = ET.fromstring(text)
+                        data["index"] = await self._read_ncss_xml_response(response, kind="index")
 
                     # Если var_list задан, выполняем запрос для main
                     if self._var_list:
@@ -2152,10 +2290,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                                     expect_new_run_fetch=expect_new_run_fetch,
                                 )
 
-                            async with async_timeout.timeout(10):
-                                text = await response.text()
-                                _LOGGER.debug("%s Получен ответ для main: %s", self._log_prefix, text[:200])
-                                data["main"] = ET.fromstring(text)
+                            data["main"] = await self._read_ncss_xml_response(response, kind="main")
 
                     # --- Шаг 2: фиксируем, на каком run_id построен актуальный кеш ---
                     # Обновляем только после успешного «полного» фетча (чтобы не закрепить битый/частичный результат).
