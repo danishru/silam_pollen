@@ -37,6 +37,7 @@ from .coordinator import SilamCoordinator  # Импорт координатор
 from .diagnostics import (
     SilamPollenFetchDurationSensor,
     SilamPollenForecastHorizonSensor,
+    SilamPollenServiceStatusSensor,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -133,7 +134,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
         entry_id=entry.entry_id,
         base_device_name=base_device_name,
     )
-    async_add_entities([fetch_diag, horizon_diag], True)
+    service_status_diag = SilamPollenServiceStatusSensor(
+        coordinator=coordinator,
+        entry_id=entry.entry_id,
+        base_device_name=base_device_name,
+    )
+    async_add_entities([fetch_diag, horizon_diag, service_status_diag], True)
 
 
 class SilamPollenSensor(SensorEntity):

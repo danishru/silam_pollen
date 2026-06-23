@@ -48,6 +48,21 @@ FORECAST_HORIZON_DESC = SilamDiagnosticsSensorEntityDescription(
     entity_registry_enabled_default=False,
 )
 
+SERVICE_STATUS_OPTIONS = [
+    "ok",
+    "service_unavailable",
+    "dataset_unavailable",
+    "data_unavailable",
+    "unknown",
+]
+
+SERVICE_STATUS_DESC = SilamDiagnosticsSensorEntityDescription(
+    key="service_status",
+    translation_key="service_status",
+    device_class=SensorDeviceClass.ENUM,
+    entity_category=EntityCategory.DIAGNOSTIC,
+)
+
 # -------------------------------------------------------------------------
 # SilamPollenFetchDurationSensor
 # Показывает длительность последнего обновления (сек)
@@ -134,6 +149,98 @@ class SilamPollenFetchDurationSensor(SensorEntity):
             "cache_current_date": cache.get("current_date"),
             "cache_current_data_points": cache.get("current_data_points"),
             "cache_restore_payload_loaded": cache.get("restore_payload_loaded"),
+        }
+
+# -------------------------------------------------------------------------
+# SilamPollenServiceStatusSensor
+# Показывает короткий статус службы SILAM и подробную причину
+# -------------------------------------------------------------------------
+class SilamPollenServiceStatusSensor(SensorEntity):
+    entity_description: SilamDiagnosticsSensorEntityDescription
+    _attr_has_entity_name = True
+    _attr_options = SERVICE_STATUS_OPTIONS
+
+    def __init__(
+        self,
+        coordinator: SilamCoordinator,
+        entry_id: str,
+        base_device_name: str,
+        description: SilamDiagnosticsSensorEntityDescription = SERVICE_STATUS_DESC,
+    ) -> None:
+        super().__init__()
+        self.coordinator = coordinator
+        self._entry_id = entry_id
+        self._base_device_name = base_device_name
+        self.entity_description = description
+
+        # неизменяемый unique_id
+        self._attr_unique_id = f"{entry_id}_{description.key}"
+
+        # привязываем к тому же Device, что и остальные сенсоры интеграции
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry_id)},
+            name=self._base_device_name,
+            entry_type=DeviceEntryType.SERVICE,
+        )
+
+        # автоматическое обновление состояния при каждом refresh координатора
+        self.async_on_remove(
+            coordinator.async_add_listener(self.async_write_ha_state)
+        )
+
+    @property
+    def suggested_object_id(self) -> str:
+        """Стабильный slug для entity ID."""
+        return self.entity_description.key
+
+    @property
+    def native_value(self) -> str:
+        """Короткий статус службы SILAM."""
+        service = (self.coordinator.merged_data or {}).get("diag", {}).get("service", {})
+        status = service.get("status") if isinstance(service, dict) else None
+        return status if status in SERVICE_STATUS_OPTIONS else "unknown"
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Подробная причина и связанные сведения для отладки."""
+        md = (self.coordinator.merged_data or {}).get("diag", {})
+        service = md.get("service", {})
+        root = md.get("root_catalog", {})
+        runs = md.get("runs_catalog", {})
+        ds = md.get("dataset", {})
+        if not isinstance(service, dict):
+            service = {}
+        if not isinstance(root, dict):
+            root = {}
+        if not isinstance(runs, dict):
+            runs = {}
+        if not isinstance(ds, dict):
+            ds = {}
+        return {
+            "reason": service.get("reason", "unknown"),
+            "root_catalog_url": root.get("url"),
+            "root_catalog_status": service.get("root_catalog_status") or root.get("status"),
+            "root_catalog_ok": service.get("root_catalog_ok") if "root_catalog_ok" in service else root.get("ok"),
+            "root_catalog_http_status": root.get("http_status"),
+            "root_catalog_error": service.get("root_catalog_error") or root.get("error") or root.get("last_error"),
+            "root_dataset_paths_count": root.get("dataset_paths_count"),
+            "dataset_selection": service.get("dataset_selection") or ds.get("selection"),
+            "effective_dataset": service.get("effective_dataset") or root.get("effective_dataset"),
+            "effective_dataset_listed": service.get("effective_dataset_listed")
+                if "effective_dataset_listed" in service
+                else root.get("effective_dataset_listed"),
+            "effective_base_url": ds.get("effective_base_url"),
+            "preferred_dataset": service.get("preferred_dataset") or root.get("preferred_dataset"),
+            "preferred_dataset_listed": service.get("preferred_dataset_listed")
+                if "preferred_dataset_listed" in service
+                else root.get("preferred_dataset_listed"),
+            "preferred_base_url": ds.get("preferred_base_url"),
+            "smart_root_skipped": service.get("smart_root_skipped")
+                or root.get("smart_root_skipped"),
+            "runs_catalog_url": runs.get("url"),
+            "latest_run_id": runs.get("latest_run_id"),
+            "latest_run_start": runs.get("latest_run_start"),
+            "latest_run_end": runs.get("latest_run_end"),
         }
 
 # -------------------------------------------------------------------------

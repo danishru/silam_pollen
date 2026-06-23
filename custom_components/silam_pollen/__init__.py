@@ -10,14 +10,22 @@ from homeassistant.components.persistent_notification import (
 )
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import SupportsResponse
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 
-from .const import CACHE_STORES, DOMAIN, RUNS_CATALOG_MANAGER, RUNS_CATALOG_TTL_SECONDS
-from .runs_catalog import RunsCatalogManager
+from .const import (
+    CACHE_STORES,
+    DOMAIN,
+    RUNS_CATALOG_MANAGER,
+    RUNS_CATALOG_TTL_SECONDS,
+    SILAM_CATALOG_MANAGER,
+)
+from .silam_catalog import SilamCatalogManager
 from .config_flow import OptionsFlowHandler as SilamPollenOptionsFlow
 from .coordinator import SilamCoordinator
 from .cache_store import SilamPollenCacheStore, async_remove_entry_cache
 from .migration import async_migrate_entry  # ядро вызовет при необходимости
+from .repairs import async_delete_manual_dataset_unavailable_issue
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -116,7 +124,18 @@ async def async_setup(hass, _config):
             coordinator: SilamCoordinator | None = hass.data.get(DOMAIN, {}).get(entry_id)
             if coordinator:
                 if force_full_refresh:
-                    await coordinator.async_request_full_refresh()
+                    try:
+                        await coordinator.async_request_full_refresh()
+                    except Exception as err:  # noqa: BLE001 - service action должен вернуть пользователю ошибку
+                        base_name = coordinator._base_device_name  # noqa: SLF001
+                        _LOGGER.error(
+                            "full_refresh failed for %s: %s",
+                            base_name,
+                            err,
+                        )
+                        raise HomeAssistantError(
+                            f"SILAM Pollen full refresh failed for {base_name}: {err}"
+                        ) from err
                 else:
                     await coordinator.async_request_refresh()
                 # _base_device_name — приватный атрибут; переедет в public-property позже
@@ -234,14 +253,22 @@ async def async_setup_entry(hass, entry):
     if isinstance(base_url, str) and base_url and base_url not in candidates:
         candidates.append(base_url)
 
-    # Инициализируем общий RunsCatalogManager (один на DOMAIN)
+    # Инициализируем общий SilamCatalogManager (один на DOMAIN).
+    # На этом шаге фасад содержит только RunsCatalogManager, поэтому поведение
+    # координатора не меняется. Старый ключ RUNS_CATALOG_MANAGER оставляем
+    # как compatibility layer для текущего coordinator.py и hot-reload.
     domain_data = hass.data.setdefault(DOMAIN, {})
-    if RUNS_CATALOG_MANAGER not in domain_data:
-        domain_data[RUNS_CATALOG_MANAGER] = RunsCatalogManager(
+    catalog_manager = domain_data.get(SILAM_CATALOG_MANAGER)
+    if catalog_manager is None:
+        catalog_manager = SilamCatalogManager(
             hass,
             ttl_seconds=RUNS_CATALOG_TTL_SECONDS,
+            runs_manager=domain_data.get(RUNS_CATALOG_MANAGER),
         )
-        _LOGGER.debug("SILAM Pollen: initialized RunsCatalogManager")
+        domain_data[SILAM_CATALOG_MANAGER] = catalog_manager
+        _LOGGER.debug("SILAM Pollen: initialized SilamCatalogManager")
+
+    domain_data[RUNS_CATALOG_MANAGER] = catalog_manager.runs
 
     # Постоянный кэш для этой ConfigEntry:
     # читаем совместимый payload при setup и передаём его координатору.
@@ -278,6 +305,7 @@ async def async_setup_entry(hass, entry):
         forecast_duration=forecast_duration,
         cache_store=cache_store,
         cached_payload=cached_payload,
+        config_entry_id=entry.entry_id,
     )
     await coordinator.async_config_entry_first_refresh()
 
@@ -300,12 +328,14 @@ async def async_unload_entry(hass, entry):
     domain_data = hass.data.get(DOMAIN, {})
     domain_data.pop(entry.entry_id, None)
     domain_data.get(CACHE_STORES, {}).pop(entry.entry_id, None)
+    await async_delete_manual_dataset_unavailable_issue(hass, entry_id=entry.entry_id)
     return True
 
 
 
 async def async_remove_entry(hass, entry) -> None:
     """Удалить файл постоянного кэша при удалении ConfigEntry пользователем."""
+    await async_delete_manual_dataset_unavailable_issue(hass, entry_id=entry.entry_id)
     domain_data = hass.data.get(DOMAIN, {})
     cache_store = domain_data.get(CACHE_STORES, {}).pop(entry.entry_id, None)
 
@@ -330,7 +360,11 @@ async def update_listener(hass, entry):
     legacy_enabled = entry.options.get("legacy", entry.data.get("legacy", False))
 
     # Ожидаемые unique_id
-    expected_ids: set[str] = {f"{entry.entry_id}_fetch_duration"}
+    expected_ids: set[str] = {
+        f"{entry.entry_id}_fetch_duration",
+        f"{entry.entry_id}_forecast_horizon",
+        f"{entry.entry_id}_service_status",
+    }
 
     # Индекс — только если включён legacy
     if legacy_enabled:

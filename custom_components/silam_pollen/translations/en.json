@@ -137,6 +137,75 @@
             "name": "Forecast for Tomorrow"
           }
         }
+      },
+      "service_status": {
+        "name": "SILAM service status",
+        "state": {
+          "ok": "OK",
+          "service_unavailable": "Service unavailable",
+          "dataset_unavailable": "Dataset unavailable",
+          "data_unavailable": "Data unavailable",
+          "unknown": "Unknown"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Reason"
+          },
+          "root_catalog_url": {
+            "name": "Root catalog URL"
+          },
+          "root_catalog_status": {
+            "name": "Root catalog status"
+          },
+          "root_catalog_ok": {
+            "name": "Root catalog OK"
+          },
+          "root_catalog_http_status": {
+            "name": "Root catalog HTTP status"
+          },
+          "root_catalog_error": {
+            "name": "Root catalog error"
+          },
+          "root_dataset_paths_count": {
+            "name": "Root dataset count"
+          },
+          "dataset_selection": {
+            "name": "Dataset selection"
+          },
+          "effective_dataset": {
+            "name": "Effective dataset"
+          },
+          "effective_dataset_listed": {
+            "name": "Effective dataset listed"
+          },
+          "effective_base_url": {
+            "name": "Effective base URL"
+          },
+          "preferred_dataset": {
+            "name": "Preferred dataset"
+          },
+          "preferred_dataset_listed": {
+            "name": "Preferred dataset listed"
+          },
+          "preferred_base_url": {
+            "name": "Preferred base URL"
+          },
+          "runs_catalog_url": {
+            "name": "Runs catalog URL"
+          },
+          "latest_run_id": {
+            "name": "Latest run ID"
+          },
+          "latest_run_start": {
+            "name": "Latest run start"
+          },
+          "latest_run_end": {
+            "name": "Latest run end"
+          },
+          "smart_root_skipped": {
+            "name": "SMART root skipped candidates"
+          }
+        }
       }
     },
     "weather": {
@@ -328,5 +397,11 @@
     "additional_forecast_mode_minimal": "Minimal",
     "meteo_risk": "Meteo Risk (experimental)",
     "display_attribute": "Display attribute"
+  },
+  "issues": {
+    "manual_dataset_unavailable": {
+      "title": "Selected SILAM dataset is no longer available",
+      "description": "The SILAM Pollen entry **{entry_title}** is configured to use the manual dataset **{dataset_label}** (`{dataset_name}`), but this dataset is no longer published in the SILAM root catalog.\n\nOpen the integration options and choose **SMART** or another available dataset."
+    }
   }
 }

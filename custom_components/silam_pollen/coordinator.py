@@ -21,6 +21,20 @@
 - При восстановлении preferred (по каталогу + подтверждение probe) выполняется возврат.
 - В merged_data сохраняются effective_base_url и preferred_base_url для UI/диагностики.
 
+Шаг 5b (root catalog hard gate):
+- Root catalog становится обязательной ранней online-проверкой перед SMART,
+  runs/catalog.xml и NCSS fetch.
+- Если root catalog недоступен или невалиден, сетевые запросы к runs/NCSS
+  не выполняются: обычный refresh может восстановиться из кэша, а full_refresh
+  завершается ошибкой без изменения persistent cache.
+- Если текущий датасет не опубликован в root catalog, сетевой fetch тоже
+  не выполняется; SMART-кандидаты дополнительно фильтруются по root catalog.
+
+Шаг 6 (manual dataset Repair issue):
+- Если пользователь вручную выбрал датасет, а root catalog успешно проверен
+  и датасет больше не опубликован, создаём Repair issue.
+- Для SMART Repair issue не создаётся: SMART просто пропускает такой кандидат.
+
 Постоянный кэш:
 - После успешного обновления сохраняем финальный raw_merged в Store.
 - При старте используем совместимый persistent raw_merged, если latest run_id совпадает.
@@ -46,12 +60,18 @@ from .cache_runtime import SilamPollenCacheRuntime
 from .const import (
     DOMAIN,
     RUNS_CATALOG_MANAGER,
+    SILAM_CATALOG_MANAGER,
+    THREDDS_ROOT_CATALOG_URL,
     URL_VAR_MAPPING,
     resolve_silam_var_name,
     DATASET_SRC_KEYS,
     SMART_MIN_COVERAGE_HOURS,
     SMART_NCSS_FAIL_STREAK_SWITCH,
 )  # Импортируем константы и маппинг
+from .repairs import (
+    async_create_manual_dataset_unavailable_issue,
+    async_delete_manual_dataset_unavailable_issue,
+)
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -77,6 +97,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         smart_candidates=None,
         cache_store=None,
         cached_payload=None,
+        config_entry_id: str | None = None,
     ):
         """
         Инициализирует координатор.
@@ -96,8 +117,10 @@ class SilamCoordinator(DataUpdateCoordinator):
         :param smart_candidates: список кандидатов base_url для SMART (в порядке приоритета).
         :param cache_store: объект постоянного кэша для сохранения raw_merged.
         :param cached_payload: совместимый payload постоянного кэша, загруженный при setup.
+        :param config_entry_id: идентификатор ConfigEntry для Repair issue.
         """
         self._base_device_name = base_device_name
+        self._config_entry_id = config_entry_id
         self._log_prefix = f"[{base_device_name}]"
         self._var_list = var_list
         self._manual_coordinates = manual_coordinates
@@ -146,8 +169,20 @@ class SilamCoordinator(DataUpdateCoordinator):
         # Последняя ошибка каталога нужна, чтобы отличать offline-сбой от пустого каталога.
         self._last_runs_catalog_error = None
 
-        # Общий менеджер runs catalog (domain-level) из hass.data[DOMAIN]
-        self._runs_manager = hass.data.get(DOMAIN, {}).get(RUNS_CATALOG_MANAGER)
+        # Общий catalog-layer (domain-level) из hass.data[DOMAIN].
+        # Root catalog используется для диагностики и как безопасный gate
+        # в SMART-логике: retired-датасеты исключаются только если root
+        # catalog успешно проверен и датасет явно отсутствует.
+        domain_data = hass.data.get(DOMAIN, {})
+        self._silam_catalog_manager = domain_data.get(SILAM_CATALOG_MANAGER)
+        self._root_catalog_manager = getattr(self._silam_catalog_manager, "root", None)
+
+        # Общий менеджер runs catalog (domain-level) из hass.data[DOMAIN].
+        # Compatibility fallback оставлен для переходного периода: координатор
+        # продолжает работать через прежний ключ RUNS_CATALOG_MANAGER.
+        self._runs_manager = domain_data.get(RUNS_CATALOG_MANAGER)
+        if self._runs_manager is None and self._silam_catalog_manager is not None:
+            self._runs_manager = getattr(self._silam_catalog_manager, "runs", None)
 
         # Store постоянного кэша. Forecast-режим использует raw_merged,
         # non-forecast режим использует маленький current-кэш с последним now.
@@ -171,6 +206,11 @@ class SilamCoordinator(DataUpdateCoordinator):
         # --- Шаг 4 (SMART): кеш гео-покрытия кандидатов по координатам ---
         # base_url -> True/False (True = NCSS probe подтвердил, False = детерминированно "не покрывает")
         self._smart_coord_ok: dict[str, bool] = {}
+
+        # --- Шаг 5b: root catalog hard gate ---
+        # dataset_name -> причина исключения SMART-кандидата. Root catalog
+        # также используется как ранний online-gate перед runs/NCSS fetch.
+        self._smart_root_skipped: dict[str, str] = {}
 
         # Извлекаем версию SILAM из BASE_URL
         match = re.search(r"pollen_v(\d+_\d+(?:_\d+)?)", self._base_url)
@@ -221,10 +261,37 @@ class SilamCoordinator(DataUpdateCoordinator):
         return await super().async_request_refresh()
 
     async def async_request_full_refresh(self):
-        """Принудительно выполнить полный сетевой refresh без cache/incremental путей."""
+        """Принудительно выполнить полный сетевой refresh без cache/incremental путей.
+
+        В отличие от обычного обновления, full_refresh не должен
+        восстанавливаться из cache. Если сетевой запрос не удался,
+        сервисный вызов должен завершиться ошибкой, а существующий
+        persistent cache должен остаться нетронутым.
+        """
         self._force_full_refresh = True
         try:
-            return await self.async_request_refresh(context={"full_refresh": True})
+            # Для service action нельзя использовать async_request_refresh():
+            # он проходит через debouncer и при попадании в cooldown может не
+            # выполнить refresh сразу. full_refresh должен быть синхронной
+            # проверкой: вызов сервиса завершён только после реального refresh.
+            await super().async_refresh()
+
+            if not self.last_update_success:
+                # DataUpdateCoordinator сохраняет исключение внутри себя и не
+                # пробрасывает его наружу. Для service action full_refresh
+                # явно превращаем неуспешный refresh в ошибку вызова сервиса.
+                err = getattr(self, "last_exception", None)
+                try:
+                    self.async_update_listeners()
+                except Exception as notify_err:  # noqa: BLE001 - ошибка уведомления не должна скрывать root cause
+                    _LOGGER.debug(
+                        "%s Failed to notify listeners after full refresh failure: %s",
+                        self._log_prefix,
+                        notify_err,
+                    )
+                if isinstance(err, Exception):
+                    raise UpdateFailed(f"Forced full refresh failed: {err}") from err
+                raise UpdateFailed("Forced full refresh failed")
         finally:
             self._force_full_refresh = False
 
@@ -360,6 +427,65 @@ class SilamCoordinator(DataUpdateCoordinator):
 
         _LOGGER.debug("%s SMART: base_url switched: %s -> %s", self._log_prefix, old, new_base_url)
 
+    async def _get_root_info_for_smart(self):
+        """Вернуть root catalog snapshot для SMART-фильтра кандидатов.
+
+        Основная online-проверка выполняется раньше, в `_async_update_data()`.
+        Здесь используем уже сохранённый snapshot через TTL/cache manager, чтобы
+        не делать повторный сетевой запрос при каждом SMART-кандидате.
+        """
+        manager = self._root_catalog_manager
+        if manager is None:
+            return None
+
+        try:
+            return await manager.async_get_info()
+        except Exception as err:  # noqa: BLE001 - SMART не должен падать из-за root check
+            _LOGGER.debug(
+                "%s SMART root catalog check skipped: %s",
+                self._log_prefix,
+                err,
+            )
+            return None
+
+    def _smart_candidate_allowed_by_root_catalog(self, base_url: str, root_info) -> bool:
+        """Проверить, можно ли SMART-кандидат использовать по root catalog.
+
+        Возвращает False только в одном безопасном случае: root catalog успешно
+        прошёл проверку, но dataset.path кандидата отсутствует в списке
+        опубликованных датасетов. Недоступный root catalog обрабатывается раньше
+        как hard gate, поэтому здесь fallback оставлен только как страховка.
+        """
+        manager = self._root_catalog_manager
+        if manager is None or getattr(root_info, "ok", False) is not True:
+            return True
+
+        dataset_name = self._dataset_name_from_base_url(base_url)
+        if dataset_name in (None, "", "-"):
+            return True
+
+        try:
+            listed = manager.is_dataset_listed(dataset_name, root_info)
+        except Exception as err:  # noqa: BLE001 - fallback к старой SMART-логике
+            _LOGGER.debug(
+                "%s SMART root catalog gate failed for %s: %s",
+                self._log_prefix,
+                dataset_name,
+                err,
+            )
+            return True
+
+        if listed is False:
+            self._smart_root_skipped[dataset_name] = "dataset_not_listed"
+            _LOGGER.debug(
+                "%s SMART: skip candidate %s: dataset is not listed in SILAM root catalog",
+                self._log_prefix,
+                dataset_name,
+            )
+            return False
+
+        return True
+
     async def _smart_select_base_url(
         self,
         session,
@@ -377,12 +503,21 @@ class SilamCoordinator(DataUpdateCoordinator):
             только лёгкий NCSS-probe (PT0H) для определения preferred по координатам.
         """
         candidates = self._smart_candidates or [self._base_url]
+        self._smart_root_skipped = {}
+        root_info = await self._get_root_info_for_smart()
 
         now_utc = datetime.now(timezone.utc)
         min_end_dt = now_utc + timedelta(hours=SMART_MIN_COVERAGE_HOURS)
 
         for url in candidates:
             if not url:
+                continue
+
+            # --- Шаг 5: root catalog gate для SMART-кандидатов ---
+            # Исключаем retired-датасет только если root catalog сам успешно
+            # проверен. При проблеме root catalog продолжаем старую логику,
+            # чтобы временный сбой каталога не отключил все кандидаты.
+            if not self._smart_candidate_allowed_by_root_catalog(url, root_info):
                 continue
 
             # --- SMART candidate gate: проверяем, что runs/catalog.xml у кандидата покрывает now+SMART_MIN_COVERAGE_HOURS ---
@@ -767,6 +902,442 @@ class SilamCoordinator(DataUpdateCoordinator):
             return "-"
         return DATASET_SRC_KEYS.get(dataset_name, dataset_name)
 
+    def _dataset_catalog_info_for_base_url(
+        self,
+        base_url: str | None,
+        root_info=None,
+    ) -> dict:
+        """Вернуть диагностическую информацию о публикации датасета.
+
+        Метод только читает root catalog snapshot и не влияет на выбор
+        датасета. Если root catalog недоступен, `listed` остаётся None —
+        это значит, что делать вывод об удалении датасета нельзя.
+        """
+        dataset_name = self._dataset_name_from_base_url(base_url)
+        manager = self._root_catalog_manager
+        listed = None
+        catalog_info = None
+
+        if manager is not None and dataset_name not in (None, "", "-"):
+            try:
+                listed = manager.is_dataset_listed(dataset_name, root_info)
+                build_info = getattr(manager, "build_dataset_catalog_info", None)
+                if callable(build_info):
+                    catalog_info = build_info(dataset_name, root_info)
+            except Exception as err:  # noqa: BLE001 - диагностика не должна ломать refresh
+                _LOGGER.debug(
+                    "%s root catalog dataset diagnostic failed for %s: %s",
+                    self._log_prefix,
+                    dataset_name,
+                    err,
+                )
+
+        if not isinstance(catalog_info, dict):
+            catalog_info = {
+                "dataset_name": dataset_name,
+                "listed": listed,
+                "base_url": base_url,
+                "runs_catalog_url": self._derive_runs_catalog_url_for_base_url(base_url),
+            }
+        else:
+            catalog_info = dict(catalog_info)
+            catalog_info.setdefault("dataset_name", dataset_name)
+            catalog_info.setdefault("listed", listed)
+            catalog_info.setdefault("base_url", base_url)
+            catalog_info.setdefault(
+                "runs_catalog_url",
+                self._derive_runs_catalog_url_for_base_url(base_url),
+            )
+
+        return catalog_info
+
+    async def _get_root_catalog_diagnostics(self, *, force_refresh: bool = False) -> dict:
+        """Собрать диагностику root catalog без изменения поведения координатора.
+
+        force_refresh=True используется для full_refresh/error paths, где
+        статус службы должен отражать текущую сетевую доступность, а не
+        только TTL-кэш последней успешной проверки.
+        """
+        manager = self._root_catalog_manager
+        if manager is None:
+            return {
+                "url": THREDDS_ROOT_CATALOG_URL,
+                "status": "manager_unavailable",
+                "ok": None,
+                "error": "root catalog manager is not initialized",
+                "effective_dataset": self._dataset_name_from_base_url(self._base_url),
+                "effective_dataset_listed": None,
+                "preferred_dataset": self._dataset_name_from_base_url(self._preferred_base_url),
+                "preferred_dataset_listed": None,
+                "smart_root_skipped": dict(self._smart_root_skipped),
+            }
+
+        try:
+            info = await manager.async_get_info(force_refresh=force_refresh)
+        except Exception as err:  # noqa: BLE001 - диагностика не должна ломать refresh
+            _LOGGER.debug("%s root catalog diagnostic refresh failed: %s", self._log_prefix, err)
+            return {
+                "url": THREDDS_ROOT_CATALOG_URL,
+                "status": "unknown_error",
+                "ok": False,
+                "error": str(err),
+                "effective_dataset": self._dataset_name_from_base_url(self._base_url),
+                "effective_dataset_listed": None,
+                "preferred_dataset": self._dataset_name_from_base_url(self._preferred_base_url),
+                "preferred_dataset_listed": None,
+                "smart_root_skipped": dict(self._smart_root_skipped),
+            }
+
+        effective = self._dataset_catalog_info_for_base_url(self._base_url, info)
+        preferred = self._dataset_catalog_info_for_base_url(self._preferred_base_url, info)
+        dataset_paths = sorted(getattr(info, "dataset_paths", frozenset()) or [])
+
+        return {
+            "url": THREDDS_ROOT_CATALOG_URL,
+            "status": getattr(info, "status", None),
+            "ok": getattr(info, "ok", None),
+            "error": getattr(info, "error", None),
+            "http_status": getattr(info, "http_status", None),
+            "catalog_name": getattr(info, "catalog_name", None),
+            "catalog_name_ok": getattr(info, "catalog_name_ok", None),
+            "pollen_catalogs_ok": getattr(info, "pollen_catalogs_ok", None),
+            "pollen_catalogs": list(getattr(info, "pollen_catalogs", ()) or ()),
+            "dataset_paths_count": len(dataset_paths),
+            "dataset_paths": dataset_paths,
+            "effective_dataset": effective.get("dataset_name"),
+            "effective_dataset_listed": effective.get("listed"),
+            "effective_dataset_path": effective.get("path"),
+            "effective_dataset_label": effective.get("label"),
+            "preferred_dataset": preferred.get("dataset_name"),
+            "preferred_dataset_listed": preferred.get("listed"),
+            "preferred_dataset_path": preferred.get("path"),
+            "preferred_dataset_label": preferred.get("label"),
+            "fetched_at": (
+                info.fetched_at.isoformat()
+                if getattr(info, "fetched_at", None) is not None
+                else None
+            ),
+            "last_ok": (
+                info.last_ok.isoformat()
+                if getattr(info, "last_ok", None) is not None
+                else None
+            ),
+            "last_error": getattr(info, "last_error", None),
+            "smart_root_skipped": dict(self._smart_root_skipped),
+        }
+
+    def _is_coverage_expired(self, latest_end: str | None) -> bool | None:
+        """Проверить, достаточно ли далеко вперёд покрывает текущий latest run.
+
+        Возвращает:
+        - True  — coverage_end меньше now+SMART_MIN_COVERAGE_HOURS;
+        - False — coverage_end есть и покрытие достаточно;
+        - None  — coverage_end неизвестен или не парсится.
+        """
+        end_dt = self._parse_dt_utc(latest_end)
+        if end_dt is None:
+            return None
+        return end_dt < (datetime.now(timezone.utc) + timedelta(hours=SMART_MIN_COVERAGE_HOURS))
+
+    def _infer_service_reason(self, root_catalog_diag: dict) -> str:
+        """Определить подробную причину состояния службы SILAM.
+
+        Здесь возвращаем именно `reason`, а не короткое состояние сенсора.
+        Короткое состояние строится отдельно в `_build_service_diagnostics()`.
+        """
+        root_status = root_catalog_diag.get("status")
+        root_ok = root_catalog_diag.get("ok")
+        effective_listed = root_catalog_diag.get("effective_dataset_listed")
+
+        if root_status in (
+            "manager_unavailable",
+            "connection_error",
+            "http_error",
+            "ssl_error",
+            "timeout",
+            "unknown_error",
+        ):
+            return "root_catalog_unavailable"
+
+        if root_status in (
+            "catalog_error",
+            "invalid_xml",
+        ) or root_ok is False:
+            return "root_catalog_invalid"
+
+        if effective_listed is False:
+            return "dataset_not_listed"
+
+        runs_error = self._last_runs_catalog_error
+        if runs_error and not self._latest_run_id:
+            if runs_error == "parse: no latest run":
+                return "runs_no_latest"
+            return "runs_catalog_unavailable"
+
+        if not self._latest_run_id:
+            return "runs_no_latest"
+
+        if self._is_coverage_expired(self._latest_run_end) is True:
+            return "coverage_expired"
+
+        return "none"
+
+    @staticmethod
+    def _service_state_from_reason(reason: str) -> str:
+        """Преобразовать подробную причину в короткое состояние enum-сенсора."""
+        if reason in (None, "", "none"):
+            return "ok"
+        if reason in ("root_catalog_unavailable", "root_catalog_invalid"):
+            return "service_unavailable"
+        if reason in (
+            "dataset_not_listed",
+            "runs_catalog_unavailable",
+            "runs_no_latest",
+            "coverage_expired",
+            "no_dataset_available",
+        ):
+            return "dataset_unavailable"
+        if reason in (
+            "ncss_unavailable",
+            "ncss_invalid_response",
+            "ncss_empty_body",
+        ):
+            return "data_unavailable"
+        return "unknown"
+
+    def _build_service_diagnostics(
+        self,
+        *,
+        root_catalog_diag: dict,
+        request_type: str | None,
+        cache_source: str | None,
+        offline_fallback: bool,
+    ) -> dict:
+        """Собрать онлайн-статус службы SILAM и подробную причину.
+
+        `service_status` описывает доступность внешней службы SILAM, а не
+        источник данных конкретной ConfigEntry. Поэтому cache/offline fallback
+        не переводит статус в отдельное состояние: сведения о кэше остаются
+        в `diag.request` и диагностическом сенсоре fetch_duration.
+        """
+        reason = self._infer_service_reason(root_catalog_diag)
+        status = self._service_state_from_reason(reason)
+
+        return {
+            "status": status,
+            "reason": reason,
+            "root_catalog_status": root_catalog_diag.get("status"),
+            "root_catalog_ok": root_catalog_diag.get("ok"),
+            "root_catalog_error": root_catalog_diag.get("error") or root_catalog_diag.get("last_error"),
+            "dataset_selection": self._dataset_selection,
+            "effective_dataset": root_catalog_diag.get("effective_dataset")
+                or self._dataset_name_from_base_url(self._base_url),
+            "effective_dataset_listed": root_catalog_diag.get("effective_dataset_listed"),
+            "preferred_dataset": root_catalog_diag.get("preferred_dataset")
+                or self._dataset_name_from_base_url(self._preferred_base_url),
+            "preferred_dataset_listed": root_catalog_diag.get("preferred_dataset_listed"),
+            "smart_root_skipped": root_catalog_diag.get("smart_root_skipped")
+                or dict(self._smart_root_skipped),
+        }
+
+    def _is_manual_dataset_selection(self) -> bool:
+        """Вернуть True, если пользователь выбрал фиксированный датасет вручную."""
+        return (self._dataset_selection or "smart").lower() != "smart"
+
+    async def _async_create_manual_dataset_repair_if_needed(
+        self,
+        root_catalog_diag: dict,
+    ) -> None:
+        """Создать Repair issue для ручного датасета, отсутствующего в root catalog."""
+        if not self._is_manual_dataset_selection():
+            return
+
+        if root_catalog_diag.get("ok") is not True:
+            return
+
+        if root_catalog_diag.get("effective_dataset_listed") is not False:
+            return
+
+        await async_create_manual_dataset_unavailable_issue(
+            self.hass,
+            entry_id=self._config_entry_id,
+            entry_title=self._base_device_name,
+            dataset_name=root_catalog_diag.get("effective_dataset")
+            or self._dataset_name_from_base_url(self._base_url),
+        )
+
+    async def _async_clear_manual_dataset_repair_if_needed(
+        self,
+        root_catalog_diag: dict,
+    ) -> None:
+        """Удалить Repair issue, если ручной датасет снова доступен или выбран SMART."""
+        if not self._config_entry_id:
+            return
+
+        if not self._is_manual_dataset_selection():
+            await async_delete_manual_dataset_unavailable_issue(
+                self.hass,
+                entry_id=self._config_entry_id,
+            )
+            return
+
+        if (
+            root_catalog_diag.get("ok") is True
+            and root_catalog_diag.get("effective_dataset_listed") is True
+        ):
+            await async_delete_manual_dataset_unavailable_issue(
+                self.hass,
+                entry_id=self._config_entry_id,
+            )
+
+    def _root_catalog_hard_gate_reason(self, root_catalog_diag: dict) -> str | None:
+        """Вернуть причину, если online-проверка root catalog запрещает сетевой fetch.
+
+        Этот gate стоит перед SMART, runs/catalog.xml и NCSS. Если root catalog
+        недоступен или текущий датасет не опубликован, дальше в сеть не идём.
+        """
+        root_status = root_catalog_diag.get("status")
+        root_ok = root_catalog_diag.get("ok")
+        effective_listed = root_catalog_diag.get("effective_dataset_listed")
+
+        if root_status in (
+            "manager_unavailable",
+            "connection_error",
+            "http_error",
+            "ssl_error",
+            "timeout",
+            "unknown_error",
+        ):
+            return "root_catalog_unavailable"
+
+        if root_status in (
+            "catalog_error",
+            "invalid_xml",
+        ) or root_ok is False:
+            return "root_catalog_invalid"
+
+        if root_ok is True and effective_listed is False:
+            # Для ручного выбора это ошибка настройки пользователя: дальше в сеть
+            # не идём и создаём Repair issue. Для SMART это не hard gate:
+            # SMART сам отфильтрует отсутствующий кандидат и попробует следующий.
+            if self._is_manual_dataset_selection():
+                return "dataset_not_listed"
+            return None
+
+        return None
+
+    def _build_root_catalog_gate_error(
+        self,
+        *,
+        root_catalog_diag: dict,
+        reason: str,
+    ) -> UpdateFailed:
+        """Собрать понятную ошибку hard gate без дополнительных сетевых действий."""
+        status = root_catalog_diag.get("status")
+        error = root_catalog_diag.get("error") or root_catalog_diag.get("last_error")
+        dataset = root_catalog_diag.get("effective_dataset")
+
+        details = [f"reason={reason}", f"status={status}"]
+        if dataset:
+            details.append(f"dataset={dataset}")
+        if error:
+            details.append(f"error={error}")
+
+        return UpdateFailed(
+            "SILAM root catalog hard gate failed: " + ", ".join(details)
+        )
+
+    @staticmethod
+    def _reason_from_fetch_error(err: Exception) -> str:
+        """Определить service reason по ошибке сетевого/NCSS-запроса."""
+        if isinstance(err, ET.ParseError):
+            msg = str(err).lower()
+            if "no element found" in msg:
+                return "ncss_empty_body"
+            return "ncss_invalid_response"
+
+        if isinstance(err, (asyncio.TimeoutError, aiohttp.ClientError)):
+            return "ncss_unavailable"
+
+        return "ncss_unavailable"
+
+    def _override_service_reason_if_needed(
+        self,
+        service_diag: dict,
+        *,
+        fallback_reason: str,
+    ) -> dict:
+        """Подставить причину ошибки, если catalog-диагностика не дала точной причины."""
+        diag = dict(service_diag)
+        reason = diag.get("reason")
+        if reason in (None, "", "none"):
+            diag["reason"] = fallback_reason
+            diag["status"] = self._service_state_from_reason(fallback_reason)
+        return diag
+
+    async def _publish_failed_refresh_diagnostics(
+        self,
+        *,
+        request_type: str | None,
+        err: Exception,
+        started_at: float,
+        force_root_refresh: bool,
+        root_catalog_diag: dict | None = None,
+    ) -> None:
+        """Обновить service diagnostics после неуспешного refresh без перезаписи кэша.
+
+        Метод сохраняет старые пользовательские данные в `merged_data`, но
+        обновляет диагностический блок, чтобы `service_status` видел причину
+        отказа даже тогда, когда DataUpdateCoordinator завершает refresh
+        через UpdateFailed. Persistent cache здесь намеренно не сохраняется.
+        """
+        if root_catalog_diag is None:
+            root_catalog_diag = await self._get_root_catalog_diagnostics(
+                force_refresh=force_root_refresh
+            )
+        fallback_reason = self._reason_from_fetch_error(err)
+        service_diag = self._build_service_diagnostics(
+            root_catalog_diag=root_catalog_diag,
+            request_type=request_type,
+            cache_source=None,
+            offline_fallback=False,
+        )
+        service_diag = self._override_service_reason_if_needed(
+            service_diag,
+            fallback_reason=fallback_reason,
+        )
+        service_diag["error"] = f"{type(err).__name__}: {err}"
+
+        current = dict(self.merged_data) if isinstance(self.merged_data, dict) else {}
+        diag = dict(current.get("diag")) if isinstance(current.get("diag"), dict) else {}
+        diag["service"] = service_diag
+        diag["root_catalog"] = root_catalog_diag
+        diag["runs_catalog"] = {
+            "url": self._runs_catalog_url,
+            "latest_run_id": self._latest_run_id,
+            "latest_run_start": self._latest_run_start,
+            "latest_run_end": self._latest_run_end,
+        }
+        diag["request"] = {
+            "type": request_type,
+            "cache_source": None,
+            "offline_fallback": False,
+            "failed": True,
+            "error": f"{type(err).__name__}: {err}",
+            "tail_fetch_attempted": False,
+            "tail_fetch_network": False,
+            "tail_fetch_success": None,
+        }
+        diag["dataset"] = {
+            "selection": self._dataset_selection,
+            "effective_base_url": self._base_url,
+            "preferred_base_url": self._preferred_base_url,
+        }
+        diag["cache"] = self._cache_runtime.persistent_cache_diagnostics(None)
+        current["diag"] = diag
+        current["last_fetch_duration"] = round(time.monotonic() - started_at, 3)
+        self.merged_data = current
+
     def _apply_src_to_raw(self, raw: dict | None, src_key: str) -> None:
         """Проставляет src_key в каждом таймслоте raw_merged как payload['s']."""
         if not isinstance(raw, dict):
@@ -941,9 +1512,40 @@ class SilamCoordinator(DataUpdateCoordinator):
         run_id = None
         run_start = None
         run_end = None
+        root_catalog_diag = {
+            "url": THREDDS_ROOT_CATALOG_URL,
+            "status": "not_checked",
+            "ok": None,
+            "error": None,
+            "effective_dataset": self._dataset_name_from_base_url(self._base_url),
+            "effective_dataset_listed": None,
+            "preferred_dataset": self._dataset_name_from_base_url(self._preferred_base_url),
+            "preferred_dataset_listed": None,
+            "smart_root_skipped": dict(self._smart_root_skipped),
+        }
 
         try:
             async with aiohttp.ClientSession() as session:
+                # --- Шаг 5b: root catalog hard gate ---
+                # Это обязательная online-проверка перед SMART, runs/catalog.xml
+                # и NCSS. При ошибке root catalog дальше в сеть не идём.
+                self._prof(t0, "before_root_catalog_gate")
+                root_catalog_diag = await self._get_root_catalog_diagnostics(force_refresh=True)
+                self._prof(t0, "after_root_catalog_gate")
+
+                root_gate_reason = self._root_catalog_hard_gate_reason(root_catalog_diag)
+                if root_gate_reason == "dataset_not_listed":
+                    await self._async_create_manual_dataset_repair_if_needed(root_catalog_diag)
+                elif root_gate_reason is None:
+                    await self._async_clear_manual_dataset_repair_if_needed(root_catalog_diag)
+
+                if root_gate_reason is not None:
+                    err = self._build_root_catalog_gate_error(
+                        root_catalog_diag=root_catalog_diag,
+                        reason=root_gate_reason,
+                    )
+                    raise err
+
                 # --- Раннее восстановление из persistent cache ---
                 # CacheRuntime сам решает, можно ли использовать forecast raw_merged,
                 # non-forecast current или stale fallback. Координатор только
@@ -1388,8 +1990,14 @@ class SilamCoordinator(DataUpdateCoordinator):
 
                                     filled = False
 
+                                    root_info_for_fill = await self._get_root_info_for_smart()
+
                                     for cand in (self._smart_candidates or []):
                                         if not cand or cand == self._base_url:
+                                            continue
+
+                                        # Не используем retired-кандидаты при дозаполнении missing-times.
+                                        if not self._smart_candidate_allowed_by_root_catalog(cand, root_info_for_fill):
                                             continue
 
                                         # 3.1) (A) runs_catalog: должен пересекаться по времени
@@ -1558,12 +2166,31 @@ class SilamCoordinator(DataUpdateCoordinator):
 
         except Exception as err:
             if force_full_refresh:
-                raise UpdateFailed(f"Ошибка при принудительном полном обновлении XML: {err}") from err
+                await self._publish_failed_refresh_diagnostics(
+                    request_type=request_type,
+                    err=err,
+                    started_at=start,
+                    force_root_refresh=False,
+                    root_catalog_diag=root_catalog_diag,
+                )
+                _LOGGER.debug(
+                    "%s Forced full refresh failed; cache fallback is intentionally disabled: %s",
+                    self._log_prefix,
+                    err,
+                )
+                raise UpdateFailed(f"Forced full refresh failed: {err}") from err
 
             # Поздний fallback остаётся страховкой для ошибок после ранней
             # проверки каталога: SMART probe, index/main fetch или tail fetch.
             late_restore = self._cache_runtime.prepare_late_restore(err)
             if late_restore is None:
+                await self._publish_failed_refresh_diagnostics(
+                    request_type=request_type,
+                    err=err,
+                    started_at=start,
+                    force_root_refresh=False,
+                    root_catalog_diag=root_catalog_diag,
+                )
                 raise UpdateFailed(f"Ошибка при получении или обработке XML: {err}") from err
 
             if late_restore.get("index") is not None:
@@ -1642,11 +2269,25 @@ class SilamCoordinator(DataUpdateCoordinator):
                 merged["src"] = used_src
             else:
                 merged["src"] = {src_key: src_ds}
+            # После возможного SMART-переключения обновляем dataset-поля
+            # root catalog диагностики. Повторного сетевого запроса нет: snapshot
+            # уже обновлён hard gate в начале refresh.
+            root_catalog_diag = await self._get_root_catalog_diagnostics()
+
             # Засекаем конец и вычисляем длительность фетча
             duration = time.monotonic() - start
             merged["last_fetch_duration"] = round(duration, 3)
 
+            service_diag = self._build_service_diagnostics(
+                root_catalog_diag=root_catalog_diag,
+                request_type=request_type,
+                cache_source=cache_source,
+                offline_fallback=offline_fallback,
+            )
+
             merged["diag"] = {
+            # --- Короткий статус службы SILAM для отдельного диагностического сенсора ---
+            "service": service_diag,
             # --- runs catalog (диагностика) ---
             "runs_catalog": {
                 "url": self._runs_catalog_url,
@@ -1654,6 +2295,8 @@ class SilamCoordinator(DataUpdateCoordinator):
                 "latest_run_start": self._latest_run_start,
                 "latest_run_end": self._latest_run_end,
             },
+            # --- Root catalog hard gate + диагностика ---
+            "root_catalog": root_catalog_diag,
             # --- Диагностика типа запроса (для SilamPollenFetchDurationSensor) ---
             "request": {
                 "type": request_type,

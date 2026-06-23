@@ -3,13 +3,10 @@ import collections
 import voluptuous as vol
 import aiohttp
 import async_timeout
-import xml.etree.ElementTree as ET
 import logging
-import ssl
 
 from homeassistant import config_entries
 from homeassistant.core import callback
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     LocationSelector,
     LocationSelectorConfig,
@@ -19,15 +16,16 @@ from homeassistant.helpers.selector import (
     NumberSelectorConfig,
 )
 
+from .silam_catalog import SilamCatalogManager
+
 from .const import (
     DOMAIN,
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_ALTITUDE,
     COVERAGE_MAP_URL,
-    THREDDS_CATALOG_NS,
-    THREDDS_ROOT_CATALOG_NAME,
-    THREDDS_ROOT_CATALOG_TIMEOUT_SECONDS,
-    THREDDS_ROOT_CATALOG_URL,
+    RUNS_CATALOG_MANAGER,
+    RUNS_CATALOG_TTL_SECONDS,
+    SILAM_CATALOG_MANAGER,
     THREDDS_ROOT_CATALOG_WAIT_SECONDS,
     # dataset table
     DATASETS,
@@ -77,69 +75,35 @@ class SilamPollenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._async_check_root_catalog()
             )
 
+    def _get_silam_catalog_manager(self) -> SilamCatalogManager:
+        """Вернуть общий SilamCatalogManager, создав его при необходимости."""
+        domain_data = self.hass.data.setdefault(DOMAIN, {})
+        catalog_manager = domain_data.get(SILAM_CATALOG_MANAGER)
+
+        if not isinstance(catalog_manager, SilamCatalogManager):
+            catalog_manager = SilamCatalogManager(
+                self.hass,
+                ttl_seconds=RUNS_CATALOG_TTL_SECONDS,
+                runs_manager=domain_data.get(RUNS_CATALOG_MANAGER),
+            )
+            domain_data[SILAM_CATALOG_MANAGER] = catalog_manager
+
+        # Старый ключ оставляем заполненным, чтобы coordinator.py на этом этапе
+        # продолжал получать RunsCatalogManager ровно как раньше.
+        domain_data[RUNS_CATALOG_MANAGER] = catalog_manager.runs
+        return catalog_manager
+
     async def _async_check_root_catalog(self) -> dict:
-        """Проверить HTTP, SSL, имя корневого каталога и pollen-каталоги."""
-        result = self._new_catalog_check_result()
-        session = async_get_clientsession(self.hass)
-
+        """Проверить root catalog SILAM через общий catalog-manager."""
         try:
-            async with async_timeout.timeout(THREDDS_ROOT_CATALOG_TIMEOUT_SECONDS):
-                async with session.get(THREDDS_ROOT_CATALOG_URL) as response:
-                    # Полученный HTTPS-ответ означает, что стандартная SSL-проверка
-                    # общей aiohttp-сессии Home Assistant успешно пройдена.
-                    result["ssl_ok"] = True
-                    result["http_status"] = response.status
-                    result["http_ok"] = response.status == 200
-
-                    if response.status != 200:
-                        result["error"] = "http_error"
-                        return result
-
-                    text = await response.text()
-
-        except (
-            aiohttp.ClientConnectorCertificateError,
-            aiohttp.ClientConnectorSSLError,
-            ssl.CertificateError,
-            ssl.SSLError,
-        ) as err:
-            result["ssl_ok"] = False
-            result["error"] = "ssl_error"
-            _LOGGER.debug("SILAM catalog SSL check failed: %s", err)
-            return result
+            catalog_manager = self._get_silam_catalog_manager()
+            info = await catalog_manager.root.async_get_info(force_refresh=True)
+            return info.as_dict()
         except asyncio.CancelledError:
             raise
-        except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-            result["error"] = "connection_error"
-            _LOGGER.debug("SILAM catalog availability check failed: %s", err)
-            return result
-        except Exception as err:
-            result["error"] = "unknown_error"
-            _LOGGER.debug("Unexpected SILAM catalog check error: %s", err)
-            return result
-
-        try:
-            root = ET.fromstring(text)
-        except ET.ParseError as err:
-            result["error"] = "invalid_xml"
-            _LOGGER.debug("SILAM root catalog returned invalid XML: %s", err)
-            return result
-
-        catalog_name = root.attrib.get("name")
-        result["catalog_name"] = catalog_name
-        result["catalog_name_ok"] = catalog_name == THREDDS_ROOT_CATALOG_NAME
-
-        pollen_catalogs = sorted(
-            {
-                catalog_ref.attrib.get("name", "")
-                for catalog_ref in root.findall(".//t:catalogRef", THREDDS_CATALOG_NS)
-                if "pollen" in catalog_ref.attrib.get("name", "").lower()
-            }
-        )
-        result["pollen_catalogs"] = pollen_catalogs
-        result["pollen_catalogs_ok"] = bool(pollen_catalogs)
-
-        return result
+        except Exception as err:  # noqa: BLE001 - проверка не должна ломать Config Flow
+            _LOGGER.debug("Unexpected SILAM catalog manager check error: %s", err)
+            return self._new_catalog_check_result(error="unknown_error")
 
     async def _async_wait_catalog_check(self) -> dict:
         """Дождаться фоновой проверки, но не более четырёх секунд."""

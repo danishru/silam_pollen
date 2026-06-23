@@ -5,7 +5,12 @@ from dataclasses import dataclass
 
 DOMAIN = "silam_pollen"
 
-# hass.data[DOMAIN] key for shared runs catalog manager
+# hass.data[DOMAIN] key for shared SILAM catalog facade
+SILAM_CATALOG_MANAGER = "silam_catalog_manager"
+
+# Legacy hass.data[DOMAIN] key for shared runs catalog manager.
+# Оставляем для плавной миграции: координатор пока использует этот ключ,
+# а __init__.py кладёт сюда silam_catalog.runs.
 RUNS_CATALOG_MANAGER = "runs_catalog_manager"
 
 # hass.data[DOMAIN] key for per-entry persistent cache Store helpers

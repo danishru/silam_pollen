@@ -137,6 +137,75 @@
             "name": "Прогноз на завтра"
           }
         }
+      },
+      "service_status": {
+        "name": "Статус службы SILAM",
+        "state": {
+          "ok": "ОК",
+          "service_unavailable": "Служба недоступна",
+          "dataset_unavailable": "Набор данных недоступен",
+          "data_unavailable": "Данные недоступны",
+          "unknown": "Неизвестно"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Причина"
+          },
+          "root_catalog_url": {
+            "name": "URL корневого каталога"
+          },
+          "root_catalog_status": {
+            "name": "Статус корневого каталога"
+          },
+          "root_catalog_ok": {
+            "name": "Корневой каталог ОК"
+          },
+          "root_catalog_http_status": {
+            "name": "HTTP-статус корневого каталога"
+          },
+          "root_catalog_error": {
+            "name": "Ошибка корневого каталога"
+          },
+          "root_dataset_paths_count": {
+            "name": "Количество наборов в каталоге"
+          },
+          "dataset_selection": {
+            "name": "Выбор набора данных"
+          },
+          "effective_dataset": {
+            "name": "Текущий набор данных"
+          },
+          "effective_dataset_listed": {
+            "name": "Текущий набор опубликован"
+          },
+          "effective_base_url": {
+            "name": "Текущий base URL"
+          },
+          "preferred_dataset": {
+            "name": "Предпочитаемый набор данных"
+          },
+          "preferred_dataset_listed": {
+            "name": "Предпочитаемый набор опубликован"
+          },
+          "preferred_base_url": {
+            "name": "Предпочитаемый base URL"
+          },
+          "runs_catalog_url": {
+            "name": "URL каталога запусков"
+          },
+          "latest_run_id": {
+            "name": "ID последнего запуска"
+          },
+          "latest_run_start": {
+            "name": "Начало последнего запуска"
+          },
+          "latest_run_end": {
+            "name": "Конец последнего запуска"
+          },
+          "smart_root_skipped": {
+            "name": "Кандидаты SMART, пропущенные root catalog"
+          }
+        }
       }
     },
     "weather": {
@@ -328,5 +397,11 @@
     "additional_forecast_mode_minimal": "Минимальный",
     "meteo_risk": "Метео-риск (экспериментально)",
     "display_attribute": "Атрибут для вывода значения"
+  },
+  "issues": {
+    "manual_dataset_unavailable": {
+      "title": "Выбранный набор данных SILAM больше недоступен",
+      "description": "Запись SILAM Pollen **{entry_title}** настроена на ручной набор данных **{dataset_label}** (`{dataset_name}`), но этот набор больше не опубликован в корневом каталоге SILAM.\n\nОткройте параметры интеграции и выберите **SMART** или другой доступный набор данных."
+    }
   }
 }

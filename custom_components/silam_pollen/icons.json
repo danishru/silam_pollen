@@ -46,6 +46,16 @@
       },
       "ragweed": {
         "default": "mdi:barley"
+      },
+      "service_status": {
+        "default": "mdi:cloud-check-outline",
+        "state": {
+          "ok": "mdi:cloud-check-outline",
+          "service_unavailable": "mdi:cloud-alert-outline",
+          "dataset_unavailable": "mdi:database-alert-outline",
+          "data_unavailable": "mdi:file-alert-outline",
+          "unknown": "mdi:progress-question"
+        }
       }
     },
     "weather": {
