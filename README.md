@@ -43,6 +43,56 @@ The **SILAM Pollen** integration provides a service consisting of sensors that d
 
 ## 🆕 What’s new
 
+### v0.4.1 💽 Persistent memory and safer recovery
+
+Version **v0.4.1** focuses on **persistent memory** — one of the most important reliability improvements in SILAM Pollen.
+
+SILAM Pollen now saves the last successfully loaded data so sensors and forecasts can recover faster after a Home Assistant restart or a temporary SILAM/network issue.
+
+With this update, you get:
+- faster recovery for sensors and forecasts after Home Assistant restarts;
+- fewer empty or unavailable states during startup;
+- more stable behavior during temporary SILAM or network issues;
+- fewer unnecessary requests to the SILAM service;
+- more resilient SMART mode when datasets are temporarily incomplete or unavailable;
+- clearer diagnostics and better Home Assistant Repairs warnings.
+
+#### 💽 Persistent memory
+
+SILAM Pollen now stores the last successfully loaded data and can restore it when the saved data still matches the current integration settings.
+
+This helps keep pollen sensors and forecasts available more consistently, especially after a Home Assistant restart or a temporary network/SILAM issue.
+
+#### 🧠 More stable SMART mode and fewer SILAM requests
+
+SMART dataset selection is now more resilient when SILAM datasets are temporarily incomplete or unavailable.
+
+Together with persistent memory, this also helps reduce unnecessary requests to the SILAM service. When the integration can safely restore or reuse already available data, it avoids downloading the same forecast again unless a real live update is needed.
+
+#### 🗂️ More reliable SILAM service and data checks
+
+SILAM Pollen now handles SILAM service availability, published datasets, and runs catalog checks in a more centralized and consistent way.
+
+This helps the integration better understand the current SILAM state, while allowing SMART mode to choose data sources more safely and avoid outdated or unavailable datasets.
+
+#### 🩺 Diagnostics, Repairs, and update services
+
+This release also improves day-to-day maintenance:
+
+- a new **SILAM service status** diagnostic sensor helps show whether SILAM, the selected dataset, or the data itself is currently available;
+- Home Assistant Repairs can warn about unavailable manually selected datasets or deprecated legacy entities;
+- manual update services were improved for the Home Assistant UI;
+- the **Full Refresh** service helps check SILAM directly, without using saved data;
+- existing automations and scripts remain compatible.
+
+#### 🌐 AI-assisted translation updates
+
+Translations were updated with the help of AI to cover the new diagnostics, services, Repairs, and setup messages.
+
+If you are a native speaker and notice inaccurate or unnatural wording, corrections are very welcome.
+
+[![More in release v0.4.1](https://img.shields.io/badge/More--in--release-v0.4.1-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.4.1)
+
 ### v0.4.0 🧠 Smarter forecasts that adapt automatically
 
 Version **v0.4.0** takes SMART dataset selection to the next level.
@@ -114,76 +164,6 @@ The setup interface shows a clear status and provides localized guidance when th
 - Updated the **Slovak translation** through [PR #27](https://github.com/danishru/silam_pollen/pull/27) by [@misa1515](https://github.com/misa1515).
 
 [![More in release v0.4.0](https://img.shields.io/badge/More--in--release-v0.4.0-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.4.0)
-
-### v0.3.2 🧠 Smarter pollen updates for the new season
-
-Version **v0.3.2** strengthens the **SMART update logic**, making pollen forecasts more reliable and easier to use as the new season begins.
-
-With **SMART dataset selection**, SILAM Pollen no longer relies on a fixed configuration.  
-Instead, it **automatically chooses the most suitable pollen dataset for your location**, based on actual coverage — helping ensure that the forecast you see is relevant to where you live.
-
-In practice, this means:
-- less manual setup and guesswork,
-- fewer cases of misleading or irrelevant pollen data,
-- smoother behaviour when datasets change between seasons.
-
-![image](https://github.com/user-attachments/assets/c4f6b8f8-93e0-4543-9eb3-4e598fd4d54a)
-
-Manual dataset selection is still available, but **SMART mode is recommended for everyday use**.
-
-#### 🌍 SILAM pollen v6.1 datasets
-
-This release introduces support for the **latest SILAM pollen v6.1 datasets**, which form the basis for forecasts in the upcoming pollen seasons.
-
-Compared to previous versions, v6.1 datasets provide:
-- updated **SILAM v6.1 model outputs** for the current season,
-- a refreshed **European baseline** (SILAM Europe pollen v6.1),
-- a new **high-detail regional dataset** where available.
-
-- **SILAM Finland pollen v6.1** offers the **highest spatial detail** within its coverage area  
-  🟦 **Blue zone** — coverage of **SILAM Finland (v6.1)** with **up to 0.8 km resolution**, especially useful for users in:
-  - Finland  
-  - Saint Petersburg and Northwestern Russia  
-  - Northern & eastern Sweden (including Stockholm)  
-  - Northeastern Norway  
-  - Northern Estonia (including Tallinn and Narva)
-
-When available, this dataset is **automatically selected by SMART mode**, with manual selection still possible in the integration options.
-
-#### ⚠️ Deprecation
-
-> [!WARNING]  
-> 📉 **Pollen Index** sensor is now **legacy** and **disabled by default**.  
-> It is removed automatically on update and can be re-enabled via the **legacy toggle** in integration options.
-
-#### 📦 Release history & documentation
-
-The full history of SILAM Pollen updates is now published on the project website:  
-https://danishru.github.io/silam_pollen/site/blog
-
-[![More in release v0.3.2](https://img.shields.io/badge/More--in--release-v0.3.2-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.3.2)
-
-### v0.3.1 🧠 Smarter data updates.
-
-Version v0.3.1 introduces a major internal improvement in how SILAM Pollen **detects and updates forecast data**.
-
-![image](https://github.com/user-attachments/assets/b5e654e7-77b6-43e5-a082-3dec4457a80f)
-
-The integration is now **run-aware** and checks the SILAM **runs catalog** before fetching data. This allows it to reliably determine whether a **new model run is actually available**, instead of blindly re-downloading the same dataset.
-
-If the current run hasn’t changed:
-- cached data is safely reused,
-- full XML downloads are skipped,
-- and only genuinely missing forecast hours are fetched when the forecast window moves forward.
-
-This results in:
-- significantly fewer unnecessary network requests,
-- faster and more predictable updates,
-- reduced load on both Home Assistant and the SILAM data infrastructure.
-
-These changes are especially important ahead of the pollen season, ensuring timely updates while keeping the integration efficient and robust.
-
-[![More in release v0.3.1](https://img.shields.io/badge/More--in--release-v0.3.1-blue?style=flat)](https://github.com/danishru/silam_pollen/releases/tag/v0.3.1)
 
 ## All updates
 
