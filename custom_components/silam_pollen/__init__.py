@@ -335,14 +335,17 @@ async def async_setup_entry(hass, entry):
 
 
 async def async_unload_entry(hass, entry):
-    """Выключить платформы и убрать координатор при удалении записи."""
+    """Выгрузить платформы и убрать runtime-объекты записи."""
     await hass.config_entries.async_forward_entry_unload(entry, "sensor")
     await hass.config_entries.async_forward_entry_unload(entry, "weather")
     domain_data = hass.data.get(DOMAIN, {})
     domain_data.pop(entry.entry_id, None)
     domain_data.get(CACHE_STORES, {}).pop(entry.entry_id, None)
-    await async_delete_manual_dataset_unavailable_issue(hass, entry_id=entry.entry_id)
-    await async_delete_legacy_index_sensor_deprecated_issue(hass, entry_id=entry.entry_id)
+
+    # Repair issue не удаляем при обычной выгрузке ConfigEntry.
+    # Этот путь используется не только при удалении интеграции, но и при reload
+    # после изменения опций. Актуальные Repairs удаляются отдельно: либо когда
+    # проблема больше не подтверждается, либо при полном удалении записи.
     return True
 
 
