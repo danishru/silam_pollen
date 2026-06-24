@@ -44,7 +44,27 @@
         }
       },
       "fetch_duration": {
-        "name": "Abrufdauer"
+        "name": "Abrufdauer",
+        "state_attributes": {
+          "last_data_request_kind": {
+            "name": "Typ der letzten Datenanfrage"
+          },
+          "last_data_request_url": {
+            "name": "URL der letzten Datenanfrage"
+          },
+          "last_index_request_kind": {
+            "name": "Typ der letzten Index-Anfrage"
+          },
+          "last_index_request_url": {
+            "name": "URL der letzten Index-Anfrage"
+          },
+          "last_main_request_kind": {
+            "name": "Typ der letzten Main-Anfrage"
+          },
+          "last_main_request_url": {
+            "name": "URL der letzten Main-Anfrage"
+          }
+        }
       },
       "forecast_horizon": {
         "name": "Prognosehorizont",
@@ -137,6 +157,75 @@
             "name": "Vorhersage für morgen"
           }
         }
+      },
+      "service_status": {
+        "name": "SILAM-Dienststatus",
+        "state": {
+          "ok": "OK",
+          "service_unavailable": "Dienst nicht verfügbar",
+          "dataset_unavailable": "Datensatz nicht verfügbar",
+          "data_unavailable": "Daten nicht verfügbar",
+          "unknown": "Unbekannt"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Grund"
+          },
+          "root_catalog_url": {
+            "name": "Root-Katalog-URL"
+          },
+          "root_catalog_status": {
+            "name": "Root-Katalogstatus"
+          },
+          "root_catalog_ok": {
+            "name": "Root-Katalog OK"
+          },
+          "root_catalog_http_status": {
+            "name": "HTTP-Status des Root-Katalogs"
+          },
+          "root_catalog_error": {
+            "name": "Root-Katalogfehler"
+          },
+          "root_dataset_paths_count": {
+            "name": "Anzahl Datensätze im Root-Katalog"
+          },
+          "dataset_selection": {
+            "name": "Datensatzauswahl"
+          },
+          "effective_dataset": {
+            "name": "Aktiver Datensatz"
+          },
+          "effective_dataset_listed": {
+            "name": "Aktiver Datensatz im Katalog"
+          },
+          "effective_base_url": {
+            "name": "Aktive Base-URL"
+          },
+          "preferred_dataset": {
+            "name": "Bevorzugter Datensatz"
+          },
+          "preferred_dataset_listed": {
+            "name": "Bevorzugter Datensatz im Katalog"
+          },
+          "preferred_base_url": {
+            "name": "Bevorzugte Base-URL"
+          },
+          "runs_catalog_url": {
+            "name": "Runs-Katalog-URL"
+          },
+          "latest_run_id": {
+            "name": "Letzte Run-ID"
+          },
+          "latest_run_start": {
+            "name": "Start des letzten Runs"
+          },
+          "latest_run_end": {
+            "name": "Ende des letzten Runs"
+          },
+          "smart_root_skipped": {
+            "name": "Von SMART übersprungene Root-Katalog-Kandidaten"
+          }
+        }
       }
     },
     "weather": {
@@ -185,13 +274,27 @@
           "attribution": {
             "name": "Datenquelle"
           },
-          "pollen_alder": { "name": "Erle" },
-          "pollen_birch": { "name": "Birke" },
-          "pollen_grass": { "name": "Gras" },
-          "pollen_olive": { "name": "Olive" },
-          "pollen_mugwort": { "name": "Beifuß" },
-          "pollen_ragweed": { "name": "Ambrosia" },
-          "pollen_hazel": { "name": "Hasel" }
+          "pollen_alder": {
+            "name": "Erle"
+          },
+          "pollen_birch": {
+            "name": "Birke"
+          },
+          "pollen_grass": {
+            "name": "Gras"
+          },
+          "pollen_olive": {
+            "name": "Olive"
+          },
+          "pollen_mugwort": {
+            "name": "Beifuß"
+          },
+          "pollen_ragweed": {
+            "name": "Ambrosia"
+          },
+          "pollen_hazel": {
+            "name": "Hasel"
+          }
         }
       }
     }
@@ -205,10 +308,12 @@
           "var": "Pollenart",
           "update_interval": "Aktualisierungsintervall (Minuten, mindestens 30)",
           "forecast": "Pollenprognose aktivieren?",
-          "forecast_duration": "Prognosedauer (36–120 Stunden; Standard 36)"
+          "forecast_duration": "Prognosedauer (36–120 Stunden; Standard 36)",
+          "legacy": "Veralteten Indexsensor aktivieren (deprecated)"
         },
         "data_description": {
-          "forecast": "Die Prognosefunktion kann die API-Antwortzeit erheblich erhöhen."
+          "forecast": "Die Prognosefunktion kann die API-Antwortzeit erheblich erhöhen.",
+          "legacy": "Veraltet: wird in einer zukünftigen Version entfernt."
         },
         "title": "SILAM Pollen Service erstellen",
         "description": "Konfigurieren Sie die unten aufgeführten Parameter.\nPrognosen dienen wissenschaftlichen Zwecken; ihre Genauigkeit ist nicht garantiert."
@@ -221,7 +326,24 @@
         },
         "title": "SILAM-Pollen-Service erstellen",
         "description": "Geben Sie den Zonen­namen ein und passen Sie bei Bedarf die Koordinaten an.\n[Service-Abdeckungskarte anzeigen]({coverage_url})."
+      },
+      "manual_coords_warning": {
+        "data": {
+          "zone_name": "Zonenname",
+          "location": "Standort",
+          "altitude": "Höhe über dem Meeresspiegel"
+        },
+        "title": "SILAM-Pollen-Service erstellen",
+        "description": "⚠️ **Die Verfügbarkeit des SILAM-Dienstes konnte nicht bestätigt werden**\n\nSie können mit der Einrichtung fortfahren — der ausgewählte Standort wird im nächsten Schritt weiterhin geprüft.\n\nGeben Sie den Zonennamen ein und passen Sie bei Bedarf die Koordinaten an.\n[Abdeckungskarte des Dienstes ansehen]({coverage_url})."
       }
+    },
+    "error": {
+      "silam_ssl_error": "Es konnte keine sichere Verbindung zu SILAM hergestellt werden. Prüfen Sie Datum und Uhrzeit von Home Assistant, Systemzertifikate und ob HTTPS-Verkehr abgefangen wird.",
+      "silam_connection_error": "Keine Verbindung zu SILAM möglich. Prüfen Sie Internetverbindung, DNS und den Zugriff auf thredds.silam.fmi.fi.",
+      "silam_catalog_error": "Der Server hat geantwortet, aber der SILAM-Datenkatalog hat ein ungültiges Format oder enthält keine Pollenkataloge. Versuchen Sie es später erneut.",
+      "silam_check_unconfirmed": "Die Prüfung wurde nicht rechtzeitig abgeschlossen oder es ist ein unbekannter Fehler aufgetreten. Versuchen Sie es später erneut.",
+      "silam_location_unavailable": "Der ausgewählte Standort liegt außerhalb des SILAM-Abdeckungsbereichs. Wählen Sie einen anderen Standort.",
+      "silam_location_check_failed": "Die SILAM-Datenverfügbarkeit für den ausgewählten Standort konnte nicht geprüft werden. Prüfen Sie die Internetverbindung und versuchen Sie es erneut."
     }
   },
   "options": {
@@ -232,10 +354,12 @@
           "var": "Pollenart",
           "version": "Datensatz (aktuell: {effective_dataset})",
           "forecast": "Pollenprognose aktivieren?",
-          "forecast_duration": "Prognosedauer (36–120 Stunden; Standard 36)"
+          "forecast_duration": "Prognosedauer (36–120 Stunden; Standard 36)",
+          "legacy": "Veralteten Indexsensor aktivieren (deprecated)"
         },
         "data_description": {
-          "forecast": "Die Prognosefunktion kann die API-Antwortzeit erheblich erhöhen."
+          "forecast": "Die Prognosefunktion kann die API-Antwortzeit erheblich erhöhen.",
+          "legacy": "Veraltet: wird in einer zukünftigen Version entfernt. Nur aktiviert lassen, wenn alte Automatisierungen oder Dashboards davon abhängen."
         },
         "title": "SILAM Pollen Optionen"
       }
@@ -257,13 +381,55 @@
   "services": {
     "manual_update": {
       "name": "Manuelle Aktualisierung",
-      "description": "Manueller Start der Datenaktualisierung für die ausgewählten Ziele der SILAM Pollen Integration.",
+      "description": "Manuell eine Datenaktualisierung für die ausgewählten SILAM-Pollen-Dienste auslösen.",
       "fields": {
         "targets": {
           "name": "Ziele",
           "description": "Wählen Sie ein oder mehrere Geräte oder Entitäten zum Aktualisieren aus."
+        },
+        "device_id": {
+          "name": "SILAM-Pollen-Dienst",
+          "description": "Wählen Sie einen oder mehrere SILAM-Pollen-Dienste zur Aktualisierung aus."
         }
       }
+    },
+    "full_refresh": {
+      "name": "Vollständige Aktualisierung",
+      "description": "Vollständige Datenaktualisierung für die ausgewählten SILAM-Pollen-Dienste erzwingen.",
+      "fields": {
+        "device_id": {
+          "name": "SILAM-Pollen-Dienst",
+          "description": "Wählen Sie einen oder mehrere SILAM-Pollen-Dienste für eine vollständige Aktualisierung aus."
+        }
+      }
+    }
+  },
+  "common": {
+    "advanced_options": "Erweiterte Optionen",
+    "only_silam": "Nur SILAM",
+    "debug_forecast": "Debug: Rohprognose",
+    "show_decimals": "Zehntel anzeigen",
+    "pollen_more_info_on_tap": "Pollensensor-Karte bei Tippen öffnen",
+    "value_attributes_left": "Linke Spalte",
+    "value_attributes_right": "Rechte Spalte",
+    "value_attributes_as_rows": "Attribute als Zeilen darstellen",
+    "additional_forecast": "Zusätzliche Attribute",
+    "additional_only": "Nur den zusätzlichen Block anzeigen",
+    "additional_forecast_mode": "Modus des zusätzlichen Blocks",
+    "additional_forecast_mode_standard": "Standard",
+    "additional_forecast_mode_focus": "Fokus",
+    "additional_forecast_mode_minimal": "Minimal",
+    "meteo_risk": "Meteo Risk (experimentell)",
+    "display_attribute": "Anzuzeigendes Attribut"
+  },
+  "issues": {
+    "manual_dataset_unavailable": {
+      "title": "Ausgewählter SILAM-Datensatz ist nicht mehr verfügbar",
+      "description": "Der SILAM-Pollen-Eintrag **{entry_title}** ist für den manuellen Datensatz **{dataset_label}** (`{dataset_name}`) konfiguriert, aber dieser Datensatz wird im SILAM-Root-Katalog nicht mehr veröffentlicht.\n\nÖffnen Sie die Integrationsoptionen und wählen Sie **SMART** oder einen anderen verfügbaren Datensatz."
+    },
+    "legacy_index_sensor_deprecated": {
+      "title": "Veralteter SILAM-Indexsensor wird entfernt",
+      "description": "Der SILAM-Pollen-Eintrag **{entry_title}** besitzt noch den veralteten Indexsensor **{entity_id}**. Dieser Sensor ist veraltet und wird in einem zukünftigen Update entfernt.\n\nDeaktivieren Sie den veralteten Indexsensor und aktualisieren Sie alle Automatisierungen, Skripte, Dashboards oder Templates, die ihn verwenden. Nutzen Sie stattdessen die neue SILAM-Pollen-Wetterprognose-Entität."
     }
   }
 }

@@ -44,7 +44,27 @@
         }
       },
       "fetch_duration": {
-        "name": "Hentetid"
+        "name": "Hentetid",
+        "state_attributes": {
+          "last_data_request_kind": {
+            "name": "Siste dataforespørselstype"
+          },
+          "last_data_request_url": {
+            "name": "Siste dataforespørsels-URL"
+          },
+          "last_index_request_kind": {
+            "name": "Siste index-forespørselstype"
+          },
+          "last_index_request_url": {
+            "name": "Siste index-forespørsels-URL"
+          },
+          "last_main_request_kind": {
+            "name": "Siste main-forespørselstype"
+          },
+          "last_main_request_url": {
+            "name": "Siste main-forespørsels-URL"
+          }
+        }
       },
       "forecast_horizon": {
         "name": "Prognosehorisont",
@@ -137,6 +157,75 @@
             "name": "Prognose for i morgen"
           }
         }
+      },
+      "service_status": {
+        "name": "SILAM-tjenestestatus",
+        "state": {
+          "ok": "OK",
+          "service_unavailable": "Tjeneste utilgjengelig",
+          "dataset_unavailable": "Datasett utilgjengelig",
+          "data_unavailable": "Data utilgjengelig",
+          "unknown": "Ukjent"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Årsak"
+          },
+          "root_catalog_url": {
+            "name": "Root-katalog-URL"
+          },
+          "root_catalog_status": {
+            "name": "Root-katalogstatus"
+          },
+          "root_catalog_ok": {
+            "name": "Root-katalog OK"
+          },
+          "root_catalog_http_status": {
+            "name": "HTTP-status for root-katalog"
+          },
+          "root_catalog_error": {
+            "name": "Root-katalogfeil"
+          },
+          "root_dataset_paths_count": {
+            "name": "Antall datasett i root-katalog"
+          },
+          "dataset_selection": {
+            "name": "Valg av datasett"
+          },
+          "effective_dataset": {
+            "name": "Aktivt datasett"
+          },
+          "effective_dataset_listed": {
+            "name": "Aktivt datasett i katalog"
+          },
+          "effective_base_url": {
+            "name": "Aktiv base-URL"
+          },
+          "preferred_dataset": {
+            "name": "Foretrukket datasett"
+          },
+          "preferred_dataset_listed": {
+            "name": "Foretrukket datasett i katalog"
+          },
+          "preferred_base_url": {
+            "name": "Foretrukket base-URL"
+          },
+          "runs_catalog_url": {
+            "name": "Runs-katalog-URL"
+          },
+          "latest_run_id": {
+            "name": "Siste run-ID"
+          },
+          "latest_run_start": {
+            "name": "Start for siste run"
+          },
+          "latest_run_end": {
+            "name": "Slutt for siste run"
+          },
+          "smart_root_skipped": {
+            "name": "SMART-kandidater hoppet over av root-katalog"
+          }
+        }
       }
     },
     "weather": {
@@ -219,10 +308,12 @@
           "var": "Pollentype",
           "update_interval": "Oppdateringsintervall (minutter, minst 30)",
           "forecast": "Aktiver pollenprognose?",
-          "forecast_duration": "Ønsket prognosevarighet (36–120 timer; standard 36)"
+          "forecast_duration": "Ønsket prognosevarighet (36–120 timer; standard 36)",
+          "legacy": "Aktiver eldre indekssensor (utdatert)"
         },
         "data_description": {
-          "forecast": "Prognosefunksjonen kan betydelig øke API-svartiden."
+          "forecast": "Prognosefunksjonen kan betydelig øke API-svartiden.",
+          "legacy": "Utdatert: vil bli fjernet i en fremtidig versjon."
         },
         "title": "Opprett SILAM Pollen-tjeneste",
         "description": "Konfigurer parametrene nedenfor.\nPrognoser er for vitenskapelig bruk; nøyaktighet garanteres ikke."
@@ -235,7 +326,24 @@
         },
         "title": "Opprett SILAM Pollen-tjeneste",
         "description": "Angi sonenavn og juster koordinatene om nødvendig.\n[Se dekningskartet]({coverage_url})."
+      },
+      "manual_coords_warning": {
+        "data": {
+          "zone_name": "Sonenavn",
+          "location": "Plassering",
+          "altitude": "Høyde over havnivået"
+        },
+        "title": "Opprett SILAM Pollen-tjeneste",
+        "description": "⚠️ **Tilgjengeligheten til SILAM-tjenesten kunne ikke bekreftes**\n\nDu kan fortsette oppsettet — den valgte plasseringen blir fortsatt kontrollert i neste trinn.\n\nSkriv inn sonenavnet og juster koordinatene om nødvendig.\n[Se tjenestens dekningskart]({coverage_url})."
       }
+    },
+    "error": {
+      "silam_ssl_error": "Kunne ikke opprette en sikker tilkobling til SILAM. Kontroller dato og tid i Home Assistant, systemsertifikater og om HTTPS-trafikk blir fanget opp.",
+      "silam_connection_error": "Kunne ikke koble til SILAM. Kontroller internettforbindelsen, DNS og tilgang til thredds.silam.fmi.fi.",
+      "silam_catalog_error": "Serveren svarte, men SILAM-datakatalogen har ugyldig format eller inneholder ingen pollenkataloger. Prøv igjen senere.",
+      "silam_check_unconfirmed": "Kontrollen ble ikke fullført i tide, eller det oppstod en ukjent feil. Prøv igjen senere.",
+      "silam_location_unavailable": "Valgt plassering er utenfor SILAM-dekningsområdet. Velg en annen plassering.",
+      "silam_location_check_failed": "Kunne ikke kontrollere SILAM-datatilgjengelighet for valgt plassering. Kontroller internettforbindelsen og prøv igjen."
     }
   },
   "options": {
@@ -246,10 +354,12 @@
           "var": "Pollentype",
           "version": "Datasett (gjeldende: {effective_dataset})",
           "forecast": "Aktiver pollenprognose?",
-          "forecast_duration": "Ønsket prognosevarighet (36–120 timer; standard 36)"
+          "forecast_duration": "Ønsket prognosevarighet (36–120 timer; standard 36)",
+          "legacy": "Aktiver eldre indekssensor (utdatert)"
         },
         "data_description": {
-          "forecast": "Prognosefunksjonen kan betydelig øke API-svartiden."
+          "forecast": "Prognosefunksjonen kan betydelig øke API-svartiden.",
+          "legacy": "Utdatert: vil bli fjernet i en fremtidig versjon. La den bare være aktivert hvis du er avhengig av gamle automasjoner eller dashbord."
         },
         "title": "SILAM Pollen-alternativer"
       }
@@ -271,13 +381,55 @@
   "services": {
     "manual_update": {
       "name": "Manuell oppdatering",
-      "description": "Manuell igangsetting av dataoppdatering for valgte mål i SILAM Pollen-integrasjonen.",
+      "description": "Utløs dataoppdatering manuelt for valgte SILAM Pollen-tjenester.",
       "fields": {
         "targets": {
           "name": "Mål",
           "description": "Velg en eller flere enheter eller entiteter som skal oppdateres."
+        },
+        "device_id": {
+          "name": "SILAM Pollen-tjeneste",
+          "description": "Velg én eller flere SILAM Pollen-tjenester som skal oppdateres."
         }
       }
+    },
+    "full_refresh": {
+      "name": "Full oppdatering",
+      "description": "Tving en full dataoppdatering for valgte SILAM Pollen-tjenester.",
+      "fields": {
+        "device_id": {
+          "name": "SILAM Pollen-tjeneste",
+          "description": "Velg én eller flere SILAM Pollen-tjenester for full oppdatering."
+        }
+      }
+    }
+  },
+  "common": {
+    "advanced_options": "Avanserte alternativer",
+    "only_silam": "Kun SILAM",
+    "debug_forecast": "Debug: rå prognose",
+    "show_decimals": "Vis tideler",
+    "pollen_more_info_on_tap": "Åpne pollensensorkort ved trykk",
+    "value_attributes_left": "Venstre kolonne",
+    "value_attributes_right": "Høyre kolonne",
+    "value_attributes_as_rows": "Vis attributter som rader",
+    "additional_forecast": "Tilleggsattributter",
+    "additional_only": "Vis bare tilleggsblokken",
+    "additional_forecast_mode": "Modus for tilleggsblokk",
+    "additional_forecast_mode_standard": "Standard",
+    "additional_forecast_mode_focus": "Fokus",
+    "additional_forecast_mode_minimal": "Minimal",
+    "meteo_risk": "Meteo Risk (eksperimentell)",
+    "display_attribute": "Visningsattributt"
+  },
+  "issues": {
+    "manual_dataset_unavailable": {
+      "title": "Valgt SILAM-datasett er ikke lenger tilgjengelig",
+      "description": "SILAM Pollen-oppføringen **{entry_title}** er konfigurert til å bruke det manuelle datasettet **{dataset_label}** (`{dataset_name}`), men dette datasettet publiseres ikke lenger i SILAM-root-katalogen.\n\nÅpne integrasjonsalternativene og velg **SMART** eller et annet tilgjengelig datasett."
+    },
+    "legacy_index_sensor_deprecated": {
+      "title": "Eldre SILAM-indekssensor vil bli fjernet",
+      "description": "SILAM Pollen-oppføringen **{entry_title}** har fortsatt den eldre indekssensoren **{entity_id}**. Denne sensoren er utdatert og vil bli fjernet i en fremtidig oppdatering.\n\nDeaktiver den eldre indekssensoren og oppdater alle automasjoner, skript, dashbord eller maler som bruker den. Bruk den nye SILAM Pollen weather-prognoseentiteten i stedet."
     }
   }
 }

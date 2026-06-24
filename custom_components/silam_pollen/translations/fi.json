@@ -44,7 +44,27 @@
         }
       },
       "fetch_duration": {
-        "name": "Hakukesto"
+        "name": "Hakukesto",
+        "state_attributes": {
+          "last_data_request_kind": {
+            "name": "Viimeisimmän datapyyntötyyppi"
+          },
+          "last_data_request_url": {
+            "name": "Viimeisimmän datapyynnön URL"
+          },
+          "last_index_request_kind": {
+            "name": "Viimeisimmän index-pyynnön tyyppi"
+          },
+          "last_index_request_url": {
+            "name": "Viimeisimmän index-pyynnön URL"
+          },
+          "last_main_request_kind": {
+            "name": "Viimeisimmän main-pyynnön tyyppi"
+          },
+          "last_main_request_url": {
+            "name": "Viimeisimmän main-pyynnön URL"
+          }
+        }
       },
       "forecast_horizon": {
         "name": "Ennustehorisontti",
@@ -137,6 +157,75 @@
             "name": "Ennuste huomiselle"
           }
         }
+      },
+      "service_status": {
+        "name": "SILAM-palvelun tila",
+        "state": {
+          "ok": "OK",
+          "service_unavailable": "Palvelu ei ole saatavilla",
+          "dataset_unavailable": "Aineisto ei ole saatavilla",
+          "data_unavailable": "Data ei ole saatavilla",
+          "unknown": "Tuntematon"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Syy"
+          },
+          "root_catalog_url": {
+            "name": "Root-katalogin URL"
+          },
+          "root_catalog_status": {
+            "name": "Root-katalogin tila"
+          },
+          "root_catalog_ok": {
+            "name": "Root-katalogi OK"
+          },
+          "root_catalog_http_status": {
+            "name": "Root-katalogin HTTP-tila"
+          },
+          "root_catalog_error": {
+            "name": "Root-katalogin virhe"
+          },
+          "root_dataset_paths_count": {
+            "name": "Aineistojen määrä root-katalogissa"
+          },
+          "dataset_selection": {
+            "name": "Aineiston valinta"
+          },
+          "effective_dataset": {
+            "name": "Käytössä oleva aineisto"
+          },
+          "effective_dataset_listed": {
+            "name": "Käytössä oleva aineisto katalogissa"
+          },
+          "effective_base_url": {
+            "name": "Käytössä oleva base URL"
+          },
+          "preferred_dataset": {
+            "name": "Ensisijainen aineisto"
+          },
+          "preferred_dataset_listed": {
+            "name": "Ensisijainen aineisto katalogissa"
+          },
+          "preferred_base_url": {
+            "name": "Ensisijainen base URL"
+          },
+          "runs_catalog_url": {
+            "name": "Runs-katalogin URL"
+          },
+          "latest_run_id": {
+            "name": "Viimeisimmän ajon ID"
+          },
+          "latest_run_start": {
+            "name": "Viimeisimmän ajon alku"
+          },
+          "latest_run_end": {
+            "name": "Viimeisimmän ajon loppu"
+          },
+          "smart_root_skipped": {
+            "name": "Root-katalogin ohittamat SMART-ehdokkaat"
+          }
+        }
       }
     },
     "weather": {
@@ -185,13 +274,27 @@
           "attribution": {
             "name": "Tietolähde"
           },
-          "pollen_alder": { "name": "Leppä" },
-          "pollen_birch": { "name": "Koivu" },
-          "pollen_grass": { "name": "Heinä" },
-          "pollen_olive": { "name": "Oliivi" },
-          "pollen_mugwort": { "name": "Siankärsämö" },
-          "pollen_ragweed": { "name": "Ambrosia" },
-          "pollen_hazel": { "name": "Pähkinäleppä" }
+          "pollen_alder": {
+            "name": "Leppä"
+          },
+          "pollen_birch": {
+            "name": "Koivu"
+          },
+          "pollen_grass": {
+            "name": "Heinä"
+          },
+          "pollen_olive": {
+            "name": "Oliivi"
+          },
+          "pollen_mugwort": {
+            "name": "Siankärsämö"
+          },
+          "pollen_ragweed": {
+            "name": "Ambrosia"
+          },
+          "pollen_hazel": {
+            "name": "Pähkinäleppä"
+          }
         }
       }
     }
@@ -205,10 +308,12 @@
           "var": "Siitepölyn laji",
           "update_interval": "Päivitysväli (minuutteina, vähintään 30)",
           "forecast": "Ota siitepölyennuste käyttöön?",
-          "forecast_duration": "Haluttu ennusteen kesto (36–120 h; oletus 36)"
+          "forecast_duration": "Haluttu ennusteen kesto (36–120 h; oletus 36)",
+          "legacy": "Ota vanha indeksisensori käyttöön (vanhentunut)"
         },
         "data_description": {
-          "forecast": "Ennusteominaisuus voi merkittävästi pidentää API-vastausaikaa."
+          "forecast": "Ennusteominaisuus voi merkittävästi pidentää API-vastausaikaa.",
+          "legacy": "Vanhentunut: poistetaan tulevassa julkaisussa."
         },
         "title": "Luo SILAM Siitepölypalvelu",
         "description": "Määritä alla olevat parametrit.\nEnnusteet on tarkoitettu tieteelliseen käyttöön; tarkkuutta ei taata."
@@ -221,7 +326,24 @@
         },
         "title": "Luo SILAM Siitepölypalvelu",
         "description": "Anna vyöhykkeen nimi ja säädä koordinaatteja tarvittaessa.\n[Tarkastele palvelun peittoaluetta kartalla]({coverage_url})."
+      },
+      "manual_coords_warning": {
+        "data": {
+          "zone_name": "Vyöhykkeen nimi",
+          "location": "Sijainti",
+          "altitude": "Korkeus merenpinnasta"
+        },
+        "title": "Luo SILAM Siitepölypalvelu",
+        "description": "⚠️ **SILAM-palvelun saatavuutta ei voitu vahvistaa**\n\nVoit jatkaa asetusten tekemistä — valittu sijainti tarkistetaan silti seuraavaksi.\n\nAnna vyöhykkeen nimi ja säädä koordinaatteja tarvittaessa.\n[Katso palvelun peittoaluekartta]({coverage_url})."
       }
+    },
+    "error": {
+      "silam_ssl_error": "Suojattua yhteyttä SILAM-palveluun ei voitu muodostaa. Tarkista Home Assistantin päivämäärä ja aika, järjestelmävarmenteet sekä se, siepataanko HTTPS-liikennettä.",
+      "silam_connection_error": "Yhteyttä SILAM-palveluun ei voitu muodostaa. Tarkista internet-yhteys, DNS ja pääsy osoitteeseen thredds.silam.fmi.fi.",
+      "silam_catalog_error": "Palvelin vastasi, mutta SILAM-datakatalogin muoto on virheellinen tai se ei sisällä siitepölykatalogeja. Yritä myöhemmin uudelleen.",
+      "silam_check_unconfirmed": "Tarkistus ei valmistunut ajoissa tai tapahtui tuntematon virhe. Yritä myöhemmin uudelleen.",
+      "silam_location_unavailable": "Valittu sijainti on SILAM-peittoalueen ulkopuolella. Valitse toinen sijainti.",
+      "silam_location_check_failed": "SILAM-datan saatavuutta valitulle sijainnille ei voitu tarkistaa. Tarkista internet-yhteys ja yritä uudelleen."
     }
   },
   "options": {
@@ -232,10 +354,12 @@
           "var": "Siitepölyn laji",
           "version": "Aineisto (nykyinen: {effective_dataset})",
           "forecast": "Ota siitepölyennuste käyttöön?",
-          "forecast_duration": "Haluttu ennusteen kesto (36–120 h; oletus 36)"
+          "forecast_duration": "Haluttu ennusteen kesto (36–120 h; oletus 36)",
+          "legacy": "Ota vanha indeksisensori käyttöön (vanhentunut)"
         },
         "data_description": {
-          "forecast": "Ennusteominaisuus voi merkittävästi pidentää API-vastausaikaa."
+          "forecast": "Ennusteominaisuus voi merkittävästi pidentää API-vastausaikaa.",
+          "legacy": "Vanhentunut: poistetaan tulevassa julkaisussa. Pidä käytössä vain, jos vanhat automaatiot tai dashboardit tarvitsevat sitä."
         },
         "title": "SILAM Siitepölyasetukset"
       }
@@ -257,13 +381,55 @@
   "services": {
     "manual_update": {
       "name": "Manuaalinen päivitys",
-      "description": "Manuaalinen tiedon päivityksen käynnistys valituille SILAM Siitepöly integraation kohteille.",
+      "description": "Käynnistä datan päivitys valituille SILAM Pollen -palveluille manuaalisesti.",
       "fields": {
         "targets": {
           "name": "Kohteet",
           "description": "Valitse yksi tai useampi laite tai entiteetti päivitystä varten."
+        },
+        "device_id": {
+          "name": "SILAM Pollen -palvelu",
+          "description": "Valitse yksi tai useampi päivitettävä SILAM Pollen -palvelu."
         }
       }
+    },
+    "full_refresh": {
+      "name": "Täysi päivitys",
+      "description": "Pakota täysi datan päivitys valituille SILAM Pollen -palveluille.",
+      "fields": {
+        "device_id": {
+          "name": "SILAM Pollen -palvelu",
+          "description": "Valitse yksi tai useampi SILAM Pollen -palvelu täyttä päivitystä varten."
+        }
+      }
+    }
+  },
+  "common": {
+    "advanced_options": "Lisäasetukset",
+    "only_silam": "Vain SILAM",
+    "debug_forecast": "Debug: raaka ennuste",
+    "show_decimals": "Näytä kymmenesosat",
+    "pollen_more_info_on_tap": "Avaa siitepölysensorin kortti napauttamalla",
+    "value_attributes_left": "Vasen sarake",
+    "value_attributes_right": "Oikea sarake",
+    "value_attributes_as_rows": "Näytä attribuutit riveinä",
+    "additional_forecast": "Lisäattribuutit",
+    "additional_only": "Näytä vain lisälohko",
+    "additional_forecast_mode": "Lisälohkon tila",
+    "additional_forecast_mode_standard": "Vakio",
+    "additional_forecast_mode_focus": "Fokus",
+    "additional_forecast_mode_minimal": "Minimi",
+    "meteo_risk": "Meteo Risk (kokeellinen)",
+    "display_attribute": "Näytettävä attribuutti"
+  },
+  "issues": {
+    "manual_dataset_unavailable": {
+      "title": "Valittu SILAM-aineisto ei ole enää saatavilla",
+      "description": "SILAM Pollen -merkintä **{entry_title}** on määritetty käyttämään manuaalista aineistoa **{dataset_label}** (`{dataset_name}`), mutta tätä aineistoa ei enää julkaista SILAM-root-katalogissa.\n\nAvaa integraation asetukset ja valitse **SMART** tai toinen saatavilla oleva aineisto."
+    },
+    "legacy_index_sensor_deprecated": {
+      "title": "Vanha SILAM-indeksisensori poistetaan",
+      "description": "SILAM Pollen -merkinnällä **{entry_title}** on edelleen vanha indeksisensori **{entity_id}**. Tämä sensori on vanhentunut ja poistetaan tulevassa päivityksessä.\n\nPoista vanha indeksisensori käytöstä ja päivitä kaikki sitä käyttävät automaatiot, skriptit, dashboardit tai mallit. Käytä sen sijaan uutta SILAM Pollen -sääennuste-entiteettiä."
     }
   }
 }

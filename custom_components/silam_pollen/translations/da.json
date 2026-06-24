@@ -44,7 +44,27 @@
         }
       },
       "fetch_duration": {
-        "name": "Hentetid"
+        "name": "Hentetid",
+        "state_attributes": {
+          "last_data_request_kind": {
+            "name": "Seneste dataanmodningstype"
+          },
+          "last_data_request_url": {
+            "name": "Seneste dataanmodnings-URL"
+          },
+          "last_index_request_kind": {
+            "name": "Seneste index-anmodningstype"
+          },
+          "last_index_request_url": {
+            "name": "Seneste index-anmodnings-URL"
+          },
+          "last_main_request_kind": {
+            "name": "Seneste main-anmodningstype"
+          },
+          "last_main_request_url": {
+            "name": "Seneste main-anmodnings-URL"
+          }
+        }
       },
       "forecast_horizon": {
         "name": "Prognosehorisont",
@@ -58,56 +78,153 @@
         "name": "Al",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": { "name": "Højde (over havets overflade)" },
-          "tomorrow": { "name": "Prognose for i morgen" }
+          "altitude": {
+            "name": "Højde (over havets overflade)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
+          }
         }
       },
       "birch": {
         "name": "Birk",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": { "name": "Højde (over havets overflade)" },
-          "tomorrow": { "name": "Prognose for i morgen" }
+          "altitude": {
+            "name": "Højde (over havets overflade)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
+          }
         }
       },
       "grass": {
         "name": "Græs",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": { "name": "Højde (over havets overflade)" },
-          "tomorrow": { "name": "Prognose for i morgen" }
+          "altitude": {
+            "name": "Højde (over havets overflade)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
+          }
         }
       },
       "hazel": {
         "name": "Hassel",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": { "name": "Højde (over havets overflade)" },
-          "tomorrow": { "name": "Prognose for i morgen" }
+          "altitude": {
+            "name": "Højde (over havets overflade)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
+          }
         }
       },
       "mugwort": {
         "name": "Malurt",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": { "name": "Højde (over havets overflade)" },
-          "tomorrow": { "name": "Prognose for i morgen" }
+          "altitude": {
+            "name": "Højde (over havets overflade)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
+          }
         }
       },
       "olive": {
         "name": "Oliven",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": { "name": "Højde (over havets overflade)" },
-          "tomorrow": { "name": "Prognose for i morgen" }
+          "altitude": {
+            "name": "Højde (over havets overflade)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
+          }
         }
       },
       "ragweed": {
         "name": "Ambrosia",
         "unit_of_measurement": "korn/m³",
         "state_attributes": {
-          "altitude": { "name": "Højde (over havets overflade)" },
-          "tomorrow": { "name": "Prognose for i morgen" }
+          "altitude": {
+            "name": "Højde (over havets overflade)"
+          },
+          "tomorrow": {
+            "name": "Prognose for i morgen"
+          }
+        }
+      },
+      "service_status": {
+        "name": "SILAM-tjenestestatus",
+        "state": {
+          "ok": "OK",
+          "service_unavailable": "Tjenesten er utilgængelig",
+          "dataset_unavailable": "Datasættet er utilgængeligt",
+          "data_unavailable": "Data er utilgængelige",
+          "unknown": "Ukendt"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Årsag"
+          },
+          "root_catalog_url": {
+            "name": "Root-katalog-URL"
+          },
+          "root_catalog_status": {
+            "name": "Root-katalogstatus"
+          },
+          "root_catalog_ok": {
+            "name": "Root-katalog OK"
+          },
+          "root_catalog_http_status": {
+            "name": "HTTP-status for root-katalog"
+          },
+          "root_catalog_error": {
+            "name": "Root-katalogfejl"
+          },
+          "root_dataset_paths_count": {
+            "name": "Antal datasæt i root-katalog"
+          },
+          "dataset_selection": {
+            "name": "Valg af datasæt"
+          },
+          "effective_dataset": {
+            "name": "Aktivt datasæt"
+          },
+          "effective_dataset_listed": {
+            "name": "Aktivt datasæt i katalog"
+          },
+          "effective_base_url": {
+            "name": "Aktiv base-URL"
+          },
+          "preferred_dataset": {
+            "name": "Foretrukket datasæt"
+          },
+          "preferred_dataset_listed": {
+            "name": "Foretrukket datasæt i katalog"
+          },
+          "preferred_base_url": {
+            "name": "Foretrukken base-URL"
+          },
+          "runs_catalog_url": {
+            "name": "Runs-katalog-URL"
+          },
+          "latest_run_id": {
+            "name": "Seneste run-ID"
+          },
+          "latest_run_start": {
+            "name": "Seneste run-start"
+          },
+          "latest_run_end": {
+            "name": "Seneste run-slut"
+          },
+          "smart_root_skipped": {
+            "name": "SMART-kandidater sprunget over af root-katalog"
+          }
         }
       }
     },
@@ -137,7 +254,9 @@
               "unknown": "Ukendt"
             }
           },
-          "date": { "name": "Prognosedato & tid" },
+          "date": {
+            "name": "Prognosedato & tid"
+          },
           "next_condition": {
             "name": "Næste indeks",
             "state": {
@@ -149,15 +268,33 @@
               "unknown": "Ukendt"
             }
           },
-          "altitude": { "name": "Højde (over havets overflade)" },
-          "attribution": { "name": "Datakilde" },
-          "pollen_alder": { "name": "Al" },
-          "pollen_birch": { "name": "Birk" },
-          "pollen_grass": { "name": "Græs" },
-          "pollen_olive": { "name": "Oliven" },
-          "pollen_mugwort": { "name": "Malurt" },
-          "pollen_ragweed": { "name": "Ambrosia" },
-          "pollen_hazel": { "name": "Hassel" }
+          "altitude": {
+            "name": "Højde (over havets overflade)"
+          },
+          "attribution": {
+            "name": "Datakilde"
+          },
+          "pollen_alder": {
+            "name": "Al"
+          },
+          "pollen_birch": {
+            "name": "Birk"
+          },
+          "pollen_grass": {
+            "name": "Græs"
+          },
+          "pollen_olive": {
+            "name": "Oliven"
+          },
+          "pollen_mugwort": {
+            "name": "Malurt"
+          },
+          "pollen_ragweed": {
+            "name": "Ambrosia"
+          },
+          "pollen_hazel": {
+            "name": "Hassel"
+          }
         }
       }
     }
@@ -171,10 +308,12 @@
           "var": "Pollentype",
           "update_interval": "Opdateringsinterval (minutter, minimum 30)",
           "forecast": "Aktiver pollenprognose?",
-          "forecast_duration": "Ønsket prognosevarighed (36–120 timer; standard 36)"
+          "forecast_duration": "Ønsket prognosevarighed (36–120 timer; standard 36)",
+          "legacy": "Aktivér ældre indekssensor (forældet)"
         },
         "data_description": {
-          "forecast": "Prognosefunktionen kan betydeligt øge API-responstiden."
+          "forecast": "Prognosefunktionen kan betydeligt øge API-responstiden.",
+          "legacy": "Forældet: fjernes i en fremtidig version."
         },
         "title": "Opret SILAM Pollen-tjeneste",
         "description": "Konfigurer de nedenstående parametre.\nPrognoser er til videnskabelig brug; nøjagtighed garanteres ikke."
@@ -187,7 +326,24 @@
         },
         "title": "Opret SILAM Pollen-tjeneste",
         "description": "Indtast zonens navn og juster koordinaterne om nødvendigt.\n[Tjek dækningskortet]({coverage_url})."
+      },
+      "manual_coords_warning": {
+        "data": {
+          "zone_name": "Zonens navn",
+          "location": "Placering",
+          "altitude": "Højde over havets overflade"
+        },
+        "title": "Opret SILAM Pollen-tjeneste",
+        "description": "⚠️ **Tilgængeligheden af SILAM-tjenesten kunne ikke bekræftes**\n\nDu kan fortsætte opsætningen — den valgte placering bliver stadig kontrolleret i næste trin.\n\nIndtast zonens navn, og justér koordinaterne om nødvendigt.\n[Se dækningskortet for tjenesten]({coverage_url})."
       }
+    },
+    "error": {
+      "silam_ssl_error": "Der kunne ikke oprettes en sikker forbindelse til SILAM. Kontrollér Home Assistant-dato og -tid, systemcertifikater og om HTTPS-trafik bliver opsnappet.",
+      "silam_connection_error": "Kunne ikke oprette forbindelse til SILAM. Kontrollér internetforbindelsen, DNS og adgangen til thredds.silam.fmi.fi.",
+      "silam_catalog_error": "Serveren svarede, men SILAM-datakataloget har et ugyldigt format eller indeholder ingen pollenkataloger. Prøv igen senere.",
+      "silam_check_unconfirmed": "Kontrollen blev ikke færdig i tide, eller der opstod en ukendt fejl. Prøv igen senere.",
+      "silam_location_unavailable": "Den valgte placering ligger uden for SILAM-dækningsområdet. Vælg en anden placering.",
+      "silam_location_check_failed": "Kunne ikke kontrollere SILAM-datatilgængelighed for den valgte placering. Kontrollér internetforbindelsen, og prøv igen."
     }
   },
   "options": {
@@ -198,10 +354,12 @@
           "var": "Pollentype",
           "version": "Datasæt (nuværende: {effective_dataset})",
           "forecast": "Aktiver pollenprognose?",
-          "forecast_duration": "Ønsket prognosevarighed (36–120 timer; standard 36)"
+          "forecast_duration": "Ønsket prognosevarighed (36–120 timer; standard 36)",
+          "legacy": "Aktivér ældre indekssensor (forældet)"
         },
         "data_description": {
-          "forecast": "Prognosefunktionen kan betydeligt øge API-responstiden."
+          "forecast": "Prognosefunktionen kan betydeligt øge API-responstiden.",
+          "legacy": "Forældet: fjernes i en fremtidig version. Lad kun funktionen være aktiveret, hvis du er afhængig af gamle automatiseringer eller dashboards."
         },
         "title": "SILAM Pollen-indstillinger"
       }
@@ -223,13 +381,55 @@
   "services": {
     "manual_update": {
       "name": "Manuel opdatering",
-      "description": "Start manuelt en dataopdatering for de valgte mål i SILAM Pollen-integrationen.",
+      "description": "Start manuelt en dataopdatering for de valgte SILAM Pollen-tjenester.",
       "fields": {
         "targets": {
           "name": "Mål",
           "description": "Vælg en eller flere enheder eller entiteter, der skal opdateres."
+        },
+        "device_id": {
+          "name": "SILAM Pollen-tjeneste",
+          "description": "Vælg en eller flere SILAM Pollen-tjenester, der skal opdateres."
         }
       }
+    },
+    "full_refresh": {
+      "name": "Fuld opdatering",
+      "description": "Gennemtving en fuld dataopdatering for de valgte SILAM Pollen-tjenester.",
+      "fields": {
+        "device_id": {
+          "name": "SILAM Pollen-tjeneste",
+          "description": "Vælg en eller flere SILAM Pollen-tjenester, der skal opdateres fuldt."
+        }
+      }
+    }
+  },
+  "common": {
+    "advanced_options": "Avancerede indstillinger",
+    "only_silam": "Kun SILAM",
+    "debug_forecast": "Debug: rå prognose",
+    "show_decimals": "Vis tiendedele",
+    "pollen_more_info_on_tap": "Åbn pollensensorkort ved tryk",
+    "value_attributes_left": "Venstre kolonne",
+    "value_attributes_right": "Højre kolonne",
+    "value_attributes_as_rows": "Vis attributter som rækker",
+    "additional_forecast": "Yderligere attributter",
+    "additional_only": "Vis kun den ekstra blok",
+    "additional_forecast_mode": "Ekstra bloktilstand",
+    "additional_forecast_mode_standard": "Standard",
+    "additional_forecast_mode_focus": "Fokus",
+    "additional_forecast_mode_minimal": "Minimal",
+    "meteo_risk": "Meteo Risk (eksperimentel)",
+    "display_attribute": "Visningsattribut"
+  },
+  "issues": {
+    "manual_dataset_unavailable": {
+      "title": "Det valgte SILAM-datasæt er ikke længere tilgængeligt",
+      "description": "SILAM Pollen-posten **{entry_title}** er konfigureret til at bruge det manuelle datasæt **{dataset_label}** (`{dataset_name}`), men dette datasæt publiceres ikke længere i SILAM-root-kataloget.\n\nÅbn integrationsindstillingerne, og vælg **SMART** eller et andet tilgængeligt datasæt."
+    },
+    "legacy_index_sensor_deprecated": {
+      "title": "Ældre SILAM-indekssensor fjernes",
+      "description": "SILAM Pollen-posten **{entry_title}** har stadig den ældre indekssensor **{entity_id}**. Denne sensor er forældet og fjernes i en fremtidig opdatering.\n\nDeaktivér den ældre indekssensor, og opdater alle automatiseringer, scripts, dashboards eller skabeloner, der bruger den. Brug den nye SILAM Pollen weather-prognoseentitet i stedet."
     }
   }
 }

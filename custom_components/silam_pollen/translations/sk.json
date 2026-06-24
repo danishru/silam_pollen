@@ -27,7 +27,9 @@
               "unknown": "Neznámy"
             }
           },
-          "date": { "name": "Dátum a čas predpovede" },
+          "date": {
+            "name": "Dátum a čas predpovede"
+          },
           "index_tomorrow": {
             "name": "Predpoveď na zajtra",
             "state": {
@@ -42,7 +44,27 @@
         }
       },
       "fetch_duration": {
-	"name": "Trvanie načítania" 
+        "name": "Trvanie načítania",
+        "state_attributes": {
+          "last_data_request_kind": {
+            "name": "Typ poslednej požiadavky na dáta"
+          },
+          "last_data_request_url": {
+            "name": "URL poslednej požiadavky na dáta"
+          },
+          "last_index_request_kind": {
+            "name": "Typ poslednej index požiadavky"
+          },
+          "last_index_request_url": {
+            "name": "URL poslednej index požiadavky"
+          },
+          "last_main_request_kind": {
+            "name": "Typ poslednej main požiadavky"
+          },
+          "last_main_request_url": {
+            "name": "URL poslednej main požiadavky"
+          }
+        }
       },
       "forecast_horizon": {
         "name": "Predikčný horizont",
@@ -72,7 +94,7 @@
             "name": "Nadmorská výška (nad morom)"
           },
           "tomorrow": {
-            "name": "Predpoveď na zajtra" 
+            "name": "Predpoveď na zajtra"
           }
         }
       },
@@ -81,10 +103,10 @@
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Nadmorská výška (nad morom)" 
+            "name": "Nadmorská výška (nad morom)"
           },
           "tomorrow": {
-            "name": "Predpoveď na zajtra" 
+            "name": "Predpoveď na zajtra"
           }
         }
       },
@@ -92,8 +114,12 @@
         "name": "Lieska",
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
-          "altitude": { "name": "Nadmorská výška (nad morom)" },
-          "tomorrow": { "name": "Predpoveď na zajtra" }
+          "altitude": {
+            "name": "Nadmorská výška (nad morom)"
+          },
+          "tomorrow": {
+            "name": "Predpoveď na zajtra"
+          }
         }
       },
       "mugwort": {
@@ -116,7 +142,7 @@
             "name": "Nadmorská výška (nad morom)"
           },
           "tomorrow": {
-            "name": "Predpoveď na zajtra" 
+            "name": "Predpoveď na zajtra"
           }
         }
       },
@@ -125,10 +151,79 @@
         "unit_of_measurement": "zrná/m³",
         "state_attributes": {
           "altitude": {
-            "name": "Nadmorská výška (nad morom)" 
+            "name": "Nadmorská výška (nad morom)"
           },
           "tomorrow": {
             "name": "Predpoveď na zajtra"
+          }
+        }
+      },
+      "service_status": {
+        "name": "Stav služby SILAM",
+        "state": {
+          "ok": "OK",
+          "service_unavailable": "Služba nedostupná",
+          "dataset_unavailable": "Dátová sada nedostupná",
+          "data_unavailable": "Dáta nedostupné",
+          "unknown": "Neznámy"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Dôvod"
+          },
+          "root_catalog_url": {
+            "name": "URL root katalógu"
+          },
+          "root_catalog_status": {
+            "name": "Stav root katalógu"
+          },
+          "root_catalog_ok": {
+            "name": "Root katalóg OK"
+          },
+          "root_catalog_http_status": {
+            "name": "HTTP stav root katalógu"
+          },
+          "root_catalog_error": {
+            "name": "Chyba root katalógu"
+          },
+          "root_dataset_paths_count": {
+            "name": "Počet dátových sád v root katalógu"
+          },
+          "dataset_selection": {
+            "name": "Výber dátovej sady"
+          },
+          "effective_dataset": {
+            "name": "Použitá dátová sada"
+          },
+          "effective_dataset_listed": {
+            "name": "Použitá dátová sada v katalógu"
+          },
+          "effective_base_url": {
+            "name": "Použitá base URL"
+          },
+          "preferred_dataset": {
+            "name": "Preferovaná dátová sada"
+          },
+          "preferred_dataset_listed": {
+            "name": "Preferovaná dátová sada v katalógu"
+          },
+          "preferred_base_url": {
+            "name": "Preferovaná base URL"
+          },
+          "runs_catalog_url": {
+            "name": "URL katalógu runs"
+          },
+          "latest_run_id": {
+            "name": "ID posledného behu"
+          },
+          "latest_run_start": {
+            "name": "Začiatok posledného behu"
+          },
+          "latest_run_end": {
+            "name": "Koniec posledného behu"
+          },
+          "smart_root_skipped": {
+            "name": "Kandidáti SMART preskočení root katalógom"
           }
         }
       }
@@ -161,7 +256,7 @@
           },
           "date": {
             "name": "Dátum a čas predpovede"
-            },
+          },
           "next_condition": {
             "name": "Ďalší index",
             "state": {
@@ -213,7 +308,8 @@
           "var": "Typ peľu",
           "update_interval": "Interval aktualizácií (minúty, min. 30)",
           "forecast": "Povoliť peľovú predpoveď?",
-          "forecast_duration": "Požadovaná dĺžka predpovede (36 – 120 h; predvolené 36)"
+          "forecast_duration": "Požadovaná dĺžka predpovede (36 – 120 h; predvolené 36)",
+          "legacy": "Povoliť zastaraný indexový senzor (zastarané)"
         },
         "data_description": {
           "forecast": "Funkcia predpovede môže výrazne zvýšiť čas odozvy API.",
@@ -230,7 +326,24 @@
         },
         "title": "Vytvorenie služby SILAM Peľ",
         "description": "Zadajte názov zóny a upraviť súradnice podľa potreby.\n[Zobraziť mapu pokrytia služby]({coverage_url})."
+      },
+      "manual_coords_warning": {
+        "data": {
+          "zone_name": "Názov zóny",
+          "location": "Poloha",
+          "altitude": "Nadmorská výška"
+        },
+        "title": "Vytvorenie služby SILAM Peľ",
+        "description": "⚠️ **Dostupnosť služby SILAM sa nepodarilo potvrdiť**\n\nV nastavení môžete pokračovať — vybraná poloha bude ešte skontrolovaná v ďalšom kroku.\n\nZadajte názov zóny a podľa potreby upravte súradnice.\n[Pozrite si mapu pokrytia služby]({coverage_url})."
       }
+    },
+    "error": {
+      "silam_ssl_error": "Nepodarilo sa nadviazať zabezpečené pripojenie k SILAM. Skontrolujte dátum a čas v Home Assistant, systémové certifikáty a či sa nezachytáva HTTPS prevádzka.",
+      "silam_connection_error": "Nepodarilo sa pripojiť k SILAM. Skontrolujte internetové pripojenie, DNS a prístup k thredds.silam.fmi.fi.",
+      "silam_catalog_error": "Server odpovedal, ale katalóg dát SILAM má neplatný formát alebo neobsahuje žiadne peľové katalógy. Skúste to znova neskôr.",
+      "silam_check_unconfirmed": "Kontrola sa nedokončila včas alebo došlo k neznámej chybe. Skúste to znova neskôr.",
+      "silam_location_unavailable": "Vybraná poloha je mimo oblasti pokrytia SILAM. Vyberte inú polohu.",
+      "silam_location_check_failed": "Nepodarilo sa overiť dostupnosť dát SILAM pre vybranú polohu. Skontrolujte internetové pripojenie a skúste to znova."
     }
   },
   "options": {
@@ -268,11 +381,25 @@
   "services": {
     "manual_update": {
       "name": "Ručná aktualizácia",
-      "description": "Ručné spustenie aktualizácie dát pre vybrané ciele integrácie SILAM Peľ.",
+      "description": "Ručne spustiť obnovenie dát pre vybrané služby SILAM Pollen.",
       "fields": {
         "targets": {
           "name": "Ciele",
           "description": "Vyberte jedno alebo viac zariadení či entít na aktualizáciu."
+        },
+        "device_id": {
+          "name": "Služba SILAM Pollen",
+          "description": "Vyberte jednu alebo viac služieb SILAM Pollen na aktualizáciu."
+        }
+      }
+    },
+    "full_refresh": {
+      "name": "Úplné obnovenie",
+      "description": "Vynútiť úplné obnovenie dát pre vybrané služby SILAM Pollen.",
+      "fields": {
+        "device_id": {
+          "name": "Služba SILAM Pollen",
+          "description": "Vyberte jednu alebo viac služieb SILAM Pollen na úplné obnovenie."
         }
       }
     }
@@ -294,5 +421,15 @@
     "additional_forecast_mode_minimal": "Minimal",
     "meteo_risk": "Meteo Risk (experimentálne)",
     "display_attribute": "Atribút zobrazenia"
+  },
+  "issues": {
+    "manual_dataset_unavailable": {
+      "title": "Vybraná dátová sada SILAM už nie je dostupná",
+      "description": "Záznam SILAM Pollen **{entry_title}** je nastavený na používanie ručnej dátovej sady **{dataset_label}** (`{dataset_name}`), ale táto dátová sada už nie je publikovaná v root katalógu SILAM.\n\nOtvorte možnosti integrácie a vyberte **SMART** alebo inú dostupnú dátovú sadu."
+    },
+    "legacy_index_sensor_deprecated": {
+      "title": "Zastaraný indexový senzor SILAM bude odstránený",
+      "description": "Záznam SILAM Pollen **{entry_title}** stále používa zastaraný indexový senzor **{entity_id}**. Tento senzor je zastaraný a bude odstránený v niektorej z budúcich aktualizácií.\n\nVypnite zastaraný indexový senzor a aktualizujte všetky automatizácie, skripty, dashboardy alebo šablóny, ktoré ho používajú. Namiesto neho použite novú weather entitu predpovede SILAM Pollen."
+    }
   }
 }

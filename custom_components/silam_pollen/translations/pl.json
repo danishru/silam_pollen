@@ -44,7 +44,27 @@
         }
       },
       "fetch_duration": {
-        "name": "Czas pobierania"
+        "name": "Czas pobierania",
+        "state_attributes": {
+          "last_data_request_kind": {
+            "name": "Typ ostatniego żądania danych"
+          },
+          "last_data_request_url": {
+            "name": "URL ostatniego żądania danych"
+          },
+          "last_index_request_kind": {
+            "name": "Typ ostatniego żądania index"
+          },
+          "last_index_request_url": {
+            "name": "URL ostatniego żądania index"
+          },
+          "last_main_request_kind": {
+            "name": "Typ ostatniego żądania main"
+          },
+          "last_main_request_url": {
+            "name": "URL ostatniego żądania main"
+          }
+        }
       },
       "forecast_horizon": {
         "name": "Horyzont prognozy",
@@ -135,6 +155,75 @@
           },
           "tomorrow": {
             "name": "Prognoza na jutro"
+          }
+        }
+      },
+      "service_status": {
+        "name": "Status usługi SILAM",
+        "state": {
+          "ok": "OK",
+          "service_unavailable": "Usługa niedostępna",
+          "dataset_unavailable": "Zbiór danych niedostępny",
+          "data_unavailable": "Dane niedostępne",
+          "unknown": "Nieznany"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Przyczyna"
+          },
+          "root_catalog_url": {
+            "name": "URL katalogu root"
+          },
+          "root_catalog_status": {
+            "name": "Status katalogu root"
+          },
+          "root_catalog_ok": {
+            "name": "Katalog root OK"
+          },
+          "root_catalog_http_status": {
+            "name": "Status HTTP katalogu root"
+          },
+          "root_catalog_error": {
+            "name": "Błąd katalogu root"
+          },
+          "root_dataset_paths_count": {
+            "name": "Liczba zbiorów danych w katalogu root"
+          },
+          "dataset_selection": {
+            "name": "Wybór zbioru danych"
+          },
+          "effective_dataset": {
+            "name": "Aktywny zbiór danych"
+          },
+          "effective_dataset_listed": {
+            "name": "Aktywny zbiór danych w katalogu"
+          },
+          "effective_base_url": {
+            "name": "Aktywny base URL"
+          },
+          "preferred_dataset": {
+            "name": "Preferowany zbiór danych"
+          },
+          "preferred_dataset_listed": {
+            "name": "Preferowany zbiór danych w katalogu"
+          },
+          "preferred_base_url": {
+            "name": "Preferowany base URL"
+          },
+          "runs_catalog_url": {
+            "name": "URL katalogu runs"
+          },
+          "latest_run_id": {
+            "name": "ID ostatniego uruchomienia"
+          },
+          "latest_run_start": {
+            "name": "Początek ostatniego uruchomienia"
+          },
+          "latest_run_end": {
+            "name": "Koniec ostatniego uruchomienia"
+          },
+          "smart_root_skipped": {
+            "name": "Kandydaci SMART pominięci przez katalog root"
           }
         }
       }
@@ -237,7 +326,24 @@
         },
         "title": "Utwórz usługę pyłków SILAM",
         "description": "Wprowadź nazwę strefy i w razie potrzeby dostosuj współrzędne.\n[Sprawdź mapę zasięgu usługi]({coverage_url})."
+      },
+      "manual_coords_warning": {
+        "data": {
+          "zone_name": "Nazwa strefy",
+          "location": "Lokalizacja",
+          "altitude": "Wysokość nad poziomem morza"
+        },
+        "title": "Utwórz usługę pyłków SILAM",
+        "description": "⚠️ **Nie udało się potwierdzić dostępności usługi SILAM**\n\nMożesz kontynuować konfigurację — wybrana lokalizacja zostanie jeszcze sprawdzona w następnym kroku.\n\nWpisz nazwę strefy i w razie potrzeby popraw współrzędne.\n[Sprawdź mapę pokrycia usługi]({coverage_url})."
       }
+    },
+    "error": {
+      "silam_ssl_error": "Nie można ustanowić bezpiecznego połączenia z SILAM. Sprawdź datę i godzinę Home Assistant, certyfikaty systemowe oraz czy ruch HTTPS nie jest przechwytywany.",
+      "silam_connection_error": "Nie można połączyć się z SILAM. Sprawdź połączenie z internetem, DNS oraz dostęp do thredds.silam.fmi.fi.",
+      "silam_catalog_error": "Serwer odpowiedział, ale katalog danych SILAM ma nieprawidłowy format albo nie zawiera katalogów pyłków. Spróbuj ponownie później.",
+      "silam_check_unconfirmed": "Kontrola nie zakończyła się w czasie albo wystąpił nieznany błąd. Spróbuj ponownie później.",
+      "silam_location_unavailable": "Wybrana lokalizacja znajduje się poza obszarem pokrycia SILAM. Wybierz inną lokalizację.",
+      "silam_location_check_failed": "Nie można sprawdzić dostępności danych SILAM dla wybranej lokalizacji. Sprawdź połączenie z internetem i spróbuj ponownie."
     }
   },
   "options": {
@@ -275,11 +381,25 @@
   "services": {
     "manual_update": {
       "name": "Ręczna aktualizacja",
-      "description": "Ręcznie wymuś odświeżenie danych dla wybranych elementów integracji SILAM Pollen.",
+      "description": "Ręcznie uruchom odświeżenie danych dla wybranych usług SILAM Pollen.",
       "fields": {
         "targets": {
           "name": "Cele",
           "description": "Wybierz jedno lub więcej urządzeń lub encji do aktualizacji."
+        },
+        "device_id": {
+          "name": "Usługa SILAM Pollen",
+          "description": "Wybierz jedną lub więcej usług SILAM Pollen do aktualizacji."
+        }
+      }
+    },
+    "full_refresh": {
+      "name": "Pełne odświeżenie",
+      "description": "Wymuś pełne odświeżenie danych dla wybranych usług SILAM Pollen.",
+      "fields": {
+        "device_id": {
+          "name": "Usługa SILAM Pollen",
+          "description": "Wybierz jedną lub więcej usług SILAM Pollen do pełnego odświeżenia."
         }
       }
     }
@@ -301,5 +421,15 @@
     "additional_forecast_mode_minimal": "Minimalny",
     "meteo_risk": "Ryzyko meteo (eksperymentalne)",
     "display_attribute": "Wyświetlany atrybut"
+  },
+  "issues": {
+    "manual_dataset_unavailable": {
+      "title": "Wybrany zbiór danych SILAM nie jest już dostępny",
+      "description": "Wpis SILAM Pollen **{entry_title}** jest skonfigurowany do używania ręcznego zbioru danych **{dataset_label}** (`{dataset_name}`), ale ten zbiór danych nie jest już publikowany w katalogu root SILAM.\n\nOtwórz opcje integracji i wybierz **SMART** albo inny dostępny zbiór danych."
+    },
+    "legacy_index_sensor_deprecated": {
+      "title": "Stary sensor indeksu SILAM zostanie usunięty",
+      "description": "Wpis SILAM Pollen **{entry_title}** nadal ma stary sensor indeksu **{entity_id}**. Ten sensor jest przestarzały i zostanie usunięty w przyszłej aktualizacji.\n\nWyłącz stary sensor indeksu i zaktualizuj wszystkie automatyzacje, skrypty, dashboardy lub szablony, które go używają. Zamiast tego użyj nowej encji prognozy weather SILAM Pollen."
+    }
   }
 }

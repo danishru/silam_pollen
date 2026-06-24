@@ -44,7 +44,27 @@
         }
       },
       "fetch_duration": {
-        "name": "Ophaalduur"
+        "name": "Ophaalduur",
+        "state_attributes": {
+          "last_data_request_kind": {
+            "name": "Type laatste dataverzoek"
+          },
+          "last_data_request_url": {
+            "name": "URL laatste dataverzoek"
+          },
+          "last_index_request_kind": {
+            "name": "Type laatste index-verzoek"
+          },
+          "last_index_request_url": {
+            "name": "URL laatste index-verzoek"
+          },
+          "last_main_request_kind": {
+            "name": "Type laatste main-verzoek"
+          },
+          "last_main_request_url": {
+            "name": "URL laatste main-verzoek"
+          }
+        }
       },
       "forecast_horizon": {
         "name": "Voorspellingshorizon",
@@ -137,6 +157,75 @@
             "name": "Voorspelling voor morgen"
           }
         }
+      },
+      "service_status": {
+        "name": "SILAM-servicestatus",
+        "state": {
+          "ok": "OK",
+          "service_unavailable": "Service niet beschikbaar",
+          "dataset_unavailable": "Dataset niet beschikbaar",
+          "data_unavailable": "Data niet beschikbaar",
+          "unknown": "Onbekend"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Reden"
+          },
+          "root_catalog_url": {
+            "name": "Rootcatalogus-URL"
+          },
+          "root_catalog_status": {
+            "name": "Rootcatalogusstatus"
+          },
+          "root_catalog_ok": {
+            "name": "Rootcatalogus OK"
+          },
+          "root_catalog_http_status": {
+            "name": "HTTP-status rootcatalogus"
+          },
+          "root_catalog_error": {
+            "name": "Rootcatalogusfout"
+          },
+          "root_dataset_paths_count": {
+            "name": "Aantal datasets in rootcatalogus"
+          },
+          "dataset_selection": {
+            "name": "Datasetselectie"
+          },
+          "effective_dataset": {
+            "name": "Effectieve dataset"
+          },
+          "effective_dataset_listed": {
+            "name": "Effectieve dataset in catalogus"
+          },
+          "effective_base_url": {
+            "name": "Effectieve base-URL"
+          },
+          "preferred_dataset": {
+            "name": "Voorkeursdataset"
+          },
+          "preferred_dataset_listed": {
+            "name": "Voorkeursdataset in catalogus"
+          },
+          "preferred_base_url": {
+            "name": "Voorkeurs-base-URL"
+          },
+          "runs_catalog_url": {
+            "name": "Runs-catalogus-URL"
+          },
+          "latest_run_id": {
+            "name": "Laatste run-ID"
+          },
+          "latest_run_start": {
+            "name": "Start laatste run"
+          },
+          "latest_run_end": {
+            "name": "Einde laatste run"
+          },
+          "smart_root_skipped": {
+            "name": "SMART-kandidaten overgeslagen door rootcatalogus"
+          }
+        }
       }
     },
     "weather": {
@@ -185,13 +274,27 @@
           "attribution": {
             "name": "Databron"
           },
-          "pollen_alder": { "name": "Els" },
-          "pollen_birch": { "name": "Berk" },
-          "pollen_grass": { "name": "Gras" },
-          "pollen_olive": { "name": "Olijf" },
-          "pollen_mugwort": { "name": "Bijvoet" },
-          "pollen_ragweed": { "name": "Ambrosia" },
-          "pollen_hazel": { "name": "Hazelaar" }
+          "pollen_alder": {
+            "name": "Els"
+          },
+          "pollen_birch": {
+            "name": "Berk"
+          },
+          "pollen_grass": {
+            "name": "Gras"
+          },
+          "pollen_olive": {
+            "name": "Olijf"
+          },
+          "pollen_mugwort": {
+            "name": "Bijvoet"
+          },
+          "pollen_ragweed": {
+            "name": "Ambrosia"
+          },
+          "pollen_hazel": {
+            "name": "Hazelaar"
+          }
         }
       }
     }
@@ -205,10 +308,12 @@
           "var": "Pollen­type",
           "update_interval": "Update-interval (minuten, minimum 30)",
           "forecast": "Pollen­voorspelling inschakelen?",
-          "forecast_duration": "Gewenste voorspellingstermijn (36–120 u; standaard 36)"
+          "forecast_duration": "Gewenste voorspellingstermijn (36–120 u; standaard 36)",
+          "legacy": "Legacy indexsensor inschakelen (verouderd)"
         },
         "data_description": {
-          "forecast": "De voorspellingsfunctie kan de API-responstijd aanzienlijk verhogen."
+          "forecast": "De voorspellingsfunctie kan de API-responstijd aanzienlijk verhogen.",
+          "legacy": "Verouderd: wordt in een toekomstige release verwijderd."
         },
         "title": "SILAM Pollen­dienst aanmaken",
         "description": "Configureer de onderstaande parameters.\nVoorspellingen zijn bedoeld voor wetenschappelijk gebruik; nauwkeurigheid wordt niet gegarandeerd."
@@ -221,7 +326,24 @@
         },
         "title": "SILAM Pollen­dienst aanmaken",
         "description": "Voer de zonenaam in en pas de coördinaten aan indien nodig.\n[Bekijk de dekkingskaart]({coverage_url})."
+      },
+      "manual_coords_warning": {
+        "data": {
+          "zone_name": "Zonenaam",
+          "location": "Locatie",
+          "altitude": "Hoogte boven zeeniveau"
+        },
+        "title": "SILAM Pollen­dienst aanmaken",
+        "description": "⚠️ **De beschikbaarheid van de SILAM-service kon niet worden bevestigd**\n\nJe kunt doorgaan met de installatie — de geselecteerde locatie wordt in de volgende stap nog gecontroleerd.\n\nVoer de zonenaam in en pas de coördinaten indien nodig aan.\n[Bekijk de dekkingskaart van de service]({coverage_url})."
       }
+    },
+    "error": {
+      "silam_ssl_error": "Er kon geen beveiligde verbinding met SILAM worden gemaakt. Controleer de datum en tijd van Home Assistant, systeemcertificaten en of HTTPS-verkeer wordt onderschept.",
+      "silam_connection_error": "Kan geen verbinding maken met SILAM. Controleer de internetverbinding, DNS en toegang tot thredds.silam.fmi.fi.",
+      "silam_catalog_error": "De server heeft geantwoord, maar de SILAM-datacatalogus heeft een ongeldig formaat of bevat geen pollencatalogi. Probeer het later opnieuw.",
+      "silam_check_unconfirmed": "De controle is niet op tijd voltooid of er is een onbekende fout opgetreden. Probeer het later opnieuw.",
+      "silam_location_unavailable": "De geselecteerde locatie ligt buiten het dekkingsgebied van SILAM. Selecteer een andere locatie.",
+      "silam_location_check_failed": "Kan de beschikbaarheid van SILAM-data voor de geselecteerde locatie niet controleren. Controleer je internetverbinding en probeer het opnieuw."
     }
   },
   "options": {
@@ -232,10 +354,12 @@
           "var": "Pollen­type",
           "version": "Dataset (huidig: {effective_dataset})",
           "forecast": "Pollen­voorspelling inschakelen?",
-          "forecast_duration": "Gewenste voorspellingstermijn (36–120 u; standaard 36)"
+          "forecast_duration": "Gewenste voorspellingstermijn (36–120 u; standaard 36)",
+          "legacy": "Legacy indexsensor inschakelen (verouderd)"
         },
         "data_description": {
-          "forecast": "De voorspellingsfunctie kan de API-responstijd aanzienlijk verhogen."
+          "forecast": "De voorspellingsfunctie kan de API-responstijd aanzienlijk verhogen.",
+          "legacy": "Verouderd: wordt in een toekomstige release verwijderd. Alleen ingeschakeld laten als je afhankelijk bent van oude automatiseringen of dashboards."
         },
         "title": "SILAM Pollen­opties"
       }
@@ -257,13 +381,55 @@
   "services": {
     "manual_update": {
       "name": "Handmatige update",
-      "description": "Handmatig een gegevensupdate starten voor de geselecteerde SILAM Pollen-doelen.",
+      "description": "Start handmatig een gegevensverversing voor de geselecteerde SILAM Pollen-services.",
       "fields": {
         "targets": {
           "name": "Doelen",
           "description": "Selecteer één of meer apparaten of entiteiten om bij te werken."
+        },
+        "device_id": {
+          "name": "SILAM Pollen-service",
+          "description": "Selecteer een of meer SILAM Pollen-services om bij te werken."
         }
       }
+    },
+    "full_refresh": {
+      "name": "Volledig verversen",
+      "description": "Forceer een volledige gegevensverversing voor de geselecteerde SILAM Pollen-services.",
+      "fields": {
+        "device_id": {
+          "name": "SILAM Pollen-service",
+          "description": "Selecteer een of meer SILAM Pollen-services om volledig te verversen."
+        }
+      }
+    }
+  },
+  "common": {
+    "advanced_options": "Geavanceerde opties",
+    "only_silam": "Alleen SILAM",
+    "debug_forecast": "Debug: ruwe voorspelling",
+    "show_decimals": "Tienden tonen",
+    "pollen_more_info_on_tap": "Open pollensensorkaart bij tikken",
+    "value_attributes_left": "Linkerkolom",
+    "value_attributes_right": "Rechterkolom",
+    "value_attributes_as_rows": "Attributen als rijen weergeven",
+    "additional_forecast": "Aanvullende attributen",
+    "additional_only": "Alleen het extra blok tonen",
+    "additional_forecast_mode": "Modus extra blok",
+    "additional_forecast_mode_standard": "Standaard",
+    "additional_forecast_mode_focus": "Focus",
+    "additional_forecast_mode_minimal": "Minimaal",
+    "meteo_risk": "Meteo Risk (experimenteel)",
+    "display_attribute": "Weergave-attribuut"
+  },
+  "issues": {
+    "manual_dataset_unavailable": {
+      "title": "Geselecteerde SILAM-dataset is niet langer beschikbaar",
+      "description": "De SILAM Pollen-vermelding **{entry_title}** is geconfigureerd om de handmatige dataset **{dataset_label}** (`{dataset_name}`) te gebruiken, maar deze dataset wordt niet langer gepubliceerd in de SILAM-rootcatalogus.\n\nOpen de integratie-opties en kies **SMART** of een andere beschikbare dataset."
+    },
+    "legacy_index_sensor_deprecated": {
+      "title": "Legacy SILAM indexsensor wordt verwijderd",
+      "description": "De SILAM Pollen-vermelding **{entry_title}** heeft nog steeds de legacy indexsensor **{entity_id}**. Deze sensor is verouderd en wordt in een toekomstige update verwijderd.\n\nSchakel de legacy indexsensor uit en werk alle automatiseringen, scripts, dashboards of templates bij die deze gebruiken. Gebruik in plaats daarvan de nieuwe SILAM Pollen weather-voorspellingsentiteit."
     }
   }
 }

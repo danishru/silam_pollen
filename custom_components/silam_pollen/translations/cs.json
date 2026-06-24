@@ -27,9 +27,9 @@
               "unknown": "Neznámý"
             }
           },
-				   
-          "date": { "name": "Datum a čas předpovědi" },
-			
+          "date": {
+            "name": "Datum a čas předpovědi"
+          },
           "index_tomorrow": {
             "name": "Předpověď na zítra",
             "state": {
@@ -43,95 +43,188 @@
           }
         }
       },
-      "fetch_duration": { "name": "Doba načítání" },
+      "fetch_duration": {
+        "name": "Doba načítání",
+        "state_attributes": {
+          "last_data_request_kind": {
+            "name": "Typ posledního požadavku na data"
+          },
+          "last_data_request_url": {
+            "name": "URL posledního požadavku na data"
+          },
+          "last_index_request_kind": {
+            "name": "Typ posledního indexového požadavku"
+          },
+          "last_index_request_url": {
+            "name": "URL posledního indexového požadavku"
+          },
+          "last_main_request_kind": {
+            "name": "Typ posledního main požadavku"
+          },
+          "last_main_request_url": {
+            "name": "URL posledního main požadavku"
+          }
+        }
+      },
       "forecast_horizon": {
         "name": "Horizont předpovědi",
         "state_attributes": {
-          "forecast_duration": { "name": "Požadovaná délka předpovědi" }
+          "forecast_duration": {
+            "name": "Požadovaná délka předpovědi"
+          }
         }
       },
       "alder": {
         "name": "Olše",
         "unit_of_measurement": "zrna/m³",
         "state_attributes": {
-					   
-          "altitude": { "name": "Nadmořská výška (nad mořem)" },
-			
-					   
-          "tomorrow": { "name": "Předpověď na zítra" }
-		   
+          "altitude": {
+            "name": "Nadmořská výška (nad mořem)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
         }
       },
       "birch": {
         "name": "Bříza",
         "unit_of_measurement": "zrna/m³",
         "state_attributes": {
-					   
-          "altitude": { "name": "Nadmořská výška (nad mořem)" },
-			
-					   
-          "tomorrow": { "name": "Předpověď na zítra" }
-		   
+          "altitude": {
+            "name": "Nadmořská výška (nad mořem)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
         }
       },
       "grass": {
         "name": "Tráva",
         "unit_of_measurement": "zrna/m³",
         "state_attributes": {
-					   
-          "altitude": { "name": "Nadmořská výška (nad mořem)" },
-			
-					   
-          "tomorrow": { "name": "Předpověď na zítra" }
-		   
+          "altitude": {
+            "name": "Nadmořská výška (nad mořem)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
         }
       },
       "hazel": {
         "name": "Líska",
         "unit_of_measurement": "zrna/m³",
         "state_attributes": {
-					   
-          "altitude": { "name": "Nadmořská výška (nad mořem)" },
-			
-					   
-          "tomorrow": { "name": "Předpověď na zítra" }
-		   
+          "altitude": {
+            "name": "Nadmořská výška (nad mořem)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
         }
       },
       "mugwort": {
         "name": "Pelyněk",
         "unit_of_measurement": "zrna/m³",
         "state_attributes": {
-					   
-          "altitude": { "name": "Nadmořská výška (nad mořem)" },
-			
-					   
-          "tomorrow": { "name": "Předpověď na zítra" }
-		   
+          "altitude": {
+            "name": "Nadmořská výška (nad mořem)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
         }
       },
       "olive": {
         "name": "Olivovník",
         "unit_of_measurement": "zrna/m³",
         "state_attributes": {
-					   
-          "altitude": { "name": "Nadmořská výška (nad mořem)" },
-			
-					   
-          "tomorrow": { "name": "Předpověď na zítra" }
-		   
+          "altitude": {
+            "name": "Nadmořská výška (nad mořem)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
         }
       },
       "ragweed": {
         "name": "Ambrózie",
         "unit_of_measurement": "zrna/m³",
         "state_attributes": {
-					   
-          "altitude": { "name": "Nadmořská výška (nad mořem)" },
-			
-					   
-          "tomorrow": { "name": "Předpověď na zítra" }
-		   
+          "altitude": {
+            "name": "Nadmořská výška (nad mořem)"
+          },
+          "tomorrow": {
+            "name": "Předpověď na zítra"
+          }
+        }
+      },
+      "service_status": {
+        "name": "Stav služby SILAM",
+        "state": {
+          "ok": "OK",
+          "service_unavailable": "Služba není dostupná",
+          "dataset_unavailable": "Datová sada není dostupná",
+          "data_unavailable": "Data nejsou dostupná",
+          "unknown": "Neznámý"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Důvod"
+          },
+          "root_catalog_url": {
+            "name": "URL root katalogu"
+          },
+          "root_catalog_status": {
+            "name": "Stav root katalogu"
+          },
+          "root_catalog_ok": {
+            "name": "Root katalog OK"
+          },
+          "root_catalog_http_status": {
+            "name": "HTTP stav root katalogu"
+          },
+          "root_catalog_error": {
+            "name": "Chyba root katalogu"
+          },
+          "root_dataset_paths_count": {
+            "name": "Počet datových sad v root katalogu"
+          },
+          "dataset_selection": {
+            "name": "Výběr datové sady"
+          },
+          "effective_dataset": {
+            "name": "Použitá datová sada"
+          },
+          "effective_dataset_listed": {
+            "name": "Použitá datová sada v katalogu"
+          },
+          "effective_base_url": {
+            "name": "Použitá base URL"
+          },
+          "preferred_dataset": {
+            "name": "Preferovaná datová sada"
+          },
+          "preferred_dataset_listed": {
+            "name": "Preferovaná datová sada v katalogu"
+          },
+          "preferred_base_url": {
+            "name": "Preferovaná base URL"
+          },
+          "runs_catalog_url": {
+            "name": "URL katalogu běhů"
+          },
+          "latest_run_id": {
+            "name": "ID posledního běhu"
+          },
+          "latest_run_start": {
+            "name": "Začátek posledního běhu"
+          },
+          "latest_run_end": {
+            "name": "Konec posledního běhu"
+          },
+          "smart_root_skipped": {
+            "name": "Kandidáti SMART přeskočení root katalogem"
+          }
         }
       }
     },
@@ -161,7 +254,9 @@
               "unknown": "Neznámý"
             }
           },
-          "date": { "name": "Datum a čas předpovědi" },
+          "date": {
+            "name": "Datum a čas předpovědi"
+          },
           "next_condition": {
             "name": "Další index",
             "state": {
@@ -173,15 +268,33 @@
               "unknown": "Neznámý"
             }
           },
-          "altitude": { "name": "Nadmořská výška (nad mořem)" },
-          "attribution": { "name": "Zdroj dat" },
-          "pollen_alder": { "name": "Olše" },
-          "pollen_birch": { "name": "Bříza" },
-          "pollen_grass": { "name": "Tráva" },
-          "pollen_olive": { "name": "Olivovník" },
-          "pollen_mugwort": { "name": "Pelyněk" },
-          "pollen_ragweed": { "name": "Ambrózie" },
-          "pollen_hazel": { "name": "Líska" }
+          "altitude": {
+            "name": "Nadmořská výška (nad mořem)"
+          },
+          "attribution": {
+            "name": "Zdroj dat"
+          },
+          "pollen_alder": {
+            "name": "Olše"
+          },
+          "pollen_birch": {
+            "name": "Bříza"
+          },
+          "pollen_grass": {
+            "name": "Tráva"
+          },
+          "pollen_olive": {
+            "name": "Olivovník"
+          },
+          "pollen_mugwort": {
+            "name": "Pelyněk"
+          },
+          "pollen_ragweed": {
+            "name": "Ambrózie"
+          },
+          "pollen_hazel": {
+            "name": "Líska"
+          }
         }
       }
     }
@@ -195,10 +308,12 @@
           "var": "Typ pylu",
           "update_interval": "Interval aktualizací (minuty, minimálně 30)",
           "forecast": "Povolit pylovou předpověď?",
-          "forecast_duration": "Požadovaná délka předpovědi (36–120 h; výchozí 36)"
+          "forecast_duration": "Požadovaná délka předpovědi (36–120 h; výchozí 36)",
+          "legacy": "Povolit zastaralý indexový senzor (zastaralé)"
         },
         "data_description": {
-          "forecast": "Funkce předpovědi může výrazně zvýšit dobu odezvy API."
+          "forecast": "Funkce předpovědi může výrazně zvýšit dobu odezvy API.",
+          "legacy": "Zastaralé: bude odstraněno v budoucí verzi."
         },
         "title": "Vytvoření služby SILAM Pyl",
         "description": "Nakonfigurujte níže uvedené parametry.\nPředpovědi jsou určeny pro vědecké účely; přesnost není garantována."
@@ -211,7 +326,24 @@
         },
         "title": "Vytvoření služby SILAM Pyl",
         "description": "Zadejte název zóny a případně upravte souřadnice.\n[Zobrazit mapu pokrytí služby]({coverage_url})."
+      },
+      "manual_coords_warning": {
+        "data": {
+          "zone_name": "Název zóny",
+          "location": "Poloha",
+          "altitude": "Nadmořská výška"
+        },
+        "title": "Vytvoření služby SILAM Pyl",
+        "description": "⚠️ **Dostupnost služby SILAM se nepodařilo potvrdit**\n\nV nastavení můžete pokračovat — vybrané místo bude ještě zkontrolováno v dalším kroku.\n\nZadejte název zóny a případně upravte souřadnice.\n[Podívejte se na mapu pokrytí služby]({coverage_url})."
       }
+    },
+    "error": {
+      "silam_ssl_error": "Nepodařilo se navázat zabezpečené připojení k SILAM. Zkontrolujte datum a čas Home Assistantu, systémové certifikáty a zda není provoz HTTPS zachytáván.",
+      "silam_connection_error": "Nelze se připojit k SILAM. Zkontrolujte internetové připojení, DNS a přístup k thredds.silam.fmi.fi.",
+      "silam_catalog_error": "Server odpověděl, ale katalog dat SILAM má neplatný formát nebo neobsahuje žádné pylové katalogy. Zkuste to znovu později.",
+      "silam_check_unconfirmed": "Kontrola nebyla dokončena včas nebo došlo k neznámé chybě. Zkuste to znovu později.",
+      "silam_location_unavailable": "Vybrané místo je mimo oblast pokrytí SILAM. Vyberte jiné místo.",
+      "silam_location_check_failed": "Nelze ověřit dostupnost dat SILAM pro vybrané místo. Zkontrolujte internetové připojení a zkuste to znovu."
     }
   },
   "options": {
@@ -222,10 +354,12 @@
           "var": "Typ pylu",
           "version": "Datová sada (aktuální: {effective_dataset})",
           "forecast": "Povolit pylovou předpověď?",
-          "forecast_duration": "Požadovaná délka předpovědi (36–120 h; výchozí 36)"
+          "forecast_duration": "Požadovaná délka předpovědi (36–120 h; výchozí 36)",
+          "legacy": "Povolit zastaralý indexový senzor (zastaralé)"
         },
         "data_description": {
-          "forecast": "Funkce předpovědi může výrazně zvýšit dobu odezvy API."
+          "forecast": "Funkce předpovědi může výrazně zvýšit dobu odezvy API.",
+          "legacy": "Zastaralé: bude odstraněno v budoucí verzi. Ponechte zapnuté pouze tehdy, pokud na něm závisí staré automatizace nebo dashboardy."
         },
         "title": "Možnosti SILAM Pyl"
       }
@@ -247,13 +381,55 @@
   "services": {
     "manual_update": {
       "name": "Ruční aktualizace",
-      "description": "Ručně spustit aktualizaci dat pro vybrané cíle integrace SILAM Pyl.",
+      "description": "Ručně spustit obnovení dat pro vybrané služby SILAM Pollen.",
       "fields": {
         "targets": {
           "name": "Cíle",
           "description": "Vyberte jedno nebo více zařízení či entit k aktualizaci."
+        },
+        "device_id": {
+          "name": "Služba SILAM Pollen",
+          "description": "Vyberte jednu nebo více služeb SILAM Pollen k aktualizaci."
         }
       }
+    },
+    "full_refresh": {
+      "name": "Úplné obnovení",
+      "description": "Vynutit úplné obnovení dat pro vybrané služby SILAM Pollen.",
+      "fields": {
+        "device_id": {
+          "name": "Služba SILAM Pollen",
+          "description": "Vyberte jednu nebo více služeb SILAM Pollen k úplnému obnovení."
+        }
+      }
+    }
+  },
+  "common": {
+    "advanced_options": "Pokročilé možnosti",
+    "only_silam": "Pouze SILAM",
+    "debug_forecast": "Debug: nezpracovaná předpověď",
+    "show_decimals": "Zobrazit desetiny",
+    "pollen_more_info_on_tap": "Otevřít kartu pylového senzoru klepnutím",
+    "value_attributes_left": "Levý sloupec",
+    "value_attributes_right": "Pravý sloupec",
+    "value_attributes_as_rows": "Zobrazit atributy jako řádky",
+    "additional_forecast": "Další atributy",
+    "additional_only": "Zobrazit pouze dodatečný blok",
+    "additional_forecast_mode": "Režim dodatečného bloku",
+    "additional_forecast_mode_standard": "Standardní",
+    "additional_forecast_mode_focus": "Focus",
+    "additional_forecast_mode_minimal": "Minimální",
+    "meteo_risk": "Meteo Risk (experimentální)",
+    "display_attribute": "Zobrazovaný atribut"
+  },
+  "issues": {
+    "manual_dataset_unavailable": {
+      "title": "Vybraná datová sada SILAM již není dostupná",
+      "description": "Záznam SILAM Pollen **{entry_title}** je nastaven na ruční datovou sadu **{dataset_label}** (`{dataset_name}`), ale tato datová sada již není publikována v root katalogu SILAM.\n\nOtevřete možnosti integrace a zvolte **SMART** nebo jinou dostupnou datovou sadu."
+    },
+    "legacy_index_sensor_deprecated": {
+      "title": "Zastaralý indexový senzor SILAM bude odstraněn",
+      "description": "Záznam SILAM Pollen **{entry_title}** stále používá zastaralý indexový senzor **{entity_id}**. Tento senzor je zastaralý a bude odstraněn v některé z budoucích aktualizací.\n\nVypněte zastaralý indexový senzor a aktualizujte všechny automatizace, skripty, dashboardy nebo šablony, které ho používají. Místo něj použijte novou weather entitu předpovědi SILAM Pollen."
     }
   }
 }
