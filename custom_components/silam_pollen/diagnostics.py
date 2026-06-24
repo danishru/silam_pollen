@@ -121,6 +121,12 @@ class SilamPollenFetchDurationSensor(SensorEntity):
 
         return {
             "request_type": req.get("type"),
+            "last_data_request_kind": req.get("last_data_request_kind"),
+            "last_data_request_url": req.get("last_data_request_url"),
+            "last_index_request_kind": req.get("last_index_request_kind"),
+            "last_index_request_url": req.get("last_index_request_url"),
+            "last_main_request_kind": req.get("last_main_request_kind"),
+            "last_main_request_url": req.get("last_main_request_url"),
             "runs_catalog_url": runs.get("url"),
             "latest_run_id": runs.get("latest_run_id"),
             "latest_run_start": runs.get("latest_run_start"),

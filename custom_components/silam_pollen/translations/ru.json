@@ -44,7 +44,27 @@
         }
       },
       "fetch_duration": {
-        "name": "Время запроса"
+        "name": "Время запроса",
+        "state_attributes": {
+          "last_data_request_kind": {
+            "name": "Тип последнего запроса данных"
+          },
+          "last_data_request_url": {
+            "name": "URL последнего запроса данных"
+          },
+          "last_index_request_kind": {
+            "name": "Тип последнего index-запроса"
+          },
+          "last_index_request_url": {
+            "name": "URL последнего index-запроса"
+          },
+          "last_main_request_kind": {
+            "name": "Тип последнего main-запроса"
+          },
+          "last_main_request_url": {
+            "name": "URL последнего main-запроса"
+          }
+        }
       },
       "forecast_horizon": {
         "name": "Горизонт прогноза",
@@ -402,6 +422,10 @@
     "manual_dataset_unavailable": {
       "title": "Выбранный набор данных SILAM больше недоступен",
       "description": "Запись SILAM Pollen **{entry_title}** настроена на ручной набор данных **{dataset_label}** (`{dataset_name}`), но этот набор больше не опубликован в корневом каталоге SILAM.\n\nОткройте параметры интеграции и выберите **SMART** или другой доступный набор данных."
+    },
+    "legacy_index_sensor_deprecated": {
+      "title": "Устаревший index-сенсор SILAM будет удалён",
+      "description": "У записи SILAM Pollen **{entry_title}** всё ещё создан устаревший index-сенсор **{entity_id}**. Этот сенсор помечен как устаревший и будет удалён в одном из следующих обновлений.\n\nОтключите устаревший index-сенсор и перенастройте автоматизации, скрипты, панели и шаблоны, которые его используют. Вместо него используйте новый погодный сенсор прогноза SILAM Pollen."
     }
   }
 }

@@ -44,7 +44,27 @@
         }
       },
       "fetch_duration": {
-        "name": "Fetch Duration"
+        "name": "Fetch Duration",
+        "state_attributes": {
+          "last_data_request_kind": {
+            "name": "Last data request type"
+          },
+          "last_data_request_url": {
+            "name": "Last data request URL"
+          },
+          "last_index_request_kind": {
+            "name": "Last index request type"
+          },
+          "last_index_request_url": {
+            "name": "Last index request URL"
+          },
+          "last_main_request_kind": {
+            "name": "Last main request type"
+          },
+          "last_main_request_url": {
+            "name": "Last main request URL"
+          }
+        }
       },
       "forecast_horizon": {
         "name": "Forecast horizon",
@@ -402,6 +422,10 @@
     "manual_dataset_unavailable": {
       "title": "Selected SILAM dataset is no longer available",
       "description": "The SILAM Pollen entry **{entry_title}** is configured to use the manual dataset **{dataset_label}** (`{dataset_name}`), but this dataset is no longer published in the SILAM root catalog.\n\nOpen the integration options and choose **SMART** or another available dataset."
+    },
+    "legacy_index_sensor_deprecated": {
+      "title": "Legacy SILAM index sensor will be removed",
+      "description": "The SILAM Pollen entry **{entry_title}** still has the legacy index sensor **{entity_id}**. This sensor is deprecated and will be removed in a future update.\n\nDisable the legacy index sensor and update any automations, scripts, dashboards, or templates that use it. Use the new SILAM Pollen weather forecast entity instead."
     }
   }
 }

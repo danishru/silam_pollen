@@ -25,7 +25,11 @@ from .config_flow import OptionsFlowHandler as SilamPollenOptionsFlow
 from .coordinator import SilamCoordinator
 from .cache_store import SilamPollenCacheStore, async_remove_entry_cache
 from .migration import async_migrate_entry  # ядро вызовет при необходимости
-from .repairs import async_delete_manual_dataset_unavailable_issue
+from .repairs import (
+    async_delete_legacy_index_sensor_deprecated_issue,
+    async_delete_manual_dataset_unavailable_issue,
+    async_update_legacy_index_sensor_deprecated_issue,
+)
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -316,6 +320,15 @@ async def async_setup_entry(hass, entry):
     platforms = ["sensor", "weather"]
     await hass.config_entries.async_forward_entry_setups(entry, platforms)
 
+    # Если у пользователя ещё создан устаревший index-сенсор, показываем
+    # Repair warning. Сам сенсор пока не удаляем: пользователю нужно спокойно
+    # перенастроить automations/scripts на новый weather-сенсор прогноза.
+    await async_update_legacy_index_sensor_deprecated_issue(
+        hass,
+        entry_id=entry.entry_id,
+        entry_title=entry.title,
+    )
+
     # Слушатель изменений опций
     entry.async_on_unload(entry.add_update_listener(update_listener))
     return True
@@ -329,6 +342,7 @@ async def async_unload_entry(hass, entry):
     domain_data.pop(entry.entry_id, None)
     domain_data.get(CACHE_STORES, {}).pop(entry.entry_id, None)
     await async_delete_manual_dataset_unavailable_issue(hass, entry_id=entry.entry_id)
+    await async_delete_legacy_index_sensor_deprecated_issue(hass, entry_id=entry.entry_id)
     return True
 
 
@@ -336,6 +350,7 @@ async def async_unload_entry(hass, entry):
 async def async_remove_entry(hass, entry) -> None:
     """Удалить файл постоянного кэша при удалении ConfigEntry пользователем."""
     await async_delete_manual_dataset_unavailable_issue(hass, entry_id=entry.entry_id)
+    await async_delete_legacy_index_sensor_deprecated_issue(hass, entry_id=entry.entry_id)
     domain_data = hass.data.get(DOMAIN, {})
     cache_store = domain_data.get(CACHE_STORES, {}).pop(entry.entry_id, None)
 
@@ -348,6 +363,17 @@ async def async_remove_entry(hass, entry) -> None:
         entry.entry_id,
         entry_title=getattr(entry, "title", None),
     )
+
+
+async def _async_reload_entry_in_background(hass, entry_id: str) -> None:
+    """Перезагрузить ConfigEntry после изменения опций без блокировки Options Flow."""
+    try:
+        await hass.config_entries.async_reload(entry_id)
+    except Exception:  # noqa: BLE001 - фоновая задача не должна терять ошибку в тишине
+        _LOGGER.exception(
+            "SILAM Pollen: background reload failed for entry %s",
+            entry_id,
+        )
 
 
 async def update_listener(hass, entry):
@@ -396,7 +422,18 @@ async def update_listener(hass, entry):
             #     title="SILAM Pollen",
             # )
 
-    await hass.config_entries.async_reload(entry.entry_id)
+    await async_update_legacy_index_sensor_deprecated_issue(
+        hass,
+        entry_id=entry.entry_id,
+        entry_title=entry.title,
+    )
+
+    # Не ждём тяжёлую перезагрузку записи внутри Options Flow.
+    # После изменения опций HA должен быстро закрыть окно настроек,
+    # а сетевой refresh/backfill координатора выполнится уже в фоне.
+    hass.async_create_task(
+        _async_reload_entry_in_background(hass, entry.entry_id)
+    )
 
 
 async def async_get_options_flow(config_entry):

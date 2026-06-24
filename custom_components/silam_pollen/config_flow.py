@@ -641,14 +641,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 new_data["version"] = new_version
 
             if new_version == "smart":
-                # SMART: выбираем лучший доступный набор по координатам (тот же приоритет, что при создании записи).
-                lat = new_data.get("latitude")
-                lon = new_data.get("longitude")
-                chosen_url = await self._probe_best_base_url(lat, lon)
-                # Если координаты отсутствуют или probe не дал результата — не ломаем запись:
-                # оставляем текущий base_url как есть.
-                if chosen_url:
-                    new_data["base_url"] = chosen_url
+                # SMART в Options Flow не выполняет сетевой probe и не ждёт выбора
+                # лучшего датасета. Это важно, чтобы окно настроек закрывалось
+                # быстро: сохранение опций только переключает политику выбора,
+                # а coordinator после фоновой перезагрузки сам выберет effective
+                # dataset и выполнит SMART backfill при необходимости.
+                # base_url оставляем как последний известный fallback.
+                pass
             else:
                 # фиксированный датасет: new_version = src (например 'sep61')
                 dataset_name = None
@@ -663,8 +662,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     _LOGGER.debug("Unknown dataset version in options: %s", new_version)
 
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data, options=new_options)
-            await self.hass.config_entries.async_reload(self.config_entry.entry_id)
 
+            # Перезагрузка записи запускается update_listener в фоне.
+            # Здесь ничего не ждём, чтобы Options Flow не блокировал UI на
+            # сетевой refresh, SMART selection и backfill.
             return self.async_create_entry(title="", data=new_options)
 
         # ------------------------------------------------------------

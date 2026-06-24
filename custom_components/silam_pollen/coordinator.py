@@ -187,6 +187,16 @@ class SilamCoordinator(DataUpdateCoordinator):
         # Последняя ошибка каталога нужна, чтобы отличать offline-сбой от пустого каталога.
         self._last_runs_catalog_error = None
 
+        # Последний фактический NCSS data request.
+        # Это именно запрос данных (index/main/tail/SMART-probe),
+        # а не root catalog или runs/catalog.xml.
+        self._last_data_request_url: str | None = None
+        self._last_data_request_kind: str | None = None
+        self._last_index_request_url: str | None = None
+        self._last_index_request_kind: str | None = None
+        self._last_main_request_url: str | None = None
+        self._last_main_request_kind: str | None = None
+
         # Общий catalog-layer (domain-level) из hass.data[DOMAIN].
         # Root catalog используется для диагностики и как безопасный gate
         # в SMART-логике: retired-датасеты исключаются только если root
@@ -343,6 +353,32 @@ class SilamCoordinator(DataUpdateCoordinator):
         except Exception:
             return None
 
+    def _record_data_request_url(self, kind: str, url: str | None) -> None:
+        """Запомнить фактический NCSS-запрос данных.
+
+        В диагностику пишем только запросы к data endpoint NCSS:
+        index/main/tail/range/SMART probe. Root catalog и runs/catalog.xml
+        сюда намеренно не попадают, чтобы атрибут был именно про запрос
+        данных прогноза.
+
+        Дополнительно храним последние URL отдельно для index и main, потому
+        что общий last_data_request_url обычно перезаписывается последним
+        запросом и не показывает вторую часть пары index/main.
+        """
+        if not url:
+            return
+
+        url_str = str(url)
+        self._last_data_request_kind = kind
+        self._last_data_request_url = url_str
+
+        if kind in {"index", "tail_index", "range_index"}:
+            self._last_index_request_kind = kind
+            self._last_index_request_url = url_str
+        elif kind in {"main", "tail_main", "range_main"}:
+            self._last_main_request_kind = kind
+            self._last_main_request_url = url_str
+
     async def _fetch_latest_run_info_for_catalog_url(self, catalog_url: str | None):
         """Вернуть (run_id, start, end) для указанного runs/catalog.xml.
 
@@ -476,6 +512,12 @@ class SilamCoordinator(DataUpdateCoordinator):
         Поэтому HTTP код проверяется отдельно, а этот метод подтверждает именно
         пригодность тела ответа для дальнейшей обработки.
         """
+        try:
+            self._record_data_request_url(kind, str(response.url))
+        except Exception:
+            # URL диагностики не должен мешать обработке ответа.
+            pass
+
         async with async_timeout.timeout(10):
             text = await response.text()
 
@@ -692,6 +734,7 @@ class SilamCoordinator(DataUpdateCoordinator):
             )
             try:
                 async with async_timeout.timeout(10):
+                    self._record_data_request_url("smart_probe", test_url)
                     async with session.get(test_url) as resp:
                         if resp.status == 200:
                             try:
@@ -758,6 +801,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         probe_url = base_url + "?" + "&".join(probe_params)
 
         try:
+            self._record_data_request_url("smart_coord_probe", probe_url)
             async with session.get(probe_url) as resp:
                 st = resp.status
 
@@ -950,6 +994,7 @@ class SilamCoordinator(DataUpdateCoordinator):
         index_url = base_url + "?" + "&".join(index_params)
 
         index_xml = None
+        self._record_data_request_url("range_index", index_url)
         async with session.get(index_url) as resp:
             if resp.status != 200:
                 return {}
@@ -973,6 +1018,7 @@ class SilamCoordinator(DataUpdateCoordinator):
             ]
             main_url = base_url + "?" + "&".join(main_params)
 
+            self._record_data_request_url("range_main", main_url)
             async with session.get(main_url) as resp:
                 if resp.status != 200:
                     return {}
@@ -993,6 +1039,180 @@ class SilamCoordinator(DataUpdateCoordinator):
         if raw:
             self._apply_src_to_raw(raw, src_key)
         return raw
+
+    async def _smart_backfill_missing_times(
+        self,
+        *,
+        session: aiohttp.ClientSession,
+        raw_all: dict,
+        latitude: float,
+        longitude: float,
+        window_start: datetime,
+        window_end: datetime,
+        context: str,
+    ) -> int:
+        """Дозаполнить отсутствующие почасовые точки из других SMART-кандидатов.
+
+        Используется и для synthetic/incremental-пересборки из кэша, и после
+        полного сетевого fetch. Это важно после смены режима manual → smart:
+        полный fetch выбранного SMART-датасета может получить не все точки, а
+        недостающие часы должны сразу добираться из fallback-кандидатов.
+        """
+        if self._dataset_selection != "smart" or not self._forecast_enabled:
+            return 0
+
+        if not isinstance(raw_all, dict) or not raw_all:
+            return 0
+
+        try:
+            # 1) Собираем целевые слоты (почасовые) в окне window_start..window_end.
+            slots: list[str] = []
+            cur = window_start.replace(minute=0, second=0, microsecond=0)
+            end = window_end.replace(minute=0, second=0, microsecond=0)
+
+            while cur <= end:
+                slots.append(cur.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"))
+                cur += timedelta(hours=1)
+
+            # Нормализованное множество "что уже есть" — только для сравнения.
+            present_norm = {self._normalize_dt_key_to_z(k) for k in raw_all.keys()}
+            missing = [s for s in slots if s not in present_norm]
+
+            if not missing:
+                return 0
+
+            _LOGGER.debug(
+                "%s Шаг 4: missing-times до дозаполнения (%s): %s",
+                self._log_prefix,
+                context,
+                len(missing),
+            )
+
+            # 2) Сегменты missing (непрерывные по часу).
+            missing_dts = []
+            for s in missing:
+                dt = self._parse_dt_utc(s)
+                if dt is not None:
+                    missing_dts.append(dt)
+            missing_dts.sort()
+
+            segments: list[tuple[datetime, datetime]] = []
+            seg_start = None
+            prev = None
+            for dt in missing_dts:
+                if seg_start is None:
+                    seg_start = dt
+                    prev = dt
+                    continue
+                if dt == prev + timedelta(hours=1):
+                    prev = dt
+                else:
+                    segments.append((seg_start, prev))
+                    seg_start = dt
+                    prev = dt
+            if seg_start is not None and prev is not None:
+                segments.append((seg_start, prev))
+
+            root_info_for_fill = await self._get_root_info_for_smart()
+            total_added = 0
+
+            # 3) Для каждого сегмента ищем первый подходящий кандидат по приоритету.
+            for seg_a, seg_b in segments:
+                hours = int((seg_b - seg_a).total_seconds() // 3600) + 1
+                if hours <= 0:
+                    continue
+
+                seg_time_start = seg_a.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+                seg_time_duration = f"PT{hours}H"
+                filled = False
+
+                for cand in (self._smart_candidates or []):
+                    if not cand or cand == self._base_url:
+                        continue
+
+                    # Не используем retired-кандидаты при дозаполнении missing-times.
+                    if not self._smart_candidate_allowed_by_root_catalog(cand, root_info_for_fill):
+                        continue
+
+                    # runs_catalog должен пересекаться по времени с сегментом.
+                    cand_catalog_url = self._derive_runs_catalog_url_for_base_url(cand)
+                    if not cand_catalog_url or self._runs_manager is None:
+                        continue
+
+                    info = await self._runs_manager.async_get_latest(cand_catalog_url)
+                    if not info:
+                        continue
+
+                    cand_end = self._parse_dt_utc(getattr(info, "end", None))
+                    cand_start = self._parse_dt_utc(getattr(info, "start", None))
+                    if cand_end is None or cand_start is None:
+                        continue
+
+                    if cand_end < seg_a or cand_start > seg_b:
+                        continue
+
+                    # Geo probe: покрывает ли кандидат координаты (лениво + кеш).
+                    ok = await self._smart_probe_coord_coverage(session, cand, latitude, longitude)
+                    if not ok:
+                        continue
+
+                    cand_ds = self._dataset_name_from_base_url(cand)
+                    cand_src = self._src_key_for_dataset(cand_ds)
+
+                    raw_seg = await self._fetch_raw_range_from_base_url(
+                        session=session,
+                        base_url=cand,
+                        latitude=latitude,
+                        longitude=longitude,
+                        time_start=seg_time_start,
+                        time_duration=seg_time_duration,
+                        src_key=cand_src,
+                    )
+
+                    if raw_seg:
+                        add_cnt = 0
+                        for k, v in raw_seg.items():
+                            nk = self._normalize_dt_key_to_z(k)
+                            if nk in present_norm:
+                                continue
+
+                            raw_all[nk] = v
+                            present_norm.add(nk)
+                            add_cnt += 1
+
+                        if add_cnt > 0:
+                            total_added += add_cnt
+                            _LOGGER.debug(
+                                "%s Шаг 4: сегмент %s..%s дозаполнен из кандидата (%s, %s): +%s",
+                                self._log_prefix,
+                                seg_a,
+                                seg_b,
+                                cand_src,
+                                context,
+                                add_cnt,
+                            )
+                            filled = True
+                            break
+
+                if not filled:
+                    _LOGGER.debug(
+                        "%s Шаг 4: не удалось дозаполнить сегмент %s..%s (%s, нет подходящих кандидатов)",
+                        self._log_prefix,
+                        seg_a,
+                        seg_b,
+                        context,
+                    )
+
+            return total_added
+
+        except Exception as err:
+            _LOGGER.debug(
+                "%s Шаг 4: ошибка SMART дозаполнения (%s, пропускаем): %s",
+                self._log_prefix,
+                context,
+                err,
+            )
+            return 0
 
     def _parse_dt_utc(self, dt_str: str):
         """Парсит ISO-строку времени в aware datetime (UTC).
@@ -1472,6 +1692,12 @@ class SilamCoordinator(DataUpdateCoordinator):
             "tail_fetch_attempted": False,
             "tail_fetch_network": False,
             "tail_fetch_success": None,
+            "last_data_request_kind": self._last_data_request_kind,
+            "last_data_request_url": self._last_data_request_url,
+            "last_index_request_kind": self._last_index_request_kind,
+            "last_index_request_url": self._last_index_request_url,
+            "last_main_request_kind": self._last_main_request_kind,
+            "last_main_request_url": self._last_main_request_url,
         }
         diag["dataset"] = {
             "selection": self._dataset_selection,
@@ -1630,6 +1856,16 @@ class SilamCoordinator(DataUpdateCoordinator):
         # Флаг меняется только когда raw_merged реально расширен сетевыми данными.
         # Простая пересборка из RAM/persistent cache не должна перезаписывать Store.
         persistent_cache_changed = False
+
+        # Сбрасываем диагностику текущего refresh. Если обновление пойдёт
+        # полностью из кэша или остановится на root catalog gate, data URL
+        # останется пустым, что честно показывает отсутствие NCSS-запроса.
+        self._last_data_request_url = None
+        self._last_data_request_kind = None
+        self._last_index_request_url = None
+        self._last_index_request_kind = None
+        self._last_main_request_url = None
+        self._last_main_request_kind = None
 
         raw_view = None  # используется для восстановления меток источника 's' при инкрементальной пересборке
         raw_all_ref = None  # ссылка на кеш raw_merged, если работали в incremental/synthetic ветке
@@ -1999,6 +2235,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                                 _LOGGER.debug("%s Шаг 2b: tail index URL: %s", self._log_prefix, tail_index_url)
 
                                 tail_index_xml = None
+                                self._record_data_request_url("tail_index", tail_index_url)
                                 async with session.get(tail_index_url) as resp:
                                     _LOGGER.debug("%s Шаг 2b: tail index HTTP %s", self._log_prefix, resp.status)
                                     if resp.status == 200:
@@ -2029,6 +2266,7 @@ class SilamCoordinator(DataUpdateCoordinator):
 
                                     _LOGGER.debug("%s Шаг 2b: tail main URL: %s", self._log_prefix, tail_main_url)
 
+                                    self._record_data_request_url("tail_main", tail_main_url)
                                     async with session.get(tail_main_url) as resp:
                                         _LOGGER.debug("%s Шаг 2b: tail main HTTP %s", self._log_prefix, resp.status)
                                         if resp.status == 200:
@@ -2068,154 +2306,20 @@ class SilamCoordinator(DataUpdateCoordinator):
                     ####
                     # -----------------------------------------------------------------
                     # Шаг 4 (SMART): дозаполнение missing-times из других датасетов
-                    # Только если:
-                    # - SMART режим
-                    # - forecast включён (есть целевой горизонт)
+                    # Используем общий helper, чтобы та же логика работала и для
+                    # synthetic/incremental, и для полного fetch после manual → smart.
                     # -----------------------------------------------------------------
-                    if self._dataset_selection == "smart" and self._forecast_enabled:
-                        try:
-                            # 1) Собираем целевые слоты (почасовые) в окне window_start..window_end
-                            # Используем UTC и ISO-ключи как в raw_merged
-                            slots: list[str] = []
-                            cur = window_start.replace(minute=0, second=0, microsecond=0)
-                            end = window_end.replace(minute=0, second=0, microsecond=0)
-
-                            # чуть аккуратнее: если window_start был "минус 1 час", мы всё равно строим слоты на весь горизонт
-                            while cur <= end:
-                                slots.append(cur.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"))
-                                cur += timedelta(hours=1)
-
-                            # Нормализованное множество "что уже есть" — только для сравнения.
-                            # raw_all не трогаем (там пусть остаётся как пришло из XML, т.е. ...Z).
-                            present_norm = {self._normalize_dt_key_to_z(k) for k in raw_all.keys()}
-
-                            missing = [s for s in slots if s not in present_norm]
-
-                            if missing:
-                                _LOGGER.debug("%s Шаг 4: missing-times до дозаполнения: %s", self._log_prefix, len(missing))
-
-                                # 2) Сегменты missing (непрерывные по часу)
-                                missing_dts = []
-                                for s in missing:
-                                    dt = self._parse_dt_utc(s)
-                                    if dt is not None:
-                                        missing_dts.append(dt)
-                                missing_dts.sort()
-
-                                segments: list[tuple[datetime, datetime]] = []
-                                seg_start = None
-                                prev = None
-                                for dt in missing_dts:
-                                    if seg_start is None:
-                                        seg_start = dt
-                                        prev = dt
-                                        continue
-                                    if dt == prev + timedelta(hours=1):
-                                        prev = dt
-                                    else:
-                                        segments.append((seg_start, prev))
-                                        seg_start = dt
-                                        prev = dt
-                                if seg_start is not None and prev is not None:
-                                    segments.append((seg_start, prev))
-
-                                # 3) Для каждого сегмента ищем первый подходящий кандидат по приоритету
-                                for seg_a, seg_b in segments:
-                                    # берем длительность (в часах) включая край
-                                    hours = int((seg_b - seg_a).total_seconds() // 3600) + 1
-                                    if hours <= 0:
-                                        continue
-
-                                    seg_time_start = seg_a.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-                                    seg_time_duration = f"PT{hours}H"
-
-                                    filled = False
-
-                                    root_info_for_fill = await self._get_root_info_for_smart()
-
-                                    for cand in (self._smart_candidates or []):
-                                        if not cand or cand == self._base_url:
-                                            continue
-
-                                        # Не используем retired-кандидаты при дозаполнении missing-times.
-                                        if not self._smart_candidate_allowed_by_root_catalog(cand, root_info_for_fill):
-                                            continue
-
-                                        # 3.1) (A) runs_catalog: должен пересекаться по времени
-                                        cand_catalog_url = self._derive_runs_catalog_url_for_base_url(cand)
-                                        if not cand_catalog_url or self._runs_manager is None:
-                                            continue
-
-                                        info = await self._runs_manager.async_get_latest(cand_catalog_url)
-                                        if not info:
-                                            continue
-
-                                        cand_end = self._parse_dt_utc(getattr(info, "end", None))
-                                        cand_start = self._parse_dt_utc(getattr(info, "start", None))
-                                        if cand_end is None or cand_start is None:
-                                            continue
-
-                                        # если кандидат не покрывает сегмент по времени — пропускаем
-                                        if cand_end < seg_a or cand_start > seg_b:
-                                            continue
-
-                                        # 3.2) (B) geo probe: покрывает ли координаты (лениво + кеш)
-                                        ok = await self._smart_probe_coord_coverage(session, cand, latitude, longitude)
-                                        if not ok:
-                                            continue
-
-                                        # 3.3) src_key для кандидата (если есть в справочнике — используем, иначе делаем fallback key)
-                                        cand_ds = self._dataset_name_from_base_url(cand)
-                                        cand_src = self._src_key_for_dataset(cand_ds)
-
-                                        raw_seg = await self._fetch_raw_range_from_base_url(
-                                            session=session,
-                                            base_url=cand,
-                                            latitude=latitude,
-                                            longitude=longitude,
-                                            time_start=seg_time_start,
-                                            time_duration=seg_time_duration,
-                                            src_key=cand_src,
-                                        )
-
-                                        if raw_seg:
-                                            # 4) НЕ ПЕРЕТИРАЕМ primary: добавляем только отсутствующие ключи
-                                            add_cnt = 0
-                                            for k, v in raw_seg.items():
-                                                nk = self._normalize_dt_key_to_z(k)
-
-                                                # не создаём дубликат "Z vs +00:00": проверяем по нормализованному множеству
-                                                if nk in present_norm:
-                                                    continue
-
-                                                raw_all[nk] = v
-                                                present_norm.add(nk)
-                                                add_cnt += 1
-
-                                            if add_cnt > 0:
-                                                persistent_cache_changed = True
-
-                                            _LOGGER.debug(
-                                                "%s Шаг 4: сегмент %s..%s дозаполнен из кандидата (%s): +%s",
-                                                self._log_prefix,
-                                                seg_a,
-                                                seg_b,
-                                                cand_src,
-                                                add_cnt,
-                                            )
-                                            filled = True
-                                            break
-
-                                    if not filled:
-                                        _LOGGER.debug(
-                                            "%s Шаг 4: не удалось дозаполнить сегмент %s..%s (нет подходящих кандидатов)",
-                                            self._log_prefix,
-                                            seg_a,
-                                            seg_b,
-                                        )
-
-                        except Exception as err:
-                            _LOGGER.debug("%s Шаг 4: ошибка SMART дозаполнения (пропускаем): %s", self._log_prefix, err)
+                    added_missing = await self._smart_backfill_missing_times(
+                        session=session,
+                        raw_all=raw_all,
+                        latitude=latitude,
+                        longitude=longitude,
+                        window_start=window_start,
+                        window_end=window_end,
+                        context="cache_rebuild",
+                    )
+                    if added_missing > 0:
+                        persistent_cache_changed = True
 
                     rebuild = self._cache_runtime.prepare_synthetic_rebuild_from_raw(
                         raw_all,
@@ -2254,6 +2358,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                 if not use_incremental:
                     # Запрос для index
                     _LOGGER.debug("%s Вызов API для index: %s", self._log_prefix, index_url)
+                    self._record_data_request_url("index", index_url)
                     async with session.get(index_url) as response:
                         _LOGGER.debug("%s Ответ для index с кодом %s", self._log_prefix, response.status)
                         if response.status != 200:
@@ -2275,6 +2380,7 @@ class SilamCoordinator(DataUpdateCoordinator):
                     if self._var_list:
                         main_url = self._build_main_url(latitude, longitude)
                         _LOGGER.debug("%s Вызов API для main: %s", self._log_prefix, main_url)
+                        self._record_data_request_url("main", main_url)
                         async with session.get(main_url) as response:
                             _LOGGER.debug("%s Ответ для main с кодом %s", self._log_prefix, response.status)
                             if response.status != 200:
@@ -2377,6 +2483,61 @@ class SilamCoordinator(DataUpdateCoordinator):
             # --- Источник данных по временным точкам (для SMART-склейки) ---
             merged_raw = merged.get("raw_merged")
             if isinstance(merged_raw, dict):
+                if not use_incremental:
+                    # После полного fetch тоже запускаем SMART-дозаполнение.
+                    # Это закрывает сценарий manual → smart, когда кэш прежнего
+                    # ручного датасета несовместим и координатор идёт по full-fetch
+                    # пути, но выбранный SMART-датасет отдаёт не весь горизонт.
+                    window_start, window_end = self._cache_runtime.current_forecast_window()
+                    # В этот момент основной aiohttp.ClientSession уже закрыт:
+                    # блок полного сетевого fetch выше завершился до этапа
+                    # merge/rebuild. Для full-fetch backfill открываем отдельную
+                    # короткую сессию, иначе дозаполнение тихо пропускается как
+                    # ошибка закрытой session и становится видно только после
+                    # следующего manual_update.
+                    async with aiohttp.ClientSession() as backfill_session:
+                        added_missing = await self._smart_backfill_missing_times(
+                            session=backfill_session,
+                            raw_all=merged_raw,
+                            latitude=latitude,
+                            longitude=longitude,
+                            window_start=window_start,
+                            window_end=window_end,
+                            context="full_fetch",
+                        )
+                    if added_missing > 0:
+                        persistent_cache_changed = True
+
+                        # После full-fetch merge_station_features уже успел
+                        # построить hourly/twice_daily/daily forecast из
+                        # исходного XML. SMART-дозаполнение выше расширяет
+                        # только raw_merged, поэтому нужно пересобрать готовый
+                        # merged payload из расширенного raw_merged сразу в
+                        # этом же refresh. Иначе новые точки станут видны
+                        # только на следующем manual_update/synthetic rebuild.
+                        rebuild = self._cache_runtime.prepare_synthetic_rebuild_from_raw(
+                            merged_raw,
+                            run_id=run_id,
+                            window_start=window_start,
+                            window_end=window_end,
+                        )
+                        if rebuild is not None:
+                            merged = merge_station_features(
+                                rebuild["index"],
+                                None,
+                                hass=self.hass,
+                                base_url=self._base_url,
+                                forecast_enabled=self._forecast_enabled,
+                                selected_allergens=self._var_list,
+                                forecast_duration=self._forecast_duration,
+                            )
+                            merged["raw_merged"] = rebuild["raw_all_ref"]
+                            raw_view = rebuild["raw_view"]
+                            raw_all_ref = rebuild["raw_all_ref"]
+                            src_ds = rebuild["src_ds"]
+                            src_key = rebuild["src_key"]
+                            merged_raw = merged.get("raw_merged")
+
                 if raw_view:
                     # Инкрементальная пересборка: восстанавливаем 's' из raw_view по ключу datetime
                     for dt_s, payload in merged_raw.items():
@@ -2440,6 +2601,12 @@ class SilamCoordinator(DataUpdateCoordinator):
                 "tail_fetch_attempted": tail_fetch_attempted,
                 "tail_fetch_network": tail_fetch_network,
                 "tail_fetch_success": tail_fetch_success,
+                "last_data_request_kind": self._last_data_request_kind,
+                "last_data_request_url": self._last_data_request_url,
+                "last_index_request_kind": self._last_index_request_kind,
+                "last_index_request_url": self._last_index_request_url,
+                "last_main_request_kind": self._last_main_request_kind,
+                "last_main_request_url": self._last_main_request_url,
             },
             # --- Runtime effective dataset info (для OptionsFlow/diagnostics) ---
             "dataset": {
