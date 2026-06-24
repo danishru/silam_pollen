@@ -4,10 +4,51 @@
         <title>SILAM Pollen Blog</title>
         <link>https://danishru.github.io/silam_pollen/site/ru/blog</link>
         <description>SILAM Pollen Blog</description>
-        <lastBuildDate>Sun, 21 Jun 2026 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Wed, 24 Jun 2026 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>ru</language>
+        <item>
+            <title><![CDATA[v0.4.1]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/24/v0.4.1</link>
+            <guid>https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/24/v0.4.1</guid>
+            <pubDate>Wed, 24 Jun 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.4.1 💽 Постоянная память и более надёжное восстановление]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v041--постоянная-память-и-более-надёжное-восстановление">v0.4.1 💽 Постоянная память и более надёжное восстановление<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/24/v0.4.1#v041--%D0%BF%D0%BE%D1%81%D1%82%D0%BE%D1%8F%D0%BD%D0%BD%D0%B0%D1%8F-%D0%BF%D0%B0%D0%BC%D1%8F%D1%82%D1%8C-%D0%B8-%D0%B1%D0%BE%D0%BB%D0%B5%D0%B5-%D0%BD%D0%B0%D0%B4%D1%91%D0%B6%D0%BD%D0%BE%D0%B5-%D0%B2%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5" class="hash-link" aria-label="Прямая ссылка на v0.4.1 💽 Постоянная память и более надёжное восстановление" title="Прямая ссылка на v0.4.1 💽 Постоянная память и более надёжное восстановление">​</a></h3>
+<p>Версия <strong>v0.4.1</strong> сосредоточена на <strong>постоянной памяти</strong> — одном из самых важных улучшений надёжности SILAM Pollen.</p>
+<p>SILAM Pollen теперь сохраняет последние успешно загруженные данные, чтобы быстрее восстановить сенсоры и прогноз после перезапуска Home Assistant или временной проблемы с SILAM/сетью.</p>
+<p>Что это значит для вас:</p>
+<ul>
+<li>сенсоры и прогноз быстрее восстанавливаются после перезапуска Home Assistant;</li>
+<li>меньше пустых или недоступных состояний при запуске;</li>
+<li>более стабильная работа при временных проблемах SILAM или сети;</li>
+<li>меньше лишних запросов к службе SILAM;</li>
+<li>SMART-режим лучше справляется с временно неполными или недоступными наборами данных;</li>
+<li>диагностика и предупреждения Home Assistant Repairs стали понятнее.</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-постоянная-память">💽 Постоянная память<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/24/v0.4.1#-%D0%BF%D0%BE%D1%81%D1%82%D0%BE%D1%8F%D0%BD%D0%BD%D0%B0%D1%8F-%D0%BF%D0%B0%D0%BC%D1%8F%D1%82%D1%8C" class="hash-link" aria-label="Прямая ссылка на 💽 Постоянная память" title="Прямая ссылка на 💽 Постоянная память">​</a></h4>
+<p>SILAM Pollen теперь сохраняет последние успешно загруженные данные и может восстановить их, если они всё ещё подходят к текущим настройкам интеграции.</p>
+<p>Это помогает сенсорам пыльцы и прогнозу оставаться доступными стабильнее, особенно после перезапуска Home Assistant или временной проблемы с сетью/SILAM.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-более-стабильный-smart-режим-и-меньше-запросов-к-silam">🧠 Более стабильный SMART-режим и меньше запросов к SILAM<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/24/v0.4.1#-%D0%B1%D0%BE%D0%BB%D0%B5%D0%B5-%D1%81%D1%82%D0%B0%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9-smart-%D1%80%D0%B5%D0%B6%D0%B8%D0%BC-%D0%B8-%D0%BC%D0%B5%D0%BD%D1%8C%D1%88%D0%B5-%D0%B7%D0%B0%D0%BF%D1%80%D0%BE%D1%81%D0%BE%D0%B2-%D0%BA-silam" class="hash-link" aria-label="Прямая ссылка на 🧠 Более стабильный SMART-режим и меньше запросов к SILAM" title="Прямая ссылка на 🧠 Более стабильный SMART-режим и меньше запросов к SILAM">​</a></h4>
+<p>SMART-выбор набора данных стал устойчивее, когда наборы данных SILAM временно неполные или недоступны.</p>
+<p>Вместе с постоянной памятью это также помогает снизить количество лишних запросов к службе SILAM. Когда интеграция может безопасно восстановить или повторно использовать уже доступные данные, ей не нужно заново загружать тот же прогноз без реальной необходимости.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="️-более-надёжная-проверка-службы-и-данных-silam">🗂️ Более надёжная проверка службы и данных SILAM<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/24/v0.4.1#%EF%B8%8F-%D0%B1%D0%BE%D0%BB%D0%B5%D0%B5-%D0%BD%D0%B0%D0%B4%D1%91%D0%B6%D0%BD%D0%B0%D1%8F-%D0%BF%D1%80%D0%BE%D0%B2%D0%B5%D1%80%D0%BA%D0%B0-%D1%81%D0%BB%D1%83%D0%B6%D0%B1%D1%8B-%D0%B8-%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D1%85-silam" class="hash-link" aria-label="Прямая ссылка на 🗂️ Более надёжная проверка службы и данных SILAM" title="Прямая ссылка на 🗂️ Более надёжная проверка службы и данных SILAM">​</a></h4>
+<p>SILAM Pollen теперь более централизованно и последовательно проверяет доступность службы SILAM, опубликованные наборы данных и каталоги запусков.</p>
+<p>Это помогает интеграции лучше понимать текущее состояние SILAM, а SMART-режиму — безопаснее выбирать источник данных и не использовать устаревшие или недоступные наборы.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-диагностика-repairs-и-службы-обновления">🩺 Диагностика, Repairs и службы обновления<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/24/v0.4.1#-%D0%B4%D0%B8%D0%B0%D0%B3%D0%BD%D0%BE%D1%81%D1%82%D0%B8%D0%BA%D0%B0-repairs-%D0%B8-%D1%81%D0%BB%D1%83%D0%B6%D0%B1%D1%8B-%D0%BE%D0%B1%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F" class="hash-link" aria-label="Прямая ссылка на 🩺 Диагностика, Repairs и службы обновления" title="Прямая ссылка на 🩺 Диагностика, Repairs и службы обновления">​</a></h4>
+<p>В релизе также улучшено повседневное обслуживание интеграции:</p>
+<ul>
+<li>новый диагностический сенсор <strong>Статус службы SILAM</strong> помогает понять, доступна ли служба SILAM, выбранный набор данных или сами данные прогноза;</li>
+<li>Home Assistant Repairs может предупредить о недоступном вручную выбранном наборе данных или устаревших legacy-сущностях;</li>
+<li>службы ручного обновления улучшены для интерфейса Home Assistant;</li>
+<li>служба <strong>Полное обновление</strong> помогает проверить SILAM напрямую, без использования сохранённых данных;</li>
+<li>существующие автоматизации и скрипты остаются совместимыми.</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-обновления-переводов-с-помощью-ии">🌐 Обновления переводов с помощью ИИ<a href="https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/24/v0.4.1#-%D0%BE%D0%B1%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F-%D0%BF%D0%B5%D1%80%D0%B5%D0%B2%D0%BE%D0%B4%D0%BE%D0%B2-%D1%81-%D0%BF%D0%BE%D0%BC%D0%BE%D1%89%D1%8C%D1%8E-%D0%B8%D0%B8" class="hash-link" aria-label="Прямая ссылка на 🌐 Обновления переводов с помощью ИИ" title="Прямая ссылка на 🌐 Обновления переводов с помощью ИИ">​</a></h4>
+<p>Переводы были обновлены с помощью ИИ, чтобы покрыть новую диагностику, службы, Repairs и сообщения мастера настройки.</p>
+<p>Если вы носитель языка и заметите неточные или неестественные формулировки, корректировки очень приветствуются.</p>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.4.1" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/%D0%9F%D0%BE%D0%B4%D1%80%D0%BE%D0%B1%D0%BD%D0%B5%D0%B5--%D0%B2--%D1%80%D0%B5%D0%BB%D0%B8%D0%B7%D0%B5-v0.4.1-blue?style=flat" alt="Подробнее в релизе v0.4.1" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
         <item>
             <title><![CDATA[v0.4.0]]></title>
             <link>https://danishru.github.io/silam_pollen/site/ru/blog/2026/06/21/v0.4.0</link>

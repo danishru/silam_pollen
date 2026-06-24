@@ -4,10 +4,51 @@
         <title>SILAM Pollen Blog</title>
         <link>https://danishru.github.io/silam_pollen/site/blog</link>
         <description>SILAM Pollen Blog</description>
-        <lastBuildDate>Sun, 21 Jun 2026 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Wed, 24 Jun 2026 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[v0.4.1]]></title>
+            <link>https://danishru.github.io/silam_pollen/site/blog/2026/06/24/v0.4.1</link>
+            <guid>https://danishru.github.io/silam_pollen/site/blog/2026/06/24/v0.4.1</guid>
+            <pubDate>Wed, 24 Jun 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[v0.4.1 💽 Persistent memory and safer recovery]]></description>
+            <content:encoded><![CDATA[<h3 class="anchor anchorWithStickyNavbar_LWe7" id="v041--persistent-memory-and-safer-recovery">v0.4.1 💽 Persistent memory and safer recovery<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/24/v0.4.1#v041--persistent-memory-and-safer-recovery" class="hash-link" aria-label="Direct link to v0.4.1 💽 Persistent memory and safer recovery" title="Direct link to v0.4.1 💽 Persistent memory and safer recovery">​</a></h3>
+<p>Version <strong>v0.4.1</strong> focuses on <strong>persistent memory</strong> — one of the most important reliability improvements in SILAM Pollen.</p>
+<p>SILAM Pollen now saves the last successfully loaded data so sensors and forecasts can recover faster after a Home Assistant restart or a temporary SILAM/network issue.</p>
+<p>With this update, you get:</p>
+<ul>
+<li>faster recovery for sensors and forecasts after Home Assistant restarts;</li>
+<li>fewer empty or unavailable states during startup;</li>
+<li>more stable behavior during temporary SILAM or network issues;</li>
+<li>fewer unnecessary requests to the SILAM service;</li>
+<li>more resilient SMART mode when datasets are temporarily incomplete or unavailable;</li>
+<li>clearer diagnostics and better Home Assistant Repairs warnings.</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-persistent-memory">💽 Persistent memory<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/24/v0.4.1#-persistent-memory" class="hash-link" aria-label="Direct link to 💽 Persistent memory" title="Direct link to 💽 Persistent memory">​</a></h4>
+<p>SILAM Pollen now stores the last successfully loaded data and can restore it when the saved data still matches the current integration settings.</p>
+<p>This helps keep pollen sensors and forecasts available more consistently, especially after a Home Assistant restart or a temporary network/SILAM issue.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-more-stable-smart-mode-and-fewer-silam-requests">🧠 More stable SMART mode and fewer SILAM requests<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/24/v0.4.1#-more-stable-smart-mode-and-fewer-silam-requests" class="hash-link" aria-label="Direct link to 🧠 More stable SMART mode and fewer SILAM requests" title="Direct link to 🧠 More stable SMART mode and fewer SILAM requests">​</a></h4>
+<p>SMART dataset selection is now more resilient when SILAM datasets are temporarily incomplete or unavailable.</p>
+<p>Together with persistent memory, this also helps reduce unnecessary requests to the SILAM service. When the integration can safely restore or reuse already available data, it avoids downloading the same forecast again unless a real live update is needed.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="️-more-reliable-silam-service-and-data-checks">🗂️ More reliable SILAM service and data checks<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/24/v0.4.1#%EF%B8%8F-more-reliable-silam-service-and-data-checks" class="hash-link" aria-label="Direct link to 🗂️ More reliable SILAM service and data checks" title="Direct link to 🗂️ More reliable SILAM service and data checks">​</a></h4>
+<p>SILAM Pollen now handles SILAM service availability, published datasets, and runs catalog checks in a more centralized and consistent way.</p>
+<p>This helps the integration better understand the current SILAM state, while allowing SMART mode to choose data sources more safely and avoid outdated or unavailable datasets.</p>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-diagnostics-repairs-and-update-services">🩺 Diagnostics, Repairs, and update services<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/24/v0.4.1#-diagnostics-repairs-and-update-services" class="hash-link" aria-label="Direct link to 🩺 Diagnostics, Repairs, and update services" title="Direct link to 🩺 Diagnostics, Repairs, and update services">​</a></h4>
+<p>This release also improves day-to-day maintenance:</p>
+<ul>
+<li>a new <strong>SILAM service status</strong> diagnostic sensor helps show whether SILAM, the selected dataset, or the data itself is currently available;</li>
+<li>Home Assistant Repairs can warn about unavailable manually selected datasets or deprecated legacy entities;</li>
+<li>manual update services were improved for the Home Assistant UI;</li>
+<li>the <strong>Full Refresh</strong> service helps check SILAM directly, without using saved data;</li>
+<li>existing automations and scripts remain compatible.</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_LWe7" id="-ai-assisted-translation-updates">🌐 AI-assisted translation updates<a href="https://danishru.github.io/silam_pollen/site/blog/2026/06/24/v0.4.1#-ai-assisted-translation-updates" class="hash-link" aria-label="Direct link to 🌐 AI-assisted translation updates" title="Direct link to 🌐 AI-assisted translation updates">​</a></h4>
+<p>Translations were updated with the help of AI to cover the new diagnostics, services, Repairs, and setup messages.</p>
+<p>If you are a native speaker and notice inaccurate or unnatural wording, corrections are very welcome.</p>
+<p><a href="https://github.com/danishru/silam_pollen/releases/tag/v0.4.1" target="_blank" rel="noopener noreferrer"><img decoding="async" loading="lazy" src="https://img.shields.io/badge/More--in--release-v0.4.1-blue?style=flat" alt="More in release v0.4.1" class="img_ev3q"></a></p>]]></content:encoded>
+        </item>
         <item>
             <title><![CDATA[v0.4.0]]></title>
             <link>https://danishru.github.io/silam_pollen/site/blog/2026/06/21/v0.4.0</link>
