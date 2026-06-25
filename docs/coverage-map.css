@@ -796,47 +796,58 @@ html[data-theme="dark"] .center-pointer {
 }
 
 /* ------------------------------------------------------------------
-   SVG theme and rotate icons
+   SVG theme and rotating compass icons
    ------------------------------------------------------------------ */
 
-/* Стандартный OpenLayers compass сохраняется в DOM для совместимости,
-   но визуально заменяется нашим SVG. */
-.ol-rotate .ol-compass {
-  display: none !important;
-}
-
-.theme-toggle-control button .theme-toggle-symbol,
-.ol-rotate button .rotate-symbol {
+/* Theme toggle использует SVG и не зависит от метрик шрифта. */
+.theme-toggle-control button .theme-toggle-symbol {
   position: static !important;
   left: auto !important;
   top: auto !important;
 
   display: block !important;
-  width: 17px !important;
-  height: 17px !important;
-  min-width: 17px !important;
-  min-height: 17px !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
 
   color: var(--ui-glass-text, var(--ui-text)) !important;
   transform: none !important;
   pointer-events: none !important;
 }
 
-.theme-toggle-control button .theme-toggle-symbol {
-  width: 16px !important;
-  height: 16px !important;
-  min-width: 16px !important;
-  min-height: 16px !important;
-}
+/* .ol-compass оставляем видимым: именно его OpenLayers вращает
+   и тем самым показывает направление поворота карты. */
+.ol-rotate .ol-compass {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 
-.ol-rotate button .rotate-symbol {
   width: 18px !important;
   height: 18px !important;
   min-width: 18px !important;
   min-height: 18px !important;
+
+  color: var(--ui-glass-text, var(--ui-text)) !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Сам SVG не вращаем отдельно: вращение приходит от .ol-compass. */
+.ol-rotate .ol-compass .rotate-symbol {
+  display: block !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+
+  color: currentColor !important;
+  transform: none !important;
+  pointer-events: none !important;
 }
 
 .theme-toggle-control button .theme-toggle-symbol *,
-.ol-rotate button .rotate-symbol * {
+.ol-rotate .ol-compass .rotate-symbol * {
   vector-effect: non-scaling-stroke;
 }

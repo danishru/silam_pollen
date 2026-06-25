@@ -311,30 +311,27 @@
 
 
   function normalizeRotateButton() {
-    const button = document.querySelector(".ol-rotate button");
-    if (!button || button.querySelector(".rotate-symbol")) {
+    const compassEl = document.querySelector(".ol-rotate .ol-compass");
+    if (!compassEl || compassEl.querySelector(".rotate-symbol")) {
       return;
     }
 
-    button.insertAdjacentHTML(
+    compassEl.textContent = "";
+    compassEl.insertAdjacentHTML(
       "beforeend",
       `
         <svg class="rotate-symbol" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path
-            d="M18.55 8.25A7.5 7.5 0 1 0 19.5 12"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.25"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+            d="M12 3.25 7.7 12.4 12 10.55 16.3 12.4 12 3.25Z"
+            fill="currentColor"
           />
           <path
-            d="M18.75 4.75v3.75h-3.75"
+            d="M12 3.25v14.5"
             fill="none"
             stroke="currentColor"
-            stroke-width="2.25"
+            stroke-width="1.9"
             stroke-linecap="round"
-            stroke-linejoin="round"
+            opacity="0.95"
           />
         </svg>
       `
