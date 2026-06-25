@@ -48,6 +48,8 @@ const config = {
       items: [
         { to: "/docs/intro", label: "Docs", position: "left" },
         { to: "/blog", label: "Releases", position: "left" },
+        { to: "/coverage", label: "Coverage map", position: "left" },
+        { to: "/roadmap", label: "Roadmap", position: "left" },
         { type: "localeDropdown", position: "right" }
       ]
     },
