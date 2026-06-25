@@ -32,9 +32,9 @@ export default function CoveragePage() {
       description={text.description}
       noFooter
     >
-      <main className={styles.coverageFullscreenPage}>
+      <main className={`${styles.coverageFullscreenPage} silamCoverageFullscreenPage`}>
         <iframe
-          className={styles.coverageFrame}
+          className={`${styles.coverageFrame} silamCoverageFrame`}
           src={src}
           title={text.iframeTitle}
           loading="eager"

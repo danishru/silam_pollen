@@ -1,0 +1,18 @@
+{
+  "item.label.Docs": {
+    "message": "Документация",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.Releases": {
+    "message": "Релизы",
+    "description": "Navbar item with label Releases"
+  },
+  "item.label.Coverage map": {
+    "message": "Карта покрытия",
+    "description": "Navbar item with label Coverage map"
+  },
+  "item.label.Roadmap": {
+    "message": "Дорожная карта",
+    "description": "Navbar item with label Roadmap"
+  }
+}

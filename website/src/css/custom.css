@@ -19,6 +19,7 @@
   --ifm-menu-color-active: var(--ifm-color-primary);
   --ifm-code-font-size: 94%;
   --ifm-global-radius: 14px;
+  --ifm-navbar-height: 4rem;
 
   /* Shared SILAM design tokens */
   --silam-accent-green: #168a4a;
@@ -705,5 +706,117 @@ body:has(.coverageFullscreenPage) footer {
     color: var(--ifm-color-primary-lightest) !important;
     background: rgba(53, 200, 120, 0.10) !important;
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile sidebar untrap fix                                                   */
+/* -------------------------------------------------------------------------- */
+
+/* Docusaurus renders the mobile sidebar inside `.navbar`.
+ * On mobile, backdrop-filter/filter/transform on `.navbar` can create a
+ * containing block for the sidebar's `position: fixed`, so the drawer becomes
+ * trapped inside the top navbar area. Keep the glass navbar on desktop, but
+ * disable those containing-block properties on mobile.
+ */
+@media (max-width: 996px) {
+  .navbar {
+    overflow: visible !important;
+    contain: none !important;
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .navbar-sidebar,
+  .navbar-sidebar__backdrop {
+    transform-style: flat !important;
+    contain: none !important;
+  }
+
+  .navbar-sidebar {
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+  }
+
+  .navbar-sidebar__items {
+    height: calc(100vh - var(--ifm-navbar-height)) !important;
+    height: calc(100dvh - var(--ifm-navbar-height)) !important;
+    max-height: calc(100vh - var(--ifm-navbar-height)) !important;
+    max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Coverage fullscreen stable class height/scrollbar fix                       */
+/* -------------------------------------------------------------------------- */
+
+/* The coverage React page adds these non-module classes intentionally.
+ * Do not use only CSS-module class names in global selectors: they are hashed
+ * by the build and may not match `.coverageFullscreenPage` literally.
+ */
+html:has(.silamCoverageFullscreenPage),
+body:has(.silamCoverageFullscreenPage) {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+/* Docusaurus wrappers should not add document height on the fullscreen map page. */
+html:has(.silamCoverageFullscreenPage) #__docusaurus,
+body:has(.silamCoverageFullscreenPage) #__docusaurus,
+html:has(.silamCoverageFullscreenPage) .main-wrapper,
+body:has(.silamCoverageFullscreenPage) .main-wrapper {
+  width: 100% !important;
+  height: calc(100vh - var(--ifm-navbar-height)) !important;
+  height: calc(100dvh - var(--ifm-navbar-height)) !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - var(--ifm-navbar-height)) !important;
+  max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
+  overflow: hidden !important;
+}
+
+/* Footer is intentionally hidden on the fullscreen map page. */
+html:has(.silamCoverageFullscreenPage) footer,
+body:has(.silamCoverageFullscreenPage) footer {
+  display: none !important;
+}
+
+/* The map page itself must fit exactly below the navbar. */
+.silamCoverageFullscreenPage {
+  position: relative !important;
+  z-index: 0 !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: calc(100vh - var(--ifm-navbar-height)) !important;
+  height: calc(100dvh - var(--ifm-navbar-height)) !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - var(--ifm-navbar-height)) !important;
+  max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.silamCoverageFrame {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  border: 0 !important;
+  overflow: hidden !important;
 }
 
