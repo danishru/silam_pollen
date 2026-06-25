@@ -62,6 +62,7 @@ function CoverageMapFrame({text}) {
       style={{'--silam-coverage-top': `${navbarHeight}px`}}
     >
       <iframe
+        key={`${text.lang}-${colorMode}`}
         className={`${styles.coverageFrame} silamCoverageFrame`}
         src={src}
         title={text.iframeTitle}
