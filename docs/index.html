@@ -286,20 +286,21 @@
                 controlsContainer.insertBefore(clusterEl, themeToggleEl || rotateEl || zoomEl);
               }
 
-              // Порядок всегда один:
+              // Порядок на mobile:
               // 1) theme toggle
-              // 2) rotate
-              // 3) zoom, но zoom добавляем сюда только на mobile.
+              // 2) zoom
+              // 3) rotate.
+              // На desktop zoom возвращается в левый контейнер рядом с legend.
               if (themeToggleEl && themeToggleEl.parentElement !== clusterEl) {
                 clusterEl.appendChild(themeToggleEl);
               }
 
-              if (rotateEl && rotateEl.parentElement !== clusterEl) {
-                clusterEl.appendChild(rotateEl);
-              }
-
               if (isMobileControlLayout() && zoomEl && zoomEl.parentElement !== clusterEl) {
                 clusterEl.appendChild(zoomEl);
+              }
+
+              if (rotateEl && rotateEl.parentElement !== clusterEl) {
+                clusterEl.appendChild(rotateEl);
               }
 
               // На desktop zoom должен вернуться в левый контейнер.
@@ -588,12 +589,40 @@
             }
             
             if (isMobile) {
-              // Для мобильных устройств обновляем информацию по событию moveend (используем центр карты)
-              map.on('moveend', function() {
-                const center = ol.proj.toLonLat(map.getView().getCenter());
-                const centerPixel = map.getPixelFromCoordinate(map.getView().getCenter());
+              // Для мобильных устройств обновляем координаты динамически,
+              // пока пользователь двигает карту. Центр карты считается точкой выбора.
+              let mobileInfoFrame = null;
+
+              function updateMobileCenterInfo() {
+                mobileInfoFrame = null;
+
+                const view = map.getView();
+                const centerCoordinate = view.getCenter();
+                if (!centerCoordinate) {
+                  return;
+                }
+
+                const center = ol.proj.toLonLat(centerCoordinate);
+                const centerPixel = map.getPixelFromCoordinate(centerCoordinate);
                 updateInfo(center, centerPixel);
-              });
+              }
+
+              function scheduleMobileCenterInfoUpdate() {
+                if (mobileInfoFrame !== null) {
+                  return;
+                }
+
+                mobileInfoFrame = requestAnimationFrame(updateMobileCenterInfo);
+              }
+
+              const view = map.getView();
+              view.on('change:center', scheduleMobileCenterInfoUpdate);
+              view.on('change:resolution', scheduleMobileCenterInfoUpdate);
+              map.on('pointerdrag', scheduleMobileCenterInfoUpdate);
+              map.on('moveend', scheduleMobileCenterInfoUpdate);
+
+              // Первичная отрисовка координат после fit().
+              requestAnimationFrame(scheduleMobileCenterInfoUpdate);
             } else {
               // Для десктопа обновляем информацию по событию pointermove
               map.on('pointermove', function(evt) {

@@ -701,3 +701,67 @@ html[data-theme="dark"] .center-pointer {
 .map-aux-control-cluster .ol-zoom button + button {
   margin-top: .5rem !important;
 }
+
+/* ------------------------------------------------------------------
+   Final mobile order, coordinate parent reset and plus centering
+   ------------------------------------------------------------------ */
+
+/* На мобильном в правой колонке порядок такой:
+   theme toggle -> zoom -> rotate. */
+@media (max-width: 767px) {
+  .map-aux-control-cluster {
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: flex-start !important;
+  }
+
+  .map-aux-control-cluster .theme-toggle-control {
+    order: 1 !important;
+  }
+
+  .map-aux-control-cluster .ol-zoom {
+    order: 2 !important;
+  }
+
+  .map-aux-control-cluster .ol-rotate {
+    order: 3 !important;
+  }
+
+  /* На mobile знак + визуально был чуть ниже центра.
+     Поднимаем только mobile-вариант и только zoom-in. */
+  .map-aux-control-cluster .ol-zoom button.ol-zoom-in .zoom-symbol,
+  .ol-zoom button.ol-zoom-in .zoom-symbol {
+    transform: translate(-50%, -64%) !important;
+  }
+}
+
+/* Когда info-window переносится внутрь legend-control на мобильном,
+   сам parent #info-window.legend-info не должен иметь собственного glass-фона.
+   Фон должен быть только у .mobile-coordinate-badge, иначе получается двойная плашка. */
+.legend-control > .info-window.legend-info,
+.legend-control .info-window.legend-info,
+.legend-control .legend-info.info-window {
+  width: 100% !important;
+  box-sizing: border-box !important;
+
+  margin-top: 7px !important;
+  padding: 0 !important;
+
+  color: inherit !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  white-space: normal !important;
+  opacity: 1 !important;
+}
+
+/* Сама координатная плашка остаётся стеклянной и/или получает overlay покрытия. */
+.legend-control > .info-window.legend-info .mobile-coordinate-badge,
+.legend-control .info-window.legend-info .mobile-coordinate-badge {
+  width: 100%;
+}
