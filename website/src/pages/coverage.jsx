@@ -51,28 +51,34 @@ function useNavbarHeight() {
   return navbarHeight;
 }
 
-export default function CoveragePage() {
-  const {i18n} = useDocusaurusContext();
+function CoverageMapFrame({text}) {
   const {colorMode} = useColorMode();
   const navbarHeight = useNavbarHeight();
-
-  const currentLocale = i18n.currentLocale === 'ru' ? 'ru' : 'en';
-  const text = TEXT[currentLocale];
   const src = useBaseUrl(`/coverage-map/index.html?lng=${text.lang}&theme=${colorMode}`);
 
   return (
+    <main
+      className={`${styles.coveragePage} silamCoveragePage`}
+      style={{'--silam-coverage-top': `${navbarHeight}px`}}
+    >
+      <iframe
+        className={`${styles.coverageFrame} silamCoverageFrame`}
+        src={src}
+        title={text.iframeTitle}
+        loading="eager"
+      />
+    </main>
+  );
+}
+
+export default function CoveragePage() {
+  const {i18n} = useDocusaurusContext();
+  const currentLocale = i18n.currentLocale === 'ru' ? 'ru' : 'en';
+  const text = TEXT[currentLocale];
+
+  return (
     <Layout title={text.title} description={text.description} noFooter>
-      <main
-        className={`${styles.coveragePage} silamCoveragePage`}
-        style={{'--silam-coverage-top': `${navbarHeight}px`}}
-      >
-        <iframe
-          className={`${styles.coverageFrame} silamCoverageFrame`}
-          src={src}
-          title={text.iframeTitle}
-          loading="eager"
-        />
-      </main>
+      <CoverageMapFrame text={text} />
     </Layout>
   );
 }
