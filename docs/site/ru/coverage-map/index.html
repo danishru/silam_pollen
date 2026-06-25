@@ -210,8 +210,117 @@
           padding: 7px 9px;
         }
       }
-      </style>
-  </head>
+      
+    /* ------------------------------------------------------------------
+       SILAM map theme support
+       ------------------------------------------------------------------ */
+    :root {
+      --silam-map-bg: #eef7f2;
+      --silam-map-panel-bg: rgba(112, 239, 112, 0.84);
+      --silam-map-panel-border: rgba(22, 138, 74, 0.18);
+      --silam-map-text: #0f2430;
+      --silam-map-muted: rgba(15, 36, 48, 0.78);
+      --silam-map-button-bg: rgba(255, 255, 255, 0.9);
+      --silam-map-button-text: #0f2430;
+      --silam-map-button-border: rgba(15, 36, 48, 0.14);
+      --silam-map-shadow: 0 18px 46px rgba(15, 23, 42, 0.18);
+    }
+
+    html[data-theme="dark"] {
+      --silam-map-bg: #071314;
+      --silam-map-panel-bg: rgba(9, 30, 26, 0.9);
+      --silam-map-panel-border: rgba(94, 234, 212, 0.2);
+      --silam-map-text: #ecfeff;
+      --silam-map-muted: rgba(236, 254, 255, 0.74);
+      --silam-map-button-bg: rgba(15, 23, 42, 0.92);
+      --silam-map-button-text: #ecfeff;
+      --silam-map-button-border: rgba(94, 234, 212, 0.18);
+      --silam-map-shadow: 0 22px 60px rgba(0, 0, 0, 0.44);
+    }
+
+    html[data-theme="dark"],
+    html[data-theme="dark"] body {
+      background: var(--silam-map-bg);
+      color: var(--silam-map-text);
+    }
+
+    html[data-theme="dark"] #map {
+      background: var(--silam-map-bg);
+    }
+
+    html[data-theme="dark"] .ol-layer canvas {
+      filter: brightness(0.72) contrast(1.08) saturate(0.82) hue-rotate(8deg);
+    }
+
+    html[data-theme="dark"] .ol-layer canvas:hover {
+      filter: brightness(0.74) contrast(1.08) saturate(0.84) hue-rotate(8deg);
+    }
+
+    .legend-control {
+      background: var(--silam-map-panel-bg) !important;
+      border: 1px solid var(--silam-map-panel-border);
+      color: var(--silam-map-text);
+      box-shadow: var(--silam-map-shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .legend-control label,
+    .legend-control span,
+    .legend-control div {
+      color: var(--silam-map-text);
+    }
+
+    .legend-control .coordinates,
+    .coordinates {
+      color: var(--silam-map-muted);
+    }
+
+    .ol-control button {
+      border: 1px solid var(--silam-map-button-border) !important;
+      background: var(--silam-map-button-bg) !important;
+      color: var(--silam-map-button-text) !important;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    }
+
+    html[data-theme="dark"] .ol-control button {
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
+    }
+
+    html[data-theme="dark"] .ol-attribution,
+    html[data-theme="dark"] .ol-attribution ul {
+      background: rgba(15, 23, 42, 0.78) !important;
+      color: var(--silam-map-text) !important;
+    }
+
+    html[data-theme="dark"] .ol-attribution a {
+      color: #7ab7ff !important;
+    }
+
+    html[data-theme="dark"] .mobile-center-pointer {
+      color: #ecfeff;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
+    }
+
+  </style>
+  
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const requestedTheme = params.get("theme");
+      const preferredTheme = window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+      const theme = requestedTheme === "dark" || requestedTheme === "light"
+        ? requestedTheme
+        : preferredTheme;
+
+      document.documentElement.dataset.theme = theme;
+    })();
+  </script>
+
+</head>
   <body>
     <div id="map" class="map">
       <!-- Центровой указатель (виден только на мобильных) с inline SVG -->
