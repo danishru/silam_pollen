@@ -743,8 +743,6 @@ html[data-theme="dark"] .center-pointer {
 
 .copy-toast {
   position: fixed;
-  left: 50%;
-  bottom: 1rem;
   z-index: 3000;
 
   max-width: min(320px, calc(100vw - 2rem));
@@ -764,13 +762,81 @@ html[data-theme="dark"] .center-pointer {
 
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, 8px);
   transition:
     opacity .16s ease,
     transform .16s ease;
 }
 
-.copy-toast.is-visible {
+/* Mobile: toast появляется прямо под центром карты / под перекрестием. */
+.copy-toast.is-mobile-center {
+  left: 50%;
+  top: calc(50% + 22px);
+  bottom: auto;
+  transform: translate(-50%, 8px);
+}
+
+/* JS ставит left/top под переданным элементом: info-window на desktop или legend-control на mobile. */
+.copy-toast.is-below-element {
+  bottom: auto;
+  transform: translate(-50%, 8px);
+}
+
+/* Fallback, если якорь не передан. */
+.copy-toast.is-fallback {
+  left: 50%;
+  bottom: 1rem;
+  transform: translate(-50%, 8px);
+}
+
+.copy-toast.is-visible.is-mobile-center,
+.copy-toast.is-visible.is-below-element,
+.copy-toast.is-visible.is-fallback {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+/* ------------------------------------------------------------------
+   SVG theme and rotate icons
+   ------------------------------------------------------------------ */
+
+/* Стандартный OpenLayers compass сохраняется в DOM для совместимости,
+   но визуально заменяется нашим SVG. */
+.ol-rotate .ol-compass {
+  display: none !important;
+}
+
+.theme-toggle-control button .theme-toggle-symbol,
+.ol-rotate button .rotate-symbol {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+
+  display: block !important;
+  width: 17px !important;
+  height: 17px !important;
+  min-width: 17px !important;
+  min-height: 17px !important;
+
+  color: var(--ui-glass-text, var(--ui-text)) !important;
+  transform: none !important;
+  pointer-events: none !important;
+}
+
+.theme-toggle-control button .theme-toggle-symbol {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+}
+
+.ol-rotate button .rotate-symbol {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+}
+
+.theme-toggle-control button .theme-toggle-symbol *,
+.ol-rotate button .rotate-symbol * {
+  vector-effect: non-scaling-stroke;
 }

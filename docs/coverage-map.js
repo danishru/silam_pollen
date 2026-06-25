@@ -180,7 +180,7 @@
     });
   }
 
-  function showCopyToast(message) {
+  function showCopyToast(message, placement = {}) {
     let toastEl = document.querySelector(".copy-toast");
     if (!toastEl) {
       toastEl = document.createElement("div");
@@ -188,6 +188,28 @@
       toastEl.setAttribute("role", "status");
       toastEl.setAttribute("aria-live", "polite");
       document.body.appendChild(toastEl);
+    }
+
+    toastEl.classList.remove(
+      "is-mobile-center",
+      "is-below-element",
+      "is-fallback"
+    );
+
+    toastEl.style.left = "";
+    toastEl.style.top = "";
+    toastEl.style.bottom = "";
+    toastEl.style.transform = "";
+
+    if (placement.type === "mobile-center") {
+      toastEl.classList.add("is-mobile-center");
+    } else if (placement.type === "below-element" && placement.element) {
+      const rect = placement.element.getBoundingClientRect();
+      toastEl.classList.add("is-below-element");
+      toastEl.style.left = `${rect.left + rect.width / 2}px`;
+      toastEl.style.top = `${rect.bottom + 8}px`;
+    } else {
+      toastEl.classList.add("is-fallback");
     }
 
     toastEl.textContent = message;
@@ -199,10 +221,10 @@
     }, 1200);
   }
 
-  function copyCoordinate(coordinate, text) {
+  function copyCoordinate(coordinate, text, placement) {
     return copyTextToClipboard(formatCoordinateClipboard(coordinate))
-      .then(() => showCopyToast(text.copied))
-      .catch(() => showCopyToast(text.copyFailed));
+      .then(() => showCopyToast(text.copied, placement))
+      .catch(() => showCopyToast(text.copyFailed, placement));
   }
 
   function buildCoverageStyle(entry) {
@@ -238,6 +260,33 @@
     return { layer, source };
   }
 
+
+  function getThemeIconSvg(iconName) {
+    if (iconName === "sun") {
+      return `
+        <svg class="theme-toggle-symbol theme-toggle-symbol-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2" />
+          <path
+            d="M12 2.75v2.1M12 19.15v2.1M4.85 4.85l1.49 1.49M17.66 17.66l1.49 1.49M2.75 12h2.1M19.15 12h2.1M4.85 19.15l1.49-1.49M17.66 6.34l1.49-1.49"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      `;
+    }
+
+    return `
+      <svg class="theme-toggle-symbol theme-toggle-symbol-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path
+          d="M20.2 14.55A7.5 7.5 0 0 1 9.45 3.8 8.5 8.5 0 1 0 20.2 14.55Z"
+          fill="currentColor"
+        />
+      </svg>
+    `;
+  }
+
   function normalizeZoomButtons() {
     const zoomIn = document.querySelector(".ol-zoom .ol-zoom-in");
     const zoomOut = document.querySelector(".ol-zoom .ol-zoom-out");
@@ -258,6 +307,38 @@
 
       button.appendChild(symbolEl);
     });
+  }
+
+
+  function normalizeRotateButton() {
+    const button = document.querySelector(".ol-rotate button");
+    if (!button || button.querySelector(".rotate-symbol")) {
+      return;
+    }
+
+    button.insertAdjacentHTML(
+      "beforeend",
+      `
+        <svg class="rotate-symbol" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path
+            d="M18.55 8.25A7.5 7.5 0 1 0 19.5 12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.25"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M18.75 4.75v3.75h-3.75"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.25"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      `
+    );
   }
 
   function stopMapDragOnControl(element) {
@@ -363,6 +444,8 @@
   }
 
   function arrangeAuxControls(themeToggleEl) {
+    normalizeRotateButton();
+
     const rotateEl = document.querySelector(".ol-rotate");
     const zoomEl = document.querySelector(".ol-zoom");
 
@@ -440,11 +523,10 @@
 
     function updateButton() {
       const theme = getCurrentTheme() === "dark" ? "dark" : "light";
-      const icon = theme === "dark" ? "☀︎" : "☾";
       const iconName = theme === "dark" ? "sun" : "moon";
 
       button.dataset.icon = iconName;
-      button.innerHTML = `<span class="theme-toggle-symbol" aria-hidden="true">${icon}</span>`;
+      button.innerHTML = getThemeIconSvg(iconName);
       button.title = theme === "dark"
         ? TEXT.en.switchToLight
         : TEXT.en.switchToDark;
@@ -700,8 +782,14 @@
       }
 
       copyTextToClipboard(value)
-        .then(() => showCopyToast(text.copied))
-        .catch(() => showCopyToast(text.copyFailed));
+        .then(() => showCopyToast(text.copied, {
+          type: "below-element",
+          element: legendEl || infoWindow,
+        }))
+        .catch(() => showCopyToast(text.copyFailed, {
+          type: "below-element",
+          element: legendEl || infoWindow,
+        }));
     });
 
     infoWindow.addEventListener("keydown", (event) => {
@@ -723,8 +811,14 @@
       }
 
       copyTextToClipboard(value)
-        .then(() => showCopyToast(text.copied))
-        .catch(() => showCopyToast(text.copyFailed));
+        .then(() => showCopyToast(text.copied, {
+          type: "below-element",
+          element: legendEl || infoWindow,
+        }))
+        .catch(() => showCopyToast(text.copyFailed, {
+          type: "below-element",
+          element: legendEl || infoWindow,
+        }));
     });
 
     window.addEventListener("resize", arrangeMapControls);
@@ -741,7 +835,15 @@
         return;
       }
 
-      copyCoordinate(ol.proj.toLonLat(event.coordinate), text);
+      const coordinate = ol.proj.toLonLat(event.coordinate);
+      renderInfo(coordinate, event.pixel);
+      infoWindow.style.left = `${event.pixel[0] + 15}px`;
+      infoWindow.style.top = `${event.pixel[1] + 15}px`;
+
+      copyCoordinate(coordinate, text, {
+        type: "below-element",
+        element: infoWindow,
+      });
     });
 
     map.on("pointermove", (event) => {
