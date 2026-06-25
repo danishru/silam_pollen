@@ -443,3 +443,261 @@ html[data-theme="dark"] .ol-attribution.ol-uncollapsible:not(.ol-collapsed) ul {
     border-color .16s ease,
     background .16s ease;
 }
+/* ------------------------------------------------------------------
+   Auxiliary top-right controls: rotate + temporary theme toggle
+   ------------------------------------------------------------------ */
+
+/* Общий контейнер для ol-rotate + временного переключателя темы.
+   Особенно полезно на мобильном, где rotate-control может появиться
+   в той же зоне, что и theme-toggle. */
+.map-aux-control-cluster {
+  position: absolute !important;
+  top: .75rem !important;
+  right: .75rem !important;
+  left: auto !important;
+  bottom: auto !important;
+
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: .5rem !important;
+
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.map-aux-control-cluster .ol-rotate,
+.map-aux-control-cluster .theme-toggle-control {
+  position: static !important;
+  inset: auto !important;
+  margin: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.map-aux-control-cluster .ol-rotate button,
+.map-aux-control-cluster .theme-toggle-control button {
+  margin: 0 !important;
+}
+
+/* Fallback-позиция до сборки контейнера JS. */
+.ol-rotate {
+  top: .75rem !important;
+  right: 4rem !important;
+  left: auto !important;
+}
+
+/* ------------------------------------------------------------------
+   Mobile coordinates inside legend
+   ------------------------------------------------------------------ */
+
+/* В мобильном режиме координаты внутри легенды выводятся отдельной
+   стеклянной плашкой. Фон повторяет glass material основной legend-control. */
+.legend-control .legend-info {
+  border-top: 0 !important;
+  margin-top: 7px;
+  padding-top: 0;
+}
+
+.mobile-coordinate-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border-radius: 12px;
+
+  color: var(--ui-glass-text) !important;
+  background: var(--ui-glass-panel) !important;
+  background-color: var(--ui-glass-panel) !important;
+  border: 1px solid var(--ui-glass-border) !important;
+  box-shadow: var(--ui-glass-shadow) !important;
+  backdrop-filter: blur(18px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+
+  white-space: nowrap;
+}
+
+.mobile-coordinate-badge.has-active-coverage {
+  background:
+    linear-gradient(0deg, var(--coverage-active-bg), var(--coverage-active-bg)),
+    var(--ui-glass-panel) !important;
+  background-color: var(--ui-glass-panel) !important;
+}
+
+html[data-theme="dark"] .mobile-coordinate-badge {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.42);
+}
+
+/* ------------------------------------------------------------------
+   Mobile center pointer theme colors
+   ------------------------------------------------------------------ */
+
+/* Цвет линий SVG берётся из currentColor, поэтому тема управляется CSS. */
+.center-pointer {
+  color: rgba(0, 0, 0, 0.34);
+}
+
+html[data-theme="dark"] .center-pointer {
+  color: rgba(232, 255, 251, 0.68);
+}
+
+/* ------------------------------------------------------------------
+   Right auxiliary control column
+   ------------------------------------------------------------------ */
+
+/* Один правый контейнер для:
+   1) theme toggle
+   2) rotate
+   3) zoom на mobile */
+.map-aux-control-cluster {
+  position: absolute !important;
+  top: .75rem !important;
+  right: .75rem !important;
+  left: auto !important;
+  bottom: auto !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+  gap: .5rem !important;
+
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.map-aux-control-cluster .theme-toggle-control,
+.map-aux-control-cluster .ol-rotate,
+.map-aux-control-cluster .ol-zoom {
+  position: static !important;
+  inset: auto !important;
+  margin: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.map-aux-control-cluster .theme-toggle-control {
+  order: 1;
+}
+
+.map-aux-control-cluster .ol-rotate {
+  order: 2;
+}
+
+.map-aux-control-cluster .ol-zoom {
+  order: 3;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+}
+
+.map-aux-control-cluster .theme-toggle-control button,
+.map-aux-control-cluster .ol-rotate button,
+.map-aux-control-cluster .ol-zoom button {
+  margin: 0 !important;
+}
+
+.map-aux-control-cluster .ol-zoom button + button {
+  margin-top: .5rem !important;
+}
+
+/* Fallback до JS-сборки правого контейнера. */
+.theme-toggle-control {
+  top: .75rem;
+  right: .75rem;
+  left: auto;
+}
+
+.ol-rotate {
+  top: 3.25rem !important;
+  right: .75rem !important;
+  left: auto !important;
+}
+
+/* Mobile: zoom физически переносится в правый контейнер под rotate.
+   Левый контейнер остаётся только для legend-control. */
+@media (max-width: 767px) {
+  .coverage-control-cluster {
+    align-items: flex-start !important;
+  }
+
+  .coverage-control-cluster .legend-control {
+    max-width: calc(100vw - 6.25rem);
+  }
+
+  .map-aux-control-cluster {
+    align-items: flex-end !important;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Equal auxiliary buttons and hidden controls
+   ------------------------------------------------------------------ */
+
+/* Все кнопки в правом auxiliary stack имеют одинаковый размер. */
+.map-aux-control-cluster .theme-toggle-control button,
+.map-aux-control-cluster .ol-rotate button,
+.map-aux-control-cluster .ol-zoom button {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 !important;
+
+  border-radius: 16px !important;
+}
+
+/* Временный переключатель темы больше не растягивается шире остальных кнопок. */
+.map-aux-control-cluster .theme-toggle-control button {
+  min-width: 32px !important;
+  padding-inline: 0 !important;
+}
+
+/* Если OpenLayers скрывает control через ol-hidden, элемент полностью
+   убирается из flex-раскладки и не занимает место в колонке. */
+.map-aux-control-cluster .ol-hidden,
+.map-aux-control-cluster .ol-rotate.ol-hidden,
+.map-aux-control-cluster .ol-zoom.ol-hidden,
+.map-aux-control-cluster .theme-toggle-control.ol-hidden {
+  display: none !important;
+}
+
+/* Если скрытой окажется сама кнопка, она тоже не занимает место. */
+.map-aux-control-cluster button.ol-hidden,
+.map-aux-control-cluster .ol-hidden button {
+  display: none !important;
+}
+
+/* Отступ между кнопками zoom сохраняем только когда обе кнопки реально видны. */
+.map-aux-control-cluster .ol-zoom button + button {
+  margin-top: .5rem !important;
+}

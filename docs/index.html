@@ -69,10 +69,10 @@
       <!-- Центровой указатель (виден только на мобильных) с inline SVG -->
       <div id="center-pointer" class="center-pointer">
         <svg width="20" height="20" viewBox="0 0 20 20" style="display:block;">
-          <line x1="0" y1="10" x2="8" y2="10" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
-          <line x1="12" y1="10" x2="20" y2="10" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
-          <line x1="10" y1="0" x2="10" y2="8" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
-          <line x1="10" y1="12" x2="10" y2="20" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
+          <line x1="0" y1="10" x2="8" y2="10" stroke="currentColor" stroke-width="2" />
+          <line x1="12" y1="10" x2="20" y2="10" stroke="currentColor" stroke-width="2" />
+          <line x1="10" y1="0" x2="10" y2="8" stroke="currentColor" stroke-width="2" />
+          <line x1="10" y1="12" x2="10" y2="20" stroke="currentColor" stroke-width="2" />
         </svg>
       </div>
       <!-- Элемент для отображения информации -->
@@ -211,34 +211,111 @@
               });
             }
 
+            function isMobileControlLayout() {
+              return window.matchMedia &&
+                window.matchMedia('(max-width: 767px)').matches;
+            }
+
             function centerZoomControl(legendEl) {
               const zoomEl = document.querySelector('.ol-zoom');
-              if (!legendEl || !zoomEl) {
-                return;
+              if (!legendEl) {
+                return null;
               }
 
               normalizeZoomButtons();
 
-              const existingCluster = legendEl.closest('.coverage-control-cluster');
-              if (existingCluster) {
-                return;
+              let clusterEl = legendEl.closest('.coverage-control-cluster');
+              if (!clusterEl) {
+                const controlsContainer =
+                  (legendEl.parentElement) ||
+                  (zoomEl && zoomEl.parentElement);
+
+                if (!controlsContainer) {
+                  return null;
+                }
+
+                clusterEl = document.createElement('div');
+                clusterEl.className = 'ol-unselectable ol-control coverage-control-cluster';
+                controlsContainer.insertBefore(clusterEl, legendEl);
               }
 
-              const controlsContainer = zoomEl.parentElement || legendEl.parentElement;
-              if (!controlsContainer) {
-                return;
+              if (!clusterEl.contains(legendEl)) {
+                clusterEl.appendChild(legendEl);
               }
 
-              const clusterEl = document.createElement('div');
-              clusterEl.className = 'ol-unselectable ol-control coverage-control-cluster';
+              // Desktop: zoom остаётся слева рядом с legend.
+              // Mobile: zoom физически переносится в правый вертикальный стек.
+              if (!isMobileControlLayout() && zoomEl && zoomEl.parentElement !== clusterEl) {
+                clusterEl.insertBefore(zoomEl, legendEl);
+              }
 
-              controlsContainer.insertBefore(clusterEl, zoomEl);
-              clusterEl.appendChild(zoomEl);
-              clusterEl.appendChild(legendEl);
+              if (!clusterEl.dataset.silamEventsBound) {
+                clusterEl.addEventListener('mousedown', (e) => e.stopPropagation());
+                clusterEl.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+                clusterEl.dataset.silamEventsBound = 'true';
+              }
 
-              // Чтобы клики по объединённому контролу не тащили карту.
-              clusterEl.addEventListener('mousedown', (e) => e.stopPropagation());
-              clusterEl.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+              return clusterEl;
+            }
+
+            function clusterAuxControls(themeToggleEl) {
+              const rotateEl = document.querySelector('.ol-rotate');
+              const zoomEl = document.querySelector('.ol-zoom');
+
+              if (!themeToggleEl && !rotateEl && !zoomEl) {
+                return null;
+              }
+
+              let clusterEl =
+                (themeToggleEl && themeToggleEl.closest('.map-aux-control-cluster')) ||
+                (rotateEl && rotateEl.closest('.map-aux-control-cluster')) ||
+                (isMobileControlLayout() && zoomEl && zoomEl.closest('.map-aux-control-cluster'));
+
+              if (!clusterEl) {
+                const controlsContainer =
+                  (themeToggleEl && themeToggleEl.parentElement) ||
+                  (rotateEl && rotateEl.parentElement) ||
+                  (zoomEl && zoomEl.parentElement);
+
+                if (!controlsContainer) {
+                  return null;
+                }
+
+                clusterEl = document.createElement('div');
+                clusterEl.className = 'ol-unselectable ol-control map-aux-control-cluster';
+                controlsContainer.insertBefore(clusterEl, themeToggleEl || rotateEl || zoomEl);
+              }
+
+              // Порядок всегда один:
+              // 1) theme toggle
+              // 2) rotate
+              // 3) zoom, но zoom добавляем сюда только на mobile.
+              if (themeToggleEl && themeToggleEl.parentElement !== clusterEl) {
+                clusterEl.appendChild(themeToggleEl);
+              }
+
+              if (rotateEl && rotateEl.parentElement !== clusterEl) {
+                clusterEl.appendChild(rotateEl);
+              }
+
+              if (isMobileControlLayout() && zoomEl && zoomEl.parentElement !== clusterEl) {
+                clusterEl.appendChild(zoomEl);
+              }
+
+              // На desktop zoom должен вернуться в левый контейнер.
+              // Сам перенос назад выполняет centerZoomControl().
+              if (!clusterEl.dataset.silamEventsBound) {
+                clusterEl.addEventListener('mousedown', (e) => e.stopPropagation());
+                clusterEl.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+                clusterEl.dataset.silamEventsBound = 'true';
+              }
+
+              return clusterEl;
+            }
+
+            function arrangeMapControls(legendEl, themeToggleEl) {
+              centerZoomControl(legendEl);
+              clusterAuxControls(themeToggleEl);
             }
 
             function addLocalThemeToggle(map) {
@@ -402,7 +479,7 @@
                   const target = items.find((x) => x.id === id);
                   if (target && target.layer) {
                     target.layer.setVisible(cb.checked);
-                    requestAnimationFrame(() => centerZoomControl(el));
+                    requestAnimationFrame(() => arrangeMapControls(el, document.querySelector('.theme-toggle-control')));
                   }
                 });
               });
@@ -421,7 +498,9 @@
             });
 
             // Временный переключатель темы для локальной проверки без Docusaurus.
-            addLocalThemeToggle(map);
+            const themeToggleEl = addLocalThemeToggle(map);
+            requestAnimationFrame(() => clusterAuxControls(themeToggleEl));
+            setTimeout(() => clusterAuxControls(themeToggleEl), 0);
 
             // Элемент для отображения информации
             const infoWindow = document.getElementById('info-window');
@@ -443,14 +522,19 @@
             }
             const legendEl = addCoverageLegend(map, legendItems);
             normalizeZoomButtons();
-            requestAnimationFrame(() => centerZoomControl(legendEl));
-            setTimeout(() => centerZoomControl(legendEl), 0);
-            window.addEventListener('resize', () => centerZoomControl(legendEl));
+
+            function refreshControlLayout() {
+              arrangeMapControls(legendEl, themeToggleEl);
+            }
+
+            requestAnimationFrame(refreshControlLayout);
+            setTimeout(refreshControlLayout, 0);
+            window.addEventListener('resize', refreshControlLayout);
 
             // На мобиле переносим координаты внутрь легенды (после списка зон)
             if (isMobile && legendEl) {
               legendEl.appendChild(infoWindow);
-              requestAnimationFrame(() => centerZoomControl(legendEl));
+              requestAnimationFrame(refreshControlLayout);
             }
             
             // Функция для обновления информации (координаты и легенда)
@@ -473,30 +557,33 @@
                 }
               });
               
+              const coordText = `${i18next.t('lat')}: ${coordinate[1].toFixed(3)}, ${i18next.t('lon')}: ${coordinate[0].toFixed(3)}`;
+
+              if (isMobile) {
+                // На мобильном имя датасета уже есть в легенде.
+                // Поэтому не дублируем его, а накладываем цвет текущего покрытия
+                // прямо на плашку координат.
+                const badgeBg = layerDesc ? makeBadgeBg(squareColor) : '';
+                const activeClass = badgeBg ? ' has-active-coverage' : '';
+                const activeStyle = badgeBg
+                  ? ` style="--coverage-active-bg:${badgeBg};border-color:${coveragePalette.badgeBorder};"`
+                  : '';
+
+                infoWindow.innerHTML = `<div class="mobile-coordinate-badge${activeClass}"${activeStyle}>${coordText}</div>`;
+                return;
+              }
+
               let legendHtml = '';
               if (layerDesc) {
-                if (isMobile) {
-                  // на мобиле: цвет зоны — фоном "плашки" с названием
-                  const badgeBg = makeBadgeBg(squareColor);
+                const badgeBg = makeBadgeBg(squareColor);
 
-                  legendHtml = `<div style="margin-bottom:4px;">
-                    <span style="display:inline-block;padding:2px 6px;border-radius:6px;background:${badgeBg};border:1px solid ${coveragePalette.badgeBorder};">
-                      ${layerDesc}
-                    </span>
-                  </div>`;
-                } else {
-                  // на десктопе: тоже "плашка" с названием (как на мобиле)
-                  const badgeBg = makeBadgeBg(squareColor);
-
-                  legendHtml = `<div style="margin-bottom:4px;">
-                    <span style="display:inline-block;padding:2px 6px;border-radius:6px;background:${badgeBg};border:1px solid ${coveragePalette.badgeBorder};">
-                      ${layerDesc}
-                    </span>
-                  </div>`;
-                }
+                legendHtml = `<div style="margin-bottom:4px;">
+                  <span style="display:inline-block;padding:2px 6px;border-radius:6px;background:${badgeBg};border:1px solid ${coveragePalette.badgeBorder};">
+                    ${layerDesc}
+                  </span>
+                </div>`;
               }
-              
-              const coordText = `${i18next.t('lat')}: ${coordinate[1].toFixed(3)}, ${i18next.t('lon')}: ${coordinate[0].toFixed(3)}`;
+
               infoWindow.innerHTML = legendHtml + coordText;
             }
             
