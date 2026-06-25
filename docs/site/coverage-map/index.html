@@ -247,43 +247,7 @@
     html[data-theme="dark"] #map {
       background: var(--silam-map-bg);
     }
-
-    html[data-theme="dark"] .ol-layer canvas {
-      filter: brightness(0.72) contrast(1.08) saturate(0.82) hue-rotate(8deg);
-    }
-
-    html[data-theme="dark"] .ol-layer canvas:hover {
-      filter: brightness(0.74) contrast(1.08) saturate(0.84) hue-rotate(8deg);
-    }
-
-    .legend-control {
-      background: var(--silam-map-panel-bg) !important;
-      border: 1px solid var(--silam-map-panel-border);
-      color: var(--silam-map-text);
-      box-shadow: var(--silam-map-shadow);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-    }
-
-    .legend-control label,
-    .legend-control span,
-    .legend-control div {
-      color: var(--silam-map-text);
-    }
-
-    .legend-control .coordinates,
-    .coordinates {
-      color: var(--silam-map-muted);
-    }
-
-    .ol-control button {
-      border: 1px solid var(--silam-map-button-border) !important;
-      background: var(--silam-map-button-bg) !important;
-      color: var(--silam-map-button-text) !important;
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
-    }
-
-    html[data-theme="dark"] .ol-control button {
+html[data-theme="dark"] .ol-control button {
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
     }
 
@@ -302,21 +266,108 @@
       filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
     }
 
+  
+    /* Явно возвращаем светлые переменные, даже если ОС пользователя в dark mode,
+       но Docusaurus-страница сейчас в light. */
+    html[data-theme="light"] {
+      --ui-bg: #f7fbfb;
+      --ui-panel: rgba(255, 255, 255, 0.78);
+      --ui-panel-strong: rgba(255, 255, 255, 0.92);
+      --ui-text: #153235;
+      --ui-muted: rgba(21, 50, 53, 0.68);
+      --ui-border: rgba(24, 121, 113, 0.22);
+      --ui-shadow: 0 18px 46px rgba(9, 74, 72, 0.18);
+      --ui-accent: #22b8a0;
+    }
+
+    /* Dark theme меняет только тёмный режим. Светлая легенда остаётся
+       на исходном стиле .legend-control выше. */
+    html[data-theme="dark"] .legend-control {
+      background: var(--ui-panel-strong) !important;
+      border-color: var(--ui-border) !important;
+      color: var(--ui-text) !important;
+      box-shadow: var(--ui-shadow) !important;
+    }
+
+    html[data-theme="dark"] .legend-control label,
+    html[data-theme="dark"] .legend-control span,
+    html[data-theme="dark"] .legend-control div {
+      color: var(--ui-text) !important;
+    }
+
+    html[data-theme="dark"] .legend-control .coordinates,
+    html[data-theme="dark"] .coordinates {
+      color: var(--ui-muted) !important;
+    }
+
+    html[data-theme="dark"] .ol-control button {
+      border-color: var(--ui-border) !important;
+      background: var(--ui-panel-strong) !important;
+      color: var(--ui-text) !important;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
+    }
+
+  
+    /* Тёмная тема карты через фильтр штатных OpenStreetMap tiles.
+       Не применяем фильтр ко всей карте, чтобы controls/legend/attribution
+       не инвертировались вместе с тайлами. */
+    html[data-theme="dark"] .ol-layer canvas {
+      filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+    }
+
   </style>
   
   <script>
     (function () {
+      function normalizeTheme(value) {
+        return value === "dark" || value === "light" ? value : null;
+      }
+
+      function getParentTheme() {
+        try {
+          if (window.parent && window.parent !== window) {
+            return normalizeTheme(
+              window.parent.document.documentElement.getAttribute("data-theme")
+            );
+          }
+        } catch (err) {
+          return null;
+        }
+        return null;
+      }
+
+      function getStoredTheme() {
+        try {
+          return (
+            normalizeTheme(window.localStorage.getItem("theme")) ||
+            normalizeTheme(window.localStorage.getItem("docusaurus-theme"))
+          );
+        } catch (err) {
+          return null;
+        }
+      }
+
+      function getPreferredTheme() {
+        return window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+      }
+
       const params = new URLSearchParams(window.location.search);
-      const requestedTheme = params.get("theme");
-      const preferredTheme = window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light";
-      const theme = requestedTheme === "dark" || requestedTheme === "light"
-        ? requestedTheme
-        : preferredTheme;
+      const requestedTheme = normalizeTheme(params.get("theme"));
+
+      // В iframe главным источником считаем тему родительского Docusaurus.
+      // Это защищает от ситуации, когда при смене языка iframe получил
+      // временный/дефолтный параметр theme=light, хотя сайт уже в dark.
+      const theme =
+        getParentTheme() ||
+        requestedTheme ||
+        getStoredTheme() ||
+        getPreferredTheme();
 
       document.documentElement.dataset.theme = theme;
+      window.__silamCoverageTheme = theme;
     })();
   </script>
 
@@ -441,11 +492,13 @@
               });
             }
             
-            // Базовый слой карты
+            // Базовый слой карты.
+            // Используем штатный OpenStreetMap в обеих темах.
+            // В тёмной теме применяем CSS-filter только к tile canvas.
             const rasterLayer = new ol.layer.Tile({
               source: new ol.source.OSM()
             });
-            
+
             // Определяем, мобильное ли устройство и задаем уровень зума
             const isMobile = isMobileDevice();
             const defaultZoom = isMobile ? 6 : 4;
