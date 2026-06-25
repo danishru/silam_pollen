@@ -40,11 +40,11 @@
 
       html[data-theme="dark"] {
         --ui-bg: #071314;
-        --ui-panel-strong: rgba(9, 28, 30, 0.66);
+        --ui-panel-strong: rgba(9, 28, 30, 0.58);
         --ui-text: #eefdf9;
         --ui-muted: rgba(238, 253, 249, 0.72);
         --ui-border: rgba(148, 231, 218, 0.30);
-        --ui-shadow: 0 14px 34px rgba(0, 0, 0, 0.30);
+        --ui-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
         --ui-accent: #6ee7d8;
       }
 
@@ -140,40 +140,49 @@
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        width: 32px;
-        height: 32px;
-        margin: 0 0 6px 0;
+        width: 1.375em;
+        height: 1.375em;
+        margin: 1px;
         padding: 0 !important;
-        border-radius: 6px;
-        border: 1px solid var(--ui-border) !important;
-        background: var(--ui-panel-strong) !important;
-        color: var(--ui-text) !important;
-        font: 800 22px/1 var(--ui-font-family) !important;
+        border-radius: 2px;
+        border: 1px solid rgba(0,0,0,0.25) !important;
+        background: rgba(255, 255, 255, 0.92) !important;
+        color: #111 !important;
+        font: 800 1.25em/1 var(--ui-font-family) !important;
         text-align: center;
-        box-shadow: var(--ui-shadow);
-        backdrop-filter: blur(14px) saturate(140%);
-        -webkit-backdrop-filter: blur(14px) saturate(140%);
-        transition: transform .16s ease, border-color .16s ease, background .16s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
       }
 
       .ol-zoom button:hover,
       .ol-zoom button:focus {
-        transform: translateY(-1px);
-        border-color: color-mix(in srgb, var(--ui-accent), transparent 35%) !important;
+        background: rgba(255, 255, 255, 0.92) !important;
+        color: #111 !important;
+      }
+
+      html[data-theme="dark"] .ol-zoom button {
+        border-color: var(--ui-border) !important;
         background: var(--ui-panel-strong) !important;
+        color: var(--ui-text) !important;
+        box-shadow: var(--ui-shadow);
+      }
+
+      html[data-theme="dark"] .ol-zoom button:hover,
+      html[data-theme="dark"] .ol-zoom button:focus {
+        background: var(--ui-panel-strong) !important;
+        color: var(--ui-text) !important;
       }
 
       .legend-control {
         top: .5em;
-        left: 3.6em;
+        left: 3.6em; /* правее zoom */
         right: auto;
-        background: var(--ui-panel-strong);
-        border: 1px solid var(--ui-border);
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(0,0,0,0.25);
         border-radius: 6px;
-        padding: 1px 5px;
+        padding: 1px 5px; /* компактнее */
         font: var(--ui-font-size)/var(--ui-line-height) var(--ui-font-family);
-        color: var(--ui-text);
-        box-shadow: var(--ui-shadow);
+        color: #111;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
       }
 
       html[data-theme="dark"] .legend-control {
@@ -218,13 +227,11 @@
 
         margin-top: 2px;
         padding-top: 2px;
-        border-top: 2px solid color-mix(in srgb, var(--ui-border), transparent 15%) !important;
-        box-shadow: 0 -1px 0 rgba(255,255,255,0.18) inset;
+        border-top: 2px solid rgba(0,0,0,0.35);
+        box-shadow: 0 -1px 0 rgba(255,255,255,0.6) inset;
 
         background: transparent !important;
-        border-left: 0 !important;
-        border-right: 0 !important;
-        border-bottom: 0 !important;
+        border: 0 !important;
         border-radius: 0 !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
@@ -234,11 +241,15 @@
         width: 100%;
       }
 
+      html[data-theme="dark"] .legend-control .legend-info {
+        border-top: 2px solid color-mix(in srgb, var(--ui-border), transparent 15%) !important;
+        box-shadow: 0 -1px 0 rgba(255,255,255,0.18) inset;
+      }
+
       /* На мобиле просто чуть ужимаем легенду, позиция остаётся рядом с zoom */
       @media (max-width: 767px) {
         .legend-control {
           padding: 2px 6px;
-          max-width: calc(100vw - 5rem);
         }
       }
 
