@@ -765,3 +765,94 @@ html[data-theme="dark"] .center-pointer {
 .legend-control .info-window.legend-info .mobile-coordinate-badge {
   width: 100%;
 }
+
+/* ------------------------------------------------------------------
+   Final mobile stable coordinates and symbol centering
+   ------------------------------------------------------------------ */
+
+/* На mobile фиксируем рабочую ширину legend-control, чтобы она не дёргалась
+   от изменения длины координат при движении карты. */
+@media (max-width: 767px) {
+  .coverage-control-cluster .legend-control {
+    width: min(272px, calc(100vw - 6.25rem)) !important;
+    max-width: calc(100vw - 6.25rem) !important;
+    box-sizing: border-box !important;
+  }
+
+  .legend-control .row,
+  .legend-control .row label {
+    min-width: 0;
+  }
+
+  .legend-control .name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-coordinate-badge {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
+  }
+
+  /* Плюс был визуально выше центра. Опускаем mobile-вариант ближе к центру. */
+  .map-aux-control-cluster .ol-zoom button.ol-zoom-in .zoom-symbol,
+  .ol-zoom button.ol-zoom-in .zoom-symbol {
+    transform: translate(-50%, -56%) !important;
+  }
+}
+
+/* Если центр карты не попадает в coverage dataset, координаты не получают
+   собственную цветную/glass-плашку: остаётся только аккуратный контур. */
+.mobile-coordinate-badge.no-active-coverage {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid var(--ui-glass-border) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Символ переключателя темы центрируем отдельно от baseline текстового символа. */
+.theme-toggle-control button {
+  position: relative !important;
+  overflow: hidden !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  text-align: center !important;
+}
+
+.theme-toggle-control button .theme-toggle-symbol {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+
+  color: var(--ui-glass-text, var(--ui-text)) !important;
+  font-family: var(--ui-font-family) !important;
+  font-size: 16px !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+
+  transform: translate(-50%, -55%) !important;
+  pointer-events: none !important;
+}
+
+/* Солнце визуально проседает ниже центра, поэтому поднимаем только его. */
+.theme-toggle-control button[data-icon="sun"] .theme-toggle-symbol {
+  transform: translate(-50%, -61%) !important;
+}
+
+.theme-toggle-control button[data-icon="moon"] .theme-toggle-symbol {
+  transform: translate(-50%, -55%) !important;
+}

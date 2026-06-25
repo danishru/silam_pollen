@@ -328,7 +328,11 @@
 
               function updateButton() {
                 const theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
-                button.textContent = theme === 'dark' ? '☀︎' : '☾';
+                const icon = theme === 'dark' ? '☀︎' : '☾';
+                const iconName = theme === 'dark' ? 'sun' : 'moon';
+
+                button.dataset.icon = iconName;
+                button.innerHTML = `<span class="theme-toggle-symbol" aria-hidden="true">${icon}</span>`;
                 button.title = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
                 button.setAttribute('aria-label', button.title);
               }
@@ -565,7 +569,7 @@
                 // Поэтому не дублируем его, а накладываем цвет текущего покрытия
                 // прямо на плашку координат.
                 const badgeBg = layerDesc ? makeBadgeBg(squareColor) : '';
-                const activeClass = badgeBg ? ' has-active-coverage' : '';
+                const activeClass = badgeBg ? ' has-active-coverage' : ' no-active-coverage';
                 const activeStyle = badgeBg
                   ? ` style="--coverage-active-bg:${badgeBg};border-color:${coveragePalette.badgeBorder};"`
                   : '';
