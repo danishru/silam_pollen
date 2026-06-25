@@ -239,13 +239,17 @@ a {
 }
 
 /* Theme toggle and small navbar buttons */
-.clean-btn,
-[class*="colorModeToggle"] {
+.navbar .clean-btn,
+.navbar [class*="colorModeToggle"],
+.navbar-sidebar .clean-btn,
+.navbar-sidebar [class*="colorModeToggle"] {
   border-radius: 999px;
 }
 
-.clean-btn:hover,
-[class*="colorModeToggle"]:hover {
+.navbar .clean-btn:hover,
+.navbar [class*="colorModeToggle"]:hover,
+.navbar-sidebar .clean-btn:hover,
+.navbar-sidebar [class*="colorModeToggle"]:hover {
   background: rgba(22, 138, 74, 0.09);
 }
 
@@ -309,8 +313,10 @@ html[data-theme='dark'] .dropdown__link--active {
   background: rgba(53, 200, 120, 0.10);
 }
 
-html[data-theme='dark'] .clean-btn:hover,
-html[data-theme='dark'] [class*="colorModeToggle"]:hover {
+html[data-theme='dark'] .navbar .clean-btn:hover,
+html[data-theme='dark'] .navbar [class*="colorModeToggle"]:hover,
+html[data-theme='dark'] .navbar-sidebar .clean-btn:hover,
+html[data-theme='dark'] .navbar-sidebar [class*="colorModeToggle"]:hover {
   background: rgba(53, 200, 120, 0.10);
 }
 
@@ -318,10 +324,64 @@ html[data-theme='dark'] .footer {
   border-top-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Mobile navbar */
+/* Mobile navbar
+ * Keep the Docusaurus mobile layout intact: only polish colors/surfaces.
+ */
 @media (max-width: 996px) {
   .navbar {
-    height: 3.65rem;
+    height: var(--ifm-navbar-height);
+    padding: 0 var(--ifm-navbar-padding-horizontal);
+  }
+
+  .navbar__inner {
+    width: 100%;
+    max-width: none;
+  }
+
+  .navbar__brand {
+    min-width: 0;
+    max-width: calc(100vw - 7.5rem);
+    gap: 0.45rem;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .navbar__brand:hover {
+    background: transparent;
+    transform: none;
+  }
+
+  .navbar__logo {
+    width: 1.75rem;
+    height: 1.75rem;
+    flex: 0 0 auto;
+  }
+
+  .navbar__title {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .navbar__toggle {
+    flex: 0 0 auto;
+    border-radius: 12px;
+  }
+
+  .navbar__items--right {
+    min-width: 0;
+    gap: 0.1rem;
+    margin-left: auto;
+  }
+
+  .navbar__link {
+    padding: 0.42rem 0.62rem;
+  }
+
+  .navbar__link--active::after {
+    display: none;
   }
 
   .navbar-sidebar {
@@ -339,6 +399,10 @@ html[data-theme='dark'] .footer {
 
   .navbar-sidebar__items {
     padding: 0.75rem;
+  }
+
+  .menu__list {
+    gap: 0.15rem;
   }
 
   .menu__link {

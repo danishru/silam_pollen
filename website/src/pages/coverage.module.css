@@ -3,42 +3,36 @@
   min-height: calc(100vh - var(--ifm-navbar-height));
   margin: 0;
   padding: 0;
-  background:
-    radial-gradient(circle at 12% 12%, rgba(34, 184, 160, 0.10), transparent 34%),
-    radial-gradient(circle at 88% 10%, rgba(79, 140, 255, 0.10), transparent 34%),
-    var(--ifm-background-color);
+  background: var(--ifm-background-color);
 }
 
 .coverageFrameShell {
   width: 100%;
   height: calc(100vh - var(--ifm-navbar-height));
-  min-height: 520px;
-  padding: clamp(8px, 1.4vw, 18px);
+  min-height: calc(100vh - var(--ifm-navbar-height));
+  margin: 0;
+  padding: 0;
 }
 
 .coverageFrame {
   display: block;
   width: 100%;
   height: 100%;
-  border: 1px solid rgba(24, 121, 113, 0.18);
-  border-radius: 24px;
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
   background: var(--ifm-background-color);
-  box-shadow: 0 26px 70px rgba(9, 74, 72, 0.16);
+  box-shadow: none;
 }
 
-:global(html[data-theme='dark']) .coverageFrame {
-  border-color: rgba(110, 231, 216, 0.18);
-  box-shadow: 0 26px 76px rgba(0, 0, 0, 0.36);
-}
-
+/* На мобильных карта тоже занимает всю доступную высоту под верхним меню. */
 @media (max-width: 767px) {
-  .coverageFrameShell {
-    min-height: 620px;
-    padding: 8px;
+  .coverageOnlyPage {
+    min-height: calc(100dvh - var(--ifm-navbar-height));
   }
 
-  .coverageFrame {
-    border-radius: 18px;
+  .coverageFrameShell {
+    height: calc(100dvh - var(--ifm-navbar-height));
+    min-height: calc(100dvh - var(--ifm-navbar-height));
   }
 }
