@@ -1,20 +1,24 @@
-.coverageOnlyPage {
-  width: 100%;
+/* Fullscreen coverage map page.
+ * This page intentionally avoids the default MDX markdown/container wrapper.
+ */
+
+.coverageFullscreenPage {
+  position: relative;
+  z-index: 0;
+  width: 100vw;
+  height: calc(100vh - var(--ifm-navbar-height));
+  height: calc(100dvh - var(--ifm-navbar-height));
   min-height: calc(100vh - var(--ifm-navbar-height));
+  min-height: calc(100dvh - var(--ifm-navbar-height));
   margin: 0;
   padding: 0;
+  overflow: hidden;
   background: var(--ifm-background-color);
 }
 
-.coverageFrameShell {
-  width: 100%;
-  height: calc(100vh - var(--ifm-navbar-height));
-  min-height: calc(100vh - var(--ifm-navbar-height));
-  margin: 0;
-  padding: 0;
-}
-
 .coverageFrame {
+  position: relative;
+  z-index: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -23,16 +27,4 @@
   overflow: hidden;
   background: var(--ifm-background-color);
   box-shadow: none;
-}
-
-/* На мобильных карта тоже занимает всю доступную высоту под верхним меню. */
-@media (max-width: 767px) {
-  .coverageOnlyPage {
-    min-height: calc(100dvh - var(--ifm-navbar-height));
-  }
-
-  .coverageFrameShell {
-    height: calc(100dvh - var(--ifm-navbar-height));
-    min-height: calc(100dvh - var(--ifm-navbar-height));
-  }
 }
