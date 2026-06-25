@@ -1,6 +1,6 @@
 /* SILAM Pollen global Docusaurus style
  * Place this content into: website/src/css/custom.css
- * If your site already has custom.css, merge the variables and global rules carefully.
+ * If your site already has custom.css, replace it with this file content carefully.
  */
 
 :root {
@@ -109,30 +109,267 @@ a {
 
 /* Navbar/footer polish without changing Docusaurus structure. */
 .navbar {
-  border-bottom: 1px solid var(--ifm-color-emphasis-200);
-  box-shadow: none;
-  backdrop-filter: blur(14px);
+  height: 4rem;
+  border-bottom: 1px solid rgba(22, 138, 74, 0.14);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(240, 253, 244, 0.82)
+    ) !important;
+  box-shadow: 0 14px 38px rgba(31, 41, 55, 0.06);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
-html[data-theme='light'] .navbar {
-  background: rgba(255, 255, 255, 0.82);
+.navbar__inner {
+  max-width: 1180px;
+  margin: 0 auto;
 }
 
-html[data-theme='dark'] .navbar {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
-  background: rgba(11, 17, 23, 0.82);
+.navbar__brand {
+  gap: 0.65rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem 0.35rem 0.45rem;
+  transition:
+    background 180ms ease,
+    transform 180ms ease;
 }
 
-.navbar__link {
+.navbar__brand:hover {
+  background: rgba(22, 138, 74, 0.08);
+  transform: translateY(-1px);
+}
+
+.navbar__logo {
+  height: 2rem;
+  width: 2rem;
+  border-radius: 999px;
+  filter: drop-shadow(0 8px 18px rgba(22, 138, 74, 0.22));
+}
+
+.navbar__title {
+  color: #111827;
+  font-weight: 850;
+  letter-spacing: -0.035em;
+}
+
+.navbar__items {
+  gap: 0.25rem;
+}
+
+.navbar__item {
   font-weight: 700;
 }
 
+.navbar__link {
+  position: relative;
+  border-radius: 999px;
+  padding: 0.48rem 0.78rem;
+  color: rgba(17, 24, 39, 0.72);
+  font-weight: 750;
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.navbar__link:hover {
+  color: var(--silam-accent-green);
+  background: rgba(22, 138, 74, 0.09);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.navbar__link--active {
+  color: var(--silam-accent-green);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(22, 138, 74, 0.14),
+      rgba(21, 112, 239, 0.10)
+    );
+}
+
+.navbar__link--active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0.22rem;
+  width: 22px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--silam-accent-green), var(--silam-accent-blue));
+  transform: translateX(-50%);
+}
+
+.navbar__toggle {
+  border-radius: 999px;
+  color: var(--silam-accent-green);
+}
+
+.navbar__toggle:hover {
+  background: rgba(22, 138, 74, 0.09);
+}
+
+/* Locale dropdown */
+.dropdown > .navbar__link::after {
+  border-top-color: currentColor;
+}
+
+.dropdown__menu {
+  border: 1px solid rgba(22, 138, 74, 0.14);
+  border-radius: 18px;
+  padding: 0.45rem;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 70px rgba(31, 41, 55, 0.14);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.dropdown__link {
+  border-radius: 12px;
+  font-weight: 650;
+}
+
+.dropdown__link:hover,
+.dropdown__link--active {
+  color: var(--silam-accent-green);
+  background: rgba(22, 138, 74, 0.09);
+}
+
+/* Theme toggle and small navbar buttons */
+.clean-btn,
+[class*="colorModeToggle"] {
+  border-radius: 999px;
+}
+
+.clean-btn:hover,
+[class*="colorModeToggle"]:hover {
+  background: rgba(22, 138, 74, 0.09);
+}
+
+/* Footer */
 .footer {
   border-top: 1px solid var(--ifm-color-emphasis-200);
 }
 
+/* Dark theme navbar/footer */
+html[data-theme='dark'] .navbar {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(11, 17, 23, 0.9),
+      rgba(17, 25, 35, 0.86)
+    ) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.34);
+}
+
+html[data-theme='dark'] .navbar__brand:hover {
+  background: rgba(53, 200, 120, 0.10);
+}
+
+html[data-theme='dark'] .navbar__title {
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .navbar__link {
+  color: rgba(248, 250, 252, 0.74);
+}
+
+html[data-theme='dark'] .navbar__link:hover {
+  color: var(--ifm-color-primary-lightest);
+  background: rgba(53, 200, 120, 0.10);
+}
+
+html[data-theme='dark'] .navbar__link--active {
+  color: var(--ifm-color-primary-lightest);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(53, 200, 120, 0.16),
+      rgba(122, 183, 255, 0.11)
+    );
+}
+
+html[data-theme='dark'] .navbar__link--active::after {
+  background: linear-gradient(90deg, var(--ifm-color-primary), var(--ifm-link-color));
+}
+
+html[data-theme='dark'] .dropdown__menu {
+  border-color: rgba(255, 255, 255, 0.10);
+  background: rgba(17, 25, 35, 0.96);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+}
+
+html[data-theme='dark'] .dropdown__link:hover,
+html[data-theme='dark'] .dropdown__link--active {
+  color: var(--ifm-color-primary-lightest);
+  background: rgba(53, 200, 120, 0.10);
+}
+
+html[data-theme='dark'] .clean-btn:hover,
+html[data-theme='dark'] [class*="colorModeToggle"]:hover {
+  background: rgba(53, 200, 120, 0.10);
+}
+
 html[data-theme='dark'] .footer {
   border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Mobile navbar */
+@media (max-width: 996px) {
+  .navbar {
+    height: 3.65rem;
+  }
+
+  .navbar-sidebar {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.98),
+        rgba(240, 253, 244, 0.96)
+      );
+  }
+
+  .navbar-sidebar__brand {
+    border-bottom: 1px solid rgba(22, 138, 74, 0.14);
+  }
+
+  .navbar-sidebar__items {
+    padding: 0.75rem;
+  }
+
+  .menu__link {
+    border-radius: 14px;
+    font-weight: 700;
+  }
+
+  .menu__link:hover,
+  .menu__link--active {
+    color: var(--silam-accent-green);
+    background: rgba(22, 138, 74, 0.09);
+  }
+
+  html[data-theme='dark'] .navbar-sidebar {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(11, 17, 23, 0.98),
+        rgba(17, 25, 35, 0.96)
+      );
+  }
+
+  html[data-theme='dark'] .navbar-sidebar__brand {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+  html[data-theme='dark'] .menu__link:hover,
+  html[data-theme='dark'] .menu__link--active {
+    color: var(--ifm-color-primary-lightest);
+    background: rgba(53, 200, 120, 0.10);
+  }
 }
 
 /* Buttons follow the same green-blue product accent. */

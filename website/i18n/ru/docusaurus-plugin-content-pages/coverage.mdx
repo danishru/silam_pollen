@@ -1,0 +1,26 @@
+---
+title: Карта покрытия
+description: Карта покрытия SILAM Pollen
+hide_table_of_contents: true
+---
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+import styles from '../../../../src/pages/coverage.module.css';
+
+export function CoverageMapOnly() {
+  const src = useBaseUrl('/coverage-map/index.html?lng=ru');
+  return (
+    <main className={styles.coverageOnlyPage}>
+      <div className={styles.coverageFrameShell}>
+        <iframe
+          className={styles.coverageFrame}
+          src={src}
+          title="Карта покрытия SILAM Pollen"
+          loading="eager"
+        />
+      </div>
+    </main>
+  );
+}
+
+<CoverageMapOnly />

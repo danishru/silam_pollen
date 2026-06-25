@@ -1,0 +1,26 @@
+---
+title: Coverage map
+description: SILAM Pollen coverage map
+hide_table_of_contents: true
+---
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+import styles from './coverage.module.css';
+
+export function CoverageMapOnly() {
+  const src = useBaseUrl('/coverage-map/index.html?lng=en');
+  return (
+    <main className={styles.coverageOnlyPage}>
+      <div className={styles.coverageFrameShell}>
+        <iframe
+          className={styles.coverageFrame}
+          src={src}
+          title="SILAM Pollen coverage map"
+          loading="eager"
+        />
+      </div>
+    </main>
+  );
+}
+
+<CoverageMapOnly />
