@@ -16,30 +16,36 @@
       }
 
       :root {
-        --ui-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        --ui-font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
         --ui-font-size: 12px;
         --ui-line-height: 1.2;
         --ui-bg: #f7fbfb;
-        --ui-panel: rgba(255, 255, 255, 0.78);
         --ui-panel-strong: rgba(255, 255, 255, 0.92);
-        --ui-text: #153235;
-        --ui-muted: rgba(21, 50, 53, 0.68);
-        --ui-border: rgba(24, 121, 113, 0.22);
-        --ui-shadow: 0 18px 46px rgba(9, 74, 72, 0.18);
+        --ui-text: #111;
+        --ui-muted: rgba(17, 17, 17, 0.68);
+        --ui-border: rgba(0, 0, 0, 0.25);
+        --ui-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
         --ui-accent: #22b8a0;
       }
 
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --ui-bg: #071314;
-          --ui-panel: rgba(9, 28, 30, 0.78);
-          --ui-panel-strong: rgba(9, 28, 30, 0.92);
-          --ui-text: #e8fffb;
-          --ui-muted: rgba(232, 255, 251, 0.68);
-          --ui-border: rgba(110, 231, 216, 0.24);
-          --ui-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
-          --ui-accent: #6ee7d8;
-        }
+      html[data-theme="light"] {
+        --ui-bg: #f7fbfb;
+        --ui-panel-strong: rgba(255, 255, 255, 0.92);
+        --ui-text: #111;
+        --ui-muted: rgba(17, 17, 17, 0.68);
+        --ui-border: rgba(0, 0, 0, 0.25);
+        --ui-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        --ui-accent: #22b8a0;
+      }
+
+      html[data-theme="dark"] {
+        --ui-bg: #071314;
+        --ui-panel-strong: rgba(9, 28, 30, 0.66);
+        --ui-text: #eefdf9;
+        --ui-muted: rgba(238, 253, 249, 0.72);
+        --ui-border: rgba(148, 231, 218, 0.30);
+        --ui-shadow: 0 14px 34px rgba(0, 0, 0, 0.30);
+        --ui-accent: #6ee7d8;
       }
 
       body {
@@ -67,28 +73,26 @@
         mix-blend-mode: multiply;
       }
 
-      @media (prefers-color-scheme: dark) {
-        .map::before {
-          mix-blend-mode: screen;
-          opacity: 0.42;
-        }
+      html[data-theme="dark"] .map::before {
+        mix-blend-mode: screen;
+        opacity: 0.34;
       }
 
       /* Окно для отображения координат и активной зоны */
       .info-window {
         position: absolute;
         pointer-events: none;
-        padding: 7px 9px;
+        padding: 4px 4px;
         background: var(--ui-panel-strong);
-        backdrop-filter: blur(16px) saturate(150%);
-        -webkit-backdrop-filter: blur(16px) saturate(150%);
         font: var(--ui-font-size)/var(--ui-line-height) var(--ui-font-family);
         border: 1px solid var(--ui-border);
-        border-radius: 12px;
+        border-radius: 6px;
         color: var(--ui-text);
         white-space: nowrap;
-        z-index: 1200;
+        z-index: 1000;
         box-shadow: var(--ui-shadow);
+        backdrop-filter: blur(14px) saturate(140%);
+        -webkit-backdrop-filter: blur(14px) saturate(140%);
       }
 
       .mobile-info {
@@ -97,7 +101,8 @@
         transform: translateX(-50%);
       }
 
-      /* Центровой указатель на мобильных */
+      /* Центровой указатель для мобильных реализован через inline SVG.
+         Он сохраняет постоянную толщину линий независимо от ориентации экрана. */
       .center-pointer {
         position: absolute;
         top: 50%;
@@ -106,19 +111,25 @@
         width: 20px;
         height: 20px;
         z-index: 1100;
-        filter: drop-shadow(0 2px 5px rgba(0,0,0,0.18));
       }
 
+      html[data-theme="dark"] .center-pointer {
+        filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
+      }
+
+      /* Скрываем указатель на десктопе */
       @media (min-width: 768px) {
         .center-pointer {
           display: none;
         }
       }
 
+      /* Zoom расположен слева от легенды. Вертикальное центрирование
+         относительно легенды дополнительно выполняется JS после рендера. */
       .ol-zoom {
         right: auto !important;
-        left: .75rem !important;
-        top: .75rem !important;
+        left: .5em !important;
+        top: .5em !important;
       }
 
       .ol-control {
@@ -126,14 +137,20 @@
       }
 
       .ol-zoom button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         width: 32px;
         height: 32px;
         margin: 0 0 6px 0;
-        border-radius: 12px;
-        border: 1px solid var(--ui-border);
-        background: var(--ui-panel-strong);
-        color: var(--ui-text);
-        box-shadow: 0 10px 30px rgba(9, 74, 72, 0.12);
+        padding: 0 !important;
+        border-radius: 6px;
+        border: 1px solid var(--ui-border) !important;
+        background: var(--ui-panel-strong) !important;
+        color: var(--ui-text) !important;
+        font: 800 22px/1 var(--ui-font-family) !important;
+        text-align: center;
+        box-shadow: var(--ui-shadow);
         backdrop-filter: blur(14px) saturate(140%);
         -webkit-backdrop-filter: blur(14px) saturate(140%);
         transition: transform .16s ease, border-color .16s ease, background .16s ease;
@@ -142,55 +159,68 @@
       .ol-zoom button:hover,
       .ol-zoom button:focus {
         transform: translateY(-1px);
-        border-color: color-mix(in srgb, var(--ui-accent), transparent 35%);
-        background: var(--ui-panel-strong);
+        border-color: color-mix(in srgb, var(--ui-accent), transparent 35%) !important;
+        background: var(--ui-panel-strong) !important;
       }
 
       .legend-control {
-        top: .75rem;
-        left: 3.95rem;
+        top: .5em;
+        left: 3.6em;
         right: auto;
         background: var(--ui-panel-strong);
         border: 1px solid var(--ui-border);
-        border-radius: 16px;
-        padding: 7px 9px;
+        border-radius: 6px;
+        padding: 1px 5px;
         font: var(--ui-font-size)/var(--ui-line-height) var(--ui-font-family);
         color: var(--ui-text);
         box-shadow: var(--ui-shadow);
-        backdrop-filter: blur(18px) saturate(150%);
-        -webkit-backdrop-filter: blur(18px) saturate(150%);
+      }
+
+      html[data-theme="dark"] .legend-control {
+        background: var(--ui-panel-strong);
+        color: var(--ui-text);
+        border-color: var(--ui-border);
+        box-shadow: var(--ui-shadow);
+        backdrop-filter: blur(14px) saturate(135%);
+        -webkit-backdrop-filter: blur(14px) saturate(135%);
       }
 
       .legend-control .row {
         display: flex;
         align-items: center;
-        gap: 7px;
-        margin: 3px 0;
+        gap: 5px;
+        margin: 1px 0;
         white-space: nowrap;
       }
 
       .legend-control input[type="checkbox"] {
         margin: 0;
-        width: 14px;
-        height: 14px;
-        border-radius: 5px;
+        width: 13px;
+        height: 13px;
       }
 
       .legend-control .name {
         opacity: 0.95;
-        font-weight: 650;
-        letter-spacing: -0.01em;
       }
 
+      html[data-theme="dark"] .legend-control .name {
+        color: var(--ui-text);
+        opacity: 0.96;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.38);
+      }
+
+      /* info-window внутри легенды (мобильный режим) */
       .legend-control .legend-info {
         position: static !important;
         transform: none !important;
         left: auto !important;
         top: auto !important;
-        margin-top: 7px;
-        padding-top: 7px;
-        border-top: 1px solid var(--ui-border) !important;
-        box-shadow: none !important;
+
+        margin-top: 2px;
+        padding-top: 2px;
+        border-top: 2px solid color-mix(in srgb, var(--ui-border), transparent 15%) !important;
+        box-shadow: 0 -1px 0 rgba(255,255,255,0.18) inset;
+
         background: transparent !important;
         border-left: 0 !important;
         border-right: 0 !important;
@@ -204,118 +234,31 @@
         width: 100%;
       }
 
+      /* На мобиле просто чуть ужимаем легенду, позиция остаётся рядом с zoom */
       @media (max-width: 767px) {
         .legend-control {
+          padding: 2px 6px;
           max-width: calc(100vw - 5rem);
-          padding: 7px 9px;
         }
       }
-      
-    /* ------------------------------------------------------------------
-       SILAM map theme support
-       ------------------------------------------------------------------ */
-    :root {
-      --silam-map-bg: #eef7f2;
-      --silam-map-panel-bg: rgba(112, 239, 112, 0.84);
-      --silam-map-panel-border: rgba(22, 138, 74, 0.18);
-      --silam-map-text: #0f2430;
-      --silam-map-muted: rgba(15, 36, 48, 0.78);
-      --silam-map-button-bg: rgba(255, 255, 255, 0.9);
-      --silam-map-button-text: #0f2430;
-      --silam-map-button-border: rgba(15, 36, 48, 0.14);
-      --silam-map-shadow: 0 18px 46px rgba(15, 23, 42, 0.18);
-    }
 
-    html[data-theme="dark"] {
-      --silam-map-bg: #071314;
-      --silam-map-panel-bg: rgba(9, 30, 26, 0.9);
-      --silam-map-panel-border: rgba(94, 234, 212, 0.2);
-      --silam-map-text: #ecfeff;
-      --silam-map-muted: rgba(236, 254, 255, 0.74);
-      --silam-map-button-bg: rgba(15, 23, 42, 0.92);
-      --silam-map-button-text: #ecfeff;
-      --silam-map-button-border: rgba(94, 234, 212, 0.18);
-      --silam-map-shadow: 0 22px 60px rgba(0, 0, 0, 0.44);
-    }
+      html[data-theme="dark"] .ol-attribution,
+      html[data-theme="dark"] .ol-attribution ul {
+        background: rgba(9, 28, 30, 0.72) !important;
+        color: var(--ui-text) !important;
+      }
 
-    html[data-theme="dark"],
-    html[data-theme="dark"] body {
-      background: var(--silam-map-bg);
-      color: var(--silam-map-text);
-    }
+      html[data-theme="dark"] .ol-attribution a {
+        color: #9ad9ff !important;
+      }
 
-    html[data-theme="dark"] #map {
-      background: var(--silam-map-bg);
-    }
-html[data-theme="dark"] .ol-control button {
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
-    }
-
-    html[data-theme="dark"] .ol-attribution,
-    html[data-theme="dark"] .ol-attribution ul {
-      background: rgba(15, 23, 42, 0.78) !important;
-      color: var(--silam-map-text) !important;
-    }
-
-    html[data-theme="dark"] .ol-attribution a {
-      color: #7ab7ff !important;
-    }
-
-    html[data-theme="dark"] .mobile-center-pointer {
-      color: #ecfeff;
-      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
-    }
-
-  
-    /* Явно возвращаем светлые переменные, даже если ОС пользователя в dark mode,
-       но Docusaurus-страница сейчас в light. */
-    html[data-theme="light"] {
-      --ui-bg: #f7fbfb;
-      --ui-panel: rgba(255, 255, 255, 0.78);
-      --ui-panel-strong: rgba(255, 255, 255, 0.92);
-      --ui-text: #153235;
-      --ui-muted: rgba(21, 50, 53, 0.68);
-      --ui-border: rgba(24, 121, 113, 0.22);
-      --ui-shadow: 0 18px 46px rgba(9, 74, 72, 0.18);
-      --ui-accent: #22b8a0;
-    }
-
-    /* Dark theme меняет только тёмный режим. Светлая легенда остаётся
-       на исходном стиле .legend-control выше. */
-    html[data-theme="dark"] .legend-control {
-      background: var(--ui-panel-strong) !important;
-      border-color: var(--ui-border) !important;
-      color: var(--ui-text) !important;
-      box-shadow: var(--ui-shadow) !important;
-    }
-
-    html[data-theme="dark"] .legend-control label,
-    html[data-theme="dark"] .legend-control span,
-    html[data-theme="dark"] .legend-control div {
-      color: var(--ui-text) !important;
-    }
-
-    html[data-theme="dark"] .legend-control .coordinates,
-    html[data-theme="dark"] .coordinates {
-      color: var(--ui-muted) !important;
-    }
-
-    html[data-theme="dark"] .ol-control button {
-      border-color: var(--ui-border) !important;
-      background: var(--ui-panel-strong) !important;
-      color: var(--ui-text) !important;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
-    }
-
-  
-    /* Тёмная тема карты через фильтр штатных OpenStreetMap tiles.
-       Не применяем фильтр ко всей карте, чтобы controls/legend/attribution
-       не инвертировались вместе с тайлами. */
-    html[data-theme="dark"] .ol-layer canvas {
-      filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-    }
-
-  </style>
+      /* Тёмная тема карты через фильтр штатных OpenStreetMap tiles.
+         Не применяем фильтр ко всей карте, чтобы controls/legend/attribution
+         не инвертировались вместе с тайлами. */
+      html[data-theme="dark"] .ol-layer canvas {
+        filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+      }
+    </style>
   
   <script>
     (function () {
@@ -420,6 +363,43 @@ html[data-theme="dark"] .ol-control button {
           console.log('navigator.language:', navigator.language);
           console.log('i18next.language:', i18next.language);
           window.onload = function() {
+            const currentTheme =
+              document.documentElement.dataset.theme ||
+              window.__silamCoverageTheme ||
+              'light';
+
+            const coveragePalette = currentTheme === 'dark'
+              ? {
+                  europe:   { stroke: 'rgba(251,191,36,1)', fill: 'rgba(251,191,36,0.24)' },
+                  regional: { stroke: 'rgba(52,211,153,1)', fill: 'rgba(52,211,153,0.24)' },
+                  hires:    { stroke: 'rgba(56,189,248,1)', fill: 'rgba(56,189,248,0.24)' },
+                  badgeBorder: 'rgba(255,255,255,0.22)'
+                }
+              : {
+                  europe:   { stroke: 'rgba(255,200,0,1)', fill: 'rgba(255,255,0,0.2)' },
+                  regional: { stroke: 'rgba(0,255,0,1)', fill: 'rgba(0,255,0,0.2)' },
+                  hires:    { stroke: 'rgba(0,120,255,1)', fill: 'rgba(0,120,255,0.2)' },
+                  badgeBorder: 'rgba(0,0,0,0.15)'
+                };
+
+            function makeBadgeBg(color) {
+              return (typeof color === 'string' && color.startsWith('rgba('))
+                ? color.replace(/rgba\((\s*\d+\s*),(\s*\d+\s*),(\s*\d+\s*),\s*([0-9.]+)\s*\)/, 'rgba($1,$2,$3,0.22)')
+                : color;
+            }
+
+            function centerZoomControl(legendEl) {
+              const zoomEl = document.querySelector('.ol-zoom');
+              if (!legendEl || !zoomEl) {
+                return;
+              }
+
+              const legendTop = legendEl.offsetTop;
+              const legendHeight = legendEl.offsetHeight;
+              const zoomHeight = zoomEl.offsetHeight;
+              const nextTop = Math.max(8, legendTop + ((legendHeight - zoomHeight) / 2));
+              zoomEl.style.top = `${Math.round(nextTop)}px`;
+            }
             // Преобразование координат для основного полигона (SILAM Europe)
             const polygonCoords = rotatedPolygon.map(coord =>
               ol.proj.fromLonLat([coord[1], coord[0]])
@@ -434,11 +414,11 @@ html[data-theme="dark"] .ol-control button {
               source: vectorSource,
               style: new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                  color: 'rgba(255,200,0,1)',
+                  color: coveragePalette.europe.stroke,
                   width: 0.5
                 }),
                 fill: new ol.style.Fill({
-                  color: 'rgba(255,255,0,0.2)'
+                  color: coveragePalette.europe.fill
                 })
               })
             });
@@ -457,11 +437,11 @@ html[data-theme="dark"] .ol-control button {
               source: regionalVectorSource,
               style: new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                  color: 'rgba(0,255,0,1)',
+                  color: coveragePalette.regional.stroke,
                   width: 0.5
                 }),
                 fill: new ol.style.Fill({
-                  color: 'rgba(0,255,0,0.2)'
+                  color: coveragePalette.regional.fill
                 })
               })
             });
@@ -482,11 +462,11 @@ html[data-theme="dark"] .ol-control button {
                 source: hiresVectorSource,
                 style: new ol.style.Style({
                   stroke: new ol.style.Stroke({
-                    color: 'rgba(0,120,255,1)',
+                    color: coveragePalette.hires.stroke,
                     width: 0.5
                   }),
                   fill: new ol.style.Fill({
-                    color: 'rgba(0,120,255,0.2)'
+                    color: coveragePalette.hires.fill
                   })
                 })
               });
@@ -571,17 +551,20 @@ html[data-theme="dark"] .ol-control button {
 
             // Добавляем легенду/переключатели слоёв (справа сверху)
             const legendItems = [
-              { id: 'regional', name: 'SILAM Northern Europe (v6.1)', color: 'rgba(0,255,0,1)',   layer: regionalVectorLayer },
-              { id: 'europe',   name: 'SILAM Europe (v6.1)',     color: 'rgba(255,200,0,1)', layer: vectorLayer },
+              { id: 'regional', name: 'SILAM Northern Europe (v6.1)', color: coveragePalette.regional.stroke,   layer: regionalVectorLayer },
+              { id: 'europe',   name: 'SILAM Europe (v6.1)',     color: coveragePalette.europe.stroke, layer: vectorLayer },
             ];
             if (hiresVectorLayer) {
-              legendItems.unshift({ id: 'hires', name: 'SILAM Finland (v6.1)', color: 'rgba(0,120,255,1)', layer: hiresVectorLayer });
+              legendItems.unshift({ id: 'hires', name: 'SILAM Finland (v6.1)', color: coveragePalette.hires.stroke, layer: hiresVectorLayer });
             }
             const legendEl = addCoverageLegend(map, legendItems);
+            requestAnimationFrame(() => centerZoomControl(legendEl));
+            window.addEventListener('resize', () => centerZoomControl(legendEl));
 
             // На мобиле переносим координаты внутрь легенды (после списка зон)
             if (isMobile && legendEl) {
               legendEl.appendChild(infoWindow);
+              requestAnimationFrame(() => centerZoomControl(legendEl));
             }
             
             // Функция для обновления информации (координаты и легенда)
@@ -591,15 +574,15 @@ html[data-theme="dark"] .ol-control button {
               map.forEachFeatureAtPixel(pixel, function(feature, layer) {
                 if (hiresVectorLayer && layer === hiresVectorLayer) {
                   layerDesc = 'SILAM Finland (v6.1)';
-                  squareColor = 'rgba(0,120,255,1)';
+                  squareColor = coveragePalette.hires.stroke;
                   return true;
                 } else if (layer === regionalVectorLayer) {
                   layerDesc = 'SILAM Northern Europe (v6.1)';
-                  squareColor = 'rgba(0,255,0,1)';
+                  squareColor = coveragePalette.regional.stroke;
                   return true;
                 } else if (layer === vectorLayer) {
                   layerDesc = 'SILAM Europe (v6.1)';
-                  squareColor = 'rgba(255,200,0,1)';
+                  squareColor = coveragePalette.europe.stroke;
                   return true;
                 }
               });
@@ -608,23 +591,19 @@ html[data-theme="dark"] .ol-control button {
               if (layerDesc) {
                 if (isMobile) {
                   // на мобиле: цвет зоны — фоном "плашки" с названием
-                  const badgeBg = (typeof squareColor === 'string' && squareColor.startsWith('rgba('))
-                    ? squareColor.replace(/rgba\((\s*\d+\s*),(\s*\d+\s*),(\s*\d+\s*),\s*([0-9.]+)\s*\)/, 'rgba($1,$2,$3,0.22)')
-                    : squareColor;
+                  const badgeBg = makeBadgeBg(squareColor);
 
                   legendHtml = `<div style="margin-bottom:4px;">
-                    <span style="display:inline-block;padding:2px 6px;border-radius:6px;background:${badgeBg};border:1px solid rgba(0,0,0,0.15);">
+                    <span style="display:inline-block;padding:2px 6px;border-radius:6px;background:${badgeBg};border:1px solid ${coveragePalette.badgeBorder};">
                       ${layerDesc}
                     </span>
                   </div>`;
                 } else {
                   // на десктопе: тоже "плашка" с названием (как на мобиле)
-                  const badgeBg = (typeof squareColor === 'string' && squareColor.startsWith('rgba('))
-                    ? squareColor.replace(/rgba\((\s*\d+\s*),(\s*\d+\s*),(\s*\d+\s*),\s*([0-9.]+)\s*\)/, 'rgba($1,$2,$3,0.22)')
-                    : squareColor;
+                  const badgeBg = makeBadgeBg(squareColor);
 
                   legendHtml = `<div style="margin-bottom:4px;">
-                    <span style="display:inline-block;padding:2px 6px;border-radius:6px;background:${badgeBg};border:1px solid rgba(0,0,0,0.15);">
+                    <span style="display:inline-block;padding:2px 6px;border-radius:6px;background:${badgeBg};border:1px solid ${coveragePalette.badgeBorder};">
                       ${layerDesc}
                     </span>
                   </div>`;
