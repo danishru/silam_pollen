@@ -1,0 +1,254 @@
+---
+title: Дорожная карта
+description: Стратегическая дорожная карта SILAM Pollen
+slug: /roadmap
+hide_table_of_contents: true
+---
+
+import styles from '@site/src/pages/roadmap.module.css';
+
+# Дорожная карта SILAM Pollen
+
+<div className={styles.hero}>
+  <div className={styles.heroContent}>
+    <span className={styles.eyebrow}>Дорожная карта проекта</span>
+    <h2 className={styles.heroTitle}>Более понятный прогноз аллергии: место, время и контекст.</h2>
+    <p className={styles.heroText}>
+      SILAM Pollen развивается от узкой интеграции прогноза пыльцы к более умному экологическому прогнозу для Home Assistant: проще настройка, прозрачнее источники данных, богаче контекст прогноза, готовность к сводкам для AI и будущие карты распределения пыльцы.
+    </p>
+    <div className={styles.heroActions}>
+      <a className={styles.primaryButton} href="#release-plan">Смотреть дорожную карту</a>
+      <a className={styles.secondaryButton} href="#future-backlog">Будущие идеи</a>
+    </div>
+  </div>
+  <div className={styles.heroPanel}>
+    <div className={styles.signalCard}>
+      <span className={styles.signalIcon}>🌿</span>
+      <strong>Дом с учётом пыльцы</strong>
+      <small>Понимать ситуацию сегодня, завтра и выбирать безопасные моменты для проветривания.</small>
+    </div>
+    <div className={styles.signalCard}>
+      <span className={styles.signalIcon}>🕒</span>
+      <strong>Прогноз во времени</strong>
+      <small>Видеть, что недавно изменилось, что происходит сейчас и что будет дальше.</small>
+    </div>
+    <div className={styles.signalCard}>
+      <span className={styles.signalIcon}>🗺️</span>
+      <strong>Пространственный контекст</strong>
+      <small>В будущем карта сможет показывать, как риск пыльцы распределяется вокруг выбранной точки.</small>
+    </div>
+  </div>
+</div>
+
+<div className={styles.notice}>
+  <strong>Примечание:</strong> это стратегическое направление развития проекта. Состав и порядок релизов могут меняться в зависимости от изменений Home Assistant, доступности данных SILAM, надёжности внешних сервисов и обратной связи пользователей.
+</div>
+
+## Визуальный обзор
+
+<div className={styles.roadmapStrip}>
+  <a href="#v042" className={`${styles.step} ${styles.activeStep}`}>
+    <span>v0.4.2</span>
+    <strong>Настройка</strong>
+    <small>Местоположение в начале</small>
+  </a>
+  <a href="#v043" className={styles.step}>
+    <span>v0.4.3</span>
+    <strong>Основа</strong>
+    <small>Чище архитектура</small>
+  </a>
+  <a href="#v044" className={styles.step}>
+    <span>v0.4.4</span>
+    <strong>Время</strong>
+    <small>Прошлое + будущее</small>
+  </a>
+  <a href="#v045" className={styles.step}>
+    <span>v0.4.5</span>
+    <strong>Погода</strong>
+    <small>Больше контекста</small>
+  </a>
+  <a href="#v046" className={styles.step}>
+    <span>v0.4.6</span>
+    <strong>Сводка</strong>
+    <small>Чистый доступ к данным</small>
+  </a>
+  <a href="#v047" className={styles.step}>
+    <span>v0.4.7</span>
+    <strong>Assist</strong>
+    <small>Ответы для AI</small>
+  </a>
+  <a href="#future-backlog" className={`${styles.step} ${styles.futureStep}`}>
+    <span>Будущее</span>
+    <strong>Карты + домены</strong>
+    <small>Пыль, пожары, 2D-слой</small>
+  </a>
+</div>
+
+<section id="release-plan" className={styles.sectionHeader}>
+  <span className={styles.eyebrow}>План релизов</span>
+  <h2>Стратегические этапы</h2>
+</section>
+
+<div className={styles.releaseGrid}>
+  <article id="v042" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.2</span>
+      <span className={styles.statusBadge}>Следующий</span>
+    </div>
+    <h3>Более понятная первая настройка</h3>
+    <p>
+      Следующий релиз делает настройку естественной: сначала пользователь выбирает, где нужно отслеживать пыльцу, а интеграция проверяет, доступны ли данные SILAM для этой точки.
+    </p>
+    <ul>
+      <li>Старт с зоны Home Assistant или произвольной точки на карте.</li>
+      <li>Автоматическое предложение SILAM Pollen для домашней зоны, когда это уместно.</li>
+      <li>Определение высоты и понятного названия выбранной точки, если это возможно.</li>
+      <li>Предупреждение пользователя, если высота отсутствует или выглядит подозрительно.</li>
+      <li>Прозрачная документация по обязательным и дополнительным внешним конечным точкам.</li>
+    </ul>
+  </article>
+
+  <article id="v043" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.3</span>
+      <span className={styles.statusBadgeMuted}>Основа</span>
+    </div>
+    <h3>Более чистая техническая база</h3>
+    <p>
+      Этот релиз про здоровье проекта на длинной дистанции. Интеграция уже умеет много, поэтому следующий архитектурный шаг — сделать её внутреннюю структуру проще для развития.
+    </p>
+    <ul>
+      <li>Разделить ответственность за доступ к данным, выбор источника, диагностику и статус службы.</li>
+      <li>Сохранить привычное поведение для пользователей во время внутренних изменений.</li>
+      <li>Подготовить базу для расширенного прогноза, пыли, карт и AI-сводок.</li>
+    </ul>
+  </article>
+
+  <article id="v044" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.4</span>
+      <span className={styles.statusBadgeMuted}>Временная шкала</span>
+    </div>
+    <h3>Контекст прогноза из недавнего прошлого</h3>
+    <p>
+      Прогноз проще понимать, когда видно недавний тренд. Этот этап добавляет короткое ретроспективное окно для кастомной карточки прогноза.
+    </p>
+    <div className={styles.timelineSample}>
+      <span>-12ч</span><span>-9ч</span><span>-6ч</span><span>-3ч</span><strong>сейчас</strong><span>+3ч</span><span>+6ч</span><span>+9ч</span><span>+12ч</span>
+    </div>
+    <ul>
+      <li>Показывать, как менялся риск пыльцы до текущего момента.</li>
+      <li>Держать историю компактной и удобной для панелей Home Assistant.</li>
+      <li>Дать Absolute Forecast Card более наглядную временную шкалу.</li>
+    </ul>
+  </article>
+
+  <article id="v045" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.5</span>
+      <span className={styles.statusBadgeMuted}>Погода</span>
+    </div>
+    <h3>Больше погодного контекста вокруг пыльцы</h3>
+    <p>
+      Распространение пыльцы сильно зависит от погоды. Этот релиз расширяет прогноз погодным контекстом там, где доступные данные это позволяют.
+    </p>
+    <ul>
+      <li>Связать температуру, ветер, влажность, осадки и облачность с прогнозом пыльцы.</li>
+      <li>Использовать уже доступные поля прогноза, если они подходят.</li>
+      <li>Оставить возможность отдельного погодного набора данных в будущем.</li>
+      <li>Сделать кастомную карточку полезнее для повседневных решений.</li>
+    </ul>
+  </article>
+
+  <article id="v046" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.6</span>
+      <span className={styles.statusBadgeMuted}>Доступ к данным</span>
+    </div>
+    <h3>Понятные сводки для автоматизаций и панелей</h3>
+    <p>
+      Этот этап создаёт стабильный и компактный способ спросить интеграцию: что важно сейчас, что будет дальше и всё ли в порядке с источником данных.
+    </p>
+    <ul>
+      <li>Отдавать чистую сводку текущей ситуации, прогноза и статуса службы.</li>
+      <li>Упростить сценарии автоматизаций и уведомлений.</li>
+      <li>Не раскрывать сырые внутренние данные и не передавать тяжёлые объёмы данных без необходимости.</li>
+    </ul>
+  </article>
+
+  <article id="v047" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.7</span>
+      <span className={styles.statusBadgeMuted}>Assist</span>
+    </div>
+    <h3>Ответы о пыльце, готовые для AI</h3>
+    <p>
+      Home Assistant Assist и LLM должны отвечать на вопросы о пыльце простым языком, не читая сырые технические атрибуты сущностей.
+    </p>
+    <ul>
+      <li>Дать безопасный компактный контекст для вопросов вроде «Насколько сегодня плохо с пыльцой?»</li>
+      <li>Объяснять риск, главный аллерген, лучшие и худшие периоды, свежесть данных и состояние службы.</li>
+      <li>По умолчанию не раскрывать точные координаты, полные URL данных, отладочную информацию и тяжёлый сырой прогноз.</li>
+    </ul>
+  </article>
+</div>
+
+<section id="future-backlog" className={styles.sectionHeader}>
+  <span className={styles.eyebrow}>Будущие направления</span>
+  <h2>Долгосрочное видение</h2>
+</section>
+
+<div className={styles.futureGrid}>
+  <article className={styles.futureCard}>
+    <span className={styles.futureIcon}>🌫️</span>
+    <h3>Прогноз пыли</h3>
+    <p>Исследовать, можно ли превратить наборы данных SILAM о пыли в отдельный прогнозный домен со своими единицами, шкалами, сущностями, диагностикой и визуальным языком.</p>
+  </article>
+  <article className={styles.futureCard}>
+    <span className={styles.futureIcon}>🔥</span>
+    <h3>Риск пожаров</h3>
+    <p>Исследовать открытые источники прогноза пожарного риска и понять, могут ли они дополнить экологическую картину внутри Home Assistant.</p>
+  </article>
+  <article className={styles.futureCard}>
+    <span className={styles.futureIcon}>🗺️</span>
+    <h3>2D-слой пыльцы на карте</h3>
+    <p>Перейти от точечного прогноза к тепловой карте вокруг выбранной точки. Начать со статичных слоёв, затем развивать интерактивные карты и анимацию.</p>
+  </article>
+  <article className={styles.futureCard}>
+    <span className={styles.futureIcon}>🧭</span>
+    <h3>Перенастройка</h3>
+    <p>Позволить пользователям менять точку наблюдения без пересоздания интеграции, сохраняя безопасность кэша и состояния источников данных.</p>
+  </article>
+  <article className={styles.futureCard}>
+    <span className={styles.futureIcon}>🧪</span>
+    <h3>Стабильность и тесты</h3>
+    <p>Продолжать укреплять проверку данных, поведение кэша, сценарии настройки, миграции, сводки и временные окна прогноза.</p>
+  </article>
+</div>
+
+<section className={`${styles.sectionHeader} ${styles.endpointSectionHeader}`}>
+  <span className={styles.eyebrow}>Сетевые требования</span>
+  <h2>Прозрачность внешних конечных точек</h2>
+</section>
+
+SILAM Pollen должен явно показывать, какие внешние сервисы используются и зачем. Это особенно важно для пользователей за межсетевыми экранами, прокси или в регионах с сетевыми ограничениями.
+
+<div className={styles.endpointGrid}>
+  <div>
+    <h3>Данные прогноза</h3>
+    <code>thredds.silam.fmi.fi</code>
+    <p>Каталоги SILAM и конечные точки прогноза, необходимые для обычной работы интеграции.</p>
+  </div>
+  <div>
+    <h3>Дополнительные помощники настройки</h3>
+    <code>api.opentopodata.org</code><br />
+    <code>api.open-elevation.com</code><br />
+    <code>nominatim.openstreetmap.org</code>
+    <p>Определение высоты и обратное геокодирование при настройке или перенастройке, если это включено и доступно.</p>
+  </div>
+  <div>
+    <h3>Ресурсы проекта</h3>
+    <code>danishru.github.io</code>
+    <p>Карта покрытия и статичные ресурсы проекта.</p>
+  </div>
+</div>

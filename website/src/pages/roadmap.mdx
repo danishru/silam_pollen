@@ -1,0 +1,254 @@
+---
+title: Roadmap
+description: Strategic roadmap for SILAM Pollen
+slug: /roadmap
+hide_table_of_contents: true
+---
+
+import styles from '@site/src/pages/roadmap.module.css';
+
+# SILAM Pollen Roadmap
+
+<div className={styles.hero}>
+  <div className={styles.heroContent}>
+    <span className={styles.eyebrow}>Project roadmap</span>
+    <h2 className={styles.heroTitle}>A clearer allergy forecast, built around place, time, and context.</h2>
+    <p className={styles.heroText}>
+      SILAM Pollen is moving from a focused pollen sensor integration toward a smarter environmental forecast experience for Home Assistant: easier setup, more transparent data sources, richer forecast context, AI-ready summaries, and future map-based visualizations.
+    </p>
+    <div className={styles.heroActions}>
+      <a className={styles.primaryButton} href="#release-plan">View roadmap</a>
+      <a className={styles.secondaryButton} href="#future-backlog">Explore future ideas</a>
+    </div>
+  </div>
+  <div className={styles.heroPanel}>
+    <div className={styles.signalCard}>
+      <span className={styles.signalIcon}>🌿</span>
+      <strong>Pollen-aware home</strong>
+      <small>Understand today, tomorrow, and the safest moments to ventilate.</small>
+    </div>
+    <div className={styles.signalCard}>
+      <span className={styles.signalIcon}>🕒</span>
+      <strong>Forecast over time</strong>
+      <small>See what changed recently, what is happening now, and what comes next.</small>
+    </div>
+    <div className={styles.signalCard}>
+      <span className={styles.signalIcon}>🗺️</span>
+      <strong>Spatial awareness</strong>
+      <small>Future map layers can show how pollen risk moves around your location.</small>
+    </div>
+  </div>
+</div>
+
+<div className={styles.notice}>
+  <strong>Note:</strong> this roadmap is a strategic direction for the project. Release scope and ordering may change depending on Home Assistant changes, SILAM dataset availability, external service reliability, and user feedback.
+</div>
+
+## Visual overview
+
+<div className={styles.roadmapStrip}>
+  <a href="#v042" className={`${styles.step} ${styles.activeStep}`}>
+    <span>v0.4.2</span>
+    <strong>Setup</strong>
+    <small>Location-first onboarding</small>
+  </a>
+  <a href="#v043" className={styles.step}>
+    <span>v0.4.3</span>
+    <strong>Foundation</strong>
+    <small>Cleaner internals</small>
+  </a>
+  <a href="#v044" className={styles.step}>
+    <span>v0.4.4</span>
+    <strong>Timeline</strong>
+    <small>Past + future forecast</small>
+  </a>
+  <a href="#v045" className={styles.step}>
+    <span>v0.4.5</span>
+    <strong>Weather</strong>
+    <small>More forecast context</small>
+  </a>
+  <a href="#v046" className={styles.step}>
+    <span>v0.4.6</span>
+    <strong>Summary</strong>
+    <small>Clean data access</small>
+  </a>
+  <a href="#v047" className={styles.step}>
+    <span>v0.4.7</span>
+    <strong>Assist</strong>
+    <small>AI-ready answers</small>
+  </a>
+  <a href="#future-backlog" className={`${styles.step} ${styles.futureStep}`}>
+    <span>Future</span>
+    <strong>Maps + domains</strong>
+    <small>Dust, fire, 2D overlay</small>
+  </a>
+</div>
+
+<section id="release-plan" className={styles.sectionHeader}>
+  <span className={styles.eyebrow}>Release plan</span>
+  <h2>Strategic milestones</h2>
+</section>
+
+<div className={styles.releaseGrid}>
+  <article id="v042" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.2</span>
+      <span className={styles.statusBadge}>Next</span>
+    </div>
+    <h3>A better first-run experience</h3>
+    <p>
+      The next release focuses on making setup feel natural: choose where you want to monitor pollen first, then let the integration check whether SILAM data is available for that location.
+    </p>
+    <ul>
+      <li>Start with a Home Assistant zone or a custom point on the map.</li>
+      <li>Suggest SILAM Pollen automatically for the home zone when it makes sense.</li>
+      <li>Enrich the selected location with altitude and a readable place name when possible.</li>
+      <li>Warn the user if the altitude looks missing or suspicious.</li>
+      <li>Clearly document which external endpoints are required and which are optional.</li>
+    </ul>
+  </article>
+
+  <article id="v043" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.3</span>
+      <span className={styles.statusBadgeMuted}>Foundation</span>
+    </div>
+    <h3>A cleaner technical foundation</h3>
+    <p>
+      This release is about long-term project health. The integration already does a lot; the next architectural step is to make the internal structure easier to evolve.
+    </p>
+    <ul>
+      <li>Separate data access, dataset selection, diagnostics, and service status responsibilities.</li>
+      <li>Keep user-facing behavior stable while improving maintainability.</li>
+      <li>Prepare the codebase for richer forecast domains such as weather, dust, maps, and AI summaries.</li>
+    </ul>
+  </article>
+
+  <article id="v044" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.4</span>
+      <span className={styles.statusBadgeMuted}>Timeline</span>
+    </div>
+    <h3>Forecast context from the recent past</h3>
+    <p>
+      Forecasts are easier to understand when users can see the recent trend. This milestone adds a short retrospective window for the custom forecast card.
+    </p>
+    <div className={styles.timelineSample}>
+      <span>-12h</span><span>-9h</span><span>-6h</span><span>-3h</span><strong>now</strong><span>+3h</span><span>+6h</span><span>+9h</span><span>+12h</span>
+    </div>
+    <ul>
+      <li>Show how pollen risk moved before the current moment.</li>
+      <li>Keep the history window compact and dashboard-friendly.</li>
+      <li>Support richer visual timelines in Absolute Forecast Card.</li>
+    </ul>
+  </article>
+
+  <article id="v045" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.5</span>
+      <span className={styles.statusBadgeMuted}>Weather</span>
+    </div>
+    <h3>More weather context around pollen</h3>
+    <p>
+      Pollen is strongly shaped by weather. This release expands the forecast experience with weather-related context where the available data allows it.
+    </p>
+    <ul>
+      <li>Bring temperature, wind, humidity, precipitation, and cloud context closer to the pollen forecast.</li>
+      <li>Use fields already available in the current forecast where practical.</li>
+      <li>Leave room for a separate weather dataset later if it becomes the better path.</li>
+      <li>Make the custom card more useful for real daily decisions.</li>
+    </ul>
+  </article>
+
+  <article id="v046" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.6</span>
+      <span className={styles.statusBadgeMuted}>Data access</span>
+    </div>
+    <h3>Clean summaries for automations and dashboards</h3>
+    <p>
+      This milestone creates a stable, compact way to ask the integration what matters now, what is coming next, and whether the data source is healthy.
+    </p>
+    <ul>
+      <li>Expose clean current, forecast, and service-status summaries.</li>
+      <li>Make automation and notification use cases easier.</li>
+      <li>Keep raw internal data private and avoid exposing oversized payloads.</li>
+    </ul>
+  </article>
+
+  <article id="v047" className={styles.releaseCard}>
+    <div className={styles.cardHeader}>
+      <span className={styles.versionBadge}>v0.4.7</span>
+      <span className={styles.statusBadgeMuted}>Assist</span>
+    </div>
+    <h3>AI-ready pollen answers</h3>
+    <p>
+      Home Assistant Assist and LLMs should be able to answer pollen questions in plain language without reading raw internal attributes.
+    </p>
+    <ul>
+      <li>Provide safe, compact context for questions like “How bad is pollen today?”</li>
+      <li>Explain risk, primary allergens, best and worst periods, data freshness, and service health.</li>
+      <li>Avoid exposing precise coordinates, full data URLs, debug internals, or heavy raw forecast payloads by default.</li>
+    </ul>
+  </article>
+</div>
+
+<section id="future-backlog" className={styles.sectionHeader}>
+  <span className={styles.eyebrow}>Future backlog</span>
+  <h2>Longer-term vision</h2>
+</section>
+
+<div className={styles.futureGrid}>
+  <article className={styles.futureCard}>
+    <span className={styles.futureIcon}>🌫️</span>
+    <h3>Dust forecast</h3>
+    <p>Explore whether SILAM dust datasets can become a separate forecast domain with its own units, thresholds, entities, diagnostics, and visual language.</p>
+  </article>
+  <article className={styles.futureCard}>
+    <span className={styles.futureIcon}>🔥</span>
+    <h3>Fire / wildfire risk</h3>
+    <p>Research open fire-risk forecast sources and determine whether they can complement the environmental picture inside Home Assistant.</p>
+  </article>
+  <article className={styles.futureCard}>
+    <span className={styles.futureIcon}>🗺️</span>
+    <h3>2D pollen map overlay</h3>
+    <p>Move beyond point forecasts by showing a pollen heatmap around the selected location. Start with static overlays, then evolve toward interactive maps and animation.</p>
+  </article>
+  <article className={styles.futureCard}>
+    <span className={styles.futureIcon}>🧭</span>
+    <h3>Reconfiguration</h3>
+    <p>Let users change the monitored location later without recreating the integration, while keeping cache and data-source state safe.</p>
+  </article>
+  <article className={styles.futureCard}>
+    <span className={styles.futureIcon}>🧪</span>
+    <h3>Stability and tests</h3>
+    <p>Continue improving confidence around data validation, cache behavior, setup flows, migrations, summaries, and forecast windows.</p>
+  </article>
+</div>
+
+<section className={`${styles.sectionHeader} ${styles.endpointSectionHeader}`}>
+  <span className={styles.eyebrow}>Network requirements</span>
+  <h2>Endpoint transparency</h2>
+</section>
+
+SILAM Pollen should be clear about which external services it uses and why. This is especially important for users behind firewalls, proxies, or regional network restrictions.
+
+<div className={styles.endpointGrid}>
+  <div>
+    <h3>Forecast data</h3>
+    <code>thredds.silam.fmi.fi</code>
+    <p>SILAM catalogs and forecast data endpoints required for normal forecast operation.</p>
+  </div>
+  <div>
+    <h3>Optional setup helpers</h3>
+    <code>api.opentopodata.org</code><br />
+    <code>api.open-elevation.com</code><br />
+    <code>nominatim.openstreetmap.org</code>
+    <p>Altitude lookup and reverse geocoding used only during setup or reconfiguration when enabled.</p>
+  </div>
+  <div>
+    <h3>Project resources</h3>
+    <code>danishru.github.io</code>
+    <p>Coverage map and project-hosted static resources.</p>
+  </div>
+</div>
