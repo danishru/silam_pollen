@@ -1,15 +1,18 @@
 /* Fullscreen coverage map page.
  * This page intentionally avoids the default MDX markdown/container wrapper.
+ * Avoid 100vw here: it can include the browser scrollbar width and create
+ * an unwanted horizontal scrollbar.
  */
 
 .coverageFullscreenPage {
   position: relative;
   z-index: 0;
-  width: 100vw;
+  display: block;
+  width: 100%;
+  max-width: 100%;
   height: calc(100vh - var(--ifm-navbar-height));
   height: calc(100dvh - var(--ifm-navbar-height));
-  min-height: calc(100vh - var(--ifm-navbar-height));
-  min-height: calc(100dvh - var(--ifm-navbar-height));
+  min-height: 0;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -17,7 +20,8 @@
 }
 
 .coverageFrame {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 0;
   display: block;
   width: 100%;

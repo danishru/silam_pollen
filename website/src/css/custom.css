@@ -463,3 +463,84 @@ div[class^='codeBlockContainer_'] {
 html[data-theme='dark'] .DocSearch-Button {
   border-color: rgba(255, 255, 255, 0.10);
 }
+
+/* Coverage page must behave like an app screen, not like an article page.
+ * This removes accidental page scrollbars around the fullscreen map iframe.
+ */
+body:has(.coverageFullscreenPage) {
+  overflow: hidden;
+}
+
+body:has(.coverageFullscreenPage) .main-wrapper {
+  overflow: hidden;
+}
+
+body:has(.coverageFullscreenPage) .container,
+body:has(.coverageFullscreenPage) main {
+  max-width: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Coverage iframe + Docusaurus mobile sidebar hard fix                        */
+/* -------------------------------------------------------------------------- */
+
+/* Fullscreen iframe pages must never cover Docusaurus navigation layers. */
+body:has(.coverageFullscreenPage) .coverageFullscreenPage,
+body:has(.coverageFullscreenPage) .coverageFrame {
+  z-index: 0;
+}
+
+/* Navbar must stay above fullscreen map iframe. */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 4000 !important;
+}
+
+/* Docusaurus mobile sidebar/backdrop must be above the iframe and opaque. */
+@media (max-width: 996px) {
+  .navbar-sidebar__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 4998 !important;
+    background: rgba(15, 23, 42, 0.46) !important;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+
+  .navbar-sidebar {
+    position: fixed;
+    z-index: 4999 !important;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 1),
+        rgba(240, 253, 244, 1)
+      ) !important;
+    box-shadow: 28px 0 70px rgba(15, 23, 42, 0.22);
+    opacity: 1 !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(11, 17, 23, 1),
+        rgba(17, 25, 35, 1)
+      ) !important;
+    box-shadow: 28px 0 70px rgba(0, 0, 0, 0.55);
+  }
+
+  html[data-theme='dark'] .navbar-sidebar__backdrop {
+    background: rgba(0, 0, 0, 0.58) !important;
+  }
+
+  .navbar-sidebar__brand,
+  .navbar-sidebar__items,
+  .navbar-sidebar .menu,
+  .navbar-sidebar .menu__list,
+  .navbar-sidebar .menu__link {
+    opacity: 1 !important;
+  }
+}
+
