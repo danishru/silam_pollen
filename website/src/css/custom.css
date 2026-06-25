@@ -1,3 +1,176 @@
+/* SILAM Pollen global Docusaurus style
+ * Place this content into: website/src/css/custom.css
+ * If your site already has custom.css, merge the variables and global rules carefully.
+ */
+
 :root {
-  --ifm-color-primary: #4f8cff;
+  /* Infima / Docusaurus theme colors */
+  --ifm-color-primary: #168a4a;
+  --ifm-color-primary-dark: #137c43;
+  --ifm-color-primary-darker: #11733e;
+  --ifm-color-primary-darkest: #0d5f33;
+  --ifm-color-primary-light: #1b9b56;
+  --ifm-color-primary-lighter: #22aa62;
+  --ifm-color-primary-lightest: #35c878;
+
+  --ifm-link-color: #1570ef;
+  --ifm-link-hover-color: #168a4a;
+  --ifm-navbar-link-hover-color: var(--ifm-color-primary);
+  --ifm-menu-color-active: var(--ifm-color-primary);
+  --ifm-code-font-size: 94%;
+  --ifm-global-radius: 14px;
+
+  /* Shared SILAM design tokens */
+  --silam-accent-green: #168a4a;
+  --silam-accent-blue: #1570ef;
+  --silam-accent-mint: #2ecc71;
+  --silam-page-gradient:
+    radial-gradient(circle at 12% -10%, rgba(50, 217, 143, 0.16), transparent 34rem),
+    radial-gradient(circle at 88% 8%, rgba(77, 171, 247, 0.14), transparent 30rem);
+  --silam-card-border: var(--ifm-color-emphasis-200);
+  --silam-card-shadow: 0 14px 36px rgba(31, 41, 55, 0.06);
+  --silam-card-shadow-strong: 0 18px 44px rgba(31, 41, 55, 0.10);
+  --silam-soft-surface: rgba(255, 255, 255, 0.72);
+  --docusaurus-highlighted-code-line-bg: rgba(21, 112, 239, 0.12);
+}
+
+html[data-theme='dark'] {
+  --ifm-color-primary: #35c878;
+  --ifm-color-primary-dark: #2fba6f;
+  --ifm-color-primary-darker: #2bb168;
+  --ifm-color-primary-darkest: #219254;
+  --ifm-color-primary-light: #49d486;
+  --ifm-color-primary-lighter: #5ade93;
+  --ifm-color-primary-lightest: #80e9ad;
+
+  --ifm-link-color: #7ab7ff;
+  --ifm-link-hover-color: #8ee7b4;
+  --ifm-navbar-link-hover-color: var(--ifm-color-primary);
+  --ifm-menu-color-active: var(--ifm-color-primary);
+  --ifm-background-color: #0b1117;
+  --ifm-background-surface-color: #111923;
+
+  --silam-page-gradient:
+    radial-gradient(circle at 12% -10%, rgba(50, 217, 143, 0.12), transparent 34rem),
+    radial-gradient(circle at 88% 8%, rgba(77, 171, 247, 0.12), transparent 30rem);
+  --silam-card-border: rgba(255, 255, 255, 0.10);
+  --silam-card-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+  --silam-card-shadow-strong: 0 18px 44px rgba(0, 0, 0, 0.34);
+  --silam-soft-surface: rgba(17, 25, 35, 0.72);
+  --docusaurus-highlighted-code-line-bg: rgba(122, 183, 255, 0.14);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-image: var(--silam-page-gradient);
+  background-attachment: fixed;
+}
+
+/* Keep links close to the roadmap visual language across docs, blog and pages. */
+a {
+  font-weight: 600;
+  text-underline-offset: 0.18em;
+}
+
+.markdown a:not(.button) {
+  text-decoration-thickness: 0.08em;
+}
+
+.markdown a:not(.button):hover {
+  text-decoration-thickness: 0.12em;
+}
+
+/* Slightly more polished article typography. */
+.markdown > h1,
+.markdown > h2,
+.markdown > h3 {
+  letter-spacing: -0.025em;
+}
+
+.markdown > h2 {
+  margin-top: 2.75rem;
+}
+
+/* Cards/admonitions blend better with the roadmap page. */
+.card,
+.theme-admonition,
+.alert {
+  border-color: var(--silam-card-border);
+  border-radius: 18px;
+  box-shadow: var(--silam-card-shadow);
+}
+
+.theme-admonition {
+  background: var(--ifm-background-surface-color);
+}
+
+/* Navbar/footer polish without changing Docusaurus structure. */
+.navbar {
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  box-shadow: none;
+  backdrop-filter: blur(14px);
+}
+
+html[data-theme='light'] .navbar {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+html[data-theme='dark'] .navbar {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: rgba(11, 17, 23, 0.82);
+}
+
+.navbar__link {
+  font-weight: 700;
+}
+
+.footer {
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+html[data-theme='dark'] .footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Buttons follow the same green-blue product accent. */
+.button--primary,
+.button.button--primary {
+  border: 0;
+  background: linear-gradient(135deg, var(--silam-accent-green), var(--silam-accent-blue));
+  box-shadow: 0 12px 30px rgba(21, 112, 239, 0.20);
+}
+
+.button--primary:hover,
+.button.button--primary:hover {
+  filter: brightness(1.04);
+}
+
+/* Tables and code blocks should not feel disconnected from the new style. */
+.markdown table {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--silam-card-shadow);
+}
+
+.markdown table thead tr {
+  background: linear-gradient(90deg, rgba(46, 204, 113, 0.12), rgba(77, 171, 247, 0.12));
+}
+
+div[class^='codeBlockContainer_'] {
+  border: 1px solid var(--silam-card-border);
+  border-radius: 18px;
+  box-shadow: var(--silam-card-shadow);
+}
+
+/* Search input / DocSearch surfaces. */
+.DocSearch-Button {
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 999px;
+}
+
+html[data-theme='dark'] .DocSearch-Button {
+  border-color: rgba(255, 255, 255, 0.10);
 }
