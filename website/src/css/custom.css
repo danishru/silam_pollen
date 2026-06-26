@@ -63,67 +63,30 @@ html[data-theme='dark'] {
 
 html {
   scroll-behavior: smooth;
-  scrollbar-gutter: stable;
-
-  /* Фон держим на html, а не только на body.
-     Так зарезервированный справа scrollbar gutter получает тот же фон,
-     что и страница, и не выглядит как отдельная белая/тёмная полоса. */
-  background-color: var(--ifm-background-color);
-  background-image: var(--silam-page-gradient);
-  background-attachment: fixed;
-
-  /* Firefox: прозрачный track, чтобы gutter не перекрывал фон страницы. */
-  scrollbar-color: rgba(22, 138, 74, 0.34) transparent;
-}
-
-/* Резервируем место под вертикальный scrollbar в браузерах без
-   `scrollbar-gutter`, чтобы navbar не сдвигался между страницами
-   со скроллом и fullscreen-страницами без скролла. */
-@supports not (scrollbar-gutter: stable) {
-  html {
-    overflow-y: scroll;
-  }
 }
 
 body {
-  background-color: transparent;
-  background-image: none;
+  background-image: var(--silam-page-gradient);
+  background-attachment: fixed;
 }
 
-/* Chromium/Safari: делаем track scrollbar прозрачным, а thumb компактным.
-   На страницах без фактического скролла останется только прозрачный gutter. */
-html::-webkit-scrollbar {
-  width: 14px;
-}
+/* -------------------------------------------------------------------------- */
+/* Stable desktop navbar without visible scrollbar gutter                      */
+/* -------------------------------------------------------------------------- */
 
-html::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* Не резервируем искусственный gutter у всей страницы: он создаёт видимую
+   правую полосу на full-bleed страницах. Вместо этого стабилизируем только
+   содержимое navbar.
 
-html::-webkit-scrollbar-thumb {
-  border: 4px solid transparent;
-  border-radius: 999px;
-  background: rgba(22, 138, 74, 0.30);
-  background-clip: content-box;
-}
-
-html::-webkit-scrollbar-thumb:hover {
-  background: rgba(22, 138, 74, 0.46);
-  background-clip: content-box;
-}
-
-html[data-theme='dark'] {
-  scrollbar-color: rgba(53, 200, 120, 0.38) transparent;
-}
-
-html[data-theme='dark']::-webkit-scrollbar-thumb {
-  background: rgba(53, 200, 120, 0.34);
-  background-clip: content-box;
-}
-
-html[data-theme='dark']::-webkit-scrollbar-thumb:hover {
-  background: rgba(53, 200, 120, 0.52);
-  background-clip: content-box;
+   100vw включает вертикальный scrollbar, а 100% — ширину layout viewport
+   без scrollbar. На страницах со scrollbar сдвигаем navbar__inner вправо
+   на половину этой разницы, чтобы центр меню совпадал со страницами без
+   scrollbar. На fullscreen coverage page разница равна 0, поэтому сдвига нет. */
+@media (min-width: 997px) {
+  .navbar__inner {
+    position: relative;
+    left: calc((100vw - 100%) / 2);
+  }
 }
 
 /* Keep links close to the roadmap visual language across docs, blog and pages. */
