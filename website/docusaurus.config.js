@@ -47,22 +47,14 @@ const config = {
       title: "SILAM Pollen",
       items: [
 //        { to: "/docs/intro", label: "Docs", position: "left" },
-        {
-          type: "dropdown",
-          label: "Releases",
-          position: "left",
-          to: "/blog",
-          items: [
-            { label: "Release notes", to: "/blog" },
-            {
-              label: "GitHub releases",
-              href: "https://github.com/danishru/silam_pollen/releases"
-            }
-          ]
-        },
+        { to: "/blog", label: "Releases", position: "left" },
         { to: "/coverage", label: "Coverage map", position: "left" },
         { to: "/roadmap", label: "Roadmap", position: "left" },
-        { type: "localeDropdown", position: "right" }
+        {
+          type: "localeDropdown",
+          position: "right",
+          className: "silamLocaleDropdown"
+        }
       ]
     },
     footer: {
@@ -84,7 +76,10 @@ const config = {
         {
           title: "Data source",
           items: [
-            { label: "SILAM by FMI", href: "https://silam.fmi.fi/" }
+            {
+              label: "SILAM by FMI",
+              href: "https://silam.fmi.fi/"
+            }
           ]
         }
       ],
