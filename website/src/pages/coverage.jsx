@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import Layout from '@theme/Layout';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
@@ -52,9 +52,34 @@ function useNavbarHeight() {
 }
 
 function CoverageMapFrame({text}) {
+  const frameRef = useRef(null);
   const {colorMode} = useColorMode();
   const navbarHeight = useNavbarHeight();
-  const src = useBaseUrl(`/coverage-map/index.html?lng=${text.lang}&theme=${colorMode}`);
+
+  // Локальный переключатель темы внутри карты скрываем: тема управляется navbar Docusaurus.
+  // src намеренно не зависит от colorMode/lang, чтобы React не перезагружал iframe
+  // при штатном переключении темы или локали в Docusaurus.
+  const src = useBaseUrl('/coverage-map/index.html?themeToggle=0');
+
+  const sendFrameContext = useCallback(() => {
+    const frameWindow = frameRef.current?.contentWindow;
+    if (!frameWindow) {
+      return;
+    }
+
+    frameWindow.postMessage(
+      {
+        type: 'silam-coverage-context',
+        theme: colorMode,
+        lang: text.lang,
+      },
+      '*',
+    );
+  }, [colorMode, text.lang]);
+
+  useEffect(() => {
+    sendFrameContext();
+  }, [sendFrameContext]);
 
   return (
     <main
@@ -62,11 +87,12 @@ function CoverageMapFrame({text}) {
       style={{'--silam-coverage-top': `${navbarHeight}px`}}
     >
       <iframe
-        key={`${text.lang}-${colorMode}`}
+        ref={frameRef}
         className={`${styles.coverageFrame} silamCoverageFrame`}
         src={src}
         title={text.iframeTitle}
         loading="eager"
+        onLoad={sendFrameContext}
       />
     </main>
   );
