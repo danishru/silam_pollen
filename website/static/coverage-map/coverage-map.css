@@ -35,8 +35,10 @@ html[data-theme="light"] {
   --ui-attribution-link: #153235;
   --ui-attribution-shadow: 0 1px 2px rgba(255, 255, 255, 0.65);
 
-  --control-size: 32px;
+  --control-size: 36px;
   --control-gap: .5rem;
+  --control-edge-offset: 16px;
+  --control-edge-offset-desktop: 16px;
 }
 
 html[data-theme="dark"] {
@@ -254,7 +256,7 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 .map-aux-control-cluster {
   position: absolute !important;
   top: .75rem !important;
-  right: .75rem !important;
+  right: var(--control-edge-offset) !important;
   left: auto !important;
   bottom: auto !important;
 
@@ -310,7 +312,7 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 /* Fallback до JS-сборки auxiliary-контейнера. */
 .theme-toggle-control {
   top: .75rem;
-  right: .75rem;
+  right: var(--control-edge-offset);
   left: auto;
   padding: 0;
   border-radius: 999px;
@@ -318,8 +320,21 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 
 .ol-rotate {
   top: 3.25rem !important;
-  right: .75rem !important;
+  right: var(--control-edge-offset) !important;
   left: auto !important;
+}
+
+/* На desktop правый стек controls выравниваем по тому же отступу,
+   что и кнопки в верхнем меню сайта: 16px от правого края. */
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  .map-aux-control-cluster {
+    right: var(--control-edge-offset-desktop) !important;
+  }
+
+  .theme-toggle-control,
+  .ol-rotate {
+    right: var(--control-edge-offset-desktop) !important;
+  }
 }
 
 /* ------------------------------------------------------------------

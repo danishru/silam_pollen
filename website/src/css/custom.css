@@ -80,7 +80,6 @@
   --silam-navbar-active-line: linear-gradient(90deg, var(--silam-accent-green), var(--silam-accent-blue));
   --silam-brand-idle-text:
     linear-gradient(135deg, var(--silam-accent-green), var(--silam-accent-blue));
-  --silam-brand-height: 2.25rem;
   --silam-brand-idle-panel:
     linear-gradient(135deg,
       rgb(var(--silam-accent-green-rgb) / 0.085),
@@ -88,6 +87,7 @@
     );
   --silam-brand-idle-border-color: rgb(24 121 113 / 0.16);
   --silam-brand-idle-shadow:
+    inset 0 0 0 1px var(--silam-brand-idle-border-color),
     inset 0 1px 0 rgb(255 255 255 / 0.14),
     0 0 0 1px rgb(255 255 255 / 0.020);
   --silam-brand-active-panel: var(--silam-gradient-accent);
@@ -118,6 +118,21 @@
   --silam-glass-saturation: 150%;
   --silam-glass-filter: blur(var(--silam-glass-blur)) saturate(var(--silam-glass-saturation));
   --silam-glass-filter-soft: blur(14px) saturate(145%);
+
+  /* Mobile drawer glass: очень мягкое мутное стекло для бокового меню. */
+  --silam-drawer-glass-surface:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.68),
+      rgb(240 253 244 / 0.54)
+    );
+  --silam-drawer-glass-sheen:
+    radial-gradient(circle at 18% 6%, rgb(var(--silam-accent-mint-rgb) / 0.11), transparent 18rem),
+    radial-gradient(circle at 92% 18%, rgb(var(--silam-accent-blue-rgb) / 0.085), transparent 16rem);
+  --silam-drawer-glass-border: rgb(24 121 113 / 0.16);
+  --silam-drawer-glass-shadow: 28px 0 70px rgb(15 23 42 / 0.20);
+  --silam-drawer-glass-filter: blur(24px) saturate(158%);
+  --silam-drawer-header-surface: rgb(255 255 255 / 0.56);
 
   /* Backward-compatible aliases for existing navbar rules. */
   --silam-navbar-glass-panel: var(--silam-glass-surface);
@@ -184,6 +199,7 @@ html[data-theme='dark'] {
     );
   --silam-brand-idle-border-color: rgb(110 231 216 / 0.16);
   --silam-brand-idle-shadow:
+    inset 0 0 0 1px var(--silam-brand-idle-border-color),
     inset 0 1px 0 rgb(255 255 255 / 0.075),
     0 0 0 1px rgb(255 255 255 / 0.012);
   --silam-brand-active-panel: var(--silam-gradient-accent);
@@ -236,6 +252,20 @@ html[data-theme='dark'] {
   --silam-glass-surface-elevated: rgb(9 28 30 / 0.72);
   --silam-glass-border: rgb(110 231 216 / 0.24);
   --silam-glass-shadow: 0 18px 48px rgb(0 0 0 / 0.34);
+
+  --silam-drawer-glass-surface:
+    linear-gradient(
+      180deg,
+      rgb(9 28 30 / 0.54),
+      rgb(17 25 35 / 0.48)
+    );
+  --silam-drawer-glass-sheen:
+    radial-gradient(circle at 18% 6%, rgb(128 233 173 / 0.085), transparent 18rem),
+    radial-gradient(circle at 92% 18%, rgb(122 183 255 / 0.075), transparent 16rem);
+  --silam-drawer-glass-border: rgb(110 231 216 / 0.18);
+  --silam-drawer-glass-shadow: 28px 0 70px rgb(0 0 0 / 0.52);
+  --silam-drawer-glass-filter: blur(24px) saturate(160%);
+  --silam-drawer-header-surface: rgb(9 28 30 / 0.50);
 
   --silam-navbar-glass-panel: var(--silam-glass-surface);
   --silam-navbar-glass-text: var(--silam-glass-text);
@@ -452,16 +482,13 @@ div[class^='codeBlockContainer_'] {
   gap: 0.55rem !important;
   min-width: 0 !important;
   max-width: 100% !important;
-  height: var(--silam-brand-height) !important;
-  min-height: var(--silam-brand-height) !important;
   box-sizing: border-box !important;
-  padding: 0 0.9rem !important;
-  border: 1px solid var(--silam-brand-idle-border-color) !important;
+  padding: 0.42rem 0.9rem !important;
+  border: 0 !important;
   border-radius: var(--silam-radius-pill) !important;
   color: var(--silam-accent-green) !important;
   overflow: hidden !important;
   isolation: isolate;
-  line-height: 1 !important;
   background: var(--silam-brand-idle-panel) !important;
   background-color: transparent !important;
   box-shadow: var(--silam-brand-idle-shadow) !important;
@@ -510,7 +537,6 @@ div[class^='codeBlockContainer_'] {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 850 !important;
-  line-height: 1 !important;
   letter-spacing: -0.035em !important;
 }
 
@@ -844,9 +870,7 @@ html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
   .navbar__brand,
   .navbar-sidebar__brand .navbar__brand {
     gap: 0.45rem !important;
-    height: var(--silam-brand-height) !important;
-    min-height: var(--silam-brand-height) !important;
-    padding: 0 0.78rem !important;
+    padding: 0.36rem 0.78rem !important;
   }
 
   .navbar__logo {
@@ -894,11 +918,34 @@ html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
     max-height: 100vh !important;
     max-height: 100dvh !important;
     overflow: hidden !important;
+    isolation: isolate !important;
     opacity: 1 !important;
-    background: var(--silam-bg-drawer) !important;
-    box-shadow: 28px 0 70px rgb(15 23 42 / 0.24) !important;
+    border-right: 1px solid var(--silam-drawer-glass-border) !important;
+    background: transparent !important;
+    box-shadow: var(--silam-drawer-glass-shadow) !important;
     contain: none !important;
     transform-style: flat !important;
+  }
+
+  .navbar-sidebar::before {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    content: '';
+    background: var(--silam-drawer-glass-surface);
+    backdrop-filter: var(--silam-drawer-glass-filter);
+    -webkit-backdrop-filter: var(--silam-drawer-glass-filter);
+  }
+
+  .navbar-sidebar::after {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    content: '';
+    background: var(--silam-drawer-glass-sheen);
+    opacity: 0.72;
   }
 
   .navbar-sidebar__brand {
@@ -914,7 +961,9 @@ html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
     min-height: var(--ifm-navbar-height) !important;
     padding: 0 0.7rem !important;
     border-bottom: 1px solid var(--silam-border-soft) !important;
-    background: var(--silam-bg-surface-solid) !important;
+    background: var(--silam-drawer-header-surface) !important;
+    backdrop-filter: var(--silam-glass-filter-soft) !important;
+    -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
     opacity: 1 !important;
   }
 
@@ -954,7 +1003,7 @@ html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
     max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
     padding: 0 !important;
     overflow: visible !important;
-    background: var(--silam-bg-drawer) !important;
+    background: transparent !important;
     opacity: 1 !important;
     transform: translateZ(0) !important;
     transition: transform var(--ifm-transition-fast) ease-in-out !important;
@@ -988,6 +1037,17 @@ html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
     opacity: 1 !important;
   }
 
+  /* В боковом меню подсветка должна обнимать только текст,
+     а не растягиваться на всю ширину drawer. */
+  .navbar-sidebar .menu__link,
+  .navbar-sidebar__back {
+    display: inline-flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+    width: auto !important;
+    max-width: 100% !important;
+  }
+
   .navbar-sidebar .menu__link {
     border-radius: var(--silam-radius-md);
     color: var(--silam-text-main) !important;
@@ -998,6 +1058,90 @@ html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
   .navbar-sidebar__back {
     border-radius: var(--silam-radius-md) !important;
     color: var(--silam-accent-green) !important;
+  }
+
+  /* Кнопка возврата не является активным разделом.
+     Делаем её отдельным нейтральным действием и заменяем текстовую стрелку SVG-иконкой. */
+  .navbar-sidebar .navbar-sidebar__back {
+    position: relative !important;
+    isolation: isolate;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 0.45rem !important;
+    padding: 0.5rem 0.68rem 0.72rem !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--silam-border-soft) !important;
+    border-radius: 0 !important;
+    color: var(--silam-text-soft) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: 0 !important;
+    text-decoration: none !important;
+    transform: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .navbar-sidebar .navbar-sidebar__back::before {
+    position: static !important;
+    inset: auto !important;
+    z-index: auto !important;
+    display: inline-block !important;
+    flex: 0 0 auto !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    pointer-events: none !important;
+    content: '' !important;
+    border-radius: 0 !important;
+    opacity: 0.9 !important;
+    background: currentColor !important;
+    filter: none !important;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M10.828 12l4.95 4.95-1.414 1.414L8 12l6.364-6.364 1.414 1.414L10.828 12z'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M10.828 12l4.95 4.95-1.414 1.414L8 12l6.364-6.364 1.414 1.414L10.828 12z'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+
+  .navbar-sidebar .navbar-sidebar__back::after {
+    content: 'Back to main menu';
+    min-width: 0 !important;
+    overflow: hidden;
+    color: currentColor !important;
+    font-size: 0.95rem !important;
+    font-weight: 750 !important;
+    line-height: 1.15 !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .navbar-sidebar .navbar-sidebar__back:hover {
+    color: var(--silam-menu-hover-text) !important;
+    border-bottom-color: var(--silam-border-strong) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar .navbar-sidebar__back {
+    color: var(--silam-text-soft) !important;
+    border-bottom-color: var(--silam-border-soft) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar .navbar-sidebar__back:hover {
+    color: var(--silam-menu-hover-text) !important;
+    border-bottom-color: var(--silam-border-strong) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   .navbar__items--right {
@@ -1033,8 +1177,7 @@ html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
     background: transparent !important;
     font-size: 0 !important;
     font-weight: 750 !important;
-    line-height: 1 !important;
-    transform: none !important;
+      transform: none !important;
   }
 
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown svg,
@@ -1054,8 +1197,7 @@ html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
     font-size: 0.9rem !important;
     font-weight: 750 !important;
     letter-spacing: 0 !important;
-    line-height: 1 !important;
-    transform: none !important;
+      transform: none !important;
   }
 
   html[lang^='ru'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown::after {
@@ -1116,17 +1258,18 @@ html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
   }
 
   html[data-theme='dark'] .navbar-sidebar {
-    background: var(--silam-bg-drawer) !important;
-    box-shadow: 28px 0 70px rgb(0 0 0 / 0.58) !important;
+    border-right-color: var(--silam-drawer-glass-border) !important;
+    background: transparent !important;
+    box-shadow: var(--silam-drawer-glass-shadow) !important;
   }
 
   html[data-theme='dark'] .navbar-sidebar__brand {
     border-bottom-color: var(--silam-border-soft) !important;
-    background: var(--silam-bg-surface-solid) !important;
+    background: var(--silam-drawer-header-surface) !important;
   }
 
   html[data-theme='dark'] .navbar-sidebar__items {
-    background: var(--silam-bg-drawer) !important;
+    background: transparent !important;
   }
 
   html[data-theme='dark'] .navbar-sidebar__backdrop {
