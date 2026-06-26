@@ -155,6 +155,7 @@ a {
 .navbar__inner {
   max-width: 1180px;
   margin: 0 auto;
+  flex-wrap: nowrap !important;
 }
 
 .navbar__brand {
@@ -367,6 +368,7 @@ html[data-theme='dark'] .footer {
   .navbar__inner {
     width: 100%;
     max-width: none;
+    flex-wrap: nowrap !important;
   }
 
   .navbar__brand {
@@ -1217,7 +1219,7 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
 
   /* LocaleDropdown в desktop-разметке является navbar__item-контейнером,
      а className из docusaurus.config.js попадает на внутреннюю ссылку.
-     Поэтому для mobile topbar показываем родителя через :has(). */
+     На mobile показываем только трёхбуквенный код языка без штатной иконки. */
   .navbar__items--right {
     display: flex !important;
     align-items: center !important;
@@ -1229,6 +1231,7 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
   }
 
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) {
+    position: relative !important;
     display: flex !important;
     align-items: center !important;
     flex: 0 0 auto !important;
@@ -1240,24 +1243,26 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     align-items: center !important;
     justify-content: center !important;
     box-sizing: border-box !important;
-    width: 4.05rem !important;
-    min-width: 4.05rem !important;
+    width: auto !important;
+    min-width: 3.25rem !important;
     height: 2.25rem !important;
-    padding: 0 0.55rem !important;
+    padding: 0.48rem 0.7rem !important;
     border-radius: 999px !important;
     overflow: hidden !important;
-    color: var(--silam-accent-green) !important;
+    color: rgba(17, 24, 39, 0.72) !important;
     background: transparent !important;
     font-size: 0 !important;
+    font-weight: 750 !important;
     line-height: 1 !important;
     transform: none !important;
   }
 
-  .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown svg {
-    flex: 0 0 auto !important;
-    width: 1.05rem !important;
-    height: 1.05rem !important;
-    margin-right: 0.24rem !important;
+  /* На mobile убираем штатную иконку языка («文»/language icon),
+     чтобы кнопка выглядела как обычный пункт navbar с коротким кодом. */
+  .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown svg,
+  .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown [class*='icon'],
+  .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown [class*='Icon'] {
+    display: none !important;
   }
 
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown::after {
@@ -1268,9 +1273,9 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     margin: 0 !important;
     border: 0 !important;
     color: currentColor !important;
-    font-size: 0.72rem !important;
-    font-weight: 850 !important;
-    letter-spacing: 0.035em !important;
+    font-size: 0.9rem !important;
+    font-weight: 750 !important;
+    letter-spacing: 0 !important;
     line-height: 1 !important;
     transform: none !important;
   }
@@ -1283,17 +1288,31 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     content: 'ENG' !important;
   }
 
-  .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown:hover {
+  .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown:hover,
+  .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown):focus-within > .silamLocaleDropdown {
+    color: var(--silam-accent-green) !important;
     background: rgba(22, 138, 74, 0.09) !important;
     transform: none !important;
   }
 
+  /* У dropdown не оставляем зазор до меню: на touch/hover он мог закрываться
+     до выбора языка. focus-within и dropdown--show поддерживают click/tap. */
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .dropdown__menu {
-    top: calc(100% + 0.45rem) !important;
+    top: 100% !important;
     right: 0 !important;
     left: auto !important;
     min-width: 10rem !important;
     max-width: min(14rem, calc(100vw - 1.5rem)) !important;
+    z-index: 2200 !important;
+  }
+
+  .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown):hover > .dropdown__menu,
+  .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown):focus-within > .dropdown__menu,
+  .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown).dropdown--show > .dropdown__menu {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }
 
   .navbar__items--right > div[class*='toggle'] {
@@ -1318,6 +1337,11 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
   .navbar > .navbar__inner,
   .navbar__inner {
     gap: 0.35rem !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .navbar__items {
+    flex-wrap: nowrap !important;
   }
 
   .navbar__items:first-child {
@@ -1337,10 +1361,12 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
   }
 
   html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown {
-    color: var(--ifm-color-primary-lightest) !important;
+    color: rgba(248, 250, 252, 0.74) !important;
   }
 
-  html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown:hover {
+  html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown:hover,
+  html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown):focus-within > .silamLocaleDropdown {
+    color: var(--ifm-color-primary-lightest) !important;
     background: rgba(53, 200, 120, 0.10) !important;
   }
 }
