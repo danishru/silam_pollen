@@ -63,6 +63,16 @@ html[data-theme='dark'] {
 
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+}
+
+/* Резервируем место под вертикальный scrollbar в браузерах без
+   `scrollbar-gutter`, чтобы navbar не сдвигался между страницами
+   со скроллом и fullscreen-страницами без скролла. */
+@supports not (scrollbar-gutter: stable) {
+  html {
+    overflow-y: scroll;
+  }
 }
 
 body {
@@ -819,4 +829,141 @@ body:has(.silamCoverageFullscreenPage) footer {
   border: 0 !important;
   overflow: hidden !important;
 }
+/* -------------------------------------------------------------------------- */
+/* Navbar/menu interaction states                                              */
+/* -------------------------------------------------------------------------- */
 
+/* Active показывает текущую страницу, hover — только временное наведение.
+   Поэтому hover намеренно мягче и не копирует выбранное состояние. */
+.navbar__link:hover:not(.navbar__link--active) {
+  color: var(--silam-accent-green);
+  background: rgba(22, 138, 74, 0.075);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.navbar__link--active {
+  color: var(--silam-accent-green);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(22, 138, 74, 0.15),
+      rgba(21, 112, 239, 0.10)
+    );
+  box-shadow: inset 0 0 0 1px rgba(22, 138, 74, 0.10);
+}
+
+.navbar__link--active:hover {
+  color: var(--silam-accent-green);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(22, 138, 74, 0.17),
+      rgba(21, 112, 239, 0.12)
+    );
+  text-decoration: none;
+  transform: none;
+}
+
+/* Для клавиатурной навигации focus должен быть отдельным состоянием,
+   а не выглядеть как active или hover. */
+.navbar__link:focus-visible,
+.dropdown__link:focus-visible,
+.menu__link:focus-visible,
+.navbar .clean-btn:focus-visible,
+.navbar-sidebar .clean-btn:focus-visible {
+  outline: 2px solid var(--silam-accent-blue);
+  outline-offset: 3px;
+}
+
+/* Dropdown: hover и active разделены, чтобы текущий язык/раздел
+   не выглядел как случайное наведение мышкой. */
+.dropdown__link:hover:not(.dropdown__link--active) {
+  color: var(--silam-accent-green);
+  background: rgba(22, 138, 74, 0.07);
+}
+
+.dropdown__link--active {
+  color: var(--silam-accent-green);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(22, 138, 74, 0.13),
+      rgba(21, 112, 239, 0.08)
+    );
+  font-weight: 750;
+}
+
+/* Sidebar/mobile menu: hover остаётся лёгким, active — заметнее. */
+.menu__link:hover:not(.menu__link--active),
+.navbar-sidebar .menu__link:hover:not(.menu__link--active) {
+  color: var(--silam-accent-green) !important;
+  background: rgba(22, 138, 74, 0.07) !important;
+}
+
+.menu__link--active,
+.navbar-sidebar .menu__link--active {
+  color: var(--silam-accent-green) !important;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(22, 138, 74, 0.13),
+      rgba(21, 112, 239, 0.08)
+    ) !important;
+  font-weight: 800;
+}
+
+html[data-theme='dark'] .navbar__link:hover:not(.navbar__link--active) {
+  color: var(--ifm-color-primary-lightest);
+  background: rgba(53, 200, 120, 0.075);
+}
+
+html[data-theme='dark'] .navbar__link--active {
+  color: var(--ifm-color-primary-lightest);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(53, 200, 120, 0.16),
+      rgba(122, 183, 255, 0.11)
+    );
+  box-shadow: inset 0 0 0 1px rgba(53, 200, 120, 0.12);
+}
+
+html[data-theme='dark'] .navbar__link--active:hover {
+  color: var(--ifm-color-primary-lightest);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(53, 200, 120, 0.18),
+      rgba(122, 183, 255, 0.13)
+    );
+  transform: none;
+}
+
+html[data-theme='dark'] .navbar__link:focus-visible,
+html[data-theme='dark'] .dropdown__link:focus-visible,
+html[data-theme='dark'] .menu__link:focus-visible,
+html[data-theme='dark'] .navbar .clean-btn:focus-visible,
+html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
+  outline-color: var(--ifm-link-color);
+}
+
+html[data-theme='dark'] .dropdown__link:hover:not(.dropdown__link--active),
+html[data-theme='dark'] .menu__link:hover:not(.menu__link--active),
+html[data-theme='dark'] .navbar-sidebar .menu__link:hover:not(.menu__link--active) {
+  color: var(--ifm-color-primary-lightest) !important;
+  background: rgba(53, 200, 120, 0.075) !important;
+}
+
+html[data-theme='dark'] .dropdown__link--active,
+html[data-theme='dark'] .menu__link--active,
+html[data-theme='dark'] .navbar-sidebar .menu__link--active {
+  color: var(--ifm-color-primary-lightest) !important;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(53, 200, 120, 0.15),
+      rgba(122, 183, 255, 0.10)
+    ) !important;
+  font-weight: 800;
+}
