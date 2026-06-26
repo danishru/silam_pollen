@@ -1,0 +1,865 @@
+/* SILAM Pollen coverage map
+   Чистая версия стилей после выноса основной логики в coverage-map.js. */
+
+/* ------------------------------------------------------------------
+   Theme variables
+   ------------------------------------------------------------------ */
+
+:root,
+html[data-theme="light"] {
+  --ui-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --ui-font-size: 12px;
+  --ui-line-height: 1.2;
+
+  --ui-bg: #f7fbfb;
+  --ui-text: #153235;
+  --ui-accent: #22b8a0;
+
+  --ui-glass-panel: rgba(255, 255, 255, 0.40);
+  --ui-glass-text: #153235;
+  --ui-glass-border: rgba(24, 121, 113, 0.22);
+  --ui-glass-shadow: 0 18px 46px rgba(9, 74, 72, 0.18);
+
+  --ui-attribution-text: #153235;
+  --ui-attribution-link: #153235;
+  --ui-attribution-shadow: 0 1px 2px rgba(255, 255, 255, 0.65);
+
+  --control-size: 32px;
+  --control-gap: .5rem;
+}
+
+html[data-theme="dark"] {
+  --ui-bg: #071314;
+  --ui-text: #e8fffb;
+  --ui-accent: #6ee7d8;
+
+  --ui-glass-panel: rgba(9, 28, 30, 0.40);
+  --ui-glass-text: #e8fffb;
+  --ui-glass-border: rgba(110, 231, 216, 0.24);
+  --ui-glass-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+
+  --ui-attribution-text: #e8fffb;
+  --ui-attribution-link: #bfeeff;
+  --ui-attribution-shadow: 0 1px 2px rgba(0, 0, 0, 0.58);
+}
+
+/* ------------------------------------------------------------------
+   Page and map
+   ------------------------------------------------------------------ */
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font: var(--ui-font-size) / var(--ui-line-height) var(--ui-font-family);
+}
+
+.map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--ui-bg);
+}
+
+.map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 900;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(34, 184, 160, 0.12), transparent 34%),
+    radial-gradient(circle at 82% 12%, rgba(79, 140, 255, 0.10), transparent 34%);
+  mix-blend-mode: multiply;
+}
+
+html[data-theme="dark"] .map::before {
+  opacity: 0.42;
+  mix-blend-mode: screen;
+}
+
+/* Тёмная тема карты через фильтр штатных OpenStreetMap tiles.
+   Фильтр применяем только к canvas-тайлам, не к controls/legend/attribution. */
+html[data-theme="dark"] .ol-layer canvas {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+/* ------------------------------------------------------------------
+   Shared controls
+   ------------------------------------------------------------------ */
+
+.ol-control,
+.ol-zoom,
+.ol-rotate,
+.theme-toggle-control,
+.coverage-control-cluster,
+.map-aux-control-cluster {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.legend-control,
+.info-window,
+.ol-zoom button,
+.ol-rotate button,
+.theme-toggle-control button,
+.mobile-coordinate-badge {
+  color: var(--ui-glass-text) !important;
+  background: var(--ui-glass-panel) !important;
+  background-color: var(--ui-glass-panel) !important;
+  border: 1px solid var(--ui-glass-border) !important;
+  box-shadow: var(--ui-glass-shadow) !important;
+  backdrop-filter: blur(18px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+}
+
+.legend-control,
+.info-window {
+  font: var(--ui-font-size) / var(--ui-line-height) var(--ui-font-family);
+}
+
+html[data-theme="dark"] .legend-control .name,
+html[data-theme="dark"] .info-window,
+html[data-theme="dark"] .theme-toggle-control button,
+html[data-theme="dark"] .ol-rotate button,
+html[data-theme="dark"] .mobile-coordinate-badge {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.42);
+}
+
+/* ------------------------------------------------------------------
+   Primary left controls: zoom + legend on desktop, legend only on mobile
+   ------------------------------------------------------------------ */
+
+.coverage-control-cluster {
+  position: absolute !important;
+  top: .75rem !important;
+  left: .75rem !important;
+  right: auto !important;
+  bottom: auto !important;
+
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: .75rem !important;
+
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.coverage-control-cluster .ol-zoom,
+.coverage-control-cluster .legend-control {
+  position: static !important;
+  inset: auto !important;
+  margin: 0 !important;
+}
+
+.coverage-control-cluster .ol-zoom {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.coverage-control-cluster .ol-zoom button:last-child {
+  margin-bottom: 0 !important;
+}
+
+.legend-control {
+  top: .75rem;
+  left: 3.95rem;
+  right: auto;
+
+  max-width: calc(100vw - 5.5rem);
+  padding: 7px 9px;
+  border-radius: 16px;
+}
+
+.legend-control .row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  margin: 3px 0;
+  white-space: nowrap;
+}
+
+.legend-control input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border-radius: 5px;
+}
+
+.legend-control .name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-glass-text);
+  opacity: 0.95;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  .coverage-control-cluster {
+    align-items: flex-start !important;
+    gap: .65rem !important;
+  }
+
+  .coverage-control-cluster .legend-control {
+    width: min(272px, calc(100vw - 6.25rem)) !important;
+    max-width: calc(100vw - 6.25rem) !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Fallback до JS-сборки primary-контейнера. */
+.ol-zoom {
+  top: .75rem !important;
+  left: .75rem !important;
+  right: auto !important;
+}
+
+/* ------------------------------------------------------------------
+   Right auxiliary controls: theme toggle, mobile zoom, rotate
+   ------------------------------------------------------------------ */
+
+.map-aux-control-cluster {
+  position: absolute !important;
+  top: .75rem !important;
+  right: .75rem !important;
+  left: auto !important;
+  bottom: auto !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+  gap: var(--control-gap) !important;
+
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.map-aux-control-cluster .theme-toggle-control,
+.map-aux-control-cluster .ol-rotate,
+.map-aux-control-cluster .ol-zoom {
+  position: static !important;
+  inset: auto !important;
+  margin: 0 !important;
+}
+
+.map-aux-control-cluster .theme-toggle-control {
+  order: 1 !important;
+}
+
+.map-aux-control-cluster .ol-zoom {
+  order: 2 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+  gap: var(--control-gap) !important;
+}
+
+.map-aux-control-cluster .ol-rotate {
+  order: 3 !important;
+}
+
+.map-aux-control-cluster .ol-hidden,
+.map-aux-control-cluster .ol-rotate.ol-hidden,
+.map-aux-control-cluster .ol-zoom.ol-hidden,
+.map-aux-control-cluster .theme-toggle-control.ol-hidden {
+  display: none !important;
+}
+
+/* Fallback до JS-сборки auxiliary-контейнера. */
+.theme-toggle-control {
+  top: .75rem;
+  right: .75rem;
+  left: auto;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.ol-rotate {
+  top: 3.25rem !important;
+  right: .75rem !important;
+  left: auto !important;
+}
+
+/* ------------------------------------------------------------------
+   Buttons and symbols
+   ------------------------------------------------------------------ */
+
+.ol-zoom button,
+.ol-rotate button,
+.theme-toggle-control button {
+  position: relative !important;
+  overflow: hidden !important;
+
+  display: block !important;
+  width: var(--control-size) !important;
+  min-width: var(--control-size) !important;
+  max-width: var(--control-size) !important;
+  height: var(--control-size) !important;
+  min-height: var(--control-size) !important;
+  max-height: var(--control-size) !important;
+
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 16px !important;
+
+  font-size: 0 !important;
+  line-height: 0 !important;
+  text-align: center !important;
+  color: transparent !important;
+  text-shadow: none !important;
+
+  transition:
+    transform .16s ease,
+    border-color .16s ease,
+    background .16s ease;
+}
+
+.ol-zoom button:hover,
+.ol-zoom button:focus,
+.ol-rotate button:hover,
+.ol-rotate button:focus,
+.theme-toggle-control button:hover,
+.theme-toggle-control button:focus {
+  transform: none !important;
+  border-color: color-mix(in srgb, var(--ui-accent), transparent 35%) !important;
+  background: var(--ui-glass-panel) !important;
+  background-color: var(--ui-glass-panel) !important;
+}
+
+.ol-zoom button .zoom-symbol,
+.theme-toggle-control button .theme-toggle-symbol {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+
+  color: var(--ui-glass-text, var(--ui-text)) !important;
+  font-family: var(--ui-font-family) !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+
+  pointer-events: none !important;
+}
+
+.ol-zoom button .zoom-symbol {
+  font-size: 22px !important;
+}
+
+.ol-zoom button.ol-zoom-in .zoom-symbol {
+  transform: translate(-50%, -56%) !important;
+}
+
+.ol-zoom button.ol-zoom-out .zoom-symbol {
+  transform: translate(-50%, -57%) !important;
+}
+
+.theme-toggle-control button .theme-toggle-symbol {
+  font-size: 16px !important;
+}
+
+.theme-toggle-control button[data-icon="sun"] .theme-toggle-symbol {
+  transform: translate(-50%, -61%) !important;
+}
+
+.theme-toggle-control button[data-icon="moon"] .theme-toggle-symbol {
+  transform: translate(-50%, -55%) !important;
+}
+
+/* ------------------------------------------------------------------
+   Info window and mobile coordinates
+   ------------------------------------------------------------------ */
+
+.info-window {
+  position: absolute;
+  z-index: 1200;
+  pointer-events: none;
+  padding: 7px 9px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.legend-control > .info-window.legend-info,
+.legend-control .info-window.legend-info {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+
+  width: 100% !important;
+  box-sizing: border-box !important;
+
+  margin-top: 7px !important;
+  padding: 0 !important;
+
+  color: inherit !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  white-space: normal !important;
+  opacity: 1 !important;
+}
+
+.mobile-coordinate-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 6px 8px;
+  border-radius: 12px;
+
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.mobile-coordinate-badge.has-active-coverage {
+  background:
+    linear-gradient(0deg, var(--coverage-active-bg), var(--coverage-active-bg)),
+    var(--ui-glass-panel) !important;
+  background-color: var(--ui-glass-panel) !important;
+}
+
+.mobile-coordinate-badge.no-active-coverage {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid var(--ui-glass-border) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.coverage-hover-badge-wrap {
+  margin-bottom: 4px;
+}
+
+.coverage-hover-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid var(--ui-glass-border);
+  border-radius: 6px;
+  background: var(--coverage-active-bg);
+}
+
+/* ------------------------------------------------------------------
+   Mobile center pointer
+   ------------------------------------------------------------------ */
+
+.center-pointer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1100;
+  width: 20px;
+  height: 20px;
+  color: rgba(0, 0, 0, 0.34);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.18));
+}
+
+.center-pointer svg {
+  display: block;
+}
+
+html[data-theme="dark"] .center-pointer {
+  color: rgba(232, 255, 251, 0.68);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
+}
+
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  .center-pointer {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Attribution
+   ------------------------------------------------------------------ */
+
+.ol-attribution,
+.ol-attribution ul,
+.ol-attribution:not(.ol-collapsed),
+.ol-attribution:not(.ol-collapsed) ul,
+.ol-attribution.ol-uncollapsible,
+.ol-attribution.ol-uncollapsible ul {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.ol-attribution {
+  color: var(--ui-attribution-text) !important;
+  text-shadow: var(--ui-attribution-shadow);
+}
+
+.ol-attribution a {
+  color: var(--ui-attribution-link) !important;
+  text-decoration-color: color-mix(in srgb, var(--ui-attribution-link), transparent 40%) !important;
+}
+
+/* ------------------------------------------------------------------
+   Startup error message
+   ------------------------------------------------------------------ */
+
+.map-error {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2000;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  max-width: min(360px, calc(100vw - 2rem));
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 16px;
+
+  color: var(--ui-glass-text);
+  background: var(--ui-glass-panel);
+  border: 1px solid var(--ui-glass-border);
+  box-shadow: var(--ui-glass-shadow);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+
+  font: var(--ui-font-size) / 1.35 var(--ui-font-family);
+  transform: translate(-50%, -50%);
+}
+
+.map-error strong {
+  font-weight: 800;
+}
+
+.map-error span {
+  opacity: 0.82;
+}
+
+/* ------------------------------------------------------------------
+   Final interaction fixes
+   ------------------------------------------------------------------ */
+
+/* Кнопки не должны подпрыгивать при наведении/фокусе:
+   меняем только border/background, без transform-сдвига. */
+.ol-zoom button:hover,
+.ol-zoom button:focus,
+.ol-rotate button:hover,
+.ol-rotate button:focus,
+.theme-toggle-control button:hover,
+.theme-toggle-control button:focus {
+  transform: none !important;
+}
+
+/* На телефонах и планшетах mobile layout должен сохраняться
+   даже в landscape, когда ширина viewport становится больше 767px. */
+@media (hover: none) and (pointer: coarse) {
+  .coverage-control-cluster {
+    align-items: flex-start !important;
+    gap: .65rem !important;
+  }
+
+  .coverage-control-cluster .legend-control {
+    width: min(272px, calc(100vw - 6.25rem)) !important;
+    max-width: calc(100vw - 6.25rem) !important;
+    box-sizing: border-box !important;
+  }
+
+  .map-aux-control-cluster {
+    align-items: flex-end !important;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Final crosshair, zoom gap and true symbol centering
+   ------------------------------------------------------------------ */
+
+/* Перекрестие скрываем только на настоящем desktop.
+   На touch-устройствах оно остаётся видимым даже в landscape. */
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  .center-pointer {
+    display: none;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .center-pointer {
+    display: block;
+  }
+}
+
+/* Нормальный зазор между zoom + и zoom − на desktop слева. */
+.coverage-control-cluster .ol-zoom {
+  gap: var(--control-gap) !important;
+}
+
+/* Нормальный зазор между zoom + и zoom − в mobile right stack. */
+.map-aux-control-cluster .ol-zoom {
+  gap: var(--control-gap) !important;
+}
+
+/* Символы центрируем геометрически, без ручных translate-смещений.
+   Так +, −, солнце и луна ведут себя одинаково. */
+.ol-zoom button,
+.ol-rotate button,
+.theme-toggle-control button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ol-zoom button .zoom-symbol,
+.theme-toggle-control button .theme-toggle-symbol {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 100% !important;
+  height: 100% !important;
+
+  transform: none !important;
+  line-height: 1 !important;
+  pointer-events: none !important;
+}
+
+/* Финально убираем все старые индивидуальные подгонки. */
+.ol-zoom button.ol-zoom-in .zoom-symbol,
+.ol-zoom button.ol-zoom-out .zoom-symbol,
+.map-aux-control-cluster .ol-zoom button.ol-zoom-in .zoom-symbol,
+.theme-toggle-control button[data-icon="sun"] .theme-toggle-symbol,
+.theme-toggle-control button[data-icon="moon"] .theme-toggle-symbol {
+  transform: none !important;
+}
+
+/* ------------------------------------------------------------------
+   Geometric zoom symbols
+   ------------------------------------------------------------------ */
+
+/* Плюс и минус рисуются CSS-линиями, а не текстовым символом.
+   Так центрирование не зависит от метрик шрифта. */
+.ol-zoom button .zoom-symbol {
+  position: relative !important;
+  display: block !important;
+
+  width: 14px !important;
+  height: 14px !important;
+
+  color: var(--ui-glass-text, var(--ui-text)) !important;
+  transform: none !important;
+  pointer-events: none !important;
+}
+
+.ol-zoom button .zoom-symbol::before,
+.ol-zoom button .zoom-symbol::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  display: block;
+  width: 14px;
+  height: 2px;
+  border-radius: 999px;
+
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.ol-zoom button .zoom-symbol-plus::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.ol-zoom button .zoom-symbol-minus::after {
+  display: none;
+}
+
+/* ------------------------------------------------------------------
+   Coordinate copy interaction
+   ------------------------------------------------------------------ */
+
+.legend-control > .info-window.legend-info,
+.legend-control .info-window.legend-info {
+  pointer-events: auto !important;
+}
+
+.mobile-coordinate-badge {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-coordinate-badge:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ui-accent), transparent 20%);
+  outline-offset: 2px;
+}
+
+.copy-toast {
+  position: fixed;
+  z-index: 3000;
+
+  max-width: min(320px, calc(100vw - 2rem));
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 999px;
+
+  color: var(--ui-glass-text);
+  background: var(--ui-glass-panel);
+  border: 1px solid var(--ui-glass-border);
+  box-shadow: var(--ui-glass-shadow);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+
+  font: var(--ui-font-size) / 1.2 var(--ui-font-family);
+  white-space: nowrap;
+
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity .16s ease,
+    transform .16s ease;
+}
+
+/* Mobile: toast появляется прямо под центром карты / под перекрестием. */
+.copy-toast.is-mobile-center {
+  left: 50%;
+  top: calc(50% + 22px);
+  bottom: auto;
+  transform: translate(-50%, 8px);
+}
+
+/* JS ставит left/top под переданным элементом: info-window на desktop или legend-control на mobile. */
+.copy-toast.is-below-element {
+  bottom: auto;
+  transform: translate(-50%, 8px);
+}
+
+/* Fallback, если якорь не передан. */
+.copy-toast.is-fallback {
+  left: 50%;
+  bottom: 1rem;
+  transform: translate(-50%, 8px);
+}
+
+.copy-toast.is-visible.is-mobile-center,
+.copy-toast.is-visible.is-below-element,
+.copy-toast.is-visible.is-fallback {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ------------------------------------------------------------------
+   SVG theme and rotating compass icons
+   ------------------------------------------------------------------ */
+
+/* Theme toggle использует SVG и не зависит от метрик шрифта. */
+.theme-toggle-control button .theme-toggle-symbol {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+
+  display: block !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+
+  color: var(--ui-glass-text, var(--ui-text)) !important;
+  transform: none !important;
+  pointer-events: none !important;
+}
+
+/* .ol-compass оставляем видимым: именно его OpenLayers вращает
+   и тем самым показывает направление поворота карты. */
+.ol-rotate .ol-compass {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+
+  color: var(--ui-glass-text, var(--ui-text)) !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Сам SVG не вращаем отдельно: вращение приходит от .ol-compass. */
+.ol-rotate .ol-compass .rotate-symbol {
+  display: block !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+
+  color: currentColor !important;
+  transform: none !important;
+  pointer-events: none !important;
+}
+
+.theme-toggle-control button .theme-toggle-symbol *,
+.ol-rotate .ol-compass .rotate-symbol * {
+  vector-effect: non-scaling-stroke;
+}
+
+/* ------------------------------------------------------------------
+   OpenLayers-like rotate arrow
+   ------------------------------------------------------------------ */
+
+/* Стрелка имитирует исходный OpenLayers compass label.
+   SVG находится внутри .ol-compass, поэтому направление поворота карты
+   по-прежнему показывает сам OpenLayers через transform родителя. */
+.ol-rotate .ol-compass .rotate-symbol-arrow {
+  stroke: currentColor !important;
+  fill: none !important;
+}
