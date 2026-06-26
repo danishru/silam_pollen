@@ -33,6 +33,8 @@ const config = {
         blog: {
           routeBasePath: "blog",
           showReadingTime: false,
+          blogSidebarTitle: "Releases",
+          blogSidebarCount: "ALL",
           beforeDefaultRemarkPlugins: [remarkGithubAdmonitions],
         },
         theme: {
