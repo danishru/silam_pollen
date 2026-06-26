@@ -1499,3 +1499,139 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Dark theme menu glass hover polish                                          */
+/* -------------------------------------------------------------------------- */
+
+/* Усиливаем только тёмную тему: hover остаётся тем же по смыслу, но получает
+   более заметный glass-слой, тонкий контур и мягкое свечение. Сдвигов нет —
+   все состояния работают без transform, чтобы меню не «прыгало». */
+html[data-theme='dark'] {
+  --silam-dark-menu-hover-panel:
+    linear-gradient(
+      135deg,
+      rgba(53, 200, 120, 0.14),
+      rgba(122, 183, 255, 0.10)
+    );
+  --silam-dark-menu-hover-panel-strong:
+    linear-gradient(
+      135deg,
+      rgba(53, 200, 120, 0.18),
+      rgba(122, 183, 255, 0.13)
+    );
+  --silam-dark-menu-hover-border: rgba(128, 233, 173, 0.24);
+  --silam-dark-menu-hover-glow:
+    0 10px 28px rgba(53, 200, 120, 0.16),
+    0 4px 16px rgba(122, 183, 255, 0.08);
+  --silam-dark-menu-active-glow:
+    0 12px 32px rgba(53, 200, 120, 0.18),
+    0 5px 18px rgba(122, 183, 255, 0.10);
+}
+
+html[data-theme='dark'] .dropdown__menu {
+  border-color: var(--silam-navbar-glass-border) !important;
+  background: rgba(9, 28, 30, 0.50) !important;
+  background-color: rgba(9, 28, 30, 0.50) !important;
+  box-shadow:
+    var(--silam-navbar-glass-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(18px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+}
+
+html[data-theme='dark'] .navbar__link:hover:not(.navbar__link--active),
+html[data-theme='dark'] .dropdown__link:hover:not(.dropdown__link--active),
+html[data-theme='dark'] .menu__link:hover:not(.menu__link--active),
+html[data-theme='dark'] .navbar-sidebar .menu__link:hover:not(.menu__link--active),
+html[data-theme='dark'] .navbar .clean-btn:hover,
+html[data-theme='dark'] .navbar [class*="colorModeToggle"]:hover,
+html[data-theme='dark'] .navbar-sidebar .clean-btn:hover,
+html[data-theme='dark'] .navbar-sidebar [class*="colorModeToggle"]:hover {
+  color: var(--ifm-color-primary-lightest) !important;
+  background: var(--silam-dark-menu-hover-panel) !important;
+  background-color: transparent !important;
+  box-shadow: var(--silam-dark-menu-hover-glow) !important;
+  text-decoration: none !important;
+  transform: none !important;
+  backdrop-filter: blur(14px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
+}
+
+html[data-theme='dark'] .navbar__link--active,
+html[data-theme='dark'] .dropdown__link--active,
+html[data-theme='dark'] .menu__link--active,
+html[data-theme='dark'] .navbar-sidebar .menu__link--active,
+html[data-theme='dark'] .navbar-sidebar__back {
+  color: var(--ifm-color-primary-lightest) !important;
+  background: var(--silam-dark-menu-hover-panel) !important;
+  box-shadow: var(--silam-dark-menu-active-glow) !important;
+  backdrop-filter: blur(14px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
+}
+
+html[data-theme='dark'] .navbar__link--active:hover,
+html[data-theme='dark'] .dropdown__link--active:hover,
+html[data-theme='dark'] .menu__link--active:hover,
+html[data-theme='dark'] .navbar-sidebar .menu__link--active:hover,
+html[data-theme='dark'] .navbar-sidebar__back:hover {
+  color: var(--ifm-color-primary-lightest) !important;
+  background: var(--silam-dark-menu-hover-panel-strong) !important;
+  box-shadow: var(--silam-dark-menu-active-glow) !important;
+  transform: none !important;
+}
+
+@media (max-width: 996px) {
+  html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown:hover,
+  html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown):focus-within > .silamLocaleDropdown {
+    color: var(--ifm-color-primary-lightest) !important;
+    background: var(--silam-dark-menu-hover-panel) !important;
+    box-shadow: var(--silam-dark-menu-hover-glow) !important;
+    backdrop-filter: blur(14px) saturate(145%) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Dark navbar glass alignment                                                 */
+/* -------------------------------------------------------------------------- */
+
+/* В тёмной теме верхний navbar использует тот же glass-подход, что и светлая
+   тема: полупрозрачная панель, blur/saturation, тонкая граница и мягкая тень.
+   Это отдельный override ниже базовых dark-стилей, чтобы не возвращался
+   прежний плотный gradient-фон. */
+html[data-theme='dark'] {
+  --silam-navbar-glass-panel: rgba(9, 28, 30, 0.34);
+  --silam-navbar-glass-border: rgba(128, 233, 173, 0.20);
+  --silam-navbar-glass-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.34),
+    0 8px 28px rgba(53, 200, 120, 0.06);
+}
+
+html[data-theme='dark'] .navbar {
+  border-bottom-color: var(--silam-navbar-glass-border) !important;
+  background: var(--silam-navbar-glass-panel) !important;
+  background-color: var(--silam-navbar-glass-panel) !important;
+  box-shadow: var(--silam-navbar-glass-shadow) !important;
+  backdrop-filter: blur(18px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+}
+
+@media (max-width: 996px) {
+  html[data-theme='dark'] .navbar {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  html[data-theme='dark'] .navbar::before {
+    border-bottom-color: var(--silam-navbar-glass-border) !important;
+    background: var(--silam-navbar-glass-panel) !important;
+    background-color: var(--silam-navbar-glass-panel) !important;
+    box-shadow: var(--silam-navbar-glass-shadow) !important;
+    backdrop-filter: blur(18px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+  }
+}
+
