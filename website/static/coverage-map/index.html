@@ -2,651 +2,93 @@
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
-    <!-- Мета-тег viewport для корректного масштабирования на мобильных устройствах -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Мета-тег viewport для корректного масштабирования на мобильных устройствах. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SILAM Pollen coverage map</title>
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css" />
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
+    <link rel="stylesheet" href="coverage-map.css" />
 
-      :root {
-        --ui-font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-        --ui-font-size: 12px;
-        --ui-line-height: 1.2;
-        --ui-bg: #f7fbfb;
-        --ui-panel-strong: rgba(255, 255, 255, 0.92);
-        --ui-text: #111;
-        --ui-muted: rgba(17, 17, 17, 0.68);
-        --ui-border: rgba(0, 0, 0, 0.25);
-        --ui-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-        --ui-accent: #22b8a0;
-      }
-
-      html[data-theme="light"] {
-        --ui-bg: #f7fbfb;
-        --ui-panel-strong: rgba(255, 255, 255, 0.92);
-        --ui-text: #111;
-        --ui-muted: rgba(17, 17, 17, 0.68);
-        --ui-border: rgba(0, 0, 0, 0.25);
-        --ui-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-        --ui-accent: #22b8a0;
-      }
-
-      html[data-theme="dark"] {
-        --ui-bg: #071314;
-        --ui-panel-strong: rgba(9, 28, 30, 0.58);
-        --ui-text: #eefdf9;
-        --ui-muted: rgba(238, 253, 249, 0.72);
-        --ui-border: rgba(148, 231, 218, 0.30);
-        --ui-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-        --ui-accent: #6ee7d8;
-      }
-
-      body {
-        background: var(--ui-bg);
-        font: var(--ui-font-size)/var(--ui-line-height) var(--ui-font-family);
-        color: var(--ui-text);
-      }
-
-      .map {
-        width: 100%;
-        height: 100%;
-        position: relative;
-        background: var(--ui-bg);
-      }
-
-      .map::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        z-index: 900;
-        background:
-          radial-gradient(circle at 18% 18%, rgba(34, 184, 160, 0.12), transparent 34%),
-          radial-gradient(circle at 82% 12%, rgba(79, 140, 255, 0.10), transparent 34%);
-        mix-blend-mode: multiply;
-      }
-
-      html[data-theme="dark"] .map::before {
-        mix-blend-mode: screen;
-        opacity: 0.34;
-      }
-
-      /* Окно для отображения координат и активной зоны */
-      .info-window {
-        position: absolute;
-        pointer-events: none;
-        padding: 4px 4px;
-        background: var(--ui-panel-strong);
-        font: var(--ui-font-size)/var(--ui-line-height) var(--ui-font-family);
-        border: 1px solid var(--ui-border);
-        border-radius: 6px;
-        color: var(--ui-text);
-        white-space: nowrap;
-        z-index: 1000;
-        box-shadow: var(--ui-shadow);
-        backdrop-filter: blur(14px) saturate(140%);
-        -webkit-backdrop-filter: blur(14px) saturate(140%);
-      }
-
-      .mobile-info {
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-
-      /* Центровой указатель для мобильных реализован через inline SVG.
-         Он сохраняет постоянную толщину линий независимо от ориентации экрана. */
-      .center-pointer {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 20px;
-        height: 20px;
-        z-index: 1100;
-      }
-
-      html[data-theme="dark"] .center-pointer {
-        filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
-      }
-
-      /* Скрываем указатель на десктопе */
-      @media (min-width: 768px) {
-        .center-pointer {
-          display: none;
+    <script>
+      (function () {
+        function normalizeTheme(value) {
+          return value === "dark" || value === "light" ? value : null;
         }
-      }
 
-      /* Zoom расположен слева от легенды. Вертикальное центрирование
-         относительно легенды дополнительно выполняется JS после рендера. */
-      .ol-zoom {
-        right: auto !important;
-        left: .5em !important;
-        top: .5em !important;
-      }
-
-      .ol-control {
-        background: transparent !important;
-      }
-
-      .ol-zoom button {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: 1.375em;
-        height: 1.375em;
-        margin: 1px;
-        padding: 0 !important;
-        border-radius: 2px;
-        border: 1px solid rgba(0,0,0,0.25) !important;
-        background: rgba(255, 255, 255, 0.92) !important;
-        color: #111 !important;
-        font: 800 1.25em/1 var(--ui-font-family) !important;
-        text-align: center;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-      }
-
-      .ol-zoom button:hover,
-      .ol-zoom button:focus {
-        background: rgba(255, 255, 255, 0.92) !important;
-        color: #111 !important;
-      }
-
-      html[data-theme="dark"] .ol-zoom button {
-        border-color: var(--ui-border) !important;
-        background: var(--ui-panel-strong) !important;
-        color: var(--ui-text) !important;
-        box-shadow: var(--ui-shadow);
-      }
-
-      html[data-theme="dark"] .ol-zoom button:hover,
-      html[data-theme="dark"] .ol-zoom button:focus {
-        background: var(--ui-panel-strong) !important;
-        color: var(--ui-text) !important;
-      }
-
-      .legend-control {
-        top: .5em;
-        left: 3.6em; /* правее zoom */
-        right: auto;
-        background: rgba(255, 255, 255, 0.92);
-        border: 1px solid rgba(0,0,0,0.25);
-        border-radius: 6px;
-        padding: 1px 5px; /* компактнее */
-        font: var(--ui-font-size)/var(--ui-line-height) var(--ui-font-family);
-        color: #111;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-      }
-
-      html[data-theme="dark"] .legend-control {
-        background: var(--ui-panel-strong);
-        color: var(--ui-text);
-        border-color: var(--ui-border);
-        box-shadow: var(--ui-shadow);
-        backdrop-filter: blur(14px) saturate(135%);
-        -webkit-backdrop-filter: blur(14px) saturate(135%);
-      }
-
-      .legend-control .row {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        margin: 1px 0;
-        white-space: nowrap;
-      }
-
-      .legend-control input[type="checkbox"] {
-        margin: 0;
-        width: 13px;
-        height: 13px;
-      }
-
-      .legend-control .name {
-        opacity: 0.95;
-      }
-
-      html[data-theme="dark"] .legend-control .name {
-        color: var(--ui-text);
-        opacity: 0.96;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.38);
-      }
-
-      /* info-window внутри легенды (мобильный режим) */
-      .legend-control .legend-info {
-        position: static !important;
-        transform: none !important;
-        left: auto !important;
-        top: auto !important;
-
-        margin-top: 2px;
-        padding-top: 2px;
-        border-top: 2px solid rgba(0,0,0,0.35);
-        box-shadow: 0 -1px 0 rgba(255,255,255,0.6) inset;
-
-        background: transparent !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        white-space: normal;
-        pointer-events: none;
-        opacity: 0.95;
-        width: 100%;
-      }
-
-      html[data-theme="dark"] .legend-control .legend-info {
-        border-top: 2px solid color-mix(in srgb, var(--ui-border), transparent 15%) !important;
-        box-shadow: 0 -1px 0 rgba(255,255,255,0.18) inset;
-      }
-
-      /* На мобиле просто чуть ужимаем легенду, позиция остаётся рядом с zoom */
-      @media (max-width: 767px) {
-        .legend-control {
-          padding: 2px 6px;
-        }
-      }
-
-      html[data-theme="dark"] .ol-attribution,
-      html[data-theme="dark"] .ol-attribution ul {
-        background: rgba(9, 28, 30, 0.72) !important;
-        color: var(--ui-text) !important;
-      }
-
-      html[data-theme="dark"] .ol-attribution a {
-        color: #9ad9ff !important;
-      }
-
-      /* Тёмная тема карты через фильтр штатных OpenStreetMap tiles.
-         Не применяем фильтр ко всей карте, чтобы controls/legend/attribution
-         не инвертировались вместе с тайлами. */
-      html[data-theme="dark"] .ol-layer canvas {
-        filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-      }
-    </style>
-  
-  <script>
-    (function () {
-      function normalizeTheme(value) {
-        return value === "dark" || value === "light" ? value : null;
-      }
-
-      function getParentTheme() {
-        try {
-          if (window.parent && window.parent !== window) {
-            return normalizeTheme(
-              window.parent.document.documentElement.getAttribute("data-theme")
-            );
+        function getParentTheme() {
+          try {
+            if (window.parent && window.parent !== window) {
+              return normalizeTheme(
+                window.parent.document.documentElement.getAttribute("data-theme")
+              );
+            }
+          } catch (err) {
+            return null;
           }
-        } catch (err) {
+
           return null;
         }
-        return null;
-      }
 
-      function getStoredTheme() {
-        try {
-          return (
-            normalizeTheme(window.localStorage.getItem("theme")) ||
-            normalizeTheme(window.localStorage.getItem("docusaurus-theme"))
-          );
-        } catch (err) {
-          return null;
+        function getStoredTheme() {
+          try {
+            return (
+              normalizeTheme(window.localStorage.getItem("theme")) ||
+              normalizeTheme(window.localStorage.getItem("docusaurus-theme"))
+            );
+          } catch (err) {
+            return null;
+          }
         }
-      }
 
-      function getPreferredTheme() {
-        return window.matchMedia &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark"
-            : "light";
-      }
+        function getPreferredTheme() {
+          return window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+        }
 
-      const params = new URLSearchParams(window.location.search);
-      const requestedTheme = normalizeTheme(params.get("theme"));
+        const params = new URLSearchParams(window.location.search);
+        const requestedTheme = normalizeTheme(params.get("theme"));
+        const storedTheme = getStoredTheme();
+        const parentTheme = getParentTheme();
 
-      // В iframe главным источником считаем тему родительского Docusaurus.
-      // Это защищает от ситуации, когда при смене языка iframe получил
-      // временный/дефолтный параметр theme=light, хотя сайт уже в dark.
-      const theme =
-        getParentTheme() ||
-        requestedTheme ||
-        getStoredTheme() ||
-        getPreferredTheme();
+        // В iframe главным источником остаётся тема родительского Docusaurus.
+        // При локальном запуске без Docusaurus работает localStorage/URL/fallback.
+        const theme =
+          parentTheme ||
+          storedTheme ||
+          requestedTheme ||
+          getPreferredTheme();
 
-      document.documentElement.dataset.theme = theme;
-      window.__silamCoverageTheme = theme;
-    })();
-  </script>
+        document.documentElement.dataset.theme = theme;
+        window.__silamCoverageTheme = theme;
+      })();
+    </script>
+  </head>
 
-</head>
   <body>
     <div id="map" class="map">
-      <!-- Центровой указатель (виден только на мобильных) с inline SVG -->
-      <div id="center-pointer" class="center-pointer">
-        <svg width="20" height="20" viewBox="0 0 20 20" style="display:block;">
-          <line x1="0" y1="10" x2="8" y2="10" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
-          <line x1="12" y1="10" x2="20" y2="10" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
-          <line x1="10" y1="0" x2="10" y2="8" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
-          <line x1="10" y1="12" x2="10" y2="20" stroke="rgba(0,0,0,0.3)" stroke-width="2" />
+      <!-- Центровой указатель виден только в мобильной раскладке. -->
+      <div id="center-pointer" class="center-pointer" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" focusable="false">
+          <line x1="0" y1="10" x2="8" y2="10" stroke="currentColor" stroke-width="2" />
+          <line x1="12" y1="10" x2="20" y2="10" stroke="currentColor" stroke-width="2" />
+          <line x1="10" y1="0" x2="10" y2="8" stroke="currentColor" stroke-width="2" />
+          <line x1="10" y1="12" x2="10" y2="20" stroke="currentColor" stroke-width="2" />
         </svg>
       </div>
-      <!-- Элемент для отображения информации -->
+
+      <!-- На desktop это hover tooltip, на mobile переносится внутрь legend-control. -->
       <div id="info-window" class="info-window"></div>
     </div>
-    
-    <!-- Внешний файл с координатами (rotatedPolygon и rotatedPolygonRegional должны быть определены) -->
+
+    <!-- Координаты coverage-полигонов. -->
     <script src="rotatedPolygon.js"></script>
-    
-    <!-- OpenLayers -->
+
+    <!-- OpenLayers. -->
     <script src="https://cdn.jsdelivr.net/npm/ol/dist/ol.js"></script>
-    <!-- i18next и плагин для определения языка -->
-    <script src="https://unpkg.com/i18next@latest/dist/umd/i18next.min.js"></script>
-    <script src="https://unpkg.com/i18next-browser-languagedetector@latest/dist/umd/i18nextBrowserLanguageDetector.min.js"></script>
-    
-    <script>
-      // Функция для определения мобильного устройства
-      function isMobileDevice() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      }
-      
-      // Инициализация i18next
-      i18next
-        .use(i18nextBrowserLanguageDetector)
-        .init({
-          fallbackLng: 'en',
-          load: 'languageOnly',
-          detection: {
-            order: ['querystring', 'htmlTag', 'navigator'],
-            caches: []
-          },
-          resources: {
-            ru: { translation: { lat: 'Широта', lon: 'Долгота' } },
-            en: { translation: { lat: 'Lat', lon: 'Lon' } }
-          }
-        }, function(err, t) {
-          console.log('navigator.language:', navigator.language);
-          console.log('i18next.language:', i18next.language);
-          window.onload = function() {
-            const currentTheme =
-              document.documentElement.dataset.theme ||
-              window.__silamCoverageTheme ||
-              'light';
 
-            const coveragePalette = currentTheme === 'dark'
-              ? {
-                  europe:   { stroke: 'rgba(251,191,36,1)', fill: 'rgba(251,191,36,0.24)' },
-                  regional: { stroke: 'rgba(52,211,153,1)', fill: 'rgba(52,211,153,0.24)' },
-                  hires:    { stroke: 'rgba(56,189,248,1)', fill: 'rgba(56,189,248,0.24)' },
-                  badgeBorder: 'rgba(255,255,255,0.22)'
-                }
-              : {
-                  europe:   { stroke: 'rgba(255,200,0,1)', fill: 'rgba(255,255,0,0.2)' },
-                  regional: { stroke: 'rgba(0,255,0,1)', fill: 'rgba(0,255,0,0.2)' },
-                  hires:    { stroke: 'rgba(0,120,255,1)', fill: 'rgba(0,120,255,0.2)' },
-                  badgeBorder: 'rgba(0,0,0,0.15)'
-                };
-
-            function makeBadgeBg(color) {
-              return (typeof color === 'string' && color.startsWith('rgba('))
-                ? color.replace(/rgba\((\s*\d+\s*),(\s*\d+\s*),(\s*\d+\s*),\s*([0-9.]+)\s*\)/, 'rgba($1,$2,$3,0.22)')
-                : color;
-            }
-
-            function centerZoomControl(legendEl) {
-              const zoomEl = document.querySelector('.ol-zoom');
-              if (!legendEl || !zoomEl) {
-                return;
-              }
-
-              const legendTop = legendEl.offsetTop;
-              const legendHeight = legendEl.offsetHeight;
-              const zoomHeight = zoomEl.offsetHeight;
-              const nextTop = Math.max(8, legendTop + ((legendHeight - zoomHeight) / 2));
-              zoomEl.style.top = `${Math.round(nextTop)}px`;
-            }
-            // Преобразование координат для основного полигона (SILAM Europe)
-            const polygonCoords = rotatedPolygon.map(coord =>
-              ol.proj.fromLonLat([coord[1], coord[0]])
-            );
-            const polygonFeature = new ol.Feature({
-              geometry: new ol.geom.Polygon([polygonCoords])
-            });
-            const vectorSource = new ol.source.Vector({
-              features: [polygonFeature]
-            });
-            const vectorLayer = new ol.layer.Vector({
-              source: vectorSource,
-              style: new ol.style.Style({
-                stroke: new ol.style.Stroke({
-                  color: coveragePalette.europe.stroke,
-                  width: 0.5
-                }),
-                fill: new ol.style.Fill({
-                  color: coveragePalette.europe.fill
-                })
-              })
-            });
-            
-            // Преобразование координат для регионального полигона (SILAM Regional)
-            const regionalCoords = rotatedPolygonRegional.map(coord =>
-              ol.proj.fromLonLat([coord[1], coord[0]])
-            );
-            const regionalFeature = new ol.Feature({
-              geometry: new ol.geom.Polygon([regionalCoords])
-            });
-            const regionalVectorSource = new ol.source.Vector({
-              features: [regionalFeature]
-            });
-            const regionalVectorLayer = new ol.layer.Vector({
-              source: regionalVectorSource,
-              style: new ol.style.Style({
-                stroke: new ol.style.Stroke({
-                  color: coveragePalette.regional.stroke,
-                  width: 0.5
-                }),
-                fill: new ol.style.Fill({
-                  color: coveragePalette.regional.fill
-                })
-              })
-            });
-
-            // Преобразование координат для нового полигона (SILAM Hires)
-            let hiresVectorLayer = null;
-            if (typeof rotatedPolygonHires !== 'undefined') {
-              const hiresCoords = rotatedPolygonHires.map(coord =>
-                ol.proj.fromLonLat([coord[1], coord[0]])
-              );
-              const hiresFeature = new ol.Feature({
-                geometry: new ol.geom.Polygon([hiresCoords])
-              });
-              const hiresVectorSource = new ol.source.Vector({
-                features: [hiresFeature]
-              });
-              hiresVectorLayer = new ol.layer.Vector({
-                source: hiresVectorSource,
-                style: new ol.style.Style({
-                  stroke: new ol.style.Stroke({
-                    color: coveragePalette.hires.stroke,
-                    width: 0.5
-                  }),
-                  fill: new ol.style.Fill({
-                    color: coveragePalette.hires.fill
-                  })
-                })
-              });
-            }
-            
-            // Базовый слой карты.
-            // Используем штатный OpenStreetMap в обеих темах.
-            // В тёмной теме применяем CSS-filter только к tile canvas.
-            const rasterLayer = new ol.layer.Tile({
-              source: new ol.source.OSM()
-            });
-
-            // Определяем, мобильное ли устройство и задаем уровень зума
-            const isMobile = isMobileDevice();
-            const defaultZoom = isMobile ? 6 : 4;
-
-            const layersArr = [rasterLayer, vectorLayer, regionalVectorLayer];
-            if (hiresVectorLayer) {
-              layersArr.push(hiresVectorLayer);
-            }
-            
-
-            // -----------------------------------------------------------------
-            // Legend + layer toggles (top-right)
-            // -----------------------------------------------------------------
-            function addCoverageLegend(map, items) {
-              const el = document.createElement('div');
-              el.className = 'ol-unselectable ol-control legend-control';
-
-              const rowsHtml = items.map((it) => `
-                <div class="row">
-                  <label class="row">
-                    <input type="checkbox" data-layer-id="${it.id}" checked style="accent-color:${it.color};" />
-                    <span class="name">${it.name}</span>
-                  </label>
-                </div>
-              `).join('');
-
-              el.innerHTML = `
-                ${rowsHtml}
-              `;
-
-              // чтобы клики по чекбоксам не тащили карту
-              el.addEventListener('mousedown', (e) => e.stopPropagation());
-              el.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
-
-              const control = new ol.control.Control({ element: el });
-              map.addControl(control);
-
-              el.querySelectorAll('input[type="checkbox"][data-layer-id]').forEach((cb) => {
-                cb.addEventListener('change', () => {
-                  const id = cb.getAttribute('data-layer-id');
-                  const target = items.find((x) => x.id === id);
-                  if (target && target.layer) {
-                    target.layer.setVisible(cb.checked);
-                  }
-                });
-              });
-
-              return el;
-            }
-
-            // Создаем карту с базовым и векторными слоями
-            const map = new ol.Map({
-              target: 'map',
-              layers: layersArr,
-              view: new ol.View({
-                center: ol.proj.fromLonLat([20, 20]),
-                zoom: defaultZoom
-              })
-            });
-
-            // Элемент для отображения информации
-            const infoWindow = document.getElementById('info-window');
-            if (isMobile) {
-              // на мобильном: отображаем координаты внутри легенды (внизу, после зон)
-              infoWindow.classList.add('legend-info');
-            }
-
-            
-
-
-            // Добавляем легенду/переключатели слоёв (справа сверху)
-            const legendItems = [
-              { id: 'regional', name: 'SILAM Northern Europe (v6.1)', color: coveragePalette.regional.stroke,   layer: regionalVectorLayer },
-              { id: 'europe',   name: 'SILAM Europe (v6.1)',     color: coveragePalette.europe.stroke, layer: vectorLayer },
-            ];
-            if (hiresVectorLayer) {
-              legendItems.unshift({ id: 'hires', name: 'SILAM Finland (v6.1)', color: coveragePalette.hires.stroke, layer: hiresVectorLayer });
-            }
-            const legendEl = addCoverageLegend(map, legendItems);
-            requestAnimationFrame(() => centerZoomControl(legendEl));
-            window.addEventListener('resize', () => centerZoomControl(legendEl));
-
-            // На мобиле переносим координаты внутрь легенды (после списка зон)
-            if (isMobile && legendEl) {
-              legendEl.appendChild(infoWindow);
-              requestAnimationFrame(() => centerZoomControl(legendEl));
-            }
-            
-            // Функция для обновления информации (координаты и легенда)
-            function updateInfo(coordinate, pixel) {
-              let layerDesc = '';
-              let squareColor = '';
-              map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-                if (hiresVectorLayer && layer === hiresVectorLayer) {
-                  layerDesc = 'SILAM Finland (v6.1)';
-                  squareColor = coveragePalette.hires.stroke;
-                  return true;
-                } else if (layer === regionalVectorLayer) {
-                  layerDesc = 'SILAM Northern Europe (v6.1)';
-                  squareColor = coveragePalette.regional.stroke;
-                  return true;
-                } else if (layer === vectorLayer) {
-                  layerDesc = 'SILAM Europe (v6.1)';
-                  squareColor = coveragePalette.europe.stroke;
-                  return true;
-                }
-              });
-              
-              let legendHtml = '';
-              if (layerDesc) {
-                if (isMobile) {
-                  // на мобиле: цвет зоны — фоном "плашки" с названием
-                  const badgeBg = makeBadgeBg(squareColor);
-
-                  legendHtml = `<div style="margin-bottom:4px;">
-                    <span style="display:inline-block;padding:2px 6px;border-radius:6px;background:${badgeBg};border:1px solid ${coveragePalette.badgeBorder};">
-                      ${layerDesc}
-                    </span>
-                  </div>`;
-                } else {
-                  // на десктопе: тоже "плашка" с названием (как на мобиле)
-                  const badgeBg = makeBadgeBg(squareColor);
-
-                  legendHtml = `<div style="margin-bottom:4px;">
-                    <span style="display:inline-block;padding:2px 6px;border-radius:6px;background:${badgeBg};border:1px solid ${coveragePalette.badgeBorder};">
-                      ${layerDesc}
-                    </span>
-                  </div>`;
-                }
-              }
-              
-              const coordText = `${i18next.t('lat')}: ${coordinate[1].toFixed(3)}, ${i18next.t('lon')}: ${coordinate[0].toFixed(3)}`;
-              infoWindow.innerHTML = legendHtml + coordText;
-            }
-            
-            if (isMobile) {
-              // Для мобильных устройств обновляем информацию по событию moveend (используем центр карты)
-              map.on('moveend', function() {
-                const center = ol.proj.toLonLat(map.getView().getCenter());
-                const centerPixel = map.getPixelFromCoordinate(map.getView().getCenter());
-                updateInfo(center, centerPixel);
-              });
-            } else {
-              // Для десктопа обновляем информацию по событию pointermove
-              map.on('pointermove', function(evt) {
-                const coord = ol.proj.toLonLat(evt.coordinate);
-                updateInfo(coord, evt.pixel);
-                if (!isMobile) {
-                  infoWindow.style.left = (evt.pixel[0] + 15) + 'px';
-                  infoWindow.style.top = (evt.pixel[1] + 15) + 'px';
-                }
-              });
-            }
-            
-            map.getView().fit(vectorSource.getExtent(), { padding: [10, 10, 10, 10] });
-          };
-        });
-    </script>
+    <!-- Логика карты вынесена отдельно, чтобы index.html оставался минимальным. -->
+    <script src="coverage-map.js"></script>
   </body>
 </html>
