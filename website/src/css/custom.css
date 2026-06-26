@@ -1500,38 +1500,72 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Dark theme menu glass hover polish                                          */
+/* Final dark glass navbar + dark hover polish                                 */
 /* -------------------------------------------------------------------------- */
 
-/* Усиливаем только тёмную тему: hover остаётся тем же по смыслу, но получает
-   более заметный glass-слой, тонкий контур и мягкое свечение. Сдвигов нет —
-   все состояния работают без transform, чтобы меню не «прыгало». */
+/* Светлая и тёмная темы используют один и тот же glass-паттерн navbar.
+   Для desktop можно применять backdrop-filter прямо к navbar. Для mobile blur
+   остаётся на ::before, чтобы не ломать fixed-позиционирование Docusaurus
+   mobile drawer, который рендерится внутри navbar. */
+.navbar,
+.navbar.navbar--fixed-top {
+  border-bottom: 1px solid var(--silam-navbar-glass-border) !important;
+  color: var(--silam-navbar-glass-text) !important;
+  background: var(--silam-navbar-glass-panel) !important;
+  background-color: var(--silam-navbar-glass-panel) !important;
+  box-shadow: var(--silam-navbar-glass-shadow) !important;
+  backdrop-filter: blur(18px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+}
+
 html[data-theme='dark'] {
+  --silam-navbar-glass-panel: rgba(9, 28, 30, 0.36);
+  --silam-navbar-glass-text: #e8fffb;
+  --silam-navbar-glass-border: rgba(128, 233, 173, 0.20);
+  --silam-navbar-glass-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.34),
+    0 8px 28px rgba(53, 200, 120, 0.06);
+
+  --silam-dark-menu-hover-text: #dfffee;
   --silam-dark-menu-hover-panel:
     linear-gradient(
       135deg,
-      rgba(53, 200, 120, 0.14),
-      rgba(122, 183, 255, 0.10)
+      rgba(128, 233, 173, 0.12),
+      rgba(122, 183, 255, 0.09)
     );
   --silam-dark-menu-hover-panel-strong:
     linear-gradient(
       135deg,
-      rgba(53, 200, 120, 0.18),
-      rgba(122, 183, 255, 0.13)
+      rgba(128, 233, 173, 0.17),
+      rgba(122, 183, 255, 0.12)
     );
-  --silam-dark-menu-hover-border: rgba(128, 233, 173, 0.24);
-  --silam-dark-menu-hover-glow:
-    0 10px 28px rgba(53, 200, 120, 0.16),
-    0 4px 16px rgba(122, 183, 255, 0.08);
-  --silam-dark-menu-active-glow:
-    0 12px 32px rgba(53, 200, 120, 0.18),
-    0 5px 18px rgba(122, 183, 255, 0.10);
+  --silam-dark-menu-hover-shadow:
+    inset 0 0 0 1px rgba(128, 233, 173, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 28px rgba(53, 200, 120, 0.10),
+    0 4px 16px rgba(122, 183, 255, 0.06);
+  --silam-dark-menu-active-shadow:
+    inset 0 0 0 1px rgba(128, 233, 173, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 32px rgba(53, 200, 120, 0.14),
+    0 5px 18px rgba(122, 183, 255, 0.08);
+}
+
+html[data-theme='dark'] .navbar,
+html[data-theme='dark'] .navbar.navbar--fixed-top {
+  border-bottom-color: var(--silam-navbar-glass-border) !important;
+  color: var(--silam-navbar-glass-text) !important;
+  background: var(--silam-navbar-glass-panel) !important;
+  background-color: var(--silam-navbar-glass-panel) !important;
+  box-shadow: var(--silam-navbar-glass-shadow) !important;
+  backdrop-filter: blur(18px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
 }
 
 html[data-theme='dark'] .dropdown__menu {
   border-color: var(--silam-navbar-glass-border) !important;
-  background: rgba(9, 28, 30, 0.50) !important;
-  background-color: rgba(9, 28, 30, 0.50) !important;
+  background: rgba(9, 28, 30, 0.62) !important;
+  background-color: rgba(9, 28, 30, 0.62) !important;
   box-shadow:
     var(--silam-navbar-glass-shadow),
     inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
@@ -1539,6 +1573,8 @@ html[data-theme='dark'] .dropdown__menu {
   -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
 }
 
+/* В тёмной теме hover был слишком плоским/зелёным. Теперь это мягкий
+   glass-tint с лёгким сине-зелёным свечением без движения элементов. */
 html[data-theme='dark'] .navbar__link:hover:not(.navbar__link--active),
 html[data-theme='dark'] .dropdown__link:hover:not(.dropdown__link--active),
 html[data-theme='dark'] .menu__link:hover:not(.menu__link--active),
@@ -1547,10 +1583,9 @@ html[data-theme='dark'] .navbar .clean-btn:hover,
 html[data-theme='dark'] .navbar [class*="colorModeToggle"]:hover,
 html[data-theme='dark'] .navbar-sidebar .clean-btn:hover,
 html[data-theme='dark'] .navbar-sidebar [class*="colorModeToggle"]:hover {
-  color: var(--ifm-color-primary-lightest) !important;
+  color: var(--silam-dark-menu-hover-text) !important;
   background: var(--silam-dark-menu-hover-panel) !important;
-  background-color: transparent !important;
-  box-shadow: var(--silam-dark-menu-hover-glow) !important;
+  box-shadow: var(--silam-dark-menu-hover-shadow) !important;
   text-decoration: none !important;
   transform: none !important;
   backdrop-filter: blur(14px) saturate(145%) !important;
@@ -1564,7 +1599,7 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active,
 html[data-theme='dark'] .navbar-sidebar__back {
   color: var(--ifm-color-primary-lightest) !important;
   background: var(--silam-dark-menu-hover-panel) !important;
-  box-shadow: var(--silam-dark-menu-active-glow) !important;
+  box-shadow: var(--silam-dark-menu-active-shadow) !important;
   backdrop-filter: blur(14px) saturate(145%) !important;
   -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
 }
@@ -1576,48 +1611,15 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active:hover,
 html[data-theme='dark'] .navbar-sidebar__back:hover {
   color: var(--ifm-color-primary-lightest) !important;
   background: var(--silam-dark-menu-hover-panel-strong) !important;
-  box-shadow: var(--silam-dark-menu-active-glow) !important;
+  box-shadow: var(--silam-dark-menu-active-shadow) !important;
   transform: none !important;
 }
 
 @media (max-width: 996px) {
-  html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown:hover,
-  html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown):focus-within > .silamLocaleDropdown {
-    color: var(--ifm-color-primary-lightest) !important;
-    background: var(--silam-dark-menu-hover-panel) !important;
-    box-shadow: var(--silam-dark-menu-hover-glow) !important;
-    backdrop-filter: blur(14px) saturate(145%) !important;
-    -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* Dark navbar glass alignment                                                 */
-/* -------------------------------------------------------------------------- */
-
-/* В тёмной теме верхний navbar использует тот же glass-подход, что и светлая
-   тема: полупрозрачная панель, blur/saturation, тонкая граница и мягкая тень.
-   Это отдельный override ниже базовых dark-стилей, чтобы не возвращался
-   прежний плотный gradient-фон. */
-html[data-theme='dark'] {
-  --silam-navbar-glass-panel: rgba(9, 28, 30, 0.34);
-  --silam-navbar-glass-border: rgba(128, 233, 173, 0.20);
-  --silam-navbar-glass-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.34),
-    0 8px 28px rgba(53, 200, 120, 0.06);
-}
-
-html[data-theme='dark'] .navbar {
-  border-bottom-color: var(--silam-navbar-glass-border) !important;
-  background: var(--silam-navbar-glass-panel) !important;
-  background-color: var(--silam-navbar-glass-panel) !important;
-  box-shadow: var(--silam-navbar-glass-shadow) !important;
-  backdrop-filter: blur(18px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
-}
-
-@media (max-width: 996px) {
-  html[data-theme='dark'] .navbar {
+  .navbar,
+  .navbar.navbar--fixed-top,
+  html[data-theme='dark'] .navbar,
+  html[data-theme='dark'] .navbar.navbar--fixed-top {
     background: transparent !important;
     background-color: transparent !important;
     box-shadow: none !important;
@@ -1625,13 +1627,24 @@ html[data-theme='dark'] .navbar {
     -webkit-backdrop-filter: none !important;
   }
 
+  .navbar::before,
   html[data-theme='dark'] .navbar::before {
-    border-bottom-color: var(--silam-navbar-glass-border) !important;
+    border-bottom: 1px solid var(--silam-navbar-glass-border) !important;
     background: var(--silam-navbar-glass-panel) !important;
     background-color: var(--silam-navbar-glass-panel) !important;
     box-shadow: var(--silam-navbar-glass-shadow) !important;
     backdrop-filter: blur(18px) saturate(150%) !important;
     -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+  }
+
+  html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown:hover,
+  html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown):focus-within > .silamLocaleDropdown {
+    color: var(--silam-dark-menu-hover-text) !important;
+    background: var(--silam-dark-menu-hover-panel) !important;
+    box-shadow: var(--silam-dark-menu-hover-shadow) !important;
+    transform: none !important;
+    backdrop-filter: blur(14px) saturate(145%) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
   }
 }
 
