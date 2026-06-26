@@ -32,6 +32,13 @@
   --silam-card-shadow: 0 14px 36px rgba(31, 41, 55, 0.06);
   --silam-card-shadow-strong: 0 18px 44px rgba(31, 41, 55, 0.10);
   --silam-soft-surface: rgba(255, 255, 255, 0.72);
+
+  /* Glass navbar tokens copied from coverage map legend-control. */
+  --silam-navbar-glass-panel: rgba(255, 255, 255, 0.40);
+  --silam-navbar-glass-text: #153235;
+  --silam-navbar-glass-border: rgba(24, 121, 113, 0.22);
+  --silam-navbar-glass-shadow: 0 18px 46px rgba(9, 74, 72, 0.18);
+
   --docusaurus-highlighted-code-line-bg: rgba(21, 112, 239, 0.12);
 }
 
@@ -58,6 +65,13 @@ html[data-theme='dark'] {
   --silam-card-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
   --silam-card-shadow-strong: 0 18px 44px rgba(0, 0, 0, 0.34);
   --silam-soft-surface: rgba(17, 25, 35, 0.72);
+
+  /* Glass navbar tokens copied from coverage map legend-control. */
+  --silam-navbar-glass-panel: rgba(9, 28, 30, 0.40);
+  --silam-navbar-glass-text: #e8fffb;
+  --silam-navbar-glass-border: rgba(110, 231, 216, 0.24);
+  --silam-navbar-glass-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+
   --docusaurus-highlighted-code-line-bg: rgba(122, 183, 255, 0.14);
 }
 
@@ -1370,3 +1384,118 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     background: rgba(53, 200, 120, 0.10) !important;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Unified glass navbar background                                             */
+/* -------------------------------------------------------------------------- */
+
+/* Фон верхнего меню теперь повторяет glass-эффект legend-control на карте
+   покрытия: тот же уровень прозрачности, border, shadow и blur/saturation.
+   В mobile не возвращаем backdrop-filter на сам `.navbar`, потому что sidebar
+   Docusaurus рендерится внутри navbar и filter/backdrop-filter на родителе может
+   сломать fixed-позиционирование drawer. Вместо этого blur вынесен в ::before. */
+.navbar {
+  border-bottom: 1px solid var(--silam-navbar-glass-border) !important;
+  color: var(--silam-navbar-glass-text) !important;
+  background: var(--silam-navbar-glass-panel) !important;
+  background-color: var(--silam-navbar-glass-panel) !important;
+  box-shadow: var(--silam-navbar-glass-shadow) !important;
+  backdrop-filter: blur(18px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+}
+
+@media (max-width: 996px) {
+  .navbar {
+    /* Сам navbar оставляем без filter/backdrop-filter, чтобы не ломать drawer. */
+    background: transparent !important;
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .navbar::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 0;
+    height: var(--ifm-navbar-height);
+    pointer-events: none;
+    border-bottom: 1px solid var(--silam-navbar-glass-border);
+    background: var(--silam-navbar-glass-panel);
+    background-color: var(--silam-navbar-glass-panel);
+    box-shadow: var(--silam-navbar-glass-shadow);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+  }
+
+  .navbar__inner {
+    position: relative;
+    z-index: 1;
+  }
+
+  .navbar-sidebar,
+  .navbar-sidebar__backdrop {
+    z-index: 7000 !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Centered footer content                                                     */
+/* -------------------------------------------------------------------------- */
+
+/* Центрируем содержимое подвала, не меняя footer config Docusaurus. */
+.footer {
+  text-align: center;
+}
+
+.footer .container,
+.footer .container-fluid {
+  max-width: 1180px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.footer__links {
+  justify-content: center;
+  gap: 2rem clamp(2.5rem, 7vw, 5.5rem);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.footer__col {
+  flex: 0 1 14rem;
+  max-width: 16rem;
+  text-align: center;
+}
+
+.footer__title,
+.footer__item,
+.footer__bottom,
+.footer__copyright {
+  text-align: center;
+}
+
+.footer__items {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.footer__link-item {
+  justify-content: center;
+}
+
+@media (max-width: 996px) {
+  .footer__links {
+    gap: 1.5rem;
+  }
+
+  .footer__col {
+    flex-basis: 100%;
+    max-width: 20rem;
+  }
+}
+
