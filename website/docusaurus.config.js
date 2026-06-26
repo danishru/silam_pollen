@@ -47,24 +47,48 @@ const config = {
       title: "SILAM Pollen",
       items: [
 //        { to: "/docs/intro", label: "Docs", position: "left" },
-        { to: "/blog", label: "Releases", position: "left" },
+        {
+          type: "dropdown",
+          label: "Releases",
+          position: "left",
+          to: "/blog",
+          items: [
+            { label: "Release notes", to: "/blog" },
+            {
+              label: "GitHub releases",
+              href: "https://github.com/danishru/silam_pollen/releases"
+            }
+          ]
+        },
         { to: "/coverage", label: "Coverage map", position: "left" },
         { to: "/roadmap", label: "Roadmap", position: "left" },
         { type: "localeDropdown", position: "right" }
       ]
     },
     footer: {
-      style: "dark",
+      style: "light",
       links: [
         {
-          title: "Project",
+          title: "Community",
           items: [
-            { label: "GitHub", href: "https://github.com/danishru/silam_pollen" },
-            { label: "Coverage map", href: "https://danishru.github.io/silam_pollen/" }
+            {
+              label: "Home Assistant forum",
+              href: "https://community.home-assistant.io/t/silam-pollen-allergy-proof-your-home-assistant"
+            },
+            {
+              label: "GitHub issues",
+              href: "https://github.com/danishru/silam_pollen/issues"
+            }
+          ]
+        },
+        {
+          title: "Data source",
+          items: [
+            { label: "SILAM by FMI", href: "https://silam.fmi.fi/" }
           ]
         }
       ],
-      copyright: `Copyright © ${new Date().getFullYear()}`
+      copyright: `© ${new Date().getFullYear()} SILAM Pollen Monitor · Built for Home Assistant`
     },
     prism: {
       theme: prismThemes.github,

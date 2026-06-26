@@ -976,3 +976,60 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     ) !important;
   font-weight: 800;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Desktop navbar right-edge safety                                             */
+/* -------------------------------------------------------------------------- */
+
+/* На промежуточных desktop-ширинах штатный scrollbar может визуально
+   перекрывать самый правый control в navbar. Это особенно заметно на
+   переключателе темы. Оставляем стабильную центровку navbar на широких
+   экранах, но добавляем безопасный правый отступ и отключаем сдвиг inner
+   там, где navbar уже занимает почти всю ширину окна. */
+@media (min-width: 997px) {
+  .navbar {
+    overflow-x: clip !important;
+    padding-right: calc(
+      var(--ifm-navbar-padding-horizontal) + max(0px, calc(100vw - 100%))
+    ) !important;
+  }
+
+  .navbar__inner {
+    box-sizing: border-box !important;
+    max-width: min(1180px, calc(100% - max(0px, calc(100vw - 100%)))) !important;
+  }
+
+  .navbar__items--right {
+    flex: 0 0 auto !important;
+    min-width: max-content !important;
+    margin-left: auto !important;
+  }
+
+  .navbar .clean-btn,
+  .navbar [class*="colorModeToggle"] {
+    flex: 0 0 auto !important;
+    width: 2.25rem;
+    min-width: 2.25rem;
+    height: 2.25rem;
+  }
+}
+
+/* Между полноценным desktop и mobile-breakpoint важнее не перекрывать
+   правые кнопки и не провоцировать микропрыжки пунктов меню. Поэтому
+   scrollbar-компенсацию центровки оставляем только для широкого navbar. */
+@media (min-width: 997px) and (max-width: 1219px) {
+  .navbar__inner {
+    left: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .navbar__items {
+    min-width: 0 !important;
+  }
+
+  .navbar__items--right {
+    max-width: max-content !important;
+  }
+}
+
