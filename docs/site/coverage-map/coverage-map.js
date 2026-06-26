@@ -2,6 +2,7 @@
   const MOBILE_QUERY = "(max-width: 767px), (hover: none) and (pointer: coarse)";
   const DEFAULT_CENTER = [20, 20];
   const DATASET_VERSION = "v6.1";
+  const VIEW_STATE_STORAGE_KEY = "silam_pollen_coverage_map_view_v1";
 
   const TEXT = {
     ru: {
@@ -85,10 +86,25 @@
     );
   }
 
+  function normalizeTheme(value) {
+    return value === "dark" || value === "light" ? value : null;
+  }
+
   function getCurrentTheme() {
-    return document.documentElement.dataset.theme ||
-      window.__silamCoverageTheme ||
+    return normalizeTheme(document.documentElement.dataset.theme) ||
+      normalizeTheme(window.__silamCoverageTheme) ||
       "light";
+  }
+
+  function setDocumentTheme(theme) {
+    const normalized = normalizeTheme(theme);
+    if (!normalized) {
+      return null;
+    }
+
+    document.documentElement.dataset.theme = normalized;
+    window.__silamCoverageTheme = normalized;
+    return normalized;
   }
 
   function getCoveragePalette(theme) {
@@ -151,6 +167,88 @@
     );
   }
 
+
+  function readStoredViewState() {
+    try {
+      const raw = window.localStorage.getItem(VIEW_STATE_STORAGE_KEY);
+      if (!raw) {
+        return null;
+      }
+
+      const state = JSON.parse(raw);
+      const center = Array.isArray(state.center) ? state.center : null;
+      const lon = Number(center && center[0]);
+      const lat = Number(center && center[1]);
+      const zoom = Number(state.zoom);
+      const rotation = Number(state.rotation || 0);
+
+      if (
+        !Number.isFinite(lon) ||
+        !Number.isFinite(lat) ||
+        !Number.isFinite(zoom) ||
+        !Number.isFinite(rotation) ||
+        lon < -180 ||
+        lon > 180 ||
+        lat < -90 ||
+        lat > 90 ||
+        zoom < 0 ||
+        zoom > 24
+      ) {
+        return null;
+      }
+
+      return {
+        center: [lon, lat],
+        zoom,
+        rotation,
+      };
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function writeStoredViewState(view) {
+    if (!view) {
+      return;
+    }
+
+    try {
+      const center = view.getCenter();
+      const zoom = view.getZoom();
+      const rotation = view.getRotation() || 0;
+
+      if (!center || !Number.isFinite(zoom)) {
+        return;
+      }
+
+      const lonLat = ol.proj.toLonLat(center);
+      const lon = Number(lonLat[0]);
+      const lat = Number(lonLat[1]);
+
+      if (
+        !Number.isFinite(lon) ||
+        !Number.isFinite(lat) ||
+        lon < -180 ||
+        lon > 180 ||
+        lat < -90 ||
+        lat > 90
+      ) {
+        return;
+      }
+
+      window.localStorage.setItem(
+        VIEW_STATE_STORAGE_KEY,
+        JSON.stringify({
+          center: [lon, lat],
+          zoom,
+          rotation,
+          savedAt: new Date().toISOString(),
+        })
+      );
+    } catch (err) {
+      // localStorage может быть недоступен в некоторых режимах браузера.
+    }
+  }
 
   function formatCoordinateDisplay(coordinate, text) {
     return `${text.lat}: ${coordinate[1].toFixed(3)}, ${text.lon}: ${coordinate[0].toFixed(3)}`;
@@ -544,8 +642,7 @@
       const current = getCurrentTheme() === "dark" ? "dark" : "light";
       const next = current === "dark" ? "light" : "dark";
 
-      document.documentElement.dataset.theme = next;
-      window.__silamCoverageTheme = next;
+      setDocumentTheme(next);
 
       try {
         window.localStorage.setItem("docusaurus-theme", next);
@@ -558,6 +655,7 @@
     });
 
     updateButton();
+    el.silamUpdateThemeButton = updateButton;
     el.appendChild(button);
     stopMapDragOnControl(el);
 
@@ -582,8 +680,8 @@
       return;
     }
 
-    const locale = getLocale();
-    const text = TEXT[locale] || TEXT.en;
+    let locale = getLocale();
+    let text = TEXT[locale] || TEXT.en;
     document.documentElement.lang = locale;
 
     const mapEl = document.getElementById("map");
@@ -644,12 +742,15 @@
       layers.push(hiresCoverage.layer);
     }
 
+    const savedViewState = readStoredViewState();
+
     const map = new ol.Map({
       target: "map",
       layers,
       view: new ol.View({
-        center: ol.proj.fromLonLat(DEFAULT_CENTER),
-        zoom: isMobileLayout() ? 6 : 4,
+        center: ol.proj.fromLonLat(savedViewState ? savedViewState.center : DEFAULT_CENTER),
+        zoom: savedViewState ? savedViewState.zoom : (isMobileLayout() ? 6 : 4),
+        rotation: savedViewState ? savedViewState.rotation : 0,
       }),
     });
 
@@ -741,8 +842,13 @@
     }
 
     function applyCoverageTheme(theme) {
-      currentTheme = theme;
-      coveragePalette = getCoveragePalette(theme);
+      const normalized = setDocumentTheme(theme);
+      if (!normalized) {
+        return;
+      }
+
+      currentTheme = normalized;
+      coveragePalette = getCoveragePalette(normalized);
 
       coverageItems.forEach((item) => {
         item.palette = coveragePalette[item.paletteKey];
@@ -750,8 +856,37 @@
       });
 
       updateLegendCheckboxColors(legendEl, coverageItems);
+
+      if (themeToggleEl && typeof themeToggleEl.silamUpdateThemeButton === "function") {
+        themeToggleEl.silamUpdateThemeButton();
+      }
+
       scheduleMobileCenterInfoUpdate();
     }
+
+    function applyCoverageLocale(nextLocale) {
+      const normalized = normalizeLocale(nextLocale);
+      if (!normalized || normalized === locale) {
+        return;
+      }
+
+      locale = normalized;
+      text = TEXT[locale] || TEXT.en;
+      document.documentElement.lang = locale;
+      scheduleMobileCenterInfoUpdate();
+    }
+
+    function handleParentContextMessage(event) {
+      const data = event.data;
+      if (!data || data.type !== "silam-coverage-context") {
+        return;
+      }
+
+      applyCoverageTheme(data.theme);
+      applyCoverageLocale(data.lang || data.locale);
+    }
+
+    window.addEventListener("message", handleParentContextMessage);
 
     if (isThemeToggleEnabled()) {
       themeToggleEl = addLocalThemeToggle(map, applyCoverageTheme);
@@ -767,9 +902,12 @@
     requestAnimationFrame(arrangeMapControls);
     setTimeout(arrangeMapControls, 0);
 
-    map.getView().fit(europeCoverage.source.getExtent(), {
-      padding: [10, 10, 10, 10],
-    });
+    if (!savedViewState) {
+      map.getView().fit(europeCoverage.source.getExtent(), {
+        padding: [10, 10, 10, 10],
+      });
+      writeStoredViewState(map.getView());
+    }
 
 
     infoWindow.addEventListener("click", (event) => {
@@ -833,10 +971,28 @@
     window.addEventListener("resize", arrangeMapControls);
 
     const view = map.getView();
+    let saveViewStateFrame = null;
+
+    function scheduleViewStateSave() {
+      if (saveViewStateFrame !== null) {
+        return;
+      }
+
+      saveViewStateFrame = requestAnimationFrame(() => {
+        saveViewStateFrame = null;
+        writeStoredViewState(view);
+      });
+    }
+
     view.on("change:center", scheduleMobileCenterInfoUpdate);
     view.on("change:resolution", scheduleMobileCenterInfoUpdate);
+    view.on("change:rotation", scheduleViewStateSave);
     map.on("pointerdrag", scheduleMobileCenterInfoUpdate);
-    map.on("moveend", scheduleMobileCenterInfoUpdate);
+    map.on("moveend", () => {
+      scheduleMobileCenterInfoUpdate();
+      scheduleViewStateSave();
+    });
+    window.addEventListener("beforeunload", () => writeStoredViewState(view));
 
 
     map.on("singleclick", (event) => {
