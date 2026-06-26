@@ -168,7 +168,7 @@ a {
 
 .navbar__brand:hover {
   background: rgba(22, 138, 74, 0.08);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .navbar__logo {
@@ -208,7 +208,7 @@ a {
   color: var(--silam-accent-green);
   background: rgba(22, 138, 74, 0.09);
   text-decoration: none;
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .navbar__link--active {
@@ -848,7 +848,7 @@ body:has(.silamCoverageFullscreenPage) footer {
   color: var(--silam-accent-green);
   background: rgba(22, 138, 74, 0.075);
   text-decoration: none;
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .navbar__link--active {
@@ -1033,82 +1033,93 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
   }
 }
 /* -------------------------------------------------------------------------- */
-/* Mobile drawer secondary menu — Docusaurus-native flow in SILAM style         */
+/* Mobile sidebar compact width + right-side tools fix                          */
 /* -------------------------------------------------------------------------- */
 
-/* Keep the native Docusaurus primary/secondary mobile sidebar mechanics.
-   The width variable is important: Infima uses it both for the drawer width
-   and for the slide distance when a contextual menu, such as Releases, opens.
-   A mismatch here is what makes the Releases drawer look empty. */
+/* Мобильный drawer не должен раскрываться почти на всю ширину экрана.
+   Держим его достаточно широким для русских названий пунктов меню,
+   но не превращаем в полноэкранную панель. */
 @media (max-width: 996px) {
-  :root {
-    --ifm-navbar-sidebar-width: min(18.75rem, calc(100vw - 2.25rem));
-  }
-
   .navbar-sidebar {
-    width: var(--ifm-navbar-sidebar-width) !important;
-    min-width: var(--ifm-navbar-sidebar-width) !important;
-    max-width: var(--ifm-navbar-sidebar-width) !important;
+    right: auto !important;
+    width: min(18.5rem, calc(100vw - 2.5rem)) !important;
+    min-width: min(18.5rem, calc(100vw - 2.5rem)) !important;
+    max-width: calc(100vw - 2.5rem) !important;
   }
 
-  .navbar-sidebar__items {
-    display: flex !important;
+  .navbar-sidebar__brand,
+  .navbar-sidebar__items,
+  .navbar-sidebar__item,
+  .navbar-sidebar .menu,
+  .navbar-sidebar .menu__list {
     box-sizing: border-box !important;
-    width: calc(var(--ifm-navbar-sidebar-width) * 2) !important;
-    max-width: none !important;
-    height: calc(100vh - var(--ifm-navbar-height)) !important;
-    height: calc(100dvh - var(--ifm-navbar-height)) !important;
-    max-height: calc(100vh - var(--ifm-navbar-height)) !important;
-    max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    transform: translate3d(0, 0, 0) !important;
-    transition: transform var(--ifm-transition-fast) ease-in-out !important;
-  }
-
-  .navbar-sidebar__items--show-secondary {
-    transform: translate3d(calc(var(--ifm-navbar-sidebar-width) * -1), 0, 0) !important;
-  }
-
-  .navbar-sidebar__item {
-    flex: 0 0 var(--ifm-navbar-sidebar-width) !important;
-    box-sizing: border-box !important;
-    width: var(--ifm-navbar-sidebar-width) !important;
-    min-width: var(--ifm-navbar-sidebar-width) !important;
-    max-width: var(--ifm-navbar-sidebar-width) !important;
-    height: 100% !important;
-    padding: 0.75rem !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 1),
-        rgba(240, 253, 244, 1)
-      ) !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .navbar-sidebar__brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    min-height: var(--ifm-navbar-height) !important;
     padding: 0 0.65rem !important;
   }
 
   .navbar-sidebar__brand .navbar__brand {
-    max-width: calc(100% - 8.25rem) !important;
+    min-width: 0 !important;
+    max-width: none !important;
     margin-right: auto !important;
   }
 
-  /* The locale dropdown is still a normal Docusaurus navbar item, but visually
-     it behaves like a compact header control. Fixed positioning keeps it in
-     the drawer header even when Docusaurus slides to the Releases submenu. */
-  .navbar-sidebar .silamLocaleDropdown {
-    position: fixed !important;
-    top: calc((var(--ifm-navbar-height) - 2.25rem) / 2) !important;
-    left: calc(var(--ifm-navbar-sidebar-width) - 7.55rem) !important;
-    right: auto !important;
-    z-index: 7100 !important;
-    display: flex !important;
+  /* Кнопка темы и закрытие drawer — справа, как компактные controls. */
+  .navbar-sidebar__brand .clean-btn:not(.navbar-sidebar__close),
+  .navbar-sidebar__brand [class*="colorModeToggle"] {
+    flex: 0 0 auto !important;
     width: 2.25rem !important;
     min-width: 2.25rem !important;
+    height: 2.25rem !important;
+    margin-left: 0 !important;
+  }
+
+  .navbar-sidebar__close {
+    flex: 0 0 auto !important;
+    width: 2.25rem !important;
+    min-width: 2.25rem !important;
+    height: 2.25rem !important;
+    margin-left: 0 !important;
+  }
+
+  .navbar-sidebar__items {
+    height: calc(100vh - var(--ifm-navbar-height)) !important;
+    height: calc(100dvh - var(--ifm-navbar-height)) !important;
+    max-height: calc(100vh - var(--ifm-navbar-height)) !important;
+    max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
+    padding: 0.75rem !important;
+  }
+
+  .navbar-sidebar .menu__list {
+    min-width: 0 !important;
+  }
+
+  .navbar-sidebar .menu__link,
+  .navbar-sidebar .navbar__link {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    white-space: nowrap !important;
+  }
+
+  /* Язык тоже держим справа в мобильном drawer, а не отдельным пунктом меню.
+     Элемент остаётся штатным localeDropdown Docusaurus, только позиционируется
+     как маленькая кнопка рядом с close. */
+  .navbar-sidebar .silamLocaleDropdown {
+    position: absolute !important;
+    top: calc((var(--ifm-navbar-height) - 2.25rem) / 2) !important;
+    right: 3.15rem !important;
+    z-index: 7003 !important;
+    display: flex !important;
+    width: 2.25rem !important;
     height: 2.25rem !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -1128,7 +1139,6 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     background: transparent !important;
     font-size: 0 !important;
     line-height: 1 !important;
-    transform: none !important;
   }
 
   .navbar-sidebar .silamLocaleDropdown > .navbar__link::before {
@@ -1144,120 +1154,209 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
 
   .navbar-sidebar .silamLocaleDropdown > .navbar__link:hover {
     background: rgba(22, 138, 74, 0.09) !important;
+    transform: none !important;
   }
 
   .navbar-sidebar .silamLocaleDropdown .dropdown__menu {
-    position: fixed !important;
-    top: calc(var(--ifm-navbar-height) - 0.35rem) !important;
-    left: calc(var(--ifm-navbar-sidebar-width) - 10.85rem) !important;
-    right: auto !important;
+    position: absolute !important;
+    top: calc(100% + 0.45rem) !important;
+    right: 0 !important;
+    left: auto !important;
     min-width: 10rem !important;
     max-width: min(14rem, calc(100vw - 3rem)) !important;
   }
 
-  /* Native Docusaurus secondary menu button, restyled as a compact glass row. */
-  .navbar-sidebar__back {
-    position: sticky !important;
-    top: -0.75rem !important;
-    z-index: 2 !important;
+  /* Если Docusaurus также рендерит localeDropdown в верхней mobile navbar,
+     делаем его такой же компактной правой кнопкой. */
+  .navbar__items--right .silamLocaleDropdown {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    width: 2.25rem !important;
+    min-width: 2.25rem !important;
+    height: 2.25rem !important;
+    margin: 0 !important;
+  }
+
+  .navbar__items--right .silamLocaleDropdown > .navbar__link {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 2.25rem !important;
+    min-width: 2.25rem !important;
+    height: 2.25rem !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+    color: var(--silam-accent-green) !important;
+    font-size: 0 !important;
+  }
+
+  .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
+    content: "文";
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .navbar__items--right .silamLocaleDropdown > .navbar__link::after {
+    display: none !important;
+  }
+
+  .navbar__items--right {
     display: flex !important;
     align-items: center !important;
-    width: 100% !important;
-    margin: -0.15rem 0 0.7rem !important;
-    padding: 0.68rem 0.82rem !important;
-    border: 1px solid rgba(22, 138, 74, 0.14) !important;
-    border-radius: 16px !important;
-    color: var(--silam-accent-green) !important;
-    background:
-      linear-gradient(
-        135deg,
-        rgba(22, 138, 74, 0.10),
-        rgba(21, 112, 239, 0.07)
-      ) !important;
-    box-shadow: 0 12px 30px rgba(31, 41, 55, 0.08) !important;
-    font-size: 0.92rem !important;
-    font-weight: 800 !important;
-    letter-spacing: -0.015em !important;
-    text-align: left !important;
-    transform: none !important;
+    justify-content: flex-end !important;
+    gap: 0.25rem !important;
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
   }
 
-  .navbar-sidebar__back:hover {
-    background:
-      linear-gradient(
-        135deg,
-        rgba(22, 138, 74, 0.14),
-        rgba(21, 112, 239, 0.10)
-      ) !important;
+  .navbar__brand {
+    max-width: calc(100vw - 11rem) !important;
   }
 
-  /* Blog/Releases secondary menu. Long release titles may wrap, but primary
-     site navigation stays single-line and compact. */
-  .navbar-sidebar__items--show-secondary .navbar-sidebar__item:nth-child(2) .menu__link {
-    white-space: normal !important;
-    line-height: 1.22 !important;
-  }
-
-  .navbar-sidebar__items--show-secondary .navbar-sidebar__item:nth-child(2) h3 {
-    margin: 0.85rem 0.55rem 0.45rem !important;
-    color: rgba(17, 24, 39, 0.58) !important;
-    font-size: 0.78rem !important;
-    font-weight: 850 !important;
-    letter-spacing: 0.08em !important;
-    text-transform: uppercase !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar__item {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(11, 17, 23, 1),
-        rgba(17, 25, 35, 1)
-      ) !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar .silamLocaleDropdown > .navbar__link {
+  html[data-theme='dark'] .navbar-sidebar .silamLocaleDropdown > .navbar__link,
+  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link {
     color: var(--ifm-color-primary-lightest) !important;
   }
 
-  html[data-theme='dark'] .navbar-sidebar .silamLocaleDropdown > .navbar__link:hover {
+  html[data-theme='dark'] .navbar-sidebar .silamLocaleDropdown > .navbar__link:hover,
+  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link:hover {
     background: rgba(53, 200, 120, 0.10) !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar__back {
-    border-color: rgba(255, 255, 255, 0.10) !important;
-    color: var(--ifm-color-primary-lightest) !important;
-    background:
-      linear-gradient(
-        135deg,
-        rgba(53, 200, 120, 0.14),
-        rgba(122, 183, 255, 0.09)
-      ) !important;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26) !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar__back:hover {
-    background:
-      linear-gradient(
-        135deg,
-        rgba(53, 200, 120, 0.18),
-        rgba(122, 183, 255, 0.12)
-      ) !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar__items--show-secondary .navbar-sidebar__item:nth-child(2) h3 {
-    color: rgba(248, 250, 252, 0.58) !important;
   }
 }
 
-
-
 /* -------------------------------------------------------------------------- */
-/* SILAM brand + mobile topbar controls                                        */
+/* Mobile top navbar tools — single source of truth                             */
 /* -------------------------------------------------------------------------- */
 
-/* Product-style brand button: same soft green/blue direction as roadmap cards. */
-.navbar__brand {
+/* На mobile язык и переключатель темы должны жить только в верхнем navbar.
+   Штатный mobile drawer Docusaurus может повторно рендерить правые navbar items
+   внутри панели меню; скрываем эти дубликаты только внутри drawer, не меняя
+   native primary/secondary sidebar flow для Releases. */
+@media (max-width: 996px) {
+  /* Убираем дубликаты языка и темы из mobile drawer. Основное меню и native
+     secondary menu Releases остаются штатными и продолжают работать. */
+  .navbar-sidebar .silamLocaleDropdown,
+  .navbar-sidebar__brand .clean-btn:not(.navbar-sidebar__close),
+  .navbar-sidebar__brand [class*="colorModeToggle"] {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /* После удаления дубликатов в header drawer остаётся только brand + close. */
+  .navbar-sidebar__brand .navbar__brand {
+    max-width: calc(100% - 3rem) !important;
+  }
+
+  /* Правые controls в верхнем navbar: язык + тема. */
+  .navbar__items--right {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    gap: 0.25rem !important;
+    margin-left: auto !important;
+    min-width: max-content !important;
+  }
+
+  .navbar__items--right .clean-btn,
+  .navbar__items--right [class*="colorModeToggle"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+    width: 2.25rem !important;
+    min-width: 2.25rem !important;
+    height: 2.25rem !important;
+    border-radius: 999px !important;
+  }
+
+  .navbar__items--right .silamLocaleDropdown {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    width: 2.65rem !important;
+    min-width: 2.65rem !important;
+    height: 2.25rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .navbar__items--right .silamLocaleDropdown > .navbar__link {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    width: 2.65rem !important;
+    min-width: 2.65rem !important;
+    height: 2.25rem !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+    color: var(--silam-accent-green) !important;
+    background: transparent !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+    transform: none !important;
+  }
+
+  .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
+    content: "ENG";
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.035em;
+    line-height: 1;
+  }
+
+  html[lang^="ru"] .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
+    content: "RUS";
+  }
+
+  html[lang^="en"] .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
+    content: "ENG";
+  }
+
+  .navbar__items--right .silamLocaleDropdown > .navbar__link::after {
+    display: none !important;
+  }
+
+  .navbar__items--right .silamLocaleDropdown > .navbar__link:hover {
+    background: rgba(22, 138, 74, 0.09) !important;
+    transform: none !important;
+  }
+
+  .navbar__items--right .silamLocaleDropdown .dropdown__menu {
+    top: calc(100% + 0.45rem) !important;
+    right: 0 !important;
+    left: auto !important;
+    min-width: 10rem !important;
+    max-width: min(14rem, calc(100vw - 1.5rem)) !important;
+  }
+
+  /* Освобождаем место под hamburger слева и два compact-control справа. */
+  .navbar__brand {
+    max-width: calc(100vw - 10.5rem) !important;
+  }
+
+  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link {
+    color: var(--ifm-color-primary-lightest) !important;
+  }
+
+  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link:hover {
+    background: rgba(53, 200, 120, 0.10) !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Final mobile navbar controls + no-motion hover fix                          */
+/* -------------------------------------------------------------------------- */
+
+/* Brand as a product-style button. The same visual language is used on the
+   roadmap page: soft green-blue accent, rounded shape and calm glow. */
+.navbar__brand,
+.navbar-sidebar__brand .navbar__brand {
   color: #ffffff !important;
   background:
     linear-gradient(
@@ -1270,172 +1369,155 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     inset 0 1px 0 rgba(255, 255, 255, 0.26) !important;
 }
 
-.navbar__brand:hover {
+.navbar__brand:hover,
+.navbar-sidebar__brand .navbar__brand:hover {
+  color: #ffffff !important;
   background:
     linear-gradient(
       135deg,
-      #1a9d58,
-      #287ef2
+      var(--silam-accent-green),
+      var(--silam-accent-blue)
     ) !important;
-  transform: translateY(-1px);
+  box-shadow:
+    0 16px 38px rgba(21, 112, 239, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30) !important;
+  transform: none !important;
 }
 
-.navbar__brand .navbar__title {
+.navbar__brand .navbar__title,
+.navbar-sidebar__brand .navbar__title {
   color: #ffffff !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
-.navbar__brand .navbar__logo {
-  filter:
-    drop-shadow(0 8px 18px rgba(255, 255, 255, 0.20))
-    drop-shadow(0 8px 18px rgba(0, 0, 0, 0.16));
+.navbar__brand .navbar__logo,
+.navbar-sidebar__brand .navbar__logo {
+  background: rgba(255, 255, 255, 0.92);
 }
 
-html[data-theme='dark'] .navbar__brand {
-  box-shadow:
-    0 16px 42px rgba(0, 0, 0, 0.34),
-    0 0 0 1px rgba(128, 233, 173, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+/* Hover states should highlight controls without moving them. This prevents
+   visual jumps when moving the pointer across navbar/dropdown/sidebar items. */
+.navbar__brand:hover,
+.navbar__link:hover,
+.navbar__link--active:hover,
+.dropdown__link:hover,
+.dropdown__link--active:hover,
+.menu__link:hover,
+.menu__link--active:hover,
+.navbar .clean-btn:hover,
+.navbar-sidebar .clean-btn:hover,
+.button:hover,
+.button--primary:hover,
+.button.button--primary:hover {
+  transform: none !important;
 }
 
 @media (max-width: 996px) {
-  /* Docusaurus штатно рендерит right navbar items в верхнем navbar.
-     Мы показываем их на mobile и используем swizzle только для того,
-     чтобы не дублировать language/theme внутри drawer. */
-  .navbar__inner {
-    gap: 0.45rem !important;
+  /* Docusaurus renders right navbar items inside the mobile drawer. The real
+     mobile controls are provided by src/theme/Navbar/index.js, so native copies
+     are hidden only on mobile to avoid duplicates. */
+  .navbar__items--right .silamLocaleDropdown,
+  .navbar__items--right [class*="colorModeToggle"],
+  .navbar__items--right [class*="toggleButton"],
+  .navbar__items--right > .clean-btn,
+  .navbar-sidebar .silamLocaleDropdown,
+  .navbar-sidebar [class*="colorModeToggle"],
+  .navbar-sidebar [class*="toggleButton"],
+  .navbar-sidebar__brand .clean-btn:not(.navbar-sidebar__close) {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
-  .navbar__items {
-    min-width: 0 !important;
+  .silamMobileTopbarControls {
+    position: fixed;
+    top: calc((var(--ifm-navbar-height) - 2.25rem) / 2);
+    right: 0.72rem;
+    z-index: 7100;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    pointer-events: auto;
   }
 
-  .navbar__items--right {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    flex: 0 0 auto !important;
-    min-width: max-content !important;
-    max-width: max-content !important;
-    gap: 0.25rem !important;
-    margin-left: auto !important;
-  }
-
-  .navbar__items--right .clean-btn,
-  .navbar__items--right [class*='colorModeToggle'] {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex: 0 0 auto !important;
-    width: 2.25rem !important;
-    min-width: 2.25rem !important;
-    height: 2.25rem !important;
-    margin: 0 !important;
-    border-radius: 999px !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown {
-    display: flex !important;
-    flex: 0 0 auto !important;
-    width: 2.7rem !important;
-    min-width: 2.7rem !important;
-    height: 2.25rem !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown > .navbar__link {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-sizing: border-box !important;
-    width: 2.7rem !important;
-    min-width: 2.7rem !important;
-    height: 2.25rem !important;
-    padding: 0 !important;
-    border-radius: 999px !important;
-    overflow: hidden !important;
+  .silamMobileLanguageButton,
+  .silamMobileThemeButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 2.25rem;
+    border: 0;
+    border-radius: 999px;
     color: var(--silam-accent-green) !important;
-    background: rgba(22, 138, 74, 0.08) !important;
-    font-size: 0 !important;
-    line-height: 1 !important;
-    letter-spacing: 0 !important;
-    transform: none !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown > .navbar__link svg {
-    display: none !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
-    content: 'ENG';
-    font-size: 0.72rem;
+    background: rgba(22, 138, 74, 0.08);
+    box-shadow: none;
     font-weight: 850;
-    letter-spacing: 0.035em;
     line-height: 1;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition:
+      color 180ms ease,
+      background 180ms ease,
+      box-shadow 180ms ease;
   }
 
-  html[lang^='ru'] .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
-    content: 'RUS';
+  .silamMobileLanguageButton {
+    width: 2.72rem;
+    min-width: 2.72rem;
+    padding: 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.035em;
   }
 
-  html[lang^='en'] .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
-    content: 'ENG';
+  .silamMobileThemeButton {
+    width: 2.25rem;
+    min-width: 2.25rem;
+    padding: 0;
+    font-size: 1.05rem;
   }
 
-  .navbar__items--right .silamLocaleDropdown > .navbar__link::after {
-    display: none !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown > .navbar__link:hover {
-    background: rgba(22, 138, 74, 0.13) !important;
+  .silamMobileLanguageButton:hover,
+  .silamMobileThemeButton:hover {
+    color: var(--silam-accent-green) !important;
+    background: rgba(22, 138, 74, 0.12);
+    box-shadow: 0 10px 24px rgba(22, 138, 74, 0.12);
     transform: none !important;
   }
 
-  .navbar__items--right .silamLocaleDropdown .dropdown__menu {
-    top: calc(100% + 0.45rem) !important;
-    right: 0 !important;
-    left: auto !important;
-    min-width: 10rem !important;
-    max-width: min(14rem, calc(100vw - 1.5rem)) !important;
+  .silamMobileLanguageButton:focus-visible,
+  .silamMobileThemeButton:focus-visible {
+    outline: 2px solid rgba(21, 112, 239, 0.55);
+    outline-offset: 2px;
   }
 
-  /* Верхний brand должен оставаться заметным, но не вытеснять language/theme. */
+  /* Leave space for the fixed mobile language/theme controls. */
   .navbar__brand {
-    max-width: calc(100vw - 11rem) !important;
-    gap: 0.5rem !important;
-    padding: 0.34rem 0.7rem 0.34rem 0.42rem !important;
-    border-radius: 999px !important;
-  }
-
-  .navbar__brand:hover {
-    transform: none !important;
-  }
-
-  .navbar__title {
-    color: #ffffff !important;
-    font-size: 0.96rem !important;
+    max-width: calc(100vw - 10.7rem) !important;
   }
 
   .navbar-sidebar__brand .navbar__brand {
     max-width: calc(100% - 3rem) !important;
-    margin-right: auto !important;
   }
 
-  /* Safety net: если Docusaurus или будущий конфиг снова отрендерит эти
-     элементы внутри drawer, они не должны появляться там повторно. */
-  .navbar-sidebar .silamLocaleDropdown,
-  .navbar-sidebar__brand [class*='colorModeToggle'],
-  .navbar-sidebar__brand .clean-btn:not(.navbar-sidebar__close) {
-    display: none !important;
-  }
-
-  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link {
+  html[data-theme='dark'] .silamMobileLanguageButton,
+  html[data-theme='dark'] .silamMobileThemeButton {
     color: var(--ifm-color-primary-lightest) !important;
-    background: rgba(53, 200, 120, 0.10) !important;
+    background: rgba(53, 200, 120, 0.10);
   }
 
-  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link:hover {
-    background: rgba(53, 200, 120, 0.15) !important;
+  html[data-theme='dark'] .silamMobileLanguageButton:hover,
+  html[data-theme='dark'] .silamMobileThemeButton:hover {
+    color: var(--ifm-color-primary-lightest) !important;
+    background: rgba(53, 200, 120, 0.15);
+    box-shadow: 0 10px 24px rgba(53, 200, 120, 0.12);
   }
 }
+
+@media (min-width: 997px) {
+  .silamMobileTopbarControls {
+    display: none !important;
+  }
+}
+
