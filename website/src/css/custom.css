@@ -168,7 +168,7 @@ a {
 
 .navbar__brand:hover {
   background: rgba(22, 138, 74, 0.08);
-  transform: none;
+  transform: translateY(-1px);
 }
 
 .navbar__logo {
@@ -208,7 +208,7 @@ a {
   color: var(--silam-accent-green);
   background: rgba(22, 138, 74, 0.09);
   text-decoration: none;
-  transform: none;
+  transform: translateY(-1px);
 }
 
 .navbar__link--active {
@@ -848,7 +848,7 @@ body:has(.silamCoverageFullscreenPage) footer {
   color: var(--silam-accent-green);
   background: rgba(22, 138, 74, 0.075);
   text-decoration: none;
-  transform: none;
+  transform: translateY(-1px);
 }
 
 .navbar__link--active {
@@ -1032,326 +1032,14 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     max-width: max-content !important;
   }
 }
-/* -------------------------------------------------------------------------- */
-/* Mobile sidebar compact width + right-side tools fix                          */
-/* -------------------------------------------------------------------------- */
-
-/* Мобильный drawer не должен раскрываться почти на всю ширину экрана.
-   Держим его достаточно широким для русских названий пунктов меню,
-   но не превращаем в полноэкранную панель. */
-@media (max-width: 996px) {
-  .navbar-sidebar {
-    right: auto !important;
-    width: min(18.5rem, calc(100vw - 2.5rem)) !important;
-    min-width: min(18.5rem, calc(100vw - 2.5rem)) !important;
-    max-width: calc(100vw - 2.5rem) !important;
-  }
-
-  .navbar-sidebar__brand,
-  .navbar-sidebar__items,
-  .navbar-sidebar__item,
-  .navbar-sidebar .menu,
-  .navbar-sidebar .menu__list {
-    box-sizing: border-box !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
-  .navbar-sidebar__brand {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.35rem !important;
-    min-height: var(--ifm-navbar-height) !important;
-    padding: 0 0.65rem !important;
-  }
-
-  .navbar-sidebar__brand .navbar__brand {
-    min-width: 0 !important;
-    max-width: none !important;
-    margin-right: auto !important;
-  }
-
-  /* Кнопка темы и закрытие drawer — справа, как компактные controls. */
-  .navbar-sidebar__brand .clean-btn:not(.navbar-sidebar__close),
-  .navbar-sidebar__brand [class*="colorModeToggle"] {
-    flex: 0 0 auto !important;
-    width: 2.25rem !important;
-    min-width: 2.25rem !important;
-    height: 2.25rem !important;
-    margin-left: 0 !important;
-  }
-
-  .navbar-sidebar__close {
-    flex: 0 0 auto !important;
-    width: 2.25rem !important;
-    min-width: 2.25rem !important;
-    height: 2.25rem !important;
-    margin-left: 0 !important;
-  }
-
-  .navbar-sidebar__items {
-    height: calc(100vh - var(--ifm-navbar-height)) !important;
-    height: calc(100dvh - var(--ifm-navbar-height)) !important;
-    max-height: calc(100vh - var(--ifm-navbar-height)) !important;
-    max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
-    padding: 0.75rem !important;
-  }
-
-  .navbar-sidebar .menu__list {
-    min-width: 0 !important;
-  }
-
-  .navbar-sidebar .menu__link,
-  .navbar-sidebar .navbar__link {
-    box-sizing: border-box !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    white-space: nowrap !important;
-  }
-
-  /* Язык тоже держим справа в мобильном drawer, а не отдельным пунктом меню.
-     Элемент остаётся штатным localeDropdown Docusaurus, только позиционируется
-     как маленькая кнопка рядом с close. */
-  .navbar-sidebar .silamLocaleDropdown {
-    position: absolute !important;
-    top: calc((var(--ifm-navbar-height) - 2.25rem) / 2) !important;
-    right: 3.15rem !important;
-    z-index: 7003 !important;
-    display: flex !important;
-    width: 2.25rem !important;
-    height: 2.25rem !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .navbar-sidebar .silamLocaleDropdown > .navbar__link {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 2.25rem !important;
-    min-width: 2.25rem !important;
-    height: 2.25rem !important;
-    padding: 0 !important;
-    border-radius: 999px !important;
-    overflow: hidden !important;
-    color: var(--silam-accent-green) !important;
-    background: transparent !important;
-    font-size: 0 !important;
-    line-height: 1 !important;
-  }
-
-  .navbar-sidebar .silamLocaleDropdown > .navbar__link::before {
-    content: "文";
-    font-size: 1.15rem;
-    font-weight: 800;
-    line-height: 1;
-  }
-
-  .navbar-sidebar .silamLocaleDropdown > .navbar__link::after {
-    display: none !important;
-  }
-
-  .navbar-sidebar .silamLocaleDropdown > .navbar__link:hover {
-    background: rgba(22, 138, 74, 0.09) !important;
-    transform: none !important;
-  }
-
-  .navbar-sidebar .silamLocaleDropdown .dropdown__menu {
-    position: absolute !important;
-    top: calc(100% + 0.45rem) !important;
-    right: 0 !important;
-    left: auto !important;
-    min-width: 10rem !important;
-    max-width: min(14rem, calc(100vw - 3rem)) !important;
-  }
-
-  /* Если Docusaurus также рендерит localeDropdown в верхней mobile navbar,
-     делаем его такой же компактной правой кнопкой. */
-  .navbar__items--right .silamLocaleDropdown {
-    display: flex !important;
-    flex: 0 0 auto !important;
-    width: 2.25rem !important;
-    min-width: 2.25rem !important;
-    height: 2.25rem !important;
-    margin: 0 !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown > .navbar__link {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 2.25rem !important;
-    min-width: 2.25rem !important;
-    height: 2.25rem !important;
-    padding: 0 !important;
-    border-radius: 999px !important;
-    overflow: hidden !important;
-    color: var(--silam-accent-green) !important;
-    font-size: 0 !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
-    content: "文";
-    font-size: 1.15rem;
-    font-weight: 800;
-    line-height: 1;
-  }
-
-  .navbar__items--right .silamLocaleDropdown > .navbar__link::after {
-    display: none !important;
-  }
-
-  .navbar__items--right {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    gap: 0.25rem !important;
-    flex: 0 0 auto !important;
-    margin-left: auto !important;
-  }
-
-  .navbar__brand {
-    max-width: calc(100vw - 11rem) !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar .silamLocaleDropdown > .navbar__link,
-  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link {
-    color: var(--ifm-color-primary-lightest) !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar .silamLocaleDropdown > .navbar__link:hover,
-  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link:hover {
-    background: rgba(53, 200, 120, 0.10) !important;
-  }
-}
 
 /* -------------------------------------------------------------------------- */
-/* Mobile top navbar tools — single source of truth                             */
+/* Final mobile navbar/sidebar native-controls fix                             */
 /* -------------------------------------------------------------------------- */
 
-/* На mobile язык и переключатель темы должны жить только в верхнем navbar.
-   Штатный mobile drawer Docusaurus может повторно рендерить правые navbar items
-   внутри панели меню; скрываем эти дубликаты только внутри drawer, не меняя
-   native primary/secondary sidebar flow для Releases. */
-@media (max-width: 996px) {
-  /* Убираем дубликаты языка и темы из mobile drawer. Основное меню и native
-     secondary menu Releases остаются штатными и продолжают работать. */
-  .navbar-sidebar .silamLocaleDropdown,
-  .navbar-sidebar__brand .clean-btn:not(.navbar-sidebar__close),
-  .navbar-sidebar__brand [class*="colorModeToggle"] {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
-
-  /* После удаления дубликатов в header drawer остаётся только brand + close. */
-  .navbar-sidebar__brand .navbar__brand {
-    max-width: calc(100% - 3rem) !important;
-  }
-
-  /* Правые controls в верхнем navbar: язык + тема. */
-  .navbar__items--right {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    flex: 0 0 auto !important;
-    gap: 0.25rem !important;
-    margin-left: auto !important;
-    min-width: max-content !important;
-  }
-
-  .navbar__items--right .clean-btn,
-  .navbar__items--right [class*="colorModeToggle"] {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex: 0 0 auto !important;
-    width: 2.25rem !important;
-    min-width: 2.25rem !important;
-    height: 2.25rem !important;
-    border-radius: 999px !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown {
-    display: flex !important;
-    flex: 0 0 auto !important;
-    width: 2.65rem !important;
-    min-width: 2.65rem !important;
-    height: 2.25rem !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown > .navbar__link {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-sizing: border-box !important;
-    width: 2.65rem !important;
-    min-width: 2.65rem !important;
-    height: 2.25rem !important;
-    padding: 0 !important;
-    border-radius: 999px !important;
-    overflow: hidden !important;
-    color: var(--silam-accent-green) !important;
-    background: transparent !important;
-    font-size: 0 !important;
-    line-height: 1 !important;
-    letter-spacing: 0 !important;
-    transform: none !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
-    content: "ENG";
-    font-size: 0.72rem;
-    font-weight: 850;
-    letter-spacing: 0.035em;
-    line-height: 1;
-  }
-
-  html[lang^="ru"] .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
-    content: "RUS";
-  }
-
-  html[lang^="en"] .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
-    content: "ENG";
-  }
-
-  .navbar__items--right .silamLocaleDropdown > .navbar__link::after {
-    display: none !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown > .navbar__link:hover {
-    background: rgba(22, 138, 74, 0.09) !important;
-    transform: none !important;
-  }
-
-  .navbar__items--right .silamLocaleDropdown .dropdown__menu {
-    top: calc(100% + 0.45rem) !important;
-    right: 0 !important;
-    left: auto !important;
-    min-width: 10rem !important;
-    max-width: min(14rem, calc(100vw - 1.5rem)) !important;
-  }
-
-  /* Освобождаем место под hamburger слева и два compact-control справа. */
-  .navbar__brand {
-    max-width: calc(100vw - 10.5rem) !important;
-  }
-
-  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link {
-    color: var(--ifm-color-primary-lightest) !important;
-  }
-
-  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link:hover {
-    background: rgba(53, 200, 120, 0.10) !important;
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* Final mobile navbar controls + no-motion hover fix                          */
-/* -------------------------------------------------------------------------- */
+/* ВАЖНО: этот блок не требует кастомного Navbar/index.js.
+   Используем штатные элементы Docusaurus: localeDropdown и colorModeToggle.
+   CSS только меняет расположение и внешний вид, не подменяя React-логику. */
 
 /* Brand as a product-style button. The same visual language is used on the
    roadmap page: soft green-blue accent, rounded shape and calm glow. */
@@ -1413,111 +1101,182 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
 }
 
 @media (max-width: 996px) {
-  /* Docusaurus renders right navbar items inside the mobile drawer. The real
-     mobile controls are provided by src/theme/Navbar/index.js, so native copies
-     are hidden only on mobile to avoid duplicates. */
-  .navbar__items--right .silamLocaleDropdown,
-  .navbar__items--right [class*="colorModeToggle"],
-  .navbar__items--right [class*="toggleButton"],
-  .navbar__items--right > .clean-btn,
+  /* Мобильный drawer остаётся штатным Docusaurus primary/secondary flow.
+     Поэтому НЕ скрываем clean-btn целиком: secondary menu Releases использует
+     собственные кнопки навигации вроде "Back to main menu". */
+  .navbar-sidebar {
+    right: auto !important;
+    width: min(18.5rem, calc(100vw - 2.5rem)) !important;
+    min-width: min(18.5rem, calc(100vw - 2.5rem)) !important;
+    max-width: calc(100vw - 2.5rem) !important;
+  }
+
+  .navbar-sidebar__brand,
+  .navbar-sidebar__items,
+  .navbar-sidebar__item,
+  .navbar-sidebar .menu,
+  .navbar-sidebar .menu__list {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .navbar-sidebar__brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    height: var(--ifm-navbar-height) !important;
+    padding: 0.55rem 0.75rem !important;
+  }
+
+  .navbar-sidebar__brand .navbar__brand {
+    min-width: 0 !important;
+    max-width: calc(100% - 3rem) !important;
+    flex: 0 1 auto !important;
+  }
+
+  .navbar-sidebar__close {
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+  }
+
+  .navbar-sidebar__items {
+    height: calc(100vh - var(--ifm-navbar-height)) !important;
+    height: calc(100dvh - var(--ifm-navbar-height)) !important;
+    max-height: calc(100vh - var(--ifm-navbar-height)) !important;
+    max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
+    padding: 0.75rem !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .navbar-sidebar .menu__list {
+    min-width: 0 !important;
+  }
+
+  .navbar-sidebar .menu__link,
+  .navbar-sidebar .navbar__link {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    white-space: nowrap !important;
+  }
+
+  /* Дубликаты языка/темы внутри drawer скрываем точечно.
+     Не скрываем все .clean-btn, чтобы не сломать "Back to main menu"
+     и штатное secondary menu Docusaurus на страницах Releases/Blog. */
   .navbar-sidebar .silamLocaleDropdown,
-  .navbar-sidebar [class*="colorModeToggle"],
-  .navbar-sidebar [class*="toggleButton"],
-  .navbar-sidebar__brand .clean-btn:not(.navbar-sidebar__close) {
+  .navbar-sidebar [class*="colorModeToggle"] {
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;
   }
 
-  .silamMobileTopbarControls {
-    position: fixed;
-    top: calc((var(--ifm-navbar-height) - 2.25rem) / 2);
-    right: 0.72rem;
-    z-index: 7100;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.25rem;
-    pointer-events: auto;
+  /* Правые штатные controls в верхнем mobile navbar. */
+  .navbar__items--right {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    gap: 0.25rem !important;
+    margin-left: auto !important;
+    min-width: max-content !important;
   }
 
-  .silamMobileLanguageButton,
-  .silamMobileThemeButton {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    height: 2.25rem;
-    border: 0;
-    border-radius: 999px;
+  .navbar__items--right > *,
+  .navbar__items--right .navbar__item,
+  .navbar__items--right .clean-btn,
+  .navbar__items--right [class*="colorModeToggle"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+  }
+
+  .navbar__items--right .clean-btn,
+  .navbar__items--right [class*="colorModeToggle"] {
+    width: 2.25rem !important;
+    min-width: 2.25rem !important;
+    height: 2.25rem !important;
+    border-radius: 999px !important;
+  }
+
+  .navbar__items--right .silamLocaleDropdown {
+    width: 2.65rem !important;
+    min-width: 2.65rem !important;
+    height: 2.25rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .navbar__items--right .silamLocaleDropdown > .navbar__link {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    width: 2.65rem !important;
+    min-width: 2.65rem !important;
+    height: 2.25rem !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
     color: var(--silam-accent-green) !important;
-    background: rgba(22, 138, 74, 0.08);
-    box-shadow: none;
-    font-weight: 850;
-    line-height: 1;
-    text-decoration: none !important;
-    cursor: pointer;
-    transition:
-      color 180ms ease,
-      background 180ms ease,
-      box-shadow 180ms ease;
-  }
-
-  .silamMobileLanguageButton {
-    width: 2.72rem;
-    min-width: 2.72rem;
-    padding: 0;
-    font-size: 0.72rem;
-    letter-spacing: 0.035em;
-  }
-
-  .silamMobileThemeButton {
-    width: 2.25rem;
-    min-width: 2.25rem;
-    padding: 0;
-    font-size: 1.05rem;
-  }
-
-  .silamMobileLanguageButton:hover,
-  .silamMobileThemeButton:hover {
-    color: var(--silam-accent-green) !important;
-    background: rgba(22, 138, 74, 0.12);
-    box-shadow: 0 10px 24px rgba(22, 138, 74, 0.12);
+    background: transparent !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
     transform: none !important;
   }
 
-  .silamMobileLanguageButton:focus-visible,
-  .silamMobileThemeButton:focus-visible {
-    outline: 2px solid rgba(21, 112, 239, 0.55);
-    outline-offset: 2px;
+  .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
+    content: "ENG";
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.035em;
+    line-height: 1;
   }
 
-  /* Leave space for the fixed mobile language/theme controls. */
-  .navbar__brand {
-    max-width: calc(100vw - 10.7rem) !important;
+  html[lang^="ru"] .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
+    content: "RUS";
   }
 
-  .navbar-sidebar__brand .navbar__brand {
-    max-width: calc(100% - 3rem) !important;
+  html[lang^="en"] .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
+    content: "ENG";
   }
 
-  html[data-theme='dark'] .silamMobileLanguageButton,
-  html[data-theme='dark'] .silamMobileThemeButton {
-    color: var(--ifm-color-primary-lightest) !important;
-    background: rgba(53, 200, 120, 0.10);
-  }
-
-  html[data-theme='dark'] .silamMobileLanguageButton:hover,
-  html[data-theme='dark'] .silamMobileThemeButton:hover {
-    color: var(--ifm-color-primary-lightest) !important;
-    background: rgba(53, 200, 120, 0.15);
-    box-shadow: 0 10px 24px rgba(53, 200, 120, 0.12);
-  }
-}
-
-@media (min-width: 997px) {
-  .silamMobileTopbarControls {
+  .navbar__items--right .silamLocaleDropdown > .navbar__link::after {
     display: none !important;
+  }
+
+  .navbar__items--right .silamLocaleDropdown > .navbar__link:hover,
+  .navbar__items--right .clean-btn:hover,
+  .navbar__items--right [class*="colorModeToggle"]:hover {
+    background: rgba(22, 138, 74, 0.09) !important;
+    transform: none !important;
+  }
+
+  .navbar__items--right .silamLocaleDropdown .dropdown__menu {
+    top: calc(100% + 0.45rem) !important;
+    right: 0 !important;
+    left: auto !important;
+    min-width: 10rem !important;
+    max-width: min(14rem, calc(100vw - 1.5rem)) !important;
+  }
+
+  /* Освобождаем место под hamburger слева и два compact-control справа. */
+  .navbar__brand {
+    max-width: calc(100vw - 10.5rem) !important;
+  }
+
+  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link {
+    color: var(--ifm-color-primary-lightest) !important;
+  }
+
+  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link:hover,
+  html[data-theme='dark'] .navbar__items--right .clean-btn:hover,
+  html[data-theme='dark'] .navbar__items--right [class*="colorModeToggle"]:hover {
+    background: rgba(53, 200, 120, 0.10) !important;
   }
 }
 
