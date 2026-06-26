@@ -1,3 +1,10 @@
+/* SILAM Pollen roadmap page styles.
+ * Place this content into: website/src/pages/roadmap.module.css
+ *
+ * Файл намеренно содержит только локальную композицию страницы roadmap.
+ * Глобальная дизайн-система, navbar/sidebar/footer и общие токены живут в custom.css.
+ */
+
 .hero {
   position: relative;
   display: grid;
@@ -7,12 +14,13 @@
   margin: 1.5rem 0 2rem;
   padding: clamp(1.5rem, 4vw, 3rem);
   overflow: hidden;
-  border: 1px solid var(--ifm-color-emphasis-200);
-  border-radius: 28px;
+  border: 1px solid var(--silam-card-border);
+  border-radius: var(--silam-radius-hero);
   background:
-    radial-gradient(circle at top left, rgba(50, 217, 143, 0.22), transparent 34rem),
-    radial-gradient(circle at bottom right, rgba(77, 171, 247, 0.18), transparent 28rem),
-    linear-gradient(135deg, rgba(25, 135, 84, 0.10), rgba(13, 110, 253, 0.07));
+    radial-gradient(circle at top left, rgb(var(--silam-accent-mint-rgb) / 0.22), transparent 34rem),
+    radial-gradient(circle at bottom right, rgb(var(--silam-accent-blue-rgb) / 0.18), transparent 28rem),
+    linear-gradient(135deg, rgb(var(--silam-accent-green-rgb) / 0.10), rgb(var(--silam-accent-blue-rgb) / 0.07));
+  box-shadow: var(--silam-card-shadow);
 }
 
 .hero::before {
@@ -21,8 +29,8 @@
   pointer-events: none;
   content: '';
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    linear-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.06) 1px, transparent 1px);
   background-size: 34px 34px;
   mask-image: linear-gradient(120deg, black, transparent 80%);
 }
@@ -39,10 +47,10 @@
   align-items: center;
   margin-bottom: 0.75rem;
   padding: 0.35rem 0.65rem;
-  border: 1px solid rgba(46, 204, 113, 0.35);
-  border-radius: 999px;
+  border: 1px solid rgb(var(--silam-accent-mint-rgb) / 0.35);
+  border-radius: var(--silam-radius-pill);
   color: var(--ifm-color-primary-dark);
-  background: rgba(46, 204, 113, 0.12);
+  background: rgb(var(--silam-accent-mint-rgb) / 0.12);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -60,7 +68,7 @@
 .heroText {
   max-width: 760px;
   margin: 1.25rem 0 0;
-  color: var(--ifm-color-emphasis-700);
+  color: var(--silam-text-soft);
   font-size: 1.08rem;
 }
 
@@ -78,21 +86,21 @@
   justify-content: center;
   min-height: 44px;
   padding: 0.65rem 1rem;
-  border-radius: 999px;
+  border-radius: var(--silam-radius-pill);
   font-weight: 750;
   text-decoration: none !important;
 }
 
 .primaryButton {
-  color: white !important;
-  background: linear-gradient(135deg, #168a4a, #1570ef);
-  box-shadow: 0 16px 36px rgba(21, 112, 239, 0.22);
+  color: var(--silam-text-inverse) !important;
+  background: var(--silam-gradient-accent);
+  box-shadow: 0 16px 36px rgb(var(--silam-accent-blue-rgb) / 0.22);
 }
 
 .secondaryButton {
-  border: 1px solid var(--ifm-color-emphasis-300);
-  color: var(--ifm-font-color-base) !important;
-  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--silam-card-border);
+  color: var(--silam-text-main) !important;
+  background: var(--silam-card-surface);
 }
 
 .heroPanel {
@@ -103,16 +111,12 @@
 
 .signalCard {
   padding: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.68);
-  box-shadow: 0 18px 44px rgba(31, 41, 55, 0.08);
-  backdrop-filter: blur(16px);
-}
-
-[data-theme='dark'] .signalCard {
-  border-color: rgba(255, 255, 255, 0.10);
-  background: rgba(20, 24, 31, 0.68);
+  border: 1px solid var(--silam-glass-border);
+  border-radius: var(--silam-radius-2xl);
+  background: var(--silam-glass-surface-strong);
+  box-shadow: var(--silam-glass-shadow);
+  backdrop-filter: var(--silam-glass-filter-soft);
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft);
 }
 
 .signalCard strong,
@@ -122,7 +126,7 @@
 
 .signalCard small {
   margin-top: 0.15rem;
-  color: var(--ifm-color-emphasis-700);
+  color: var(--silam-text-soft);
 }
 
 .signalIcon,
@@ -132,8 +136,8 @@
   height: 44px;
   place-items: center;
   margin-bottom: 0.65rem;
-  border-radius: 16px;
-  background: rgba(46, 204, 113, 0.16);
+  border-radius: var(--silam-radius-lg);
+  background: rgb(var(--silam-accent-mint-rgb) / 0.16);
   font-size: 1.45rem;
 }
 
@@ -141,8 +145,8 @@
   margin: 1.5rem 0 2rem;
   padding: 1rem 1.15rem;
   border-left: 4px solid var(--ifm-color-primary);
-  border-radius: 14px;
-  background: var(--ifm-color-emphasis-100);
+  border-radius: var(--silam-radius-md);
+  background: var(--silam-bg-surface-soft);
 }
 
 .roadmapStrip {
@@ -151,20 +155,20 @@
   grid-template-columns: repeat(7, minmax(130px, 1fr));
   gap: 0.85rem;
   margin: 1.5rem 0 2rem;
-  overflow-x: auto;
   padding: 0.35rem 0.1rem 0.8rem;
+  overflow-x: auto;
 }
 
 .step {
   position: relative;
   min-width: 132px;
   padding: 1rem;
-  border: 1px solid var(--ifm-color-emphasis-200);
-  border-radius: 18px;
-  color: var(--ifm-font-color-base) !important;
-  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--silam-card-border);
+  border-radius: var(--silam-radius-xl);
+  color: var(--silam-text-main) !important;
+  background: var(--silam-card-surface);
   text-decoration: none !important;
-  box-shadow: 0 10px 28px rgba(31, 41, 55, 0.06);
+  box-shadow: var(--silam-card-shadow);
 }
 
 .step::after {
@@ -174,7 +178,7 @@
   width: 0.65rem;
   height: 2px;
   content: '';
-  background: var(--ifm-color-emphasis-300);
+  background: var(--silam-border-strong);
 }
 
 .step:last-child::after {
@@ -202,12 +206,17 @@
 
 .step small {
   margin-top: 0.15rem;
-  color: var(--ifm-color-emphasis-700);
+  color: var(--silam-text-soft);
 }
 
 .activeStep {
-  border-color: rgba(46, 204, 113, 0.45);
-  background: linear-gradient(180deg, rgba(46, 204, 113, 0.16), rgba(77, 171, 247, 0.08));
+  border-color: rgb(var(--silam-accent-mint-rgb) / 0.45);
+  background:
+    linear-gradient(
+      180deg,
+      rgb(var(--silam-accent-mint-rgb) / 0.16),
+      rgb(var(--silam-accent-blue-rgb) / 0.08)
+    );
 }
 
 .futureStep {
@@ -217,7 +226,6 @@
 .sectionHeader {
   margin: 3rem 0 1.25rem;
 }
-
 
 .endpointSectionHeader {
   margin-top: 4.75rem;
@@ -238,13 +246,14 @@
 .releaseCard,
 .futureCard,
 .endpointGrid > div {
-  border: 1px solid var(--ifm-color-emphasis-200);
-  border-radius: 22px;
-  background: var(--ifm-background-surface-color);
-  box-shadow: 0 14px 36px rgba(31, 41, 55, 0.06);
+  border: 1px solid var(--silam-card-border);
+  border-radius: var(--silam-radius-3xl);
+  background: var(--silam-card-surface);
+  box-shadow: var(--silam-card-shadow);
 }
 
-.releaseCard {
+.releaseCard,
+.futureCard {
   padding: 1.15rem;
 }
 
@@ -257,7 +266,7 @@
 .releaseCard p,
 .futureCard p,
 .endpointGrid p {
-  color: var(--ifm-color-emphasis-700);
+  color: var(--silam-text-soft);
 }
 
 .releaseCard ul {
@@ -280,24 +289,24 @@
   align-items: center;
   min-height: 28px;
   padding: 0.25rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--silam-radius-pill);
   font-size: 0.78rem;
   font-weight: 800;
 }
 
 .versionBadge {
   color: var(--ifm-color-primary-darkest);
-  background: rgba(46, 204, 113, 0.15);
+  background: rgb(var(--silam-accent-mint-rgb) / 0.15);
 }
 
 .statusBadge {
-  color: white;
-  background: linear-gradient(135deg, #168a4a, #1570ef);
+  color: var(--silam-text-inverse);
+  background: var(--silam-gradient-accent);
 }
 
 .statusBadgeMuted {
-  color: var(--ifm-color-emphasis-700);
-  background: var(--ifm-color-emphasis-100);
+  color: var(--silam-text-soft);
+  background: var(--silam-bg-surface-soft);
 }
 
 .timelineSample {
@@ -307,31 +316,27 @@
   align-items: center;
   margin: 1rem 0;
   padding: 0.85rem;
-  border-radius: 16px;
-  background: linear-gradient(90deg, rgba(46, 204, 113, 0.12), rgba(77, 171, 247, 0.12));
+  border-radius: var(--silam-radius-lg);
+  background: var(--silam-gradient-soft-accent);
 }
 
 .timelineSample span,
 .timelineSample strong {
   padding: 0.28rem 0.5rem;
-  border-radius: 999px;
-  background: var(--ifm-background-surface-color);
+  border-radius: var(--silam-radius-pill);
+  background: var(--silam-card-surface);
   font-size: 0.78rem;
 }
 
 .timelineSample strong {
-  color: white;
-  background: var(--ifm-color-primary);
+  color: var(--silam-text-inverse);
+  background: var(--silam-accent-green);
 }
 
 .futureGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
-}
-
-.futureCard {
-  padding: 1.15rem;
 }
 
 .endpointGrid {
@@ -366,8 +371,8 @@
 
 @media (max-width: 640px) {
   .hero {
-    border-radius: 22px;
     padding: 1.25rem;
+    border-radius: var(--silam-radius-3xl);
   }
 
   .heroActions {

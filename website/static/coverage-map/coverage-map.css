@@ -13,12 +13,23 @@ html[data-theme="light"] {
 
   --ui-bg: #f7fbfb;
   --ui-text: #153235;
-  --ui-accent: #22b8a0;
 
-  --ui-glass-panel: rgba(255, 255, 255, 0.40);
-  --ui-glass-text: #153235;
-  --ui-glass-border: rgba(24, 121, 113, 0.22);
-  --ui-glass-shadow: 0 18px 46px rgba(9, 74, 72, 0.18);
+  /* Общий glass layer синхронизирован с website/src/css/custom.css. */
+  --silam-glass-text: #153235;
+  --silam-glass-accent: #22b8a0;
+  --silam-glass-surface: rgba(255, 255, 255, 0.40);
+  --silam-glass-border: rgba(24, 121, 113, 0.22);
+  --silam-glass-shadow: 0 18px 46px rgba(9, 74, 72, 0.18);
+  --silam-glass-blur: 18px;
+  --silam-glass-saturation: 150%;
+  --silam-glass-filter: blur(var(--silam-glass-blur)) saturate(var(--silam-glass-saturation));
+
+  /* Legacy aliases для существующих селекторов карты. */
+  --ui-accent: var(--silam-glass-accent);
+  --ui-glass-panel: var(--silam-glass-surface);
+  --ui-glass-text: var(--silam-glass-text);
+  --ui-glass-border: var(--silam-glass-border);
+  --ui-glass-shadow: var(--silam-glass-shadow);
 
   --ui-attribution-text: #153235;
   --ui-attribution-link: #153235;
@@ -31,12 +42,12 @@ html[data-theme="light"] {
 html[data-theme="dark"] {
   --ui-bg: #071314;
   --ui-text: #e8fffb;
-  --ui-accent: #6ee7d8;
 
-  --ui-glass-panel: rgba(9, 28, 30, 0.40);
-  --ui-glass-text: #e8fffb;
-  --ui-glass-border: rgba(110, 231, 216, 0.24);
-  --ui-glass-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+  --silam-glass-text: #e8fffb;
+  --silam-glass-accent: #6ee7d8;
+  --silam-glass-surface: rgba(9, 28, 30, 0.40);
+  --silam-glass-border: rgba(110, 231, 216, 0.24);
+  --silam-glass-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
 
   --ui-attribution-text: #e8fffb;
   --ui-attribution-link: #bfeeff;
@@ -117,8 +128,8 @@ html[data-theme="dark"] .ol-layer canvas {
   background-color: var(--ui-glass-panel) !important;
   border: 1px solid var(--ui-glass-border) !important;
   box-shadow: var(--ui-glass-shadow) !important;
-  backdrop-filter: blur(18px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+  backdrop-filter: var(--silam-glass-filter) !important;
+  -webkit-backdrop-filter: var(--silam-glass-filter) !important;
 }
 
 .legend-control,
@@ -565,8 +576,8 @@ html[data-theme="dark"] .center-pointer {
   background: var(--ui-glass-panel);
   border: 1px solid var(--ui-glass-border);
   box-shadow: var(--ui-glass-shadow);
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: var(--silam-glass-filter);
+  -webkit-backdrop-filter: var(--silam-glass-filter);
 
   font: var(--ui-font-size) / 1.35 var(--ui-font-family);
   transform: translate(-50%, -50%);
@@ -754,8 +765,8 @@ html[data-theme="dark"] .center-pointer {
   background: var(--ui-glass-panel);
   border: 1px solid var(--ui-glass-border);
   box-shadow: var(--ui-glass-shadow);
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: var(--silam-glass-filter);
+  -webkit-backdrop-filter: var(--silam-glass-filter);
 
   font: var(--ui-font-size) / 1.2 var(--ui-font-family);
   white-space: nowrap;

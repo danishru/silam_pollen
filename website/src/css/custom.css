@@ -1,6 +1,14 @@
 /* SILAM Pollen global Docusaurus style
  * Place this content into: website/src/css/custom.css
- * If your site already has custom.css, replace it with this file content carefully.
+ *
+ * Назначение файла:
+ * - глобальные токены дизайна SILAM;
+ * - Docusaurus layout: navbar, mobile drawer, footer;
+ * - общие элементы: ссылки, кнопки, карточки, таблицы, code blocks;
+ * - глобальные фиксы fullscreen coverage page.
+ *
+ * Page-specific стили, например roadmap.module.css и coverage.module.css,
+ * должны оставаться в своих module.css файлах.
  */
 
 :root {
@@ -25,21 +33,135 @@
   --silam-accent-green: #168a4a;
   --silam-accent-blue: #1570ef;
   --silam-accent-mint: #2ecc71;
+  --silam-accent-green-rgb: 22 138 74;
+  --silam-accent-blue-rgb: 21 112 239;
+  --silam-accent-mint-rgb: 46 204 113;
+
+  /* Semantic light theme tokens: используйте их в глобальных и page-module стилях. */
+  --silam-bg-page: #f8fbfa;
+  --silam-bg-surface: rgb(255 255 255 / 0.86);
+  --silam-bg-surface-solid: #ffffff;
+  --silam-bg-surface-soft: rgb(240 253 244 / 0.72);
+  --silam-bg-elevated: rgb(255 255 255 / 0.96);
+  --silam-bg-drawer:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255),
+      rgb(240 253 244)
+    );
+
+  --silam-text-main: #111827;
+  --silam-text-soft: rgb(17 24 39 / 0.74);
+  --silam-text-muted: rgb(17 24 39 / 0.62);
+  --silam-text-inverse: #ffffff;
+
+  --silam-border-soft: rgb(var(--silam-accent-green-rgb) / 0.14);
+  --silam-border-strong: rgb(var(--silam-accent-green-rgb) / 0.26);
+
+  --silam-shadow-soft: 0 14px 36px rgb(31 41 55 / 0.06);
+  --silam-shadow-card: 0 18px 44px rgb(31 41 55 / 0.08);
+  --silam-shadow-elevated: 0 24px 70px rgb(31 41 55 / 0.14);
+
+  /* Infima mapping: Docusaurus тоже получает общую базу SILAM. */
+  --ifm-background-color: var(--silam-bg-page);
+  --ifm-background-surface-color: var(--silam-bg-surface-solid);
+  --ifm-font-color-base: var(--silam-text-main);
+
+  /* Shared geometry/effects tokens */
+  --silam-radius-sm: 12px;
+  --silam-radius-md: 14px;
+  --silam-radius-lg: 16px;
+  --silam-radius-xl: 18px;
+  --silam-radius-2xl: 20px;
+  --silam-radius-3xl: 22px;
+  --silam-radius-hero: 28px;
+  --silam-radius-pill: 999px;
+  --silam-gradient-accent: linear-gradient(135deg, var(--silam-accent-green), var(--silam-accent-blue));
+  --silam-navbar-active-line: linear-gradient(90deg, var(--silam-accent-green), var(--silam-accent-blue));
+  --silam-brand-idle-text:
+    linear-gradient(135deg, var(--silam-accent-green), var(--silam-accent-blue));
+  --silam-brand-height: 2.25rem;
+  --silam-brand-idle-panel:
+    linear-gradient(135deg,
+      rgb(var(--silam-accent-green-rgb) / 0.085),
+      rgb(var(--silam-accent-blue-rgb) / 0.070)
+    );
+  --silam-brand-idle-border-color: rgb(24 121 113 / 0.16);
+  --silam-brand-idle-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    0 0 0 1px rgb(255 255 255 / 0.020);
+  --silam-brand-active-panel: var(--silam-gradient-accent);
+  --silam-brand-active-shadow:
+    0 12px 30px rgb(var(--silam-accent-blue-rgb) / 0.20),
+    inset 0 1px 0 rgb(255 255 255 / 0.28);
+  --silam-gradient-soft-accent: linear-gradient(90deg, rgb(var(--silam-accent-mint-rgb) / 0.12), rgb(var(--silam-accent-blue-rgb) / 0.12));
+
   --silam-page-gradient:
-    radial-gradient(circle at 12% -10%, rgba(50, 217, 143, 0.16), transparent 34rem),
-    radial-gradient(circle at 88% 8%, rgba(77, 171, 247, 0.14), transparent 30rem);
-  --silam-card-border: var(--ifm-color-emphasis-200);
-  --silam-card-shadow: 0 14px 36px rgba(31, 41, 55, 0.06);
-  --silam-card-shadow-strong: 0 18px 44px rgba(31, 41, 55, 0.10);
-  --silam-soft-surface: rgba(255, 255, 255, 0.72);
+    radial-gradient(circle at 12% -10%, rgb(var(--silam-accent-mint-rgb) / 0.16), transparent 34rem),
+    radial-gradient(circle at 88% 8%, rgb(77 171 247 / 0.14), transparent 30rem);
 
-  /* Glass navbar tokens copied from coverage map legend-control. */
-  --silam-navbar-glass-panel: rgba(255, 255, 255, 0.40);
-  --silam-navbar-glass-text: #153235;
-  --silam-navbar-glass-border: rgba(24, 121, 113, 0.22);
-  --silam-navbar-glass-shadow: 0 18px 46px rgba(9, 74, 72, 0.18);
+  --silam-card-border: var(--silam-border-soft);
+  --silam-card-surface: var(--silam-bg-surface);
+  --silam-card-shadow: var(--silam-shadow-soft);
+  --silam-card-shadow-strong: var(--silam-shadow-card);
+  --silam-soft-surface: var(--silam-bg-surface-soft);
 
-  --docusaurus-highlighted-code-line-bg: rgba(21, 112, 239, 0.12);
+  /* Shared glass tokens: единый эффект стекла для navbar, меню, карты и page components. */
+  --silam-glass-text: #153235;
+  --silam-glass-accent: #22b8a0;
+  --silam-glass-surface: rgb(255 255 255 / 0.40);
+  --silam-glass-surface-strong: rgb(255 255 255 / 0.56);
+  --silam-glass-surface-elevated: rgb(255 255 255 / 0.72);
+  --silam-glass-border: rgb(24 121 113 / 0.22);
+  --silam-glass-shadow: 0 18px 46px rgb(9 74 72 / 0.18);
+  --silam-glass-blur: 18px;
+  --silam-glass-saturation: 150%;
+  --silam-glass-filter: blur(var(--silam-glass-blur)) saturate(var(--silam-glass-saturation));
+  --silam-glass-filter-soft: blur(14px) saturate(145%);
+
+  /* Backward-compatible aliases for existing navbar rules. */
+  --silam-navbar-glass-panel: var(--silam-glass-surface);
+  --silam-navbar-glass-text: var(--silam-glass-text);
+  --silam-navbar-glass-border: var(--silam-glass-border);
+  --silam-navbar-glass-shadow: var(--silam-glass-shadow);
+
+  --silam-menu-hover-text: var(--silam-accent-green);
+  --silam-menu-hover-panel:
+    linear-gradient(
+      135deg,
+      rgb(var(--silam-accent-green-rgb) / 0.105),
+      rgb(var(--silam-accent-blue-rgb) / 0.075)
+    );
+  --silam-menu-active-panel:
+    linear-gradient(
+      135deg,
+      rgb(var(--silam-accent-green-rgb) / 0.15),
+      rgb(var(--silam-accent-blue-rgb) / 0.10)
+    );
+  --silam-menu-active-panel-strong:
+    linear-gradient(
+      135deg,
+      rgb(var(--silam-accent-green-rgb) / 0.17),
+      rgb(var(--silam-accent-blue-rgb) / 0.12)
+    );
+  --silam-menu-hover-shadow:
+    inset 0 0 0 1px rgb(var(--silam-accent-green-rgb) / 0.065),
+    0 0 0 1px rgb(var(--silam-accent-blue-rgb) / 0.025),
+    0 0 5px rgb(var(--silam-accent-green-rgb) / 0.035);
+  --silam-menu-active-shadow:
+    inset 0 0 0 1px rgb(var(--silam-accent-green-rgb) / 0.22),
+    0 0 0 1px rgb(var(--silam-accent-blue-rgb) / 0.095),
+    -4px 0 11px rgb(var(--silam-accent-green-rgb) / 0.12),
+    4px 0 11px rgb(var(--silam-accent-blue-rgb) / 0.10),
+    0 0 16px rgb(var(--silam-accent-mint-rgb) / 0.055);
+  --silam-menu-active-glow-gradient:
+    linear-gradient(
+      90deg,
+      rgb(var(--silam-accent-green-rgb) / 0.15),
+      rgb(var(--silam-accent-blue-rgb) / 0.13)
+    );
+
+  --docusaurus-highlighted-code-line-bg: rgb(var(--silam-accent-blue-rgb) / 0.12);
 }
 
 html[data-theme='dark'] {
@@ -53,57 +175,147 @@ html[data-theme='dark'] {
 
   --ifm-link-color: #7ab7ff;
   --ifm-link-hover-color: #8ee7b4;
+  --silam-navbar-active-line: linear-gradient(90deg, #35c878, #7ab7ff);
+  --silam-brand-idle-text: linear-gradient(135deg, #8ee7b4, #7ab7ff);
+  --silam-brand-idle-panel:
+    linear-gradient(135deg,
+      rgb(53 200 120 / 0.100),
+      rgb(122 183 255 / 0.080)
+    );
+  --silam-brand-idle-border-color: rgb(110 231 216 / 0.16);
+  --silam-brand-idle-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.075),
+    0 0 0 1px rgb(255 255 255 / 0.012);
+  --silam-brand-active-panel: var(--silam-gradient-accent);
+  --silam-brand-active-shadow:
+    0 12px 30px rgb(var(--silam-accent-blue-rgb) / 0.20),
+    inset 0 1px 0 rgb(255 255 255 / 0.24);
   --ifm-navbar-link-hover-color: var(--ifm-color-primary);
   --ifm-menu-color-active: var(--ifm-color-primary);
-  --ifm-background-color: #0b1117;
-  --ifm-background-surface-color: #111923;
+  --ifm-background-color: var(--silam-bg-page);
+  --ifm-background-surface-color: var(--silam-bg-surface-solid);
+
+  --silam-bg-page: #0b1117;
+  --silam-bg-surface: rgb(17 25 35 / 0.78);
+  --silam-bg-surface-solid: #111923;
+  --silam-bg-surface-soft: rgb(17 25 35 / 0.72);
+  --silam-bg-elevated: rgb(9 28 30 / 0.62);
+  --silam-bg-drawer:
+    linear-gradient(
+      180deg,
+      rgb(11 17 23),
+      rgb(17 25 35)
+    );
+
+  --silam-text-main: #f8fafc;
+  --silam-text-soft: rgb(248 250 252 / 0.76);
+  --silam-text-muted: rgb(248 250 252 / 0.62);
+  --silam-text-inverse: #ffffff;
+
+  --silam-border-soft: rgb(255 255 255 / 0.10);
+  --silam-border-strong: rgb(128 233 173 / 0.22);
+
+  --silam-shadow-soft: 0 14px 36px rgb(0 0 0 / 0.24);
+  --silam-shadow-card: 0 18px 44px rgb(0 0 0 / 0.34);
+  --silam-shadow-elevated: 0 24px 70px rgb(0 0 0 / 0.42);
 
   --silam-page-gradient:
-    radial-gradient(circle at 12% -10%, rgba(50, 217, 143, 0.12), transparent 34rem),
-    radial-gradient(circle at 88% 8%, rgba(77, 171, 247, 0.12), transparent 30rem);
-  --silam-card-border: rgba(255, 255, 255, 0.10);
-  --silam-card-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
-  --silam-card-shadow-strong: 0 18px 44px rgba(0, 0, 0, 0.34);
-  --silam-soft-surface: rgba(17, 25, 35, 0.72);
+    radial-gradient(circle at 12% -10%, rgb(var(--silam-accent-mint-rgb) / 0.12), transparent 34rem),
+    radial-gradient(circle at 88% 8%, rgb(77 171 247 / 0.12), transparent 30rem);
 
-  /* Glass navbar tokens copied from coverage map legend-control. */
-  --silam-navbar-glass-panel: rgba(9, 28, 30, 0.40);
-  --silam-navbar-glass-text: #e8fffb;
-  --silam-navbar-glass-border: rgba(110, 231, 216, 0.24);
-  --silam-navbar-glass-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+  --silam-card-border: var(--silam-border-soft);
+  --silam-card-surface: var(--silam-bg-surface);
+  --silam-card-shadow: var(--silam-shadow-soft);
+  --silam-card-shadow-strong: var(--silam-shadow-card);
+  --silam-soft-surface: var(--silam-bg-surface-soft);
 
-  --docusaurus-highlighted-code-line-bg: rgba(122, 183, 255, 0.14);
+  --silam-glass-text: #e8fffb;
+  --silam-glass-accent: #6ee7d8;
+  --silam-glass-surface: rgb(9 28 30 / 0.40);
+  --silam-glass-surface-strong: rgb(9 28 30 / 0.56);
+  --silam-glass-surface-elevated: rgb(9 28 30 / 0.72);
+  --silam-glass-border: rgb(110 231 216 / 0.24);
+  --silam-glass-shadow: 0 18px 48px rgb(0 0 0 / 0.34);
+
+  --silam-navbar-glass-panel: var(--silam-glass-surface);
+  --silam-navbar-glass-text: var(--silam-glass-text);
+  --silam-navbar-glass-border: var(--silam-glass-border);
+  --silam-navbar-glass-shadow: var(--silam-glass-shadow);
+
+  --silam-menu-hover-text: #dfffee;
+  --silam-menu-hover-panel:
+    linear-gradient(
+      135deg,
+      rgb(128 233 173 / 0.12),
+      rgb(122 183 255 / 0.09)
+    );
+  --silam-menu-active-panel:
+    linear-gradient(
+      135deg,
+      rgb(128 233 173 / 0.15),
+      rgb(122 183 255 / 0.10)
+    );
+  --silam-menu-active-panel-strong:
+    linear-gradient(
+      135deg,
+      rgb(128 233 173 / 0.18),
+      rgb(122 183 255 / 0.13)
+    );
+  --silam-menu-hover-shadow:
+    inset 0 0 0 1px rgb(128 233 173 / 0.090),
+    0 0 0 1px rgb(122 183 255 / 0.035),
+    0 0 6px rgb(128 233 173 / 0.045);
+  --silam-menu-active-shadow:
+    inset 0 0 0 1px rgb(128 233 173 / 0.26),
+    0 0 0 1px rgb(122 183 255 / 0.11),
+    -3px 0 10px rgb(128 233 173 / 0.13),
+    3px 0 10px rgb(122 183 255 / 0.11),
+    0 0 15px rgb(53 200 120 / 0.055);
+  --silam-menu-active-glow-gradient:
+    linear-gradient(
+      90deg,
+      rgb(128 233 173 / 0.18),
+      rgb(122 183 255 / 0.16)
+    );
+
+  --docusaurus-highlighted-code-line-bg: rgb(122 183 255 / 0.14);
 }
+
+/* -------------------------------------------------------------------------- */
+/* Shared glass utilities                                                       */
+/* -------------------------------------------------------------------------- */
+
+.silamGlassSurface {
+  border: 1px solid var(--silam-glass-border);
+  background: var(--silam-glass-surface);
+  box-shadow: var(--silam-glass-shadow);
+  backdrop-filter: var(--silam-glass-filter);
+  -webkit-backdrop-filter: var(--silam-glass-filter);
+}
+
+.silamGlassSurfaceStrong {
+  border: 1px solid var(--silam-glass-border);
+  background: var(--silam-glass-surface-strong);
+  box-shadow: var(--silam-glass-shadow);
+  backdrop-filter: var(--silam-glass-filter);
+  -webkit-backdrop-filter: var(--silam-glass-filter);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Base layout and content                                                     */
+/* -------------------------------------------------------------------------- */
 
 html {
   scroll-behavior: smooth;
 }
 
 body {
+  color: var(--silam-text-main);
+  background-color: var(--silam-bg-page);
   background-image: var(--silam-page-gradient);
   background-attachment: fixed;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Stable desktop navbar without visible scrollbar gutter                      */
-/* -------------------------------------------------------------------------- */
-
-/* Не резервируем искусственный gutter у всей страницы: он создаёт видимую
-   правую полосу на full-bleed страницах. Вместо этого стабилизируем только
-   содержимое navbar.
-
-   100vw включает вертикальный scrollbar, а 100% — ширину layout viewport
-   без scrollbar. На страницах со scrollbar сдвигаем navbar__inner вправо
-   на половину этой разницы, чтобы центр меню совпадал со страницами без
-   scrollbar. На fullscreen coverage page разница равна 0, поэтому сдвига нет. */
-@media (min-width: 997px) {
-  .navbar__inner {
-    position: relative;
-    left: calc((100vw - 100%) / 2);
-  }
-}
-
-/* Keep links close to the roadmap visual language across docs, blog and pages. */
 a {
   font-weight: 600;
   text-underline-offset: 0.18em;
@@ -117,7 +329,6 @@ a {
   text-decoration-thickness: 0.12em;
 }
 
-/* Slightly more polished article typography. */
 .markdown > h1,
 .markdown > h2,
 .markdown > h3 {
@@ -128,274 +339,514 @@ a {
   margin-top: 2.75rem;
 }
 
-/* Cards/admonitions blend better with the roadmap page. */
 .card,
 .theme-admonition,
 .alert {
-  border-color: var(--silam-card-border);
-  border-radius: 18px;
-  box-shadow: var(--silam-card-shadow);
+  border-color: var(--silam-border-soft);
+  border-radius: var(--silam-radius-xl);
+  box-shadow: var(--silam-shadow-soft);
 }
 
 .theme-admonition {
-  background: var(--ifm-background-surface-color);
+  background: var(--silam-bg-surface);
 }
 
-/* Navbar/footer polish without changing Docusaurus structure. */
-.navbar {
-  height: 4rem;
-  border-bottom: 1px solid rgba(22, 138, 74, 0.14);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.9),
-      rgba(240, 253, 244, 0.82)
-    ) !important;
-  box-shadow: 0 14px 38px rgba(31, 41, 55, 0.06);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+.button--primary,
+.button.button--primary {
+  border: 0;
+  background: var(--silam-gradient-accent);
+  box-shadow: 0 12px 30px rgb(var(--silam-accent-blue-rgb) / 0.20);
 }
 
-/* Keep Docusaurus navbar and mobile sidebar above fullscreen iframes/maps. */
-.navbar {
-  z-index: 2000;
+.button--primary:hover,
+.button.button--primary:hover {
+  filter: brightness(1.04);
 }
 
-.navbar-sidebar,
-.navbar-sidebar__backdrop {
-  z-index: 2100;
+.markdown table {
+  overflow: hidden;
+  border-radius: var(--silam-radius-lg);
+  box-shadow: var(--silam-card-shadow);
+}
+
+.markdown table thead tr {
+  background: linear-gradient(90deg, rgb(var(--silam-accent-mint-rgb) / 0.12), rgb(77 171 247 / 0.12));
+}
+
+div[class^='codeBlockContainer_'] {
+  border: 1px solid var(--silam-card-border);
+  border-radius: var(--silam-radius-xl);
+  box-shadow: var(--silam-card-shadow);
+}
+
+.DocSearch-Button {
+  border: 1px solid var(--silam-card-border);
+  border-radius: var(--silam-radius-pill);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Navbar: shared desktop/mobile shell                                          */
+/* -------------------------------------------------------------------------- */
+
+.navbar,
+.navbar.navbar--fixed-top {
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  height: var(--ifm-navbar-height);
+  overflow: visible !important;
+  border-bottom: 0 !important;
+  color: var(--silam-glass-text) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Стекло navbar вынесено в отдельный слой.
+   Важно: backdrop-filter не должен висеть на самой .navbar, иначе вложенный
+   dropdown получает backdrop-root от navbar и не размывает страницу под меню. */
+.navbar::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  content: '';
+  border-bottom: 1px solid var(--silam-glass-border);
+  background: var(--silam-glass-surface);
+  background-color: var(--silam-glass-surface);
+  box-shadow: var(--silam-glass-shadow);
+  backdrop-filter: var(--silam-glass-filter);
+  -webkit-backdrop-filter: var(--silam-glass-filter);
 }
 
 .navbar__inner {
+  position: relative;
+  z-index: 1;
   max-width: 1180px;
   margin: 0 auto;
   flex-wrap: nowrap !important;
 }
 
-.navbar__brand {
-  gap: 0.65rem;
-  border-radius: 999px;
-  padding: 0.35rem 0.8rem 0.35rem 0.45rem;
-  transition:
-    background 180ms ease,
-    transform 180ms ease;
-}
-
-.navbar__brand:hover {
-  background: rgba(22, 138, 74, 0.08);
-  transform: translateY(-1px);
-}
-
-.navbar__logo {
-  height: 2rem;
-  width: 2rem;
-  border-radius: 999px;
-  filter: drop-shadow(0 8px 18px rgba(22, 138, 74, 0.22));
-}
-
-.navbar__title {
-  color: #111827;
-  font-weight: 850;
-  letter-spacing: -0.035em;
-}
-
 .navbar__items {
   gap: 0.25rem;
+  flex-wrap: nowrap !important;
+}
+
+.navbar__items--right {
+  flex: 0 0 auto;
+  min-width: max-content;
+  margin-left: auto;
 }
 
 .navbar__item {
   font-weight: 700;
 }
 
-.navbar__link {
-  position: relative;
-  border-radius: 999px;
-  padding: 0.48rem 0.78rem;
-  color: rgba(17, 24, 39, 0.72);
-  font-weight: 750;
+.navbar__brand,
+.navbar-sidebar__brand .navbar__brand {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: 0 1 auto !important;
+  gap: 0.55rem !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: var(--silam-brand-height) !important;
+  min-height: var(--silam-brand-height) !important;
+  box-sizing: border-box !important;
+  padding: 0 0.9rem !important;
+  border: 1px solid var(--silam-brand-idle-border-color) !important;
+  border-radius: var(--silam-radius-pill) !important;
+  color: var(--silam-accent-green) !important;
+  overflow: hidden !important;
+  isolation: isolate;
+  line-height: 1 !important;
+  background: var(--silam-brand-idle-panel) !important;
+  background-color: transparent !important;
+  box-shadow: var(--silam-brand-idle-shadow) !important;
+  backdrop-filter: var(--silam-glass-filter-soft) !important;
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
+  text-decoration: none !important;
+  transform: none !important;
+  transition:
+    color 180ms ease,
+    filter 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease !important;
+}
+
+.navbar__brand:hover,
+.navbar__brand:focus-visible,
+.navbar__brand[aria-current='page'],
+.navbar__brand.navbar__brand--active,
+.navbar__brand.navbar__link--active,
+.navbar-sidebar__brand .navbar__brand:hover,
+.navbar-sidebar__brand .navbar__brand:focus-visible,
+.navbar-sidebar__brand .navbar__brand[aria-current='page'],
+.navbar-sidebar__brand .navbar__brand.navbar__brand--active,
+.navbar-sidebar__brand .navbar__brand.navbar__link--active {
+  border-color: transparent !important;
+  color: var(--silam-text-inverse) !important;
+  background: var(--silam-brand-active-panel) !important;
+  box-shadow: var(--silam-brand-active-shadow) !important;
+  filter: brightness(1.04);
+  transform: none !important;
+}
+
+.navbar__logo {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--silam-radius-pill);
+  filter: drop-shadow(0 8px 18px rgb(var(--silam-accent-green-rgb) / 0.22));
+}
+
+.navbar__brand .navbar__title,
+.navbar-sidebar__brand .navbar__brand .navbar__title {
+  min-width: 0 !important;
+  color: transparent !important;
+  background: var(--silam-brand-idle-text);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.035em !important;
+}
+
+.navbar__brand:hover .navbar__title,
+.navbar__brand:focus-visible .navbar__title,
+.navbar__brand[aria-current='page'] .navbar__title,
+.navbar__brand.navbar__brand--active .navbar__title,
+.navbar__brand.navbar__link--active .navbar__title,
+.navbar-sidebar__brand .navbar__brand:hover .navbar__title,
+.navbar-sidebar__brand .navbar__brand:focus-visible .navbar__title,
+.navbar-sidebar__brand .navbar__brand[aria-current='page'] .navbar__title,
+.navbar-sidebar__brand .navbar__brand.navbar__brand--active .navbar__title,
+.navbar-sidebar__brand .navbar__brand.navbar__link--active .navbar__title {
+  color: var(--silam-text-inverse) !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--silam-text-inverse);
+}
+
+.navbar__link,
+.dropdown__link,
+.menu__link,
+.navbar .clean-btn,
+.navbar-sidebar .clean-btn {
+  transform: none !important;
   transition:
     color 180ms ease,
     background 180ms ease,
-    transform 180ms ease;
+    box-shadow 180ms ease,
+    filter 180ms ease !important;
 }
 
-.navbar__link:hover {
-  color: var(--silam-accent-green);
-  background: rgba(22, 138, 74, 0.09);
-  text-decoration: none;
-  transform: translateY(-1px);
+.navbar__link {
+  position: relative;
+  padding: 0.48rem 0.78rem;
+  border-radius: var(--silam-radius-pill);
+  color: var(--silam-text-soft);
+  font-weight: 750;
 }
 
-.navbar__link--active {
-  color: var(--silam-accent-green);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(22, 138, 74, 0.14),
-      rgba(21, 112, 239, 0.10)
-    );
+.navbar .clean-btn,
+.navbar [class*='colorModeToggle'],
+.navbar-sidebar .clean-btn,
+.navbar-sidebar [class*='colorModeToggle'] {
+  border-radius: var(--silam-radius-pill);
 }
 
-.navbar__link--active::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 0.22rem;
-  width: 22px;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--silam-accent-green), var(--silam-accent-blue));
-  transform: translateX(-50%);
-}
-
-.navbar__toggle {
-  border-radius: 999px;
-  color: var(--silam-accent-green);
-}
-
-.navbar__toggle:hover {
-  background: rgba(22, 138, 74, 0.09);
-}
-
-/* Locale dropdown */
 .dropdown > .navbar__link::after {
   border-top-color: currentColor;
 }
 
+.dropdown,
+.navbar__item,
+.navbar__items,
+.navbar__inner {
+  overflow: visible !important;
+}
+
 .dropdown__menu {
-  border: 1px solid rgba(22, 138, 74, 0.14);
-  border-radius: 18px;
+  position: absolute !important;
+  z-index: 1150;
   padding: 0.45rem;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 24px 70px rgba(31, 41, 55, 0.14);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  overflow: hidden;
+  border: 1px solid var(--silam-glass-border) !important;
+  border-radius: var(--silam-radius-xl);
+  color: var(--silam-glass-text) !important;
+  background: var(--silam-glass-surface) !important;
+  background-color: var(--silam-glass-surface) !important;
+  background-image: var(--silam-glass-sheen) !important;
+  background-clip: padding-box;
+  box-shadow: var(--silam-glass-shadow) !important;
+  backdrop-filter: var(--silam-glass-filter) !important;
+  -webkit-backdrop-filter: var(--silam-glass-filter) !important;
+  transform: none !important;
+}
+
+.dropdown:hover > .dropdown__menu,
+.dropdown:focus-within > .dropdown__menu,
+.dropdown--show > .dropdown__menu {
+  border-color: var(--silam-glass-border) !important;
+  color: var(--silam-glass-text) !important;
+  background: var(--silam-glass-surface) !important;
+  background-color: var(--silam-glass-surface) !important;
+  background-image: var(--silam-glass-sheen) !important;
+  box-shadow: var(--silam-glass-shadow) !important;
+  backdrop-filter: var(--silam-glass-filter) !important;
+  -webkit-backdrop-filter: var(--silam-glass-filter) !important;
 }
 
 .dropdown__link {
-  border-radius: 12px;
+  border-radius: var(--silam-radius-sm);
   font-weight: 650;
 }
 
-.dropdown__link:hover,
-.dropdown__link--active {
-  color: var(--silam-accent-green);
-  background: rgba(22, 138, 74, 0.09);
-}
-
-/* Theme toggle and small navbar buttons */
-.navbar .clean-btn,
-.navbar [class*="colorModeToggle"],
-.navbar-sidebar .clean-btn,
-.navbar-sidebar [class*="colorModeToggle"] {
-  border-radius: 999px;
-}
-
-.navbar .clean-btn:hover,
-.navbar [class*="colorModeToggle"]:hover,
-.navbar-sidebar .clean-btn:hover,
-.navbar-sidebar [class*="colorModeToggle"]:hover {
-  background: rgba(22, 138, 74, 0.09);
-}
-
-/* Footer */
-.footer {
-  border-top: 1px solid var(--ifm-color-emphasis-200);
-}
-
-/* Dark theme navbar/footer */
-html[data-theme='dark'] .navbar {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(11, 17, 23, 0.9),
-      rgba(17, 25, 35, 0.86)
-    ) !important;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.34);
-}
-
-html[data-theme='dark'] .navbar__brand:hover {
-  background: rgba(53, 200, 120, 0.10);
-}
-
-html[data-theme='dark'] .navbar__title {
-  color: #f8fafc;
-}
-
 html[data-theme='dark'] .navbar__link {
-  color: rgba(248, 250, 252, 0.74);
-}
-
-html[data-theme='dark'] .navbar__link:hover {
-  color: var(--ifm-color-primary-lightest);
-  background: rgba(53, 200, 120, 0.10);
-}
-
-html[data-theme='dark'] .navbar__link--active {
-  color: var(--ifm-color-primary-lightest);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(53, 200, 120, 0.16),
-      rgba(122, 183, 255, 0.11)
-    );
-}
-
-html[data-theme='dark'] .navbar__link--active::after {
-  background: linear-gradient(90deg, var(--ifm-color-primary), var(--ifm-link-color));
+  color: var(--silam-text-soft);
 }
 
 html[data-theme='dark'] .dropdown__menu {
-  border-color: rgba(255, 255, 255, 0.10);
-  background: rgba(17, 25, 35, 0.96);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  color: var(--silam-glass-text) !important;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.28);
 }
 
-html[data-theme='dark'] .dropdown__link:hover,
-html[data-theme='dark'] .dropdown__link--active {
-  color: var(--ifm-color-primary-lightest);
-  background: rgba(53, 200, 120, 0.10);
-}
-
-html[data-theme='dark'] .navbar .clean-btn:hover,
-html[data-theme='dark'] .navbar [class*="colorModeToggle"]:hover,
-html[data-theme='dark'] .navbar-sidebar .clean-btn:hover,
-html[data-theme='dark'] .navbar-sidebar [class*="colorModeToggle"]:hover {
-  background: rgba(53, 200, 120, 0.10);
-}
-
-html[data-theme='dark'] .footer {
-  border-top-color: rgba(255, 255, 255, 0.08);
-}
-
-/* Mobile navbar
- * Keep the Docusaurus mobile layout intact.
- * Only light visual polish is applied, without changing sidebar mechanics.
- */
-@media (max-width: 996px) {
+@media (min-width: 997px) {
   .navbar {
-    height: var(--ifm-navbar-height);
-    padding: 0 var(--ifm-navbar-padding-horizontal);
+    overflow: visible !important;
+    padding-right: calc(
+      var(--ifm-navbar-padding-horizontal) + max(0px, calc(100vw - 100%))
+    ) !important;
   }
 
   .navbar__inner {
+    box-sizing: border-box !important;
+    max-width: min(1180px, calc(100% - max(0px, calc(100vw - 100%)))) !important;
+  }
+
+  .navbar .clean-btn,
+  .navbar [class*='colorModeToggle'] {
+    flex: 0 0 auto !important;
+    width: 2.25rem;
+    min-width: 2.25rem;
+    height: 2.25rem;
+  }
+}
+
+@media (min-width: 1220px) {
+  .navbar__inner {
+    position: relative;
+    left: calc((100vw - 100%) / 2);
+  }
+}
+
+@media (min-width: 997px) and (max-width: 1219px) {
+  .navbar__inner {
+    left: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .navbar__items {
+    min-width: 0 !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Navbar/menu interaction states                                              */
+/* -------------------------------------------------------------------------- */
+
+.navbar__link:hover:not(.navbar__link--active),
+.dropdown__link:hover:not(.dropdown__link--active),
+.menu__link:hover:not(.menu__link--active),
+.navbar-sidebar .menu__link:hover:not(.menu__link--active),
+.navbar .clean-btn:hover,
+.navbar [class*='colorModeToggle']:hover,
+.navbar-sidebar .clean-btn:hover,
+.navbar-sidebar [class*='colorModeToggle']:hover {
+  color: var(--silam-menu-hover-text) !important;
+  background: var(--silam-menu-hover-panel) !important;
+  box-shadow: none;
+  text-decoration: none !important;
+  transform: none !important;
+}
+
+.navbar__link--active,
+.dropdown__link--active,
+.menu__link--active,
+.navbar-sidebar .menu__link--active,
+.navbar-sidebar__back {
+  color: var(--silam-accent-green) !important;
+  background: var(--silam-menu-active-panel) !important;
+  box-shadow: var(--silam-menu-active-shadow) !important;
+}
+
+.navbar__link--active:hover,
+.dropdown__link--active:hover,
+.menu__link--active:hover,
+.navbar-sidebar .menu__link--active:hover,
+.navbar-sidebar__back:hover {
+  color: var(--silam-accent-green) !important;
+  background: var(--silam-menu-active-panel-strong) !important;
+  transform: none !important;
+}
+
+.navbar__link--active::after {
+  position: absolute;
+  bottom: 0.22rem;
+  left: 50%;
+  width: 22px;
+  height: 2px;
+  border-radius: var(--silam-radius-pill);
+  content: '';
+  background: var(--silam-navbar-active-line);
+  transform: translateX(-50%);
+}
+
+.navbar__link:focus-visible,
+.dropdown__link:focus-visible,
+.menu__link:focus-visible,
+.navbar .clean-btn:focus-visible,
+.navbar-sidebar .clean-btn:focus-visible {
+  outline: 2px solid var(--silam-accent-blue);
+  outline-offset: 3px;
+}
+
+html[data-theme='dark'] .navbar__link:hover:not(.navbar__link--active),
+html[data-theme='dark'] .dropdown__link:hover:not(.dropdown__link--active),
+html[data-theme='dark'] .menu__link:hover:not(.menu__link--active),
+html[data-theme='dark'] .navbar-sidebar .menu__link:hover:not(.menu__link--active),
+html[data-theme='dark'] .navbar .clean-btn:hover,
+html[data-theme='dark'] .navbar [class*='colorModeToggle']:hover,
+html[data-theme='dark'] .navbar-sidebar .clean-btn:hover,
+html[data-theme='dark'] .navbar-sidebar [class*='colorModeToggle']:hover {
+  box-shadow: var(--silam-menu-hover-shadow) !important;
+  backdrop-filter: var(--silam-glass-filter-soft) !important;
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
+}
+
+html[data-theme='dark'] .navbar__link--active,
+html[data-theme='dark'] .dropdown__link--active,
+html[data-theme='dark'] .menu__link--active,
+html[data-theme='dark'] .navbar-sidebar .menu__link--active,
+html[data-theme='dark'] .navbar-sidebar__back {
+  color: var(--ifm-color-primary-lightest) !important;
+  box-shadow: var(--silam-menu-active-shadow) !important;
+  backdrop-filter: var(--silam-glass-filter-soft) !important;
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
+}
+
+.navbar__link--active,
+.dropdown__link--active,
+.menu__link--active,
+.navbar-sidebar .menu__link--active,
+.navbar-sidebar__back {
+  position: relative;
+  isolation: isolate;
+}
+
+html[data-theme='dark'] .navbar__link--active::before,
+html[data-theme='dark'] .dropdown__link--active::before,
+html[data-theme='dark'] .menu__link--active::before,
+html[data-theme='dark'] .navbar-sidebar .menu__link--active::before,
+html[data-theme='dark'] .navbar-sidebar__back::before {
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  pointer-events: none;
+  content: '';
+  border-radius: inherit;
+  opacity: 0.34;
+  background: var(--silam-menu-active-glow-gradient);
+  filter: blur(6px);
+}
+
+html[data-theme='dark'] .navbar__link--active:hover,
+html[data-theme='dark'] .dropdown__link--active:hover,
+html[data-theme='dark'] .menu__link--active:hover,
+html[data-theme='dark'] .navbar-sidebar .menu__link--active:hover,
+html[data-theme='dark'] .navbar-sidebar__back:hover {
+  color: var(--ifm-color-primary-lightest) !important;
+}
+
+html[data-theme='dark'] .navbar__link:focus-visible,
+html[data-theme='dark'] .dropdown__link:focus-visible,
+html[data-theme='dark'] .menu__link:focus-visible,
+html[data-theme='dark'] .navbar .clean-btn:focus-visible,
+html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
+  outline-color: var(--ifm-link-color);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile navbar and drawer                                                     */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 996px) {
+  .navbar,
+  .navbar.navbar--fixed-top,
+  html[data-theme='dark'] .navbar,
+  html[data-theme='dark'] .navbar.navbar--fixed-top {
+    overflow: visible !important;
+    contain: none !important;
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .navbar::before {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 0;
+    height: var(--ifm-navbar-height);
+    pointer-events: none;
+    content: '';
+    border-bottom: 1px solid var(--silam-glass-border);
+    background: var(--silam-glass-surface);
+    background-color: var(--silam-glass-surface);
+    box-shadow: var(--silam-glass-shadow);
+    backdrop-filter: var(--silam-glass-filter);
+    -webkit-backdrop-filter: var(--silam-glass-filter);
+  }
+
+  .navbar__inner {
+    position: relative;
+    z-index: 1;
     width: 100%;
     max-width: none;
+    gap: 0.35rem !important;
     flex-wrap: nowrap !important;
   }
 
-  .navbar__brand {
-    min-width: 0;
-    max-width: calc(100vw - 7.5rem);
-    gap: 0.45rem;
-    padding: 0;
-    border-radius: 0;
+  .navbar__toggle {
+    flex: 0 0 auto;
+    border-radius: var(--silam-radius-sm);
+    color: var(--silam-accent-green);
   }
 
-  .navbar__brand:hover {
-    background: transparent;
-    transform: none;
+  .navbar__items:first-child {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  .navbar__items:first-child .navbar__brand {
+    max-width: calc(100vw - 12.5rem) !important;
+  }
+
+  .navbar__brand,
+  .navbar-sidebar__brand .navbar__brand {
+    gap: 0.45rem !important;
+    height: var(--silam-brand-height) !important;
+    min-height: var(--silam-brand-height) !important;
+    padding: 0 0.78rem !important;
   }
 
   .navbar__logo {
@@ -412,745 +863,59 @@ html[data-theme='dark'] .footer {
     white-space: nowrap;
   }
 
-  .navbar__toggle {
-    flex: 0 0 auto;
-    border-radius: 12px;
-  }
-
-  .navbar__items--right {
-    min-width: 0;
-    margin-left: auto;
-  }
-
   .navbar__link--active::after {
     display: none;
-  }
-
-  .navbar-sidebar {
-    background: var(--ifm-background-color);
-  }
-
-  .navbar-sidebar__brand {
-    border-bottom: 1px solid var(--ifm-color-emphasis-200);
-  }
-
-  .menu__link {
-    border-radius: 12px;
-    font-weight: 700;
-  }
-
-  .menu__link:hover,
-  .menu__link--active {
-    color: var(--silam-accent-green);
-    background: rgba(22, 138, 74, 0.09);
-  }
-
-  html[data-theme='dark'] .navbar-sidebar {
-    background: var(--ifm-background-color);
-  }
-
-  html[data-theme='dark'] .navbar-sidebar__brand {
-    border-bottom-color: rgba(255, 255, 255, 0.08);
-  }
-
-  html[data-theme='dark'] .menu__link:hover,
-  html[data-theme='dark'] .menu__link--active {
-    color: var(--ifm-color-primary-lightest);
-    background: rgba(53, 200, 120, 0.10);
-  }
-}
-
-/* Buttons follow the same green-blue product accent. */
-.button--primary,
-.button.button--primary {
-  border: 0;
-  background: linear-gradient(135deg, var(--silam-accent-green), var(--silam-accent-blue));
-  box-shadow: 0 12px 30px rgba(21, 112, 239, 0.20);
-}
-
-.button--primary:hover,
-.button.button--primary:hover {
-  filter: brightness(1.04);
-}
-
-/* Tables and code blocks should not feel disconnected from the new style. */
-.markdown table {
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: var(--silam-card-shadow);
-}
-
-.markdown table thead tr {
-  background: linear-gradient(90deg, rgba(46, 204, 113, 0.12), rgba(77, 171, 247, 0.12));
-}
-
-div[class^='codeBlockContainer_'] {
-  border: 1px solid var(--silam-card-border);
-  border-radius: 18px;
-  box-shadow: var(--silam-card-shadow);
-}
-
-/* Search input / DocSearch surfaces. */
-.DocSearch-Button {
-  border: 1px solid var(--ifm-color-emphasis-200);
-  border-radius: 999px;
-}
-
-html[data-theme='dark'] .DocSearch-Button {
-  border-color: rgba(255, 255, 255, 0.10);
-}
-
-/* Coverage page must behave like an app screen, not like an article page.
- * This removes accidental page scrollbars around the fullscreen map iframe.
- */
-body:has(.coverageFullscreenPage) {
-  overflow: hidden;
-}
-
-body:has(.coverageFullscreenPage) .main-wrapper {
-  overflow: hidden;
-}
-
-body:has(.coverageFullscreenPage) .container,
-body:has(.coverageFullscreenPage) main {
-  max-width: none;
-}
-
-/* -------------------------------------------------------------------------- */
-/* Coverage iframe + Docusaurus mobile sidebar hard fix                        */
-/* -------------------------------------------------------------------------- */
-
-/* Fullscreen iframe pages must never cover Docusaurus navigation layers. */
-body:has(.coverageFullscreenPage) .coverageFullscreenPage,
-body:has(.coverageFullscreenPage) .coverageFrame {
-  z-index: 0;
-}
-
-/* Navbar must stay above fullscreen map iframe. */
-.navbar {
-  position: sticky;
-  top: 0;
-  z-index: 4000 !important;
-}
-
-/* Docusaurus mobile sidebar/backdrop must be above the iframe and opaque. */
-@media (max-width: 996px) {
-  .navbar-sidebar__backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 4998 !important;
-    background: rgba(15, 23, 42, 0.46) !important;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-  }
-
-  .navbar-sidebar {
-    position: fixed;
-    z-index: 4999 !important;
-    background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 1),
-        rgba(240, 253, 244, 1)
-      ) !important;
-    box-shadow: 28px 0 70px rgba(15, 23, 42, 0.22);
-    opacity: 1 !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(11, 17, 23, 1),
-        rgba(17, 25, 35, 1)
-      ) !important;
-    box-shadow: 28px 0 70px rgba(0, 0, 0, 0.55);
-  }
-
-  html[data-theme='dark'] .navbar-sidebar__backdrop {
-    background: rgba(0, 0, 0, 0.58) !important;
-  }
-
-  .navbar-sidebar__brand,
-  .navbar-sidebar__items,
-  .navbar-sidebar .menu,
-  .navbar-sidebar .menu__list,
-  .navbar-sidebar .menu__link {
-    opacity: 1 !important;
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* Final fullscreen coverage + mobile sidebar opacity fix                      */
-/* -------------------------------------------------------------------------- */
-
-/* On the coverage page, the browser page itself must not scroll.
- * html is included intentionally: body-only overflow hidden may still leave
- * the desktop scrollbar visible in some browsers.
- */
-html:has(.coverageFullscreenPage),
-body:has(.coverageFullscreenPage) {
-  width: 100%;
-  height: 100%;
-  overflow: hidden !important;
-}
-
-html:has(.coverageFullscreenPage) .main-wrapper,
-body:has(.coverageFullscreenPage) .main-wrapper {
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-
-html:has(.coverageFullscreenPage) footer,
-body:has(.coverageFullscreenPage) footer {
-  display: none !important;
-}
-
-/* Keep the map under all Docusaurus navigation layers. */
-.coverageFullscreenPage,
-.coverageFrame {
-  z-index: 0 !important;
-}
-
-/* Desktop and mobile navbar always above fullscreen iframe. */
-.navbar {
-  z-index: 6000 !important;
-}
-
-/* Mobile drawer:
- * Docusaurus sidebar has a separate header and items area.
- * The previous styles made the header opaque, but the items area could stay
- * visually transparent over the map iframe.
- */
-@media (max-width: 996px) {
-  .navbar-sidebar {
-    position: fixed !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    z-index: 7000 !important;
-    height: 100dvh !important;
-    max-height: 100dvh !important;
-    overflow: hidden !important;
-    opacity: 1 !important;
-    background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 1),
-        rgba(240, 253, 244, 1)
-      ) !important;
-    box-shadow: 28px 0 70px rgba(15, 23, 42, 0.24) !important;
-  }
-
-  .navbar-sidebar__brand {
-    position: relative !important;
-    z-index: 7002 !important;
-    flex: 0 0 auto !important;
-    background: rgba(255, 255, 255, 1) !important;
-    border-bottom: 1px solid rgba(22, 138, 74, 0.14) !important;
-    opacity: 1 !important;
-  }
-
-  .navbar-sidebar__items,
-  .navbar-sidebar__item,
-  .navbar-sidebar .menu {
-    position: relative !important;
-    z-index: 7001 !important;
-    background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 1),
-        rgba(240, 253, 244, 1)
-      ) !important;
-    opacity: 1 !important;
-  }
-
-  .navbar-sidebar__items {
-    height: calc(100dvh - var(--ifm-navbar-height)) !important;
-    max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    padding: 0.75rem !important;
   }
 
   .navbar-sidebar__backdrop {
     position: fixed !important;
     inset: 0 !important;
-    z-index: 6999 !important;
-    background: rgba(15, 23, 42, 0.46) !important;
+    z-index: 1190 !important;
     opacity: 1 !important;
+    background: rgb(15 23 42 / 0.46) !important;
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
   }
 
-  .navbar-sidebar .menu__list {
-    background: transparent !important;
-    opacity: 1 !important;
-  }
-
-  .navbar-sidebar .menu__link {
-    color: #111827 !important;
-    background: transparent;
-    border-radius: 14px;
-    font-weight: 700;
-    opacity: 1 !important;
-  }
-
-  .navbar-sidebar .menu__link:hover,
-  .navbar-sidebar .menu__link--active {
-    color: var(--silam-accent-green) !important;
-    background: rgba(22, 138, 74, 0.09) !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(11, 17, 23, 1),
-        rgba(17, 25, 35, 1)
-      ) !important;
-    box-shadow: 28px 0 70px rgba(0, 0, 0, 0.58) !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar__brand {
-    background: rgba(11, 17, 23, 1) !important;
-    border-bottom-color: rgba(255, 255, 255, 0.08) !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar__items,
-  html[data-theme='dark'] .navbar-sidebar__item,
-  html[data-theme='dark'] .navbar-sidebar .menu {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(11, 17, 23, 1),
-        rgba(17, 25, 35, 1)
-      ) !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar__backdrop {
-    background: rgba(0, 0, 0, 0.58) !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar .menu__link {
-    color: #f8fafc !important;
-  }
-
-  html[data-theme='dark'] .navbar-sidebar .menu__link:hover,
-  html[data-theme='dark'] .navbar-sidebar .menu__link--active {
-    color: var(--ifm-color-primary-lightest) !important;
-    background: rgba(53, 200, 120, 0.10) !important;
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* Mobile sidebar untrap fix                                                   */
-/* -------------------------------------------------------------------------- */
-
-/* Docusaurus renders the mobile sidebar inside `.navbar`.
- * On mobile, backdrop-filter/filter/transform on `.navbar` can create a
- * containing block for the sidebar's `position: fixed`, so the drawer becomes
- * trapped inside the top navbar area. Keep the glass navbar on desktop, but
- * disable those containing-block properties on mobile.
- */
-@media (max-width: 996px) {
-  .navbar {
-    overflow: visible !important;
-    contain: none !important;
-    transform: none !important;
-    filter: none !important;
-    perspective: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  .navbar-sidebar,
-  .navbar-sidebar__backdrop {
-    transform-style: flat !important;
-    contain: none !important;
-  }
-
   .navbar-sidebar {
+    --ifm-navbar-sidebar-width: min(18.5rem, calc(100vw - 2.5rem));
+
+    position: fixed !important;
     top: 0 !important;
+    right: auto !important;
     bottom: 0 !important;
+    left: 0 !important;
+    z-index: 1200 !important;
+    width: var(--ifm-navbar-sidebar-width) !important;
+    min-width: var(--ifm-navbar-sidebar-width) !important;
+    max-width: var(--ifm-navbar-sidebar-width) !important;
     height: 100vh !important;
     height: 100dvh !important;
     max-height: 100vh !important;
     max-height: 100dvh !important;
-  }
-
-  .navbar-sidebar__items {
-    height: calc(100vh - var(--ifm-navbar-height)) !important;
-    height: calc(100dvh - var(--ifm-navbar-height)) !important;
-    max-height: calc(100vh - var(--ifm-navbar-height)) !important;
-    max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* Coverage fullscreen stable class height/scrollbar fix                       */
-/* -------------------------------------------------------------------------- */
-
-/* The coverage React page adds these non-module classes intentionally.
- * Do not use only CSS-module class names in global selectors: they are hashed
- * by the build and may not match `.coverageFullscreenPage` literally.
- */
-html:has(.silamCoverageFullscreenPage),
-body:has(.silamCoverageFullscreenPage) {
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  overflow: hidden !important;
-  overscroll-behavior: none;
-}
-
-/* Docusaurus wrappers should not add document height on the fullscreen map page. */
-html:has(.silamCoverageFullscreenPage) #__docusaurus,
-body:has(.silamCoverageFullscreenPage) #__docusaurus,
-html:has(.silamCoverageFullscreenPage) .main-wrapper,
-body:has(.silamCoverageFullscreenPage) .main-wrapper {
-  width: 100% !important;
-  height: calc(100vh - var(--ifm-navbar-height)) !important;
-  height: calc(100dvh - var(--ifm-navbar-height)) !important;
-  min-height: 0 !important;
-  max-height: calc(100vh - var(--ifm-navbar-height)) !important;
-  max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
-  overflow: hidden !important;
-}
-
-/* Footer is intentionally hidden on the fullscreen map page. */
-html:has(.silamCoverageFullscreenPage) footer,
-body:has(.silamCoverageFullscreenPage) footer {
-  display: none !important;
-}
-
-/* The map page itself must fit exactly below the navbar. */
-.silamCoverageFullscreenPage {
-  position: relative !important;
-  z-index: 0 !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: calc(100vh - var(--ifm-navbar-height)) !important;
-  height: calc(100dvh - var(--ifm-navbar-height)) !important;
-  min-height: 0 !important;
-  max-height: calc(100vh - var(--ifm-navbar-height)) !important;
-  max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}
-
-.silamCoverageFrame {
-  position: absolute !important;
-  inset: 0 !important;
-  z-index: 0 !important;
-  display: block !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: 100% !important;
-  max-height: 100% !important;
-  border: 0 !important;
-  overflow: hidden !important;
-}
-/* -------------------------------------------------------------------------- */
-/* Navbar/menu interaction states                                              */
-/* -------------------------------------------------------------------------- */
-
-/* Active показывает текущую страницу, hover — только временное наведение.
-   Поэтому hover намеренно мягче и не копирует выбранное состояние. */
-.navbar__link:hover:not(.navbar__link--active) {
-  color: var(--silam-accent-green);
-  background: rgba(22, 138, 74, 0.075);
-  text-decoration: none;
-  transform: translateY(-1px);
-}
-
-.navbar__link--active {
-  color: var(--silam-accent-green);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(22, 138, 74, 0.15),
-      rgba(21, 112, 239, 0.10)
-    );
-  box-shadow: inset 0 0 0 1px rgba(22, 138, 74, 0.10);
-}
-
-.navbar__link--active:hover {
-  color: var(--silam-accent-green);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(22, 138, 74, 0.17),
-      rgba(21, 112, 239, 0.12)
-    );
-  text-decoration: none;
-  transform: none;
-}
-
-/* Для клавиатурной навигации focus должен быть отдельным состоянием,
-   а не выглядеть как active или hover. */
-.navbar__link:focus-visible,
-.dropdown__link:focus-visible,
-.menu__link:focus-visible,
-.navbar .clean-btn:focus-visible,
-.navbar-sidebar .clean-btn:focus-visible {
-  outline: 2px solid var(--silam-accent-blue);
-  outline-offset: 3px;
-}
-
-/* Dropdown: hover и active разделены, чтобы текущий язык/раздел
-   не выглядел как случайное наведение мышкой. */
-.dropdown__link:hover:not(.dropdown__link--active) {
-  color: var(--silam-accent-green);
-  background: rgba(22, 138, 74, 0.07);
-}
-
-.dropdown__link--active {
-  color: var(--silam-accent-green);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(22, 138, 74, 0.13),
-      rgba(21, 112, 239, 0.08)
-    );
-  font-weight: 750;
-}
-
-/* Sidebar/mobile menu: hover остаётся лёгким, active — заметнее. */
-.menu__link:hover:not(.menu__link--active),
-.navbar-sidebar .menu__link:hover:not(.menu__link--active) {
-  color: var(--silam-accent-green) !important;
-  background: rgba(22, 138, 74, 0.07) !important;
-}
-
-.menu__link--active,
-.navbar-sidebar .menu__link--active {
-  color: var(--silam-accent-green) !important;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(22, 138, 74, 0.13),
-      rgba(21, 112, 239, 0.08)
-    ) !important;
-  font-weight: 800;
-}
-
-html[data-theme='dark'] .navbar__link:hover:not(.navbar__link--active) {
-  color: var(--ifm-color-primary-lightest);
-  background: rgba(53, 200, 120, 0.075);
-}
-
-html[data-theme='dark'] .navbar__link--active {
-  color: var(--ifm-color-primary-lightest);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(53, 200, 120, 0.16),
-      rgba(122, 183, 255, 0.11)
-    );
-  box-shadow: inset 0 0 0 1px rgba(53, 200, 120, 0.12);
-}
-
-html[data-theme='dark'] .navbar__link--active:hover {
-  color: var(--ifm-color-primary-lightest);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(53, 200, 120, 0.18),
-      rgba(122, 183, 255, 0.13)
-    );
-  transform: none;
-}
-
-html[data-theme='dark'] .navbar__link:focus-visible,
-html[data-theme='dark'] .dropdown__link:focus-visible,
-html[data-theme='dark'] .menu__link:focus-visible,
-html[data-theme='dark'] .navbar .clean-btn:focus-visible,
-html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
-  outline-color: var(--ifm-link-color);
-}
-
-html[data-theme='dark'] .dropdown__link:hover:not(.dropdown__link--active),
-html[data-theme='dark'] .menu__link:hover:not(.menu__link--active),
-html[data-theme='dark'] .navbar-sidebar .menu__link:hover:not(.menu__link--active) {
-  color: var(--ifm-color-primary-lightest) !important;
-  background: rgba(53, 200, 120, 0.075) !important;
-}
-
-html[data-theme='dark'] .dropdown__link--active,
-html[data-theme='dark'] .menu__link--active,
-html[data-theme='dark'] .navbar-sidebar .menu__link--active {
-  color: var(--ifm-color-primary-lightest) !important;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(53, 200, 120, 0.15),
-      rgba(122, 183, 255, 0.10)
-    ) !important;
-  font-weight: 800;
-}
-
-/* -------------------------------------------------------------------------- */
-/* Desktop navbar right-edge safety                                             */
-/* -------------------------------------------------------------------------- */
-
-/* На промежуточных desktop-ширинах штатный scrollbar может визуально
-   перекрывать самый правый control в navbar. Это особенно заметно на
-   переключателе темы. Оставляем стабильную центровку navbar на широких
-   экранах, но добавляем безопасный правый отступ и отключаем сдвиг inner
-   там, где navbar уже занимает почти всю ширину окна. */
-@media (min-width: 997px) {
-  .navbar {
-    overflow-x: clip !important;
-    padding-right: calc(
-      var(--ifm-navbar-padding-horizontal) + max(0px, calc(100vw - 100%))
-    ) !important;
-  }
-
-  .navbar__inner {
-    box-sizing: border-box !important;
-    max-width: min(1180px, calc(100% - max(0px, calc(100vw - 100%)))) !important;
-  }
-
-  .navbar__items--right {
-    flex: 0 0 auto !important;
-    min-width: max-content !important;
-    margin-left: auto !important;
-  }
-
-  .navbar .clean-btn,
-  .navbar [class*="colorModeToggle"] {
-    flex: 0 0 auto !important;
-    width: 2.25rem;
-    min-width: 2.25rem;
-    height: 2.25rem;
-  }
-}
-
-/* Между полноценным desktop и mobile-breakpoint важнее не перекрывать
-   правые кнопки и не провоцировать микропрыжки пунктов меню. Поэтому
-   scrollbar-компенсацию центровки оставляем только для широкого navbar. */
-@media (min-width: 997px) and (max-width: 1219px) {
-  .navbar__inner {
-    left: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-  }
-
-  .navbar__items {
-    min-width: 0 !important;
-  }
-
-  .navbar__items--right {
-    max-width: max-content !important;
-  }
-}
-
-
-/* -------------------------------------------------------------------------- */
-/* Финальный mobile navbar: штатный Docusaurus flow + аккуратный SILAM polish   */
-/* -------------------------------------------------------------------------- */
-
-/* Бренд должен выглядеть одинаково в desktop navbar и mobile drawer. */
-.navbar__brand,
-.navbar-sidebar__brand .navbar__brand {
-  display: inline-flex !important;
-  align-items: center !important;
-  flex: 0 1 auto !important;
-  gap: 0.55rem !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  padding: 0.42rem 0.9rem !important;
-  border: 1px solid rgba(255, 255, 255, 0.34) !important;
-  border-radius: 999px !important;
-  color: #ffffff !important;
-  background:
-    linear-gradient(
-      135deg,
-      var(--silam-accent-green),
-      var(--silam-accent-blue)
-    ) !important;
-  box-shadow:
-    0 12px 30px rgba(21, 112, 239, 0.20),
-    inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
-  text-decoration: none !important;
-  transform: none !important;
-  transition:
-    filter 180ms ease,
-    box-shadow 180ms ease,
-    background 180ms ease !important;
-}
-
-.navbar__brand:hover,
-.navbar-sidebar__brand .navbar__brand:hover {
-  color: #ffffff !important;
-  background:
-    linear-gradient(
-      135deg,
-      var(--silam-accent-green),
-      var(--silam-accent-blue)
-    ) !important;
-  filter: brightness(1.04);
-  transform: none !important;
-}
-
-.navbar__brand .navbar__title,
-.navbar-sidebar__brand .navbar__brand .navbar__title {
-  min-width: 0 !important;
-  color: #ffffff !important;
-  font-weight: 850 !important;
-  letter-spacing: -0.035em !important;
-}
-
-/* В hover/focus меню больше нет микро-сдвигов: только подсветка. */
-.navbar__link,
-.dropdown__link,
-.menu__link,
-.navbar .clean-btn,
-.navbar-sidebar .clean-btn {
-  transform: none !important;
-  transition:
-    color 180ms ease,
-    background 180ms ease,
-    box-shadow 180ms ease,
-    filter 180ms ease !important;
-}
-
-.navbar__link:hover,
-.navbar__link--active:hover,
-.dropdown__link:hover,
-.menu__link:hover,
-.navbar .clean-btn:hover,
-.navbar-sidebar .clean-btn:hover {
-  transform: none !important;
-}
-
-@media (max-width: 996px) {
-  /* Ширину drawer задаём через штатную переменную Infima/Docusaurus.
-     Secondary menu Releases использует эту же переменную для slide-transform,
-     поэтому не подменяем её отдельными width: 100%. */
-  .navbar-sidebar {
-    --ifm-navbar-sidebar-width: min(18.5rem, calc(100vw - 2.5rem));
-
-    right: auto !important;
-    width: var(--ifm-navbar-sidebar-width) !important;
-    min-width: var(--ifm-navbar-sidebar-width) !important;
-    max-width: var(--ifm-navbar-sidebar-width) !important;
     overflow: hidden !important;
+    opacity: 1 !important;
+    background: var(--silam-bg-drawer) !important;
+    box-shadow: 28px 0 70px rgb(15 23 42 / 0.24) !important;
+    contain: none !important;
+    transform-style: flat !important;
   }
 
   .navbar-sidebar__brand {
+    position: relative !important;
+    z-index: 1202 !important;
     display: flex !important;
     align-items: center !important;
     gap: 0.5rem !important;
     box-sizing: border-box !important;
+    flex: 0 0 auto !important;
     width: var(--ifm-navbar-sidebar-width) !important;
     max-width: var(--ifm-navbar-sidebar-width) !important;
     min-height: var(--ifm-navbar-height) !important;
     padding: 0 0.7rem !important;
+    border-bottom: 1px solid var(--silam-border-soft) !important;
+    background: var(--silam-bg-surface-solid) !important;
+    opacity: 1 !important;
   }
 
   .navbar-sidebar__brand .navbar__brand {
@@ -1167,20 +932,18 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     min-width: 2.25rem !important;
     height: 2.25rem !important;
     margin-left: auto !important;
-    border-radius: 999px !important;
+    border-radius: var(--silam-radius-pill) !important;
   }
 
-  /* Safety-net на случай, если после обновления Docusaurus color toggle снова
-     появится в header drawer. Основное удаление сделано override-компонентом. */
+  /* Safety-net: основной header drawer очищен override-компонентом. */
   .navbar-sidebar__brand > div[class*='toggle'],
-  .navbar-sidebar__brand .clean-btn:not(.navbar-sidebar__close) {
+  .navbar-sidebar__brand > div[class*='colorMode'] {
     display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
   }
 
-  /* Не ломаем штатный primary/secondary slide для Releases/Blog. */
   .navbar-sidebar__items {
+    position: relative !important;
+    z-index: 1201 !important;
     display: flex !important;
     box-sizing: border-box !important;
     width: calc(var(--ifm-navbar-sidebar-width) * 2) !important;
@@ -1191,6 +954,8 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
     padding: 0 !important;
     overflow: visible !important;
+    background: var(--silam-bg-drawer) !important;
+    opacity: 1 !important;
     transform: translateZ(0) !important;
     transition: transform var(--ifm-transition-fast) ease-in-out !important;
   }
@@ -1210,6 +975,8 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     padding: 0.75rem !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
+    background: transparent !important;
+    opacity: 1 !important;
   }
 
   .navbar-sidebar .menu,
@@ -1218,22 +985,21 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     width: 100% !important;
     max-width: 100% !important;
     background: transparent !important;
+    opacity: 1 !important;
+  }
+
+  .navbar-sidebar .menu__link {
+    border-radius: var(--silam-radius-md);
+    color: var(--silam-text-main) !important;
+    font-weight: 700;
+    opacity: 1 !important;
   }
 
   .navbar-sidebar__back {
-    border-radius: 14px !important;
+    border-radius: var(--silam-radius-md) !important;
     color: var(--silam-accent-green) !important;
-    background: rgba(22, 138, 74, 0.09) !important;
   }
 
-  html[data-theme='dark'] .navbar-sidebar__back {
-    color: var(--ifm-color-primary-lightest) !important;
-    background: rgba(53, 200, 120, 0.10) !important;
-  }
-
-  /* LocaleDropdown в desktop-разметке является navbar__item-контейнером,
-     а className из docusaurus.config.js попадает на внутреннюю ссылку.
-     На mobile показываем только трёхбуквенный код языка без штатной иконки. */
   .navbar__items--right {
     display: flex !important;
     align-items: center !important;
@@ -1261,9 +1027,9 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     min-width: 3.25rem !important;
     height: 2.25rem !important;
     padding: 0.48rem 0.7rem !important;
-    border-radius: 999px !important;
     overflow: hidden !important;
-    color: rgba(17, 24, 39, 0.72) !important;
+    border-radius: var(--silam-radius-pill) !important;
+    color: var(--silam-text-soft) !important;
     background: transparent !important;
     font-size: 0 !important;
     font-weight: 750 !important;
@@ -1271,8 +1037,6 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     transform: none !important;
   }
 
-  /* На mobile убираем штатную иконку языка («文»/language icon),
-     чтобы кнопка выглядела как обычный пункт navbar с коротким кодом. */
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown svg,
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown [class*='icon'],
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown [class*='Icon'] {
@@ -1280,12 +1044,12 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
   }
 
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown::after {
-    content: 'ENG' !important;
     display: inline-block !important;
     width: auto !important;
     height: auto !important;
     margin: 0 !important;
     border: 0 !important;
+    content: 'ENG' !important;
     color: currentColor !important;
     font-size: 0.9rem !important;
     font-weight: 750 !important;
@@ -1304,20 +1068,18 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
 
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown:hover,
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown):focus-within > .silamLocaleDropdown {
-    color: var(--silam-accent-green) !important;
-    background: rgba(22, 138, 74, 0.09) !important;
+    color: var(--silam-menu-hover-text) !important;
+    background: var(--silam-menu-hover-panel) !important;
     transform: none !important;
   }
 
-  /* У dropdown не оставляем зазор до меню: на touch/hover он мог закрываться
-     до выбора языка. focus-within и dropdown--show поддерживают click/tap. */
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .dropdown__menu {
     top: 100% !important;
     right: 0 !important;
     left: auto !important;
+    z-index: 1160 !important;
     min-width: 10rem !important;
     max-width: min(14rem, calc(100vw - 1.5rem)) !important;
-    z-index: 2200 !important;
   }
 
   .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown):hover > .dropdown__menu,
@@ -1344,110 +1106,91 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     width: 2.25rem !important;
     min-width: 2.25rem !important;
     height: 2.25rem !important;
-    border-radius: 999px !important;
+    border-radius: var(--silam-radius-pill) !important;
   }
 
-  /* Освобождаем место под hamburger слева и native controls справа. */
-  .navbar > .navbar__inner,
-  .navbar__inner {
-    gap: 0.35rem !important;
-    flex-wrap: nowrap !important;
-  }
-
-  .navbar__items {
-    flex-wrap: nowrap !important;
-  }
-
-  .navbar__items:first-child {
-    min-width: 0 !important;
-    flex: 1 1 auto !important;
-  }
-
-  .navbar__items:first-child .navbar__brand {
-    max-width: calc(100vw - 12.5rem) !important;
-  }
-
-  /* LocaleDropdown не должен быть отдельным пунктом в drawer. Основное удаление
-     сделано override-компонентом PrimaryMenu, это только запасной CSS. */
-  .navbar-sidebar .silamLocaleDropdown,
-  .navbar-sidebar .menu__link.silamLocaleDropdown {
+  /* LocaleDropdown не должен быть отдельным пунктом в drawer.
+     Основное удаление сделано override-компонентом PrimaryMenu. */
+  .navbar-sidebar .silamLocaleDropdown {
     display: none !important;
   }
 
+  html[data-theme='dark'] .navbar-sidebar {
+    background: var(--silam-bg-drawer) !important;
+    box-shadow: 28px 0 70px rgb(0 0 0 / 0.58) !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar__brand {
+    border-bottom-color: var(--silam-border-soft) !important;
+    background: var(--silam-bg-surface-solid) !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar__items {
+    background: var(--silam-bg-drawer) !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar__backdrop {
+    background: rgb(0 0 0 / 0.58) !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar .menu__link {
+    color: var(--silam-text-main) !important;
+  }
+
   html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown {
-    color: rgba(248, 250, 252, 0.74) !important;
+    color: var(--silam-text-soft) !important;
   }
 
   html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown:hover,
   html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown):focus-within > .silamLocaleDropdown {
-    color: var(--ifm-color-primary-lightest) !important;
-    background: rgba(53, 200, 120, 0.10) !important;
+    color: var(--silam-menu-hover-text) !important;
+    box-shadow: var(--silam-menu-hover-shadow) !important;
+    backdrop-filter: var(--silam-glass-filter-soft) !important;
+    -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/* Unified glass navbar background                                             */
+/* Coverage fullscreen page: только глобальная обвязка Docusaurus              */
 /* -------------------------------------------------------------------------- */
 
-/* Фон верхнего меню теперь повторяет glass-эффект legend-control на карте
-   покрытия: тот же уровень прозрачности, border, shadow и blur/saturation.
-   В mobile не возвращаем backdrop-filter на сам `.navbar`, потому что sidebar
-   Docusaurus рендерится внутри navbar и filter/backdrop-filter на родителе может
-   сломать fixed-позиционирование drawer. Вместо этого blur вынесен в ::before. */
-.navbar {
-  border-bottom: 1px solid var(--silam-navbar-glass-border) !important;
-  color: var(--silam-navbar-glass-text) !important;
-  background: var(--silam-navbar-glass-panel) !important;
-  background-color: var(--silam-navbar-glass-panel) !important;
-  box-shadow: var(--silam-navbar-glass-shadow) !important;
-  backdrop-filter: blur(18px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+html:has(.silamCoverageFullscreenPage),
+body:has(.silamCoverageFullscreenPage) {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none;
 }
 
-@media (max-width: 996px) {
-  .navbar {
-    /* Сам navbar оставляем без filter/backdrop-filter, чтобы не ломать drawer. */
-    background: transparent !important;
-    background-color: transparent !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    box-shadow: none !important;
-  }
+html:has(.silamCoverageFullscreenPage) #__docusaurus,
+body:has(.silamCoverageFullscreenPage) #__docusaurus,
+html:has(.silamCoverageFullscreenPage) .main-wrapper,
+body:has(.silamCoverageFullscreenPage) .main-wrapper {
+  width: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
 
-  .navbar::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    right: 0;
-    left: 0;
-    z-index: 0;
-    height: var(--ifm-navbar-height);
-    pointer-events: none;
-    border-bottom: 1px solid var(--silam-navbar-glass-border);
-    background: var(--silam-navbar-glass-panel);
-    background-color: var(--silam-navbar-glass-panel);
-    box-shadow: var(--silam-navbar-glass-shadow);
-    backdrop-filter: blur(18px) saturate(150%);
-    -webkit-backdrop-filter: blur(18px) saturate(150%);
-  }
+html:has(.silamCoverageFullscreenPage) footer,
+body:has(.silamCoverageFullscreenPage) footer {
+  display: none !important;
+}
 
-  .navbar__inner {
-    position: relative;
-    z-index: 1;
-  }
+.silamCoverageFullscreenPage {
+  z-index: 0 !important;
+}
 
-  .navbar-sidebar,
-  .navbar-sidebar__backdrop {
-    z-index: 7000 !important;
-  }
+.silamCoverageFrame {
+  border: 0 !important;
 }
 
 /* -------------------------------------------------------------------------- */
-/* Centered footer content                                                     */
+/* Footer                                                                       */
 /* -------------------------------------------------------------------------- */
 
-/* Центрируем содержимое подвала, не меняя footer config Docusaurus. */
 .footer {
+  border-top: 1px solid var(--silam-card-border);
   text-align: center;
 }
 
@@ -1498,153 +1241,3 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     max-width: 20rem;
   }
 }
-
-/* -------------------------------------------------------------------------- */
-/* Final dark glass navbar + dark hover polish                                 */
-/* -------------------------------------------------------------------------- */
-
-/* Светлая и тёмная темы используют один и тот же glass-паттерн navbar.
-   Для desktop можно применять backdrop-filter прямо к navbar. Для mobile blur
-   остаётся на ::before, чтобы не ломать fixed-позиционирование Docusaurus
-   mobile drawer, который рендерится внутри navbar. */
-.navbar,
-.navbar.navbar--fixed-top {
-  border-bottom: 1px solid var(--silam-navbar-glass-border) !important;
-  color: var(--silam-navbar-glass-text) !important;
-  background: var(--silam-navbar-glass-panel) !important;
-  background-color: var(--silam-navbar-glass-panel) !important;
-  box-shadow: var(--silam-navbar-glass-shadow) !important;
-  backdrop-filter: blur(18px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
-}
-
-html[data-theme='dark'] {
-  --silam-navbar-glass-panel: rgba(9, 28, 30, 0.36);
-  --silam-navbar-glass-text: #e8fffb;
-  --silam-navbar-glass-border: rgba(128, 233, 173, 0.20);
-  --silam-navbar-glass-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.34),
-    0 8px 28px rgba(53, 200, 120, 0.06);
-
-  --silam-dark-menu-hover-text: #dfffee;
-  --silam-dark-menu-hover-panel:
-    linear-gradient(
-      135deg,
-      rgba(128, 233, 173, 0.12),
-      rgba(122, 183, 255, 0.09)
-    );
-  --silam-dark-menu-hover-panel-strong:
-    linear-gradient(
-      135deg,
-      rgba(128, 233, 173, 0.17),
-      rgba(122, 183, 255, 0.12)
-    );
-  --silam-dark-menu-hover-shadow:
-    inset 0 0 0 1px rgba(128, 233, 173, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 10px 28px rgba(53, 200, 120, 0.10),
-    0 4px 16px rgba(122, 183, 255, 0.06);
-  --silam-dark-menu-active-shadow:
-    inset 0 0 0 1px rgba(128, 233, 173, 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 12px 32px rgba(53, 200, 120, 0.14),
-    0 5px 18px rgba(122, 183, 255, 0.08);
-}
-
-html[data-theme='dark'] .navbar,
-html[data-theme='dark'] .navbar.navbar--fixed-top {
-  border-bottom-color: var(--silam-navbar-glass-border) !important;
-  color: var(--silam-navbar-glass-text) !important;
-  background: var(--silam-navbar-glass-panel) !important;
-  background-color: var(--silam-navbar-glass-panel) !important;
-  box-shadow: var(--silam-navbar-glass-shadow) !important;
-  backdrop-filter: blur(18px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
-}
-
-html[data-theme='dark'] .dropdown__menu {
-  border-color: var(--silam-navbar-glass-border) !important;
-  background: rgba(9, 28, 30, 0.62) !important;
-  background-color: rgba(9, 28, 30, 0.62) !important;
-  box-shadow:
-    var(--silam-navbar-glass-shadow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-  backdrop-filter: blur(18px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
-}
-
-/* В тёмной теме hover был слишком плоским/зелёным. Теперь это мягкий
-   glass-tint с лёгким сине-зелёным свечением без движения элементов. */
-html[data-theme='dark'] .navbar__link:hover:not(.navbar__link--active),
-html[data-theme='dark'] .dropdown__link:hover:not(.dropdown__link--active),
-html[data-theme='dark'] .menu__link:hover:not(.menu__link--active),
-html[data-theme='dark'] .navbar-sidebar .menu__link:hover:not(.menu__link--active),
-html[data-theme='dark'] .navbar .clean-btn:hover,
-html[data-theme='dark'] .navbar [class*="colorModeToggle"]:hover,
-html[data-theme='dark'] .navbar-sidebar .clean-btn:hover,
-html[data-theme='dark'] .navbar-sidebar [class*="colorModeToggle"]:hover {
-  color: var(--silam-dark-menu-hover-text) !important;
-  background: var(--silam-dark-menu-hover-panel) !important;
-  box-shadow: var(--silam-dark-menu-hover-shadow) !important;
-  text-decoration: none !important;
-  transform: none !important;
-  backdrop-filter: blur(14px) saturate(145%) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
-}
-
-html[data-theme='dark'] .navbar__link--active,
-html[data-theme='dark'] .dropdown__link--active,
-html[data-theme='dark'] .menu__link--active,
-html[data-theme='dark'] .navbar-sidebar .menu__link--active,
-html[data-theme='dark'] .navbar-sidebar__back {
-  color: var(--ifm-color-primary-lightest) !important;
-  background: var(--silam-dark-menu-hover-panel) !important;
-  box-shadow: var(--silam-dark-menu-active-shadow) !important;
-  backdrop-filter: blur(14px) saturate(145%) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
-}
-
-html[data-theme='dark'] .navbar__link--active:hover,
-html[data-theme='dark'] .dropdown__link--active:hover,
-html[data-theme='dark'] .menu__link--active:hover,
-html[data-theme='dark'] .navbar-sidebar .menu__link--active:hover,
-html[data-theme='dark'] .navbar-sidebar__back:hover {
-  color: var(--ifm-color-primary-lightest) !important;
-  background: var(--silam-dark-menu-hover-panel-strong) !important;
-  box-shadow: var(--silam-dark-menu-active-shadow) !important;
-  transform: none !important;
-}
-
-@media (max-width: 996px) {
-  .navbar,
-  .navbar.navbar--fixed-top,
-  html[data-theme='dark'] .navbar,
-  html[data-theme='dark'] .navbar.navbar--fixed-top {
-    background: transparent !important;
-    background-color: transparent !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  .navbar::before,
-  html[data-theme='dark'] .navbar::before {
-    border-bottom: 1px solid var(--silam-navbar-glass-border) !important;
-    background: var(--silam-navbar-glass-panel) !important;
-    background-color: var(--silam-navbar-glass-panel) !important;
-    box-shadow: var(--silam-navbar-glass-shadow) !important;
-    backdrop-filter: blur(18px) saturate(150%) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
-  }
-
-  html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown:hover,
-  html[data-theme='dark'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown):focus-within > .silamLocaleDropdown {
-    color: var(--silam-dark-menu-hover-text) !important;
-    background: var(--silam-dark-menu-hover-panel) !important;
-    box-shadow: var(--silam-dark-menu-hover-shadow) !important;
-    transform: none !important;
-    backdrop-filter: blur(14px) saturate(145%) !important;
-    -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
-  }
-}
-
