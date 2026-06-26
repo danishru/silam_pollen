@@ -1227,63 +1227,331 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Mobile top navbar tools — single source of truth                             */
+/* Mobile drawer secondary menu — Docusaurus-native flow in SILAM style         */
 /* -------------------------------------------------------------------------- */
 
-/* На mobile язык и переключатель темы должны жить только в верхнем navbar.
-   Штатный mobile drawer Docusaurus может повторно рендерить правые navbar items
-   внутри панели меню; скрываем эти дубликаты только внутри drawer, не меняя
-   native primary/secondary sidebar flow для Releases. */
+/* Keep the native Docusaurus primary/secondary mobile sidebar mechanics.
+   The width variable is important: Infima uses it both for the drawer width
+   and for the slide distance when a contextual menu, such as Releases, opens.
+   A mismatch here is what makes the Releases drawer look empty. */
 @media (max-width: 996px) {
-  /* Убираем дубликаты языка и темы из mobile drawer. Основное меню и native
-     secondary menu Releases остаются штатными и продолжают работать. */
-  .navbar-sidebar .silamLocaleDropdown,
-  .navbar-sidebar__brand .clean-btn:not(.navbar-sidebar__close),
-  .navbar-sidebar__brand [class*="colorModeToggle"] {
+  :root {
+    --ifm-navbar-sidebar-width: min(18.75rem, calc(100vw - 2.25rem));
+  }
+
+  .navbar-sidebar {
+    width: var(--ifm-navbar-sidebar-width) !important;
+    min-width: var(--ifm-navbar-sidebar-width) !important;
+    max-width: var(--ifm-navbar-sidebar-width) !important;
+  }
+
+  .navbar-sidebar__items {
+    display: flex !important;
+    box-sizing: border-box !important;
+    width: calc(var(--ifm-navbar-sidebar-width) * 2) !important;
+    max-width: none !important;
+    height: calc(100vh - var(--ifm-navbar-height)) !important;
+    height: calc(100dvh - var(--ifm-navbar-height)) !important;
+    max-height: calc(100vh - var(--ifm-navbar-height)) !important;
+    max-height: calc(100dvh - var(--ifm-navbar-height)) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    transform: translate3d(0, 0, 0) !important;
+    transition: transform var(--ifm-transition-fast) ease-in-out !important;
+  }
+
+  .navbar-sidebar__items--show-secondary {
+    transform: translate3d(calc(var(--ifm-navbar-sidebar-width) * -1), 0, 0) !important;
+  }
+
+  .navbar-sidebar__item {
+    flex: 0 0 var(--ifm-navbar-sidebar-width) !important;
+    box-sizing: border-box !important;
+    width: var(--ifm-navbar-sidebar-width) !important;
+    min-width: var(--ifm-navbar-sidebar-width) !important;
+    max-width: var(--ifm-navbar-sidebar-width) !important;
+    height: 100% !important;
+    padding: 0.75rem !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 1),
+        rgba(240, 253, 244, 1)
+      ) !important;
+  }
+
+  .navbar-sidebar__brand {
+    padding: 0 0.65rem !important;
+  }
+
+  .navbar-sidebar__brand .navbar__brand {
+    max-width: calc(100% - 8.25rem) !important;
+    margin-right: auto !important;
+  }
+
+  /* The locale dropdown is still a normal Docusaurus navbar item, but visually
+     it behaves like a compact header control. Fixed positioning keeps it in
+     the drawer header even when Docusaurus slides to the Releases submenu. */
+  .navbar-sidebar .silamLocaleDropdown {
+    position: fixed !important;
+    top: calc((var(--ifm-navbar-height) - 2.25rem) / 2) !important;
+    left: calc(var(--ifm-navbar-sidebar-width) - 7.55rem) !important;
+    right: auto !important;
+    z-index: 7100 !important;
+    display: flex !important;
+    width: 2.25rem !important;
+    min-width: 2.25rem !important;
+    height: 2.25rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .navbar-sidebar .silamLocaleDropdown > .navbar__link {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 2.25rem !important;
+    min-width: 2.25rem !important;
+    height: 2.25rem !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+    color: var(--silam-accent-green) !important;
+    background: transparent !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+    transform: none !important;
+  }
+
+  .navbar-sidebar .silamLocaleDropdown > .navbar__link::before {
+    content: "文";
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .navbar-sidebar .silamLocaleDropdown > .navbar__link::after {
+    display: none !important;
+  }
+
+  .navbar-sidebar .silamLocaleDropdown > .navbar__link:hover {
+    background: rgba(22, 138, 74, 0.09) !important;
+  }
+
+  .navbar-sidebar .silamLocaleDropdown .dropdown__menu {
+    position: fixed !important;
+    top: calc(var(--ifm-navbar-height) - 0.35rem) !important;
+    left: calc(var(--ifm-navbar-sidebar-width) - 10.85rem) !important;
+    right: auto !important;
+    min-width: 10rem !important;
+    max-width: min(14rem, calc(100vw - 3rem)) !important;
+  }
+
+  /* Native Docusaurus secondary menu button, restyled as a compact glass row. */
+  .navbar-sidebar__back {
+    position: sticky !important;
+    top: -0.75rem !important;
+    z-index: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin: -0.15rem 0 0.7rem !important;
+    padding: 0.68rem 0.82rem !important;
+    border: 1px solid rgba(22, 138, 74, 0.14) !important;
+    border-radius: 16px !important;
+    color: var(--silam-accent-green) !important;
+    background:
+      linear-gradient(
+        135deg,
+        rgba(22, 138, 74, 0.10),
+        rgba(21, 112, 239, 0.07)
+      ) !important;
+    box-shadow: 0 12px 30px rgba(31, 41, 55, 0.08) !important;
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.015em !important;
+    text-align: left !important;
+    transform: none !important;
+  }
+
+  .navbar-sidebar__back:hover {
+    background:
+      linear-gradient(
+        135deg,
+        rgba(22, 138, 74, 0.14),
+        rgba(21, 112, 239, 0.10)
+      ) !important;
+  }
+
+  /* Blog/Releases secondary menu. Long release titles may wrap, but primary
+     site navigation stays single-line and compact. */
+  .navbar-sidebar__items--show-secondary .navbar-sidebar__item:nth-child(2) .menu__link {
+    white-space: normal !important;
+    line-height: 1.22 !important;
+  }
+
+  .navbar-sidebar__items--show-secondary .navbar-sidebar__item:nth-child(2) h3 {
+    margin: 0.85rem 0.55rem 0.45rem !important;
+    color: rgba(17, 24, 39, 0.58) !important;
+    font-size: 0.78rem !important;
+    font-weight: 850 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar__item {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(11, 17, 23, 1),
+        rgba(17, 25, 35, 1)
+      ) !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar .silamLocaleDropdown > .navbar__link {
+    color: var(--ifm-color-primary-lightest) !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar .silamLocaleDropdown > .navbar__link:hover {
+    background: rgba(53, 200, 120, 0.10) !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar__back {
+    border-color: rgba(255, 255, 255, 0.10) !important;
+    color: var(--ifm-color-primary-lightest) !important;
+    background:
+      linear-gradient(
+        135deg,
+        rgba(53, 200, 120, 0.14),
+        rgba(122, 183, 255, 0.09)
+      ) !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26) !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar__back:hover {
+    background:
+      linear-gradient(
+        135deg,
+        rgba(53, 200, 120, 0.18),
+        rgba(122, 183, 255, 0.12)
+      ) !important;
+  }
+
+  html[data-theme='dark'] .navbar-sidebar__items--show-secondary .navbar-sidebar__item:nth-child(2) h3 {
+    color: rgba(248, 250, 252, 0.58) !important;
+  }
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* SILAM brand button + mobile drawer language/theme single source             */
+/* -------------------------------------------------------------------------- */
+
+/* Brand button: make the main "SILAM Pollen" entry feel like the roadmap
+   primary action while keeping the native Docusaurus navbar structure. */
+.navbar__brand {
+  border: 1px solid rgba(22, 138, 74, 0.20) !important;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.30), transparent 42%),
+    linear-gradient(135deg, var(--silam-accent-green), var(--silam-accent-blue)) !important;
+  box-shadow: 0 14px 34px rgba(21, 112, 239, 0.18) !important;
+}
+
+.navbar__brand:hover {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.34), transparent 42%),
+    linear-gradient(135deg, #1b9b56, #1c7df4) !important;
+  box-shadow: 0 18px 40px rgba(21, 112, 239, 0.24) !important;
+  transform: translateY(-1px) !important;
+}
+
+.navbar__brand:focus-visible {
+  outline: 3px solid rgba(21, 112, 239, 0.30) !important;
+  outline-offset: 3px !important;
+}
+
+.navbar__title {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(13, 95, 51, 0.35) !important;
+}
+
+.navbar__logo {
+  background: rgba(255, 255, 255, 0.18) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+}
+
+html[data-theme='dark'] .navbar__brand {
+  border-color: rgba(128, 233, 173, 0.22) !important;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.16), transparent 42%),
+    linear-gradient(135deg, rgba(53, 200, 120, 0.92), rgba(122, 183, 255, 0.84)) !important;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.32) !important;
+}
+
+html[data-theme='dark'] .navbar__brand:hover {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.20), transparent 42%),
+    linear-gradient(135deg, rgba(74, 222, 128, 0.96), rgba(122, 183, 255, 0.90)) !important;
+}
+
+/* Keep mobile tools in one place: the mobile drawer header.
+   Docusaurus can render the same right-side navbar items in several mobile
+   places. We keep the drawer header controls and hide top-navbar duplicates
+   to avoid two language/theme controls on the same screen. */
+@media (max-width: 996px) {
+  .navbar__items--right .silamLocaleDropdown,
+  .navbar__items--right .clean-btn,
+  .navbar__items--right [class*="colorModeToggle"] {
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;
   }
 
-  /* После удаления дубликатов в header drawer остаётся только brand + close. */
+  .navbar-sidebar__brand {
+    gap: 0.35rem !important;
+  }
+
   .navbar-sidebar__brand .navbar__brand {
-    max-width: calc(100% - 3rem) !important;
+    flex: 1 1 auto !important;
+    max-width: calc(100% - 8.85rem) !important;
+    margin-right: auto !important;
   }
 
-  /* Правые controls в верхнем navbar: язык + тема. */
-  .navbar__items--right {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    flex: 0 0 auto !important;
-    gap: 0.25rem !important;
-    margin-left: auto !important;
-    min-width: max-content !important;
-  }
-
-  .navbar__items--right .clean-btn,
-  .navbar__items--right [class*="colorModeToggle"] {
+  .navbar-sidebar__brand .clean-btn:not(.navbar-sidebar__close),
+  .navbar-sidebar__brand [class*="colorModeToggle"],
+  .navbar-sidebar__close {
     display: inline-flex !important;
+    visibility: visible !important;
     align-items: center !important;
     justify-content: center !important;
     flex: 0 0 auto !important;
     width: 2.25rem !important;
     min-width: 2.25rem !important;
     height: 2.25rem !important;
+    margin-left: 0 !important;
     border-radius: 999px !important;
+    pointer-events: auto !important;
   }
 
-  .navbar__items--right .silamLocaleDropdown {
+  .navbar-sidebar .silamLocaleDropdown {
+    position: fixed !important;
+    top: calc((var(--ifm-navbar-height) - 2.25rem) / 2) !important;
+    left: calc(var(--ifm-navbar-sidebar-width) - 8.05rem) !important;
+    right: auto !important;
+    z-index: 7100 !important;
     display: flex !important;
-    flex: 0 0 auto !important;
+    visibility: visible !important;
     width: 2.65rem !important;
     min-width: 2.65rem !important;
     height: 2.25rem !important;
     margin: 0 !important;
     padding: 0 !important;
+    pointer-events: auto !important;
   }
 
-  .navbar__items--right .silamLocaleDropdown > .navbar__link {
+  .navbar-sidebar .silamLocaleDropdown > .navbar__link {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1302,49 +1570,45 @@ html[data-theme='dark'] .navbar-sidebar .menu__link--active {
     transform: none !important;
   }
 
-  .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
+  .navbar-sidebar .silamLocaleDropdown > .navbar__link::before {
     content: "ENG";
-    font-size: 0.72rem;
-    font-weight: 850;
-    letter-spacing: 0.035em;
-    line-height: 1;
+    font-size: 0.72rem !important;
+    font-weight: 850 !important;
+    letter-spacing: 0.035em !important;
+    line-height: 1 !important;
   }
 
-  html[lang^="ru"] .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
+  html[lang^="ru"] .navbar-sidebar .silamLocaleDropdown > .navbar__link::before {
     content: "RUS";
   }
 
-  html[lang^="en"] .navbar__items--right .silamLocaleDropdown > .navbar__link::before {
+  html[lang^="en"] .navbar-sidebar .silamLocaleDropdown > .navbar__link::before {
     content: "ENG";
   }
 
-  .navbar__items--right .silamLocaleDropdown > .navbar__link::after {
+  .navbar-sidebar .silamLocaleDropdown > .navbar__link::after {
     display: none !important;
   }
 
-  .navbar__items--right .silamLocaleDropdown > .navbar__link:hover {
+  .navbar-sidebar .silamLocaleDropdown > .navbar__link:hover {
     background: rgba(22, 138, 74, 0.09) !important;
     transform: none !important;
   }
 
-  .navbar__items--right .silamLocaleDropdown .dropdown__menu {
-    top: calc(100% + 0.45rem) !important;
-    right: 0 !important;
-    left: auto !important;
+  .navbar-sidebar .silamLocaleDropdown .dropdown__menu {
+    position: fixed !important;
+    top: calc(var(--ifm-navbar-height) - 0.35rem) !important;
+    left: calc(var(--ifm-navbar-sidebar-width) - 11.25rem) !important;
+    right: auto !important;
     min-width: 10rem !important;
-    max-width: min(14rem, calc(100vw - 1.5rem)) !important;
+    max-width: min(14rem, calc(100vw - 3rem)) !important;
   }
 
-  /* Освобождаем место под hamburger слева и два compact-control справа. */
-  .navbar__brand {
-    max-width: calc(100vw - 10.5rem) !important;
-  }
-
-  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link {
+  html[data-theme='dark'] .navbar-sidebar .silamLocaleDropdown > .navbar__link {
     color: var(--ifm-color-primary-lightest) !important;
   }
 
-  html[data-theme='dark'] .navbar__items--right .silamLocaleDropdown > .navbar__link:hover {
+  html[data-theme='dark'] .navbar-sidebar .silamLocaleDropdown > .navbar__link:hover {
     background: rgba(53, 200, 120, 0.10) !important;
   }
 }
