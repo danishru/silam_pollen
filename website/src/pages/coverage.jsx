@@ -72,10 +72,11 @@ function CoverageMapFrame({text}) {
         type: 'silam-coverage-context',
         theme: colorMode,
         lang: text.lang,
+        navbarHeight,
       },
       '*',
     );
-  }, [colorMode, text.lang]);
+  }, [colorMode, navbarHeight, text.lang]);
 
   useEffect(() => {
     sendFrameContext();

@@ -6,42 +6,43 @@ hide_table_of_contents: true
 ---
 
 import styles from '@site/src/pages/roadmap.module.css';
+import shared from '@site/src/pages/siteShared.module.css';
 import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
 
 # Дорожная карта SILAM Pollen
 
-<div className={styles.hero}>
-  <div className={styles.heroContent}>
-    <span className={styles.eyebrow}>Дорожная карта проекта</span>
-    <h2 className={styles.heroTitle}>Более понятный прогноз аллергии: место, время и контекст.</h2>
-    <p className={styles.heroText}>
+<div className={shared.hero}>
+  <div className={shared.heroContent}>
+    <span className={shared.eyebrow}>Дорожная карта проекта</span>
+    <h2 className={shared.heroTitle}>Более понятный прогноз аллергии: место, время и контекст.</h2>
+    <p className={shared.heroText}>
       SILAM Pollen развивается от узкой интеграции прогноза пыльцы к более умному экологическому прогнозу для Home Assistant: проще настройка, прозрачнее источники данных, богаче контекст прогноза, готовность к сводкам для AI и будущие карты распределения пыльцы.
     </p>
-    <div className={styles.heroActions}>
-      <a className={styles.primaryButton} href="#release-plan" data-roadmap-anchor-link>Смотреть дорожную карту</a>
-      <a className={styles.secondaryButton} href="#future-backlog" data-roadmap-anchor-link>Будущие идеи</a>
+    <div className={shared.heroActions}>
+      <a className={shared.primaryButton} href="#release-plan" data-roadmap-anchor-link>Смотреть дорожную карту</a>
+      <a className={shared.secondaryButton} href="#future-backlog" data-roadmap-anchor-link>Будущие идеи</a>
     </div>
   </div>
-  <div className={styles.heroPanel}>
-    <div className={styles.signalCard}>
-      <span className={styles.signalIcon}>🌿</span>
+  <div className={shared.heroPanel}>
+    <div className={shared.signalCard}>
+      <span className={shared.signalIcon}>🌿</span>
       <strong>Дом с учётом пыльцы</strong>
       <small>Понимать ситуацию сегодня, завтра и выбирать безопасные моменты для проветривания.</small>
     </div>
-    <div className={styles.signalCard}>
-      <span className={styles.signalIcon}>🕒</span>
+    <div className={shared.signalCard}>
+      <span className={shared.signalIcon}>🕒</span>
       <strong>Прогноз во времени</strong>
       <small>Видеть, что недавно изменилось, что происходит сейчас и что будет дальше.</small>
     </div>
-    <div className={styles.signalCard}>
-      <span className={styles.signalIcon}>🗺️</span>
+    <div className={shared.signalCard}>
+      <span className={shared.signalIcon}>🗺️</span>
       <strong>Пространственный контекст</strong>
       <small>В будущем карта сможет показывать, как риск пыльцы распределяется вокруг выбранной точки.</small>
     </div>
   </div>
 </div>
 
-<div className={styles.notice}>
+<div className={shared.notice}>
   <strong>Примечание:</strong> это стратегическое направление развития проекта. Состав и порядок релизов могут меняться в зависимости от изменений Home Assistant, доступности данных SILAM, надёжности внешних сервисов и обратной связи пользователей.
 </div>
 
@@ -113,16 +114,16 @@ import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
 
 <RoadmapStripRuntime />
 
-<section id="release-plan" className={styles.sectionHeader}>
-  <span className={styles.eyebrow}>План релизов</span>
+<section id="release-plan" className={`${shared.sectionHeader} ${styles.sectionHeader}`}>
+  <span className={shared.eyebrow}>План релизов</span>
   <h2>Стратегические этапы</h2>
 </section>
 
-<div className={styles.releaseGrid}>
-  <article id="v042" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
-    <div className={styles.cardHeader}>
-      <span className={styles.versionBadge}>v0.4.2</span>
-      <span className={styles.statusBadge}>Следующий</span>
+<div className={shared.releaseGrid}>
+  <article id="v042" className={`${shared.releaseCard} ${styles.releaseCard}`} data-roadmap-anchor-highlight-target>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>v0.4.2</span>
+      <span className={shared.statusBadge}>Следующий</span>
     </div>
     <h3>Более понятная первая настройка</h3>
     <p>
@@ -137,10 +138,10 @@ import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
     </ul>
   </article>
 
-  <article id="v043" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
-    <div className={styles.cardHeader}>
-      <span className={styles.versionBadge}>v0.4.3</span>
-      <span className={styles.statusBadgeMuted}>Основа</span>
+  <article id="v043" className={`${shared.releaseCard} ${styles.releaseCard}`} data-roadmap-anchor-highlight-target>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>v0.4.3</span>
+      <span className={shared.statusBadgeMuted}>Основа</span>
     </div>
     <h3>Более чистая техническая база</h3>
     <p>
@@ -153,16 +154,16 @@ import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
     </ul>
   </article>
 
-  <article id="v044" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
-    <div className={styles.cardHeader}>
-      <span className={styles.versionBadge}>v0.4.4</span>
-      <span className={styles.statusBadgeMuted}>Временная шкала</span>
+  <article id="v044" className={`${shared.releaseCard} ${styles.releaseCard}`} data-roadmap-anchor-highlight-target>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>v0.4.4</span>
+      <span className={shared.statusBadgeMuted}>Временная шкала</span>
     </div>
     <h3>Контекст прогноза из недавнего прошлого</h3>
     <p>
       Прогноз проще понимать, когда видно недавний тренд. Этот этап добавляет короткое ретроспективное окно для кастомной карточки прогноза.
     </p>
-    <div className={styles.timelineSample}>
+    <div className={shared.timelineSample}>
       <span>-12ч</span><span>-9ч</span><span>-6ч</span><span>-3ч</span><strong>сейчас</strong><span>+3ч</span><span>+6ч</span><span>+9ч</span><span>+12ч</span>
     </div>
     <ul>
@@ -172,10 +173,10 @@ import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
     </ul>
   </article>
 
-  <article id="v045" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
-    <div className={styles.cardHeader}>
-      <span className={styles.versionBadge}>v0.4.5</span>
-      <span className={styles.statusBadgeMuted}>Погода</span>
+  <article id="v045" className={`${shared.releaseCard} ${styles.releaseCard}`} data-roadmap-anchor-highlight-target>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>v0.4.5</span>
+      <span className={shared.statusBadgeMuted}>Погода</span>
     </div>
     <h3>Больше погодного контекста вокруг пыльцы</h3>
     <p>
@@ -189,10 +190,10 @@ import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
     </ul>
   </article>
 
-  <article id="v046" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
-    <div className={styles.cardHeader}>
-      <span className={styles.versionBadge}>v0.4.6</span>
-      <span className={styles.statusBadgeMuted}>Доступ к данным</span>
+  <article id="v046" className={`${shared.releaseCard} ${styles.releaseCard}`} data-roadmap-anchor-highlight-target>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>v0.4.6</span>
+      <span className={shared.statusBadgeMuted}>Доступ к данным</span>
     </div>
     <h3>Понятные сводки для автоматизаций и панелей</h3>
     <p>
@@ -205,10 +206,10 @@ import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
     </ul>
   </article>
 
-  <article id="v047" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
-    <div className={styles.cardHeader}>
-      <span className={styles.versionBadge}>v0.4.7</span>
-      <span className={styles.statusBadgeMuted}>Assist</span>
+  <article id="v047" className={`${shared.releaseCard} ${styles.releaseCard}`} data-roadmap-anchor-highlight-target>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>v0.4.7</span>
+      <span className={shared.statusBadgeMuted}>Assist</span>
     </div>
     <h3>Ответы о пыльце, готовые для AI</h3>
     <p>
@@ -222,47 +223,47 @@ import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
   </article>
 </div>
 
-<section id="future-backlog" className={styles.sectionHeader}>
-  <span className={styles.eyebrow}>Будущие направления</span>
+<section id="future-backlog" className={`${shared.sectionHeader} ${styles.sectionHeader}`}>
+  <span className={shared.eyebrow}>Будущие направления</span>
   <h2>Долгосрочное видение</h2>
 </section>
 
-<div className={styles.futureGrid}>
-  <article className={styles.futureCard}>
-    <span className={styles.futureIcon}>🌫️</span>
+<div className={shared.futureGrid}>
+  <article className={`${shared.futureCard} ${styles.futureCard}`}>
+    <span className={shared.futureIcon}>🌫️</span>
     <h3>Прогноз пыли</h3>
     <p>Исследовать, можно ли превратить наборы данных SILAM о пыли в отдельный прогнозный домен со своими единицами, шкалами, сущностями, диагностикой и визуальным языком.</p>
   </article>
-  <article className={styles.futureCard}>
-    <span className={styles.futureIcon}>🔥</span>
+  <article className={`${shared.futureCard} ${styles.futureCard}`}>
+    <span className={shared.futureIcon}>🔥</span>
     <h3>Риск пожаров</h3>
     <p>Исследовать открытые источники прогноза пожарного риска и понять, могут ли они дополнить экологическую картину внутри Home Assistant.</p>
   </article>
-  <article className={styles.futureCard}>
-    <span className={styles.futureIcon}>🗺️</span>
+  <article className={`${shared.futureCard} ${styles.futureCard}`}>
+    <span className={shared.futureIcon}>🗺️</span>
     <h3>2D-слой пыльцы на карте</h3>
     <p>Перейти от точечного прогноза к тепловой карте вокруг выбранной точки. Начать со статичных слоёв, затем развивать интерактивные карты и анимацию.</p>
   </article>
-  <article className={styles.futureCard}>
-    <span className={styles.futureIcon}>🧭</span>
+  <article className={`${shared.futureCard} ${styles.futureCard}`}>
+    <span className={shared.futureIcon}>🧭</span>
     <h3>Перенастройка</h3>
     <p>Позволить пользователям менять точку наблюдения без пересоздания интеграции, сохраняя безопасность кэша и состояния источников данных.</p>
   </article>
-  <article className={styles.futureCard}>
-    <span className={styles.futureIcon}>🧪</span>
+  <article className={`${shared.futureCard} ${styles.futureCard}`}>
+    <span className={shared.futureIcon}>🧪</span>
     <h3>Стабильность и тесты</h3>
     <p>Продолжать укреплять проверку данных, поведение кэша, сценарии настройки, миграции, сводки и временные окна прогноза.</p>
   </article>
 </div>
 
-<section className={`${styles.sectionHeader} ${styles.endpointSectionHeader}`}>
-  <span className={styles.eyebrow}>Сетевые требования</span>
+<section className={`${shared.sectionHeader} ${shared.endpointSectionHeader} ${styles.sectionHeader} ${styles.endpointSectionHeader}`}>
+  <span className={shared.eyebrow}>Сетевые требования</span>
   <h2>Прозрачность внешних конечных точек</h2>
 </section>
 
 SILAM Pollen должен явно показывать, какие внешние сервисы используются и зачем. Это особенно важно для пользователей за межсетевыми экранами, прокси или в регионах с сетевыми ограничениями.
 
-<div className={styles.endpointGrid}>
+<div className={shared.endpointGrid}>
   <div>
     <h3>Данные прогноза</h3>
     <code>thredds.silam.fmi.fi</code>

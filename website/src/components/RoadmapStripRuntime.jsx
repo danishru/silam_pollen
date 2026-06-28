@@ -260,6 +260,10 @@ export default function RoadmapStripRuntime() {
       let pendingAnchorTimers = [];
       let pendingAnchorScrollActive = false;
       let pendingAnchorHighlightDone = false;
+      let pendingAnchorHighlightTarget = null;
+      let pendingAnchorHighlightObserver = null;
+      let pendingAnchorHighlightTimer = 0;
+      let pendingAnchorHighlightFrame = 0;
 
       const getTargetOffset = (target) => {
         const scrollMarginTop = Number.parseFloat(window.getComputedStyle(target).scrollMarginTop);
@@ -269,6 +273,56 @@ export default function RoadmapStripRuntime() {
       const getTargetScrollY = (target) => (
         Math.max(0, window.scrollY + target.getBoundingClientRect().top - getTargetOffset(target))
       );
+
+      const getViewportHeight = () => (
+        window.innerHeight || document.documentElement?.clientHeight || 0
+      );
+
+      const isAnchorTargetVisible = (target) => {
+        if (!target || !document.contains(target)) {
+          return false;
+        }
+
+        const rect = target.getBoundingClientRect();
+        const viewportHeight = getViewportHeight();
+
+        if (!viewportHeight || rect.width <= 0 || rect.height <= 0) {
+          return false;
+        }
+
+        const topSafeZone = Math.min(
+          viewportHeight,
+          Math.max(0, getTargetOffset(target) - 12),
+        );
+        const bottomSafeZone = Math.max(topSafeZone, viewportHeight - 16);
+        const visibleTop = Math.max(rect.top, topSafeZone);
+        const visibleBottom = Math.min(rect.bottom, bottomSafeZone);
+        const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+        const requiredVisibleHeight = Math.min(
+          96,
+          Math.max(42, rect.height * 0.18),
+        );
+
+        return visibleHeight >= requiredVisibleHeight
+          || (rect.top >= topSafeZone && rect.top <= bottomSafeZone - 40);
+      };
+
+      const clearAnchorHighlightWatch = () => {
+        pendingAnchorHighlightObserver?.disconnect?.();
+        pendingAnchorHighlightObserver = null;
+
+        if (pendingAnchorHighlightTimer) {
+          window.clearTimeout(pendingAnchorHighlightTimer);
+          pendingAnchorHighlightTimer = 0;
+        }
+
+        if (pendingAnchorHighlightFrame) {
+          window.cancelAnimationFrame(pendingAnchorHighlightFrame);
+          pendingAnchorHighlightFrame = 0;
+        }
+
+        pendingAnchorHighlightTarget = null;
+      };
 
       const clearAnchorCorrections = () => {
         pendingAnchorTimers.forEach((timerId) => window.clearTimeout(timerId));
@@ -293,6 +347,80 @@ export default function RoadmapStripRuntime() {
         window.setTimeout(clearHighlight, 1400);
       };
 
+      const tryTriggerAnchorHighlightWhenVisible = (target) => {
+        if (pendingAnchorHighlightDone || pendingAnchorHighlightTarget !== target) {
+          return true;
+        }
+
+        if (!target || !document.contains(target)) {
+          clearAnchorHighlightWatch();
+          return true;
+        }
+
+        if (!isAnchorTargetVisible(target)) {
+          return false;
+        }
+
+        pendingAnchorHighlightDone = true;
+        clearAnchorHighlightWatch();
+        triggerAnchorHighlight(target);
+        return true;
+      };
+
+      const scheduleAnchorHighlightWhenVisible = (target) => {
+        if (!target?.matches?.('[data-roadmap-anchor-highlight-target]') || pendingAnchorHighlightDone) {
+          return;
+        }
+
+        if (pendingAnchorHighlightTarget === target) {
+          tryTriggerAnchorHighlightWhenVisible(target);
+          return;
+        }
+
+        clearAnchorHighlightWatch();
+        pendingAnchorHighlightTarget = target;
+
+        if (tryTriggerAnchorHighlightWhenVisible(target)) {
+          return;
+        }
+
+        if ('IntersectionObserver' in window) {
+          const topRootMargin = Math.max(0, Math.round(getTargetOffset(target) - 12));
+
+          pendingAnchorHighlightObserver = new IntersectionObserver((entries) => {
+            if (entries.some((entry) => entry.isIntersecting)) {
+              tryTriggerAnchorHighlightWhenVisible(target);
+            }
+          }, {
+            root: null,
+            rootMargin: `-${topRootMargin}px 0px -10% 0px`,
+            threshold: [0, 0.12, 0.24, 0.36],
+          });
+          pendingAnchorHighlightObserver.observe(target);
+        }
+
+        // Страховка для браузеров без IntersectionObserver или редких случаев,
+        // когда smooth-scroll завершился между событиями наблюдателя.
+        pendingAnchorHighlightTimer = window.setTimeout(() => {
+          if (!tryTriggerAnchorHighlightWhenVisible(target)) {
+            clearAnchorHighlightWatch();
+          }
+        }, compactTransitionLockMs + 1500);
+      };
+
+      const scheduleAnchorHighlightVisibilityCheck = () => {
+        const target = pendingAnchorHighlightTarget;
+
+        if (!target || pendingAnchorHighlightFrame) {
+          return;
+        }
+
+        pendingAnchorHighlightFrame = window.requestAnimationFrame(() => {
+          pendingAnchorHighlightFrame = 0;
+          tryTriggerAnchorHighlightWhenVisible(target);
+        });
+      };
+
       const stopAnchorScrollCorrection = (options = {}) => {
         const hadPendingAnchorScroll = pendingAnchorScrollActive || pendingAnchorTarget || pendingAnchorTimers.length > 0;
 
@@ -300,6 +428,7 @@ export default function RoadmapStripRuntime() {
         pendingAnchorScrollActive = false;
         pendingAnchorHighlightDone = false;
         clearAnchorCorrections();
+        clearAnchorHighlightWatch();
 
         if (hadPendingAnchorScroll && options.stopNativeScroll) {
           // Прерываем нативный smooth scroll, чтобы отложенные корректировки не спорили с ручной прокруткой.
@@ -356,8 +485,7 @@ export default function RoadmapStripRuntime() {
             correctAnchorScroll(target);
 
             if (!pendingAnchorHighlightDone) {
-              pendingAnchorHighlightDone = true;
-              triggerAnchorHighlight(target);
+              scheduleAnchorHighlightWhenVisible(target);
             }
 
             if (index === delays.length - 1) {
@@ -476,6 +604,7 @@ export default function RoadmapStripRuntime() {
       document.addEventListener('click', handleDocumentClick);
       window.addEventListener('resize', scheduleResizeWork);
       window.addEventListener('scroll', scheduleCompactState, {passive: true});
+      window.addEventListener('scroll', scheduleAnchorHighlightVisibilityCheck, {passive: true});
       window.addEventListener('wheel', cancelAnchorScrollOnUserInput, {passive: true});
       window.addEventListener('touchstart', cancelAnchorScrollOnUserInput, {passive: true});
       window.addEventListener('pointerdown', cancelAnchorScrollOnUserInput, {passive: true});
@@ -501,6 +630,7 @@ export default function RoadmapStripRuntime() {
 
       return () => {
         clearAnchorCorrections();
+        clearAnchorHighlightWatch();
         if (compactFrame) {
           window.cancelAnimationFrame(compactFrame);
         }
@@ -521,6 +651,7 @@ export default function RoadmapStripRuntime() {
         document.removeEventListener('click', handleDocumentClick);
         window.removeEventListener('resize', scheduleResizeWork);
         window.removeEventListener('scroll', scheduleCompactState);
+        window.removeEventListener('scroll', scheduleAnchorHighlightVisibilityCheck);
         window.removeEventListener('wheel', cancelAnchorScrollOnUserInput);
         window.removeEventListener('touchstart', cancelAnchorScrollOnUserInput);
         window.removeEventListener('pointerdown', cancelAnchorScrollOnUserInput);

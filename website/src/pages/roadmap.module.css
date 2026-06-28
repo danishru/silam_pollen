@@ -1,8 +1,9 @@
 /* SILAM Pollen roadmap page styles.
  * Place this content into: website/src/pages/roadmap.module.css
  *
- * Файл намеренно содержит только локальную композицию страницы roadmap.
- * Глобальная дизайн-система, navbar/sidebar/footer и общие токены живут в custom.css.
+ * Файл содержит только поведение и композицию страницы roadmap:
+ * sticky strip, якорные отступы, шаги, стрелки и highlight карточек.
+ * Переиспользуемые визуальные блоки вынесены в siteShared.module.css.
  */
 
 @property --silam-roadmap-step-min {
@@ -133,178 +134,6 @@ html {
   scroll-margin-top: var(--silam-roadmap-anchor-default-offset);
 }
 
-.hero {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
-  gap: 2rem;
-  align-items: stretch;
-  margin: 1.5rem 0 2rem;
-  padding: clamp(1.5rem, 4vw, 3rem);
-  overflow: hidden;
-  border: 1px solid var(--silam-card-border);
-  border-radius: var(--silam-radius-hero);
-  background:
-    radial-gradient(circle at top left, rgb(var(--silam-accent-mint-rgb) / 0.22), transparent 34rem),
-    radial-gradient(circle at bottom right, rgb(var(--silam-accent-blue-rgb) / 0.18), transparent 28rem),
-    linear-gradient(135deg, rgb(var(--silam-accent-green-rgb) / 0.10), rgb(var(--silam-accent-blue-rgb) / 0.07));
-}
-
-.hero::before {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  content: '';
-  background-image:
-    linear-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.06) 1px, transparent 1px);
-  background-size: 34px 34px;
-  mask-image: linear-gradient(120deg, black, transparent 80%);
-}
-
-.heroContent,
-.heroPanel {
-  position: relative;
-  z-index: 1;
-}
-
-.eyebrow {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  padding: 0.35rem 0.65rem;
-  border: 1px solid rgb(var(--silam-accent-mint-rgb) / 0.35);
-  border-radius: var(--silam-radius-pill);
-  color: var(--ifm-color-primary-dark);
-  background: rgb(var(--silam-accent-mint-rgb) / 0.12);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.heroTitle {
-  max-width: 900px;
-  margin: 0;
-  font-size: clamp(2.1rem, 5vw, 4.6rem);
-  line-height: 0.98;
-  letter-spacing: -0.055em;
-}
-
-.heroText {
-  max-width: 760px;
-  margin: 1.25rem 0 0;
-  color: var(--silam-text-soft);
-  font-size: 1.08rem;
-}
-
-.heroActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-}
-
-.primaryButton,
-.secondaryButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0.65rem 1rem;
-  border-radius: var(--silam-radius-pill);
-  font-weight: 750;
-  text-decoration: none !important;
-  transition:
-    color 180ms ease,
-    border-color 180ms ease,
-    transform 180ms ease;
-}
-
-.primaryButton {
-  color: var(--silam-text-inverse) !important;
-  background: var(--silam-gradient-accent);
-}
-
-.secondaryButton {
-  border: 1px solid var(--silam-card-border);
-  color: var(--silam-text-main) !important;
-  background: var(--silam-card-surface);
-}
-
-.primaryButton:hover,
-.secondaryButton:hover {
-  text-decoration: none !important;
-}
-
-.primaryButton:hover {
-  background:
-    linear-gradient(
-      135deg,
-      rgb(255 255 255 / 0.14),
-      rgb(255 255 255 / 0.030)
-    ),
-    var(--silam-gradient-accent);
-  filter: saturate(1.10) contrast(1.035);
-}
-
-.secondaryButton:hover {
-  border-color: rgb(var(--silam-accent-green-rgb) / 0.24);
-  color: var(--ifm-color-primary-dark) !important;
-  background:
-    linear-gradient(
-      135deg,
-      rgb(var(--silam-accent-green-rgb) / 0.075),
-      rgb(var(--silam-accent-blue-rgb) / 0.050)
-    );
-}
-
-.heroPanel {
-  display: grid;
-  gap: 1rem;
-  align-content: center;
-}
-
-.signalCard {
-  padding: 1rem;
-  border: 1px solid var(--silam-glass-border);
-  border-radius: var(--silam-radius-2xl);
-  background: var(--silam-glass-surface-strong);
-  backdrop-filter: var(--silam-glass-filter-soft);
-  -webkit-backdrop-filter: var(--silam-glass-filter-soft);
-}
-
-.signalCard strong,
-.signalCard small {
-  display: block;
-}
-
-.signalCard small {
-  margin-top: 0.15rem;
-  color: var(--silam-text-soft);
-}
-
-.signalIcon,
-.futureIcon {
-  display: inline-grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  margin-bottom: 0.65rem;
-  border-radius: var(--silam-radius-lg);
-  background: rgb(var(--silam-accent-mint-rgb) / 0.16);
-  font-size: 1.45rem;
-}
-
-.notice {
-  margin: 1.5rem 0 2rem;
-  padding: 1rem 1.15rem;
-  border-left: 4px solid var(--ifm-color-primary);
-  border-radius: var(--silam-radius-md);
-  background: var(--silam-bg-surface-soft);
-}
-
 .roadmapStripShell {
   position: sticky;
   top: calc(var(--ifm-navbar-height) + 0.5rem);
@@ -395,8 +224,6 @@ html[data-theme='dark'] .roadmapStripShell {
     margin 320ms cubic-bezier(0.22, 1, 0.36, 1),
     padding 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-
-
 
 
 .roadmapStripScroller {
@@ -584,9 +411,10 @@ html[data-theme='dark'] .roadmapStripShell {
   padding: 0;
   border: 0;
   border-radius: 0;
-  color: var(--silam-glass-text);
+  color: var(--silam-menu-hover-text);
   background: transparent;
   cursor: pointer;
+  filter: drop-shadow(0 0 7px rgb(var(--silam-accent-blue-rgb) / 0.16));
   transition:
     opacity 160ms ease,
     color 160ms ease,
@@ -621,7 +449,8 @@ html[data-theme='dark'] .roadmapStripShell {
 .roadmapStripArrow:hover:not(:disabled),
 .roadmapStripArrow:focus-visible:not(:disabled),
 .roadmapStripArrow:active:not(:disabled) {
-  color: var(--silam-menu-hover-text);
+  color: var(--silam-accent-green);
+  filter: drop-shadow(0 0 10px rgb(var(--silam-accent-green-rgb) / 0.24));
 }
 
 .roadmapStripArrow:focus-visible {
@@ -632,8 +461,8 @@ html[data-theme='dark'] .roadmapStripShell {
 .roadmapStripArrow svg {
   position: relative;
   z-index: 2;
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 1.45rem;
+  height: 1.45rem;
   fill: currentColor;
 }
 
@@ -893,56 +722,6 @@ html[data-theme='dark'] .activeStep:hover {
   border-style: dashed;
 }
 
-.sectionHeader {
-  margin: 3rem 0 1.25rem;
-}
-
-.endpointSectionHeader {
-  margin-top: 4.75rem;
-}
-
-.sectionHeader h2 {
-  margin: 0;
-  font-size: clamp(1.7rem, 3vw, 2.4rem);
-  letter-spacing: -0.035em;
-}
-
-.releaseGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.releaseCard,
-.futureCard,
-.endpointGrid > div {
-  border: 1px solid var(--silam-card-border);
-  border-radius: var(--silam-radius-3xl);
-  background: var(--silam-card-surface);
-}
-
-.releaseCard,
-.futureCard {
-  padding: 1.15rem;
-}
-
-.releaseCard h3,
-.futureCard h3,
-.endpointGrid h3 {
-  margin-top: 0;
-}
-
-.releaseCard p,
-.futureCard p,
-.endpointGrid p {
-  color: var(--silam-text-soft);
-}
-
-.releaseCard ul {
-  padding-left: 1.2rem;
-}
-
-
 .releaseCard {
   position: relative;
   isolation: isolate;
@@ -1026,114 +805,3 @@ html[data-theme='dark'] .activeStep:hover {
   }
 }
 
-.cardHeader {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.versionBadge,
-.statusBadge,
-.statusBadgeMuted {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 0.25rem 0.6rem;
-  border-radius: var(--silam-radius-pill);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.versionBadge {
-  color: var(--ifm-color-primary-darkest);
-  background: rgb(var(--silam-accent-mint-rgb) / 0.15);
-}
-
-.statusBadge {
-  color: var(--silam-text-inverse);
-  background: var(--silam-gradient-accent);
-}
-
-.statusBadgeMuted {
-  color: var(--silam-text-soft);
-  background: var(--silam-bg-surface-soft);
-}
-
-.timelineSample {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  align-items: center;
-  margin: 1rem 0;
-  padding: 0.85rem;
-  border-radius: var(--silam-radius-lg);
-  background: var(--silam-gradient-soft-accent);
-}
-
-.timelineSample span,
-.timelineSample strong {
-  padding: 0.28rem 0.5rem;
-  border-radius: var(--silam-radius-pill);
-  background: var(--silam-card-surface);
-  font-size: 0.78rem;
-}
-
-.timelineSample strong {
-  color: var(--silam-text-inverse);
-  background: var(--silam-accent-green);
-}
-
-.futureGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.endpointGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-  margin: 1rem 0 2rem;
-}
-
-.endpointGrid > div {
-  padding: 1rem;
-}
-
-.endpointGrid code {
-  display: inline-block;
-  margin: 0.1rem 0;
-  white-space: normal;
-}
-
-@media (max-width: 996px) {
-  .hero,
-  .releaseGrid,
-  .futureGrid,
-  .endpointGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .heroTitle {
-    letter-spacing: -0.04em;
-  }
-}
-
-@media (max-width: 640px) {
-  .hero {
-    padding: 1.25rem;
-    border-radius: var(--silam-radius-3xl);
-  }
-
-  .heroActions {
-    flex-direction: column;
-  }
-
-  .primaryButton,
-  .secondaryButton {
-    width: 100%;
-  }
-}

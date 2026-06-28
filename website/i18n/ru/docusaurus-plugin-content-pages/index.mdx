@@ -1,0 +1,129 @@
+---
+title: Главная
+description: Главная страница проекта SILAM Pollen
+hide_table_of_contents: true
+---
+
+import Link from '@docusaurus/Link';
+import shared from '@site/src/pages/siteShared.module.css';
+
+# SILAM Pollen
+
+<div className={shared.hero}>
+  <div className={shared.heroContent}>
+    <span className={shared.eyebrow}>Прогноз пыльцы для Home Assistant</span>
+    <h2 className={shared.heroTitle}>Home Assistant с учётом аллергии, на данных SILAM.</h2>
+    <p className={shared.heroText}>
+      SILAM Pollen превращает открытые прогнозные данные Finnish Meteorological Institute в практичные сущности Home Assistant, панели, автоматизации и будущий картографический контекст.
+    </p>
+    <div className={shared.heroActions}>
+      <Link className={shared.primaryButton} to="/docs/intro">Открыть документацию</Link>
+      <Link className={shared.secondaryButton} to="/coverage">Карта покрытия</Link>
+      <Link className={shared.secondaryButton} to="/roadmap">Дорожная карта</Link>
+    </div>
+  </div>
+  <div className={shared.heroPanel}>
+    <div className={shared.signalCard}>
+      <span className={shared.signalIcon}>🌿</span>
+      <strong>Прогноз пыльцы</strong>
+      <small>Отслеживай ключевые аллергены и текущий риск вокруг выбранной точки Home Assistant.</small>
+    </div>
+    <div className={shared.signalCard}>
+      <span className={shared.signalIcon}>🗺️</span>
+      <strong>Сначала покрытие</strong>
+      <small>Проверь, попадает ли точка в область прогноза, прежде чем строить панели и автоматизации.</small>
+    </div>
+    <div className={shared.signalCard}>
+      <span className={shared.signalIcon}>🏠</span>
+      <strong>Для умного дома</strong>
+      <small>Используй прогноз в карточках, уведомлениях, логике проветривания и аллергичных сценариях.</small>
+    </div>
+  </div>
+</div>
+
+<div className={shared.notice}>
+  <strong>Примечание:</strong> это временная главная страница сайта проекта. Она использует общий визуальный язык дорожной карты и позже может быть расширена в полноценный лендинг.
+</div>
+
+<section className={shared.sectionHeader}>
+  <span className={shared.eyebrow}>С чего начать</span>
+  <h2>Основные разделы проекта</h2>
+</section>
+
+<div className={shared.releaseGrid}>
+  <article className={shared.releaseCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Документация</span>
+      <span className={shared.statusBadge}>Первый шаг</span>
+    </div>
+    <h3>Установка и настройка интеграции</h3>
+    <p>
+      Начни с документации, если нужно понять настройку, сущности, опции, поведение обновлений и данные прогноза внутри Home Assistant.
+    </p>
+    <p>
+      <Link className={shared.secondaryButton} to="/docs/intro">Читать документацию</Link>
+    </p>
+  </article>
+
+  <article className={shared.releaseCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Покрытие</span>
+      <span className={shared.statusBadgeMuted}>Карта</span>
+    </div>
+    <h3>Проверь область покрытия SILAM</h3>
+    <p>
+      Страница покрытия помогает проверить, находится ли выбранная точка внутри текущей области прогноза пыльцы SILAM до настройки панелей и автоматизаций.
+    </p>
+    <p>
+      <Link className={shared.secondaryButton} to="/coverage">Открыть карту покрытия</Link>
+    </p>
+  </article>
+</div>
+
+<section className={shared.sectionHeader}>
+  <span className={shared.eyebrow}>Что есть на сайте</span>
+  <h2>Документация, релизы и планы</h2>
+</section>
+
+<div className={shared.futureGrid}>
+  <article className={shared.futureCard}>
+    <span className={shared.futureIcon}>📚</span>
+    <h3>Документация</h3>
+    <p>Настройка, поведение функций, прогнозные сущности, диагностика, кэш и требования к внешним источникам.</p>
+  </article>
+
+  <article className={shared.futureCard}>
+    <span className={shared.futureIcon}>🧾</span>
+    <h3>Релизы</h3>
+    <p>Короткие списки изменений по версиям интеграции, стабильности, прогнозным функциям и обновлениям сайта.</p>
+  </article>
+
+  <article className={shared.futureCard}>
+    <span className={shared.futureIcon}>🧭</span>
+    <h3>Дорожная карта</h3>
+    <p>Планы по настройке, контексту прогноза, AI-сводкам, картам покрытия и будущим экологическим доменам.</p>
+  </article>
+</div>
+
+<section className={shared.sectionHeader}>
+  <span className={shared.eyebrow}>URL покрытия</span>
+  <h2>Статичная карта покрытия</h2>
+</section>
+
+<div className={shared.endpointGrid}>
+  <div>
+    <h3>Карта на GitHub Pages</h3>
+    <code>https://danishru.github.io/silam_pollen/</code>
+    <p>Отдельная карта покрытия также доступна в корне GitHub Pages для быстрой проверки вне сайта документации.</p>
+  </div>
+  <div>
+    <h3>Страница Docusaurus</h3>
+    <code>/coverage</code>
+    <p>Страница покрытия внутри сайта встраивает ту же локальную карту под верхним меню проекта.</p>
+  </div>
+  <div>
+    <h3>Направление проекта</h3>
+    <code>/roadmap</code>
+    <p>Дорожная карта показывает, что планируется сделать богаче, понятнее и удобнее в следующих версиях.</p>
+  </div>
+</div>

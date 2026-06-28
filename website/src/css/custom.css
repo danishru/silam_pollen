@@ -79,7 +79,7 @@
   --silam-gradient-accent: linear-gradient(135deg, var(--silam-accent-green), var(--silam-accent-blue));
   --silam-navbar-active-line: linear-gradient(90deg, var(--silam-accent-green), var(--silam-accent-blue));
   --silam-brand-idle-text:
-    linear-gradient(135deg, var(--silam-accent-green), var(--silam-accent-blue));
+    linear-gradient(135deg, #079f6a 0%, #1976e8 100%);
   --silam-brand-idle-panel:
     linear-gradient(135deg,
       rgb(var(--silam-accent-green-rgb) / 0.085),
@@ -191,7 +191,7 @@ html[data-theme='dark'] {
   --ifm-link-color: #7ab7ff;
   --ifm-link-hover-color: #8ee7b4;
   --silam-navbar-active-line: linear-gradient(90deg, #35c878, #7ab7ff);
-  --silam-brand-idle-text: linear-gradient(135deg, #8ee7b4, #7ab7ff);
+  --silam-brand-idle-text: linear-gradient(135deg, #a1f7c4 0%, #8cc8ff 100%);
   --silam-brand-idle-panel:
     linear-gradient(135deg,
       rgb(53 200 120 / 0.100),
@@ -476,6 +476,7 @@ div[class^='codeBlockContainer_'] {
 
 .navbar__brand,
 .navbar-sidebar__brand .navbar__brand {
+  position: relative;
   display: inline-flex !important;
   align-items: center !important;
   flex: 0 1 auto !important;
@@ -483,35 +484,47 @@ div[class^='codeBlockContainer_'] {
   min-width: 0 !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
-  padding: 0.42rem 0.9rem !important;
+  padding: 0.48rem 0.78rem !important;
   border: 0 !important;
   border-radius: var(--silam-radius-pill) !important;
   color: var(--silam-accent-green) !important;
   overflow: hidden !important;
   isolation: isolate;
-  background: var(--silam-brand-idle-panel) !important;
+  outline: 0 !important;
+  background: transparent !important;
   background-color: transparent !important;
-  box-shadow: var(--silam-brand-idle-shadow) !important;
-  backdrop-filter: var(--silam-glass-filter-soft) !important;
-  -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   text-decoration: none !important;
   transform: none !important;
   transition:
     color 180ms ease,
-    filter 180ms ease,
+    background 180ms ease,
     box-shadow 180ms ease,
-    background 180ms ease !important;
+    filter 180ms ease !important;
 }
 
 .navbar__brand:hover,
 .navbar__brand:focus-visible,
-.navbar__brand:focus:not(:focus-visible),
+.navbar-sidebar__brand .navbar__brand:hover,
+.navbar-sidebar__brand .navbar__brand:focus-visible {
+  /* Hover повторяет прежний вид ненажатой бренд-кнопки. */
+  color: var(--silam-accent-green) !important;
+  background: var(--silam-brand-idle-panel) !important;
+  box-shadow: var(--silam-brand-idle-shadow) !important;
+  backdrop-filter: var(--silam-glass-filter-soft) !important;
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
+  text-decoration: none !important;
+  filter: brightness(1.02);
+  transform: none !important;
+}
+
+.navbar__brand:active,
 .navbar__brand[aria-current='page'],
 .navbar__brand.navbar__brand--active,
 .navbar__brand.navbar__link--active,
-.navbar-sidebar__brand .navbar__brand:hover,
-.navbar-sidebar__brand .navbar__brand:focus-visible,
-.navbar-sidebar__brand .navbar__brand:focus:not(:focus-visible),
+.navbar-sidebar__brand .navbar__brand:active,
 .navbar-sidebar__brand .navbar__brand[aria-current='page'],
 .navbar-sidebar__brand .navbar__brand.navbar__brand--active,
 .navbar-sidebar__brand .navbar__brand.navbar__link--active {
@@ -519,8 +532,30 @@ div[class^='codeBlockContainer_'] {
   color: var(--silam-text-inverse) !important;
   background: var(--silam-brand-active-panel) !important;
   box-shadow: var(--silam-brand-active-shadow) !important;
+  backdrop-filter: var(--silam-glass-filter-soft) !important;
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
   filter: brightness(1.04);
   transform: none !important;
+}
+
+.navbar__brand:active::after,
+.navbar__brand[aria-current='page']::after,
+.navbar__brand.navbar__brand--active::after,
+.navbar__brand.navbar__link--active::after {
+  /* У brand не рисуем нижний индикатор: он остаётся только у обычных navbar links. */
+  display: none !important;
+  content: none !important;
+}
+
+.navbar__brand:focus-visible,
+.navbar-sidebar__brand .navbar__brand:focus-visible {
+  outline: 2px solid var(--silam-accent-blue) !important;
+  outline-offset: 3px;
+}
+
+html[data-theme='dark'] .navbar__brand:focus-visible,
+html[data-theme='dark'] .navbar-sidebar__brand .navbar__brand:focus-visible {
+  outline-color: var(--ifm-link-color) !important;
 }
 
 .navbar__logo {
@@ -538,25 +573,38 @@ div[class^='codeBlockContainer_'] {
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  font-weight: 850 !important;
-  letter-spacing: -0.035em !important;
+  filter:
+    drop-shadow(0 0 8px rgb(var(--silam-accent-green-rgb) / 0.22))
+    drop-shadow(0 0 16px rgb(var(--silam-accent-blue-rgb) / 0.15));
+  font-weight: 880 !important;
+  letter-spacing: -0.04em !important;
 }
 
 .navbar__brand:hover .navbar__title,
 .navbar__brand:focus-visible .navbar__title,
-.navbar__brand:focus:not(:focus-visible) .navbar__title,
+.navbar-sidebar__brand .navbar__brand:hover .navbar__title,
+.navbar-sidebar__brand .navbar__brand:focus-visible .navbar__title {
+  background: var(--silam-brand-idle-text);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter:
+    drop-shadow(0 0 9px rgb(var(--silam-accent-green-rgb) / 0.25))
+    drop-shadow(0 0 18px rgb(var(--silam-accent-blue-rgb) / 0.18));
+}
+
+.navbar__brand:active .navbar__title,
 .navbar__brand[aria-current='page'] .navbar__title,
 .navbar__brand.navbar__brand--active .navbar__title,
 .navbar__brand.navbar__link--active .navbar__title,
-.navbar-sidebar__brand .navbar__brand:hover .navbar__title,
-.navbar-sidebar__brand .navbar__brand:focus-visible .navbar__title,
-.navbar-sidebar__brand .navbar__brand:focus:not(:focus-visible) .navbar__title,
+.navbar-sidebar__brand .navbar__brand:active .navbar__title,
 .navbar-sidebar__brand .navbar__brand[aria-current='page'] .navbar__title,
 .navbar-sidebar__brand .navbar__brand.navbar__brand--active .navbar__title,
 .navbar-sidebar__brand .navbar__brand.navbar__link--active .navbar__title {
   color: var(--silam-text-inverse) !important;
   background: none !important;
   -webkit-text-fill-color: var(--silam-text-inverse);
+  filter: none;
 }
 
 .navbar__link,
@@ -585,6 +633,53 @@ div[class^='codeBlockContainer_'] {
 .navbar-sidebar .clean-btn,
 .navbar-sidebar [class*='colorModeToggle'] {
   border-radius: var(--silam-radius-pill);
+}
+
+
+/* Инверсия иконки переключателя темы: показываем иконку целевой темы.
+ * Светлая тема показывает иконку тёмного режима, тёмная — иконку светлого режима.
+ * Дополнительно фиксируем размер SVG, чтобы иконки не выходили за границы кнопки.
+ */
+.navbar [class*='toggleButton'],
+.navbar-sidebar [class*='toggleButton'] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  width: 2.25rem !important;
+  min-width: 2.25rem !important;
+  height: 2.25rem !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  line-height: 0 !important;
+}
+
+.navbar [class*='toggleButton'] svg[class*='lightToggleIcon'],
+.navbar [class*='toggleButton'] svg[class*='darkToggleIcon'],
+.navbar-sidebar [class*='toggleButton'] svg[class*='lightToggleIcon'],
+.navbar-sidebar [class*='toggleButton'] svg[class*='darkToggleIcon'] {
+  position: static !important;
+  inset: auto !important;
+  display: none !important;
+  flex: 0 0 auto !important;
+  width: 1.18rem !important;
+  height: 1.18rem !important;
+  max-width: calc(100% - 0.6rem) !important;
+  max-height: calc(100% - 0.6rem) !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+html:not([data-theme='dark']) .navbar [class*='toggleButton'] svg[class*='darkToggleIcon'],
+html:not([data-theme='dark']) .navbar-sidebar [class*='toggleButton'] svg[class*='darkToggleIcon'],
+html[data-theme='light'] .navbar [class*='toggleButton'] svg[class*='darkToggleIcon'],
+html[data-theme='light'] .navbar-sidebar [class*='toggleButton'] svg[class*='darkToggleIcon'] {
+  display: block !important;
+}
+
+html[data-theme='dark'] .navbar [class*='toggleButton'] svg[class*='lightToggleIcon'],
+html[data-theme='dark'] .navbar-sidebar [class*='toggleButton'] svg[class*='lightToggleIcon'] {
+  display: block !important;
 }
 
 .dropdown > .navbar__link::after {
@@ -1295,6 +1390,96 @@ html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
     backdrop-filter: var(--silam-glass-filter-soft) !important;
     -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
   }
+}
+
+
+
+/* -------------------------------------------------------------------------- */
+/* Compact two-locale switch                                                    */
+/* -------------------------------------------------------------------------- */
+
+.silamLocaleSwitch {
+  text-transform: uppercase;
+  letter-spacing: 0 !important;
+}
+
+.silamLocaleSwitch__text {
+  display: inline-block;
+  min-width: 2.05rem;
+  color: currentColor;
+  font: inherit;
+  line-height: 1;
+  text-align: center;
+}
+
+.navbar__items--right > .silamLocaleSwitch {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 3.25rem !important;
+  height: 2.25rem !important;
+  margin: 0 !important;
+  padding: 0.48rem 0.7rem !important;
+  overflow: hidden !important;
+  border-radius: var(--silam-radius-pill) !important;
+  color: var(--silam-text-soft) !important;
+  background: transparent !important;
+  font-size: 0.9rem !important;
+  font-weight: 750 !important;
+  text-decoration: none !important;
+  transform: none !important;
+}
+
+.navbar__items--right > .silamLocaleSwitch:hover,
+.navbar__items--right > .silamLocaleSwitch:focus-visible {
+  color: var(--silam-menu-hover-text) !important;
+  background: var(--silam-menu-hover-panel) !important;
+  text-decoration: none !important;
+  transform: none !important;
+}
+
+html[data-theme='dark'] .navbar__items--right > .silamLocaleSwitch {
+  color: var(--silam-text-soft) !important;
+}
+
+html[data-theme='dark'] .navbar__items--right > .silamLocaleSwitch:hover,
+html[data-theme='dark'] .navbar__items--right > .silamLocaleSwitch:focus-visible {
+  color: var(--silam-menu-hover-text) !important;
+  box-shadow: var(--silam-menu-hover-shadow) !important;
+  backdrop-filter: var(--silam-glass-filter-soft) !important;
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
+}
+
+.navbar-sidebar .silamLocaleSwitch {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  width: auto !important;
+  max-width: 100% !important;
+  min-width: 3.1rem !important;
+  padding: 0.62rem 0.78rem !important;
+  overflow: hidden !important;
+  border-radius: var(--silam-radius-md) !important;
+  color: var(--silam-text-main) !important;
+  background: transparent !important;
+  font-size: 0.95rem !important;
+  font-weight: 750 !important;
+  text-decoration: none !important;
+}
+
+.navbar-sidebar .silamLocaleSwitch:hover,
+.navbar-sidebar .silamLocaleSwitch:focus-visible {
+  color: var(--silam-menu-hover-text) !important;
+  background: var(--silam-menu-hover-panel) !important;
+  text-decoration: none !important;
+}
+
+html[data-theme='dark'] .navbar-sidebar .silamLocaleSwitch {
+  color: var(--silam-text-main) !important;
 }
 
 /* -------------------------------------------------------------------------- */

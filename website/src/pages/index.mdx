@@ -1,13 +1,129 @@
 ---
 title: Home
+description: SILAM Pollen project home page
+hide_table_of_contents: true
 ---
+
+import Link from '@docusaurus/Link';
+import shared from '@site/src/pages/siteShared.module.css';
 
 # SILAM Pollen
 
-This is the project site.
+<div className={shared.hero}>
+  <div className={shared.heroContent}>
+    <span className={shared.eyebrow}>Home Assistant pollen forecast</span>
+    <h2 className={shared.heroTitle}>Allergy-aware Home Assistant, powered by SILAM.</h2>
+    <p className={shared.heroText}>
+      SILAM Pollen turns open forecast data from the Finnish Meteorological Institute into practical Home Assistant entities, dashboards, automations, and future map-based context.
+    </p>
+    <div className={shared.heroActions}>
+      <Link className={shared.primaryButton} to="/docs/intro">Open docs</Link>
+      <Link className={shared.secondaryButton} to="/coverage">Coverage map</Link>
+      <Link className={shared.secondaryButton} to="/roadmap">Roadmap</Link>
+    </div>
+  </div>
+  <div className={shared.heroPanel}>
+    <div className={shared.signalCard}>
+      <span className={shared.signalIcon}>🌿</span>
+      <strong>Pollen forecast</strong>
+      <small>Track key allergens and understand the current risk around your Home Assistant location.</small>
+    </div>
+    <div className={shared.signalCard}>
+      <span className={shared.signalIcon}>🗺️</span>
+      <strong>Coverage first</strong>
+      <small>Check whether your point is covered before relying on the forecast in daily automations.</small>
+    </div>
+    <div className={shared.signalCard}>
+      <span className={shared.signalIcon}>🏠</span>
+      <strong>Built for the home</strong>
+      <small>Use forecast data in cards, notifications, ventilation logic, and allergy-aware routines.</small>
+    </div>
+  </div>
+</div>
 
-- Go to **Docs**: `/docs/intro`
-- Go to **Releases**: `/blog`
+<div className={shared.notice}>
+  <strong>Note:</strong> this is a temporary landing page for the project site. It uses the shared visual language from the roadmap page and will be expanded into a fuller home page later.
+</div>
 
-> Coverage map lives on the GitHub Pages root:
-> https://danishru.github.io/silam_pollen/
+<section className={shared.sectionHeader}>
+  <span className={shared.eyebrow}>Start here</span>
+  <h2>Project entry points</h2>
+</section>
+
+<div className={shared.releaseGrid}>
+  <article className={shared.releaseCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Docs</span>
+      <span className={shared.statusBadge}>First step</span>
+    </div>
+    <h3>Install and configure the integration</h3>
+    <p>
+      Start with the documentation when you need to understand setup, entities, options, update behavior, and forecast data inside Home Assistant.
+    </p>
+    <p>
+      <Link className={shared.secondaryButton} to="/docs/intro">Read documentation</Link>
+    </p>
+  </article>
+
+  <article className={shared.releaseCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Coverage</span>
+      <span className={shared.statusBadgeMuted}>Map</span>
+    </div>
+    <h3>Check the SILAM coverage area</h3>
+    <p>
+      The coverage page helps verify whether the selected location is inside the current SILAM pollen forecast area before you build dashboards or automations around it.
+    </p>
+    <p>
+      <Link className={shared.secondaryButton} to="/coverage">Open coverage map</Link>
+    </p>
+  </article>
+</div>
+
+<section className={shared.sectionHeader}>
+  <span className={shared.eyebrow}>What this site contains</span>
+  <h2>Docs, releases, and future plans</h2>
+</section>
+
+<div className={shared.futureGrid}>
+  <article className={shared.futureCard}>
+    <span className={shared.futureIcon}>📚</span>
+    <h3>Documentation</h3>
+    <p>Configuration notes, feature behavior, forecast entities, diagnostics, cache behavior, and setup requirements.</p>
+  </article>
+
+  <article className={shared.futureCard}>
+    <span className={shared.futureIcon}>🧾</span>
+    <h3>Release notes</h3>
+    <p>Short changelogs for integration releases, stability improvements, forecast features, and website updates.</p>
+  </article>
+
+  <article className={shared.futureCard}>
+    <span className={shared.futureIcon}>🧭</span>
+    <h3>Roadmap</h3>
+    <p>Planned work around setup flow, forecast context, AI-ready summaries, coverage maps, and future environmental domains.</p>
+  </article>
+</div>
+
+<section className={shared.sectionHeader}>
+  <span className={shared.eyebrow}>Coverage URL</span>
+  <h2>Static coverage map root</h2>
+</section>
+
+<div className={shared.endpointGrid}>
+  <div>
+    <h3>GitHub Pages map</h3>
+    <code>https://danishru.github.io/silam_pollen/</code>
+    <p>The standalone coverage map also lives at the GitHub Pages root for quick checks outside the documentation site.</p>
+  </div>
+  <div>
+    <h3>Docusaurus page</h3>
+    <code>/coverage</code>
+    <p>The site coverage page embeds the same local map experience under the project navigation bar.</p>
+  </div>
+  <div>
+    <h3>Project direction</h3>
+    <code>/roadmap</code>
+    <p>The roadmap tracks what should become richer, clearer, and easier to use in upcoming versions.</p>
+  </div>
+</div>
