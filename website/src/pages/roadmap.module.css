@@ -407,6 +407,8 @@ html[data-theme='dark'] .roadmapStripShell {
   overflow-x: clip;
   overflow-y: visible;
   overscroll-behavior-x: contain;
+  touch-action: pan-y;
+  cursor: grab;
   --silam-roadmap-left-fade-edge-alpha: 1;
   --silam-roadmap-left-fade-soft-alpha: 1;
   --silam-roadmap-left-fade-mid-alpha: 1;
@@ -484,6 +486,22 @@ html[data-theme='dark'] .roadmapStripShell {
     gap 320ms cubic-bezier(0.22, 1, 0.36, 1),
     padding 320ms cubic-bezier(0.22, 1, 0.36, 1),
     transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.roadmapStripFrame[data-roadmap-strip-dragging='true'] .roadmapStripScroller {
+  cursor: grabbing;
+}
+
+.roadmapStripFrame[data-roadmap-strip-dragging='true'] .roadmapStrip {
+  transition:
+    grid-template-columns 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    gap 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.roadmapStripFrame[data-roadmap-strip-dragging='true'] .step {
+  pointer-events: none;
+  user-select: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

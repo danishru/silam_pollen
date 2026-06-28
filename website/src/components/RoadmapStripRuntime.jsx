@@ -133,6 +133,129 @@ export default function RoadmapStripRuntime() {
         applyOffset();
       };
 
+      let dragPointerId = null;
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let dragStartOffset = 0;
+      let isStripDragging = false;
+      let didStripDrag = false;
+      let suppressStripClickUntil = 0;
+
+      const setStripDragging = (nextDragging) => {
+        if (nextDragging) {
+          root.dataset.roadmapStripDragging = 'true';
+          return;
+        }
+
+        delete root.dataset.roadmapStripDragging;
+      };
+
+      const finishStripDrag = (event, options = {}) => {
+        if (dragPointerId === null) {
+          return;
+        }
+
+        const shouldSuppressClick = didStripDrag && !options.keepClick;
+
+        if (event?.pointerId === dragPointerId && viewport.hasPointerCapture?.(dragPointerId)) {
+          viewport.releasePointerCapture(dragPointerId);
+        }
+
+        dragPointerId = null;
+        isStripDragging = false;
+        didStripDrag = false;
+        setStripDragging(false);
+
+        if (shouldSuppressClick) {
+          suppressStripClickUntil = (window.performance?.now?.() ?? Date.now()) + 450;
+        }
+      };
+
+      const handleViewportPointerDown = (event) => {
+        if (!event.isPrimary || (typeof event.button === 'number' && event.button !== 0) || getMaxOffset() <= 2) {
+          return;
+        }
+
+        dragPointerId = event.pointerId;
+        dragStartX = event.clientX;
+        dragStartY = event.clientY;
+        dragStartOffset = offset;
+        isStripDragging = false;
+        didStripDrag = false;
+        viewport.setPointerCapture?.(dragPointerId);
+      };
+
+      const handleViewportPointerMove = (event) => {
+        if (dragPointerId !== event.pointerId) {
+          return;
+        }
+
+        const deltaX = event.clientX - dragStartX;
+        const deltaY = event.clientY - dragStartY;
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+
+        if (!isStripDragging) {
+          if (absX < 8 && absY < 8) {
+            return;
+          }
+
+          if (absY > absX * 1.15) {
+            finishStripDrag(event, {keepClick: true});
+            return;
+          }
+
+          if (absX <= absY || absX < 10) {
+            return;
+          }
+
+          isStripDragging = true;
+          didStripDrag = true;
+          setStripDragging(true);
+          stopAnchorScrollCorrection({stopNativeScroll: true});
+        }
+
+        event.preventDefault();
+        offset = clamp(dragStartOffset - deltaX, 0, getMaxOffset());
+        applyOffset();
+      };
+
+      const handleViewportPointerUp = (event) => {
+        if (dragPointerId === event.pointerId) {
+          finishStripDrag(event);
+        }
+      };
+
+      const handleViewportClickCapture = (event) => {
+        const now = window.performance?.now?.() ?? Date.now();
+
+        if (now <= suppressStripClickUntil) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      };
+
+      const handleViewportWheel = (event) => {
+        const maxOffset = getMaxOffset();
+
+        if (maxOffset <= 2) {
+          return;
+        }
+
+        const horizontalDelta = event.shiftKey && Math.abs(event.deltaX) < Math.abs(event.deltaY)
+          ? event.deltaY
+          : event.deltaX;
+
+        if (Math.abs(horizontalDelta) <= Math.abs(event.deltaY) && !event.shiftKey) {
+          return;
+        }
+
+        event.preventDefault();
+        stopAnchorScrollCorrection({stopNativeScroll: true});
+        offset = clamp(offset + horizontalDelta, 0, maxOffset);
+        applyOffset();
+      };
+
       let pendingAnchorTarget = null;
       let pendingAnchorTimers = [];
       let pendingAnchorScrollActive = false;
@@ -343,6 +466,13 @@ export default function RoadmapStripRuntime() {
       prev.addEventListener('click', handlePrevClick);
       next.addEventListener('click', handleNextClick);
       viewport.addEventListener('keydown', handleViewportKeyDown);
+      viewport.addEventListener('pointerdown', handleViewportPointerDown);
+      viewport.addEventListener('pointermove', handleViewportPointerMove);
+      viewport.addEventListener('pointerup', handleViewportPointerUp);
+      viewport.addEventListener('pointercancel', handleViewportPointerUp);
+      viewport.addEventListener('lostpointercapture', handleViewportPointerUp);
+      viewport.addEventListener('click', handleViewportClickCapture, true);
+      viewport.addEventListener('wheel', handleViewportWheel, {passive: false});
       document.addEventListener('click', handleDocumentClick);
       window.addEventListener('resize', scheduleResizeWork);
       window.addEventListener('scroll', scheduleCompactState, {passive: true});
@@ -381,6 +511,13 @@ export default function RoadmapStripRuntime() {
         prev.removeEventListener('click', handlePrevClick);
         next.removeEventListener('click', handleNextClick);
         viewport.removeEventListener('keydown', handleViewportKeyDown);
+        viewport.removeEventListener('pointerdown', handleViewportPointerDown);
+        viewport.removeEventListener('pointermove', handleViewportPointerMove);
+        viewport.removeEventListener('pointerup', handleViewportPointerUp);
+        viewport.removeEventListener('pointercancel', handleViewportPointerUp);
+        viewport.removeEventListener('lostpointercapture', handleViewportPointerUp);
+        viewport.removeEventListener('click', handleViewportClickCapture, true);
+        viewport.removeEventListener('wheel', handleViewportWheel);
         document.removeEventListener('click', handleDocumentClick);
         window.removeEventListener('resize', scheduleResizeWork);
         window.removeEventListener('scroll', scheduleCompactState);
@@ -392,6 +529,7 @@ export default function RoadmapStripRuntime() {
         stickySentinel.remove();
         delete root.dataset.roadmapStripReady;
         delete root.dataset.roadmapStripOverflow;
+        delete root.dataset.roadmapStripDragging;
         delete shell.dataset.roadmapStripCompact;
         delete shell.dataset.roadmapAnchorSettling;
         track.style.removeProperty('--roadmap-strip-offset');
