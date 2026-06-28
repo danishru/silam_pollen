@@ -107,6 +107,23 @@
     return normalized;
   }
 
+  function normalizeNavbarHeight(value) {
+    const height = Number(value);
+
+    if (!Number.isFinite(height) || height < 0) {
+      return 0;
+    }
+
+    return Math.min(Math.ceil(height), 160);
+  }
+
+  function applyParentNavbarOffset(value) {
+    document.documentElement.style.setProperty(
+      "--silam-coverage-navbar-offset",
+      `${normalizeNavbarHeight(value)}px`
+    );
+  }
+
   function getCoveragePalette(theme) {
     // Светлая тема сохраняет яркие checkbox/label colors и отдельные мягкие badge colors.
     // Тёмная тема сохраняет более спокойные цвета, подобранные раньше отдельно.
@@ -884,6 +901,8 @@
 
       applyCoverageTheme(data.theme);
       applyCoverageLocale(data.lang || data.locale);
+      applyParentNavbarOffset(data.navbarHeight);
+      requestAnimationFrame(arrangeMapControls);
     }
 
     window.addEventListener("message", handleParentContextMessage);

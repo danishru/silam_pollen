@@ -39,6 +39,12 @@ html[data-theme="light"] {
   --control-gap: .5rem;
   --control-edge-offset: 16px;
   --control-edge-offset-desktop: 16px;
+
+  /* При встраивании в Docusaurus iframe получает высоту fixed-navbar
+     через postMessage и смещает только элементы управления карты. */
+  --silam-coverage-navbar-offset: 0px;
+  --silam-coverage-control-top: calc(var(--silam-coverage-navbar-offset) + .75rem);
+  --silam-coverage-rotate-top: calc(var(--silam-coverage-navbar-offset) + 3.25rem);
 }
 
 html[data-theme="dark"] {
@@ -153,7 +159,7 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 
 .coverage-control-cluster {
   position: absolute !important;
-  top: .75rem !important;
+  top: var(--silam-coverage-control-top) !important;
   left: .75rem !important;
   right: auto !important;
   bottom: auto !important;
@@ -194,7 +200,7 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 }
 
 .legend-control {
-  top: .75rem;
+  top: var(--silam-coverage-control-top);
   left: 3.95rem;
   right: auto;
 
@@ -244,7 +250,7 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 
 /* Fallback до JS-сборки primary-контейнера. */
 .ol-zoom {
-  top: .75rem !important;
+  top: var(--silam-coverage-control-top) !important;
   left: .75rem !important;
   right: auto !important;
 }
@@ -255,7 +261,7 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 
 .map-aux-control-cluster {
   position: absolute !important;
-  top: .75rem !important;
+  top: var(--silam-coverage-control-top) !important;
   right: var(--control-edge-offset) !important;
   left: auto !important;
   bottom: auto !important;
@@ -311,7 +317,7 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 
 /* Fallback до JS-сборки auxiliary-контейнера. */
 .theme-toggle-control {
-  top: .75rem;
+  top: var(--silam-coverage-control-top);
   right: var(--control-edge-offset);
   left: auto;
   padding: 0;
@@ -319,7 +325,7 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 }
 
 .ol-rotate {
-  top: 3.25rem !important;
+  top: var(--silam-coverage-rotate-top) !important;
   right: var(--control-edge-offset) !important;
   left: auto !important;
 }
@@ -358,7 +364,7 @@ html[data-theme="dark"] .mobile-coordinate-badge {
   box-sizing: border-box !important;
   margin: 0 !important;
   padding: 0 !important;
-  border-radius: 16px !important;
+  border-radius: 999px !important;
 
   font-size: 0 !important;
   line-height: 0 !important;
@@ -479,8 +485,12 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
+  line-height: 1.25;
   letter-spacing: -0.01em;
-  white-space: nowrap;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .mobile-coordinate-badge.has-active-coverage {
@@ -656,6 +666,16 @@ html[data-theme="dark"] .center-pointer {
   .center-pointer {
     display: block;
   }
+}
+
+/* Все компактные кнопки OpenLayers делаем настоящими кругами.
+   Это перекрывает штатные радиусы .ol-zoom-in/.ol-zoom-out из ol.css. */
+.ol-zoom button,
+.ol-zoom button.ol-zoom-in,
+.ol-zoom button.ol-zoom-out,
+.ol-rotate button,
+.theme-toggle-control button {
+  border-radius: 999px !important;
 }
 
 /* Нормальный зазор между zoom + и zoom − на desktop слева. */
