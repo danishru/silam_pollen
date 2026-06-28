@@ -104,6 +104,7 @@ export default function LocaleDropdownNavbarItem({
       to={to}
       lang={targetLocale}
       hrefLang={targetLocale}
+      data-noBrokenLinkCheck
       aria-label={`Switch language to ${targetLanguageName}`}
       title={`Switch language to ${targetLanguageName}`}
       className={clsx(

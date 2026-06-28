@@ -754,11 +754,15 @@ html[data-theme='dark'] .activeStep:hover {
 }
 
 .releaseCard[data-roadmap-anchor-highlight='true'] {
-  animation: silamRoadmapAnchorBorderPulse 1150ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation-name: silamRoadmapAnchorBorderPulse;
+  animation-duration: 1150ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .releaseCard[data-roadmap-anchor-highlight='true']::after {
-  animation: silamRoadmapAnchorGradientSweep 1150ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation-name: silamRoadmapAnchorGradientSweep;
+  animation-duration: 1150ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes silamRoadmapAnchorBorderPulse {
