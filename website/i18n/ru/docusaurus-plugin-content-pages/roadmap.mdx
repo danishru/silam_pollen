@@ -6,6 +6,7 @@ hide_table_of_contents: true
 ---
 
 import styles from '@site/src/pages/roadmap.module.css';
+import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
 
 # Дорожная карта SILAM Pollen
 
@@ -17,8 +18,8 @@ import styles from '@site/src/pages/roadmap.module.css';
       SILAM Pollen развивается от узкой интеграции прогноза пыльцы к более умному экологическому прогнозу для Home Assistant: проще настройка, прозрачнее источники данных, богаче контекст прогноза, готовность к сводкам для AI и будущие карты распределения пыльцы.
     </p>
     <div className={styles.heroActions}>
-      <a className={styles.primaryButton} href="#release-plan">Смотреть дорожную карту</a>
-      <a className={styles.secondaryButton} href="#future-backlog">Будущие идеи</a>
+      <a className={styles.primaryButton} href="#release-plan" data-roadmap-anchor-link>Смотреть дорожную карту</a>
+      <a className={styles.secondaryButton} href="#future-backlog" data-roadmap-anchor-link>Будущие идеи</a>
     </div>
   </div>
   <div className={styles.heroPanel}>
@@ -46,43 +47,71 @@ import styles from '@site/src/pages/roadmap.module.css';
 
 ## Визуальный обзор
 
-<div className={styles.roadmapStrip}>
-  <a href="#v042" className={`${styles.step} ${styles.activeStep}`}>
-    <span>v0.4.2</span>
-    <strong>Настройка</strong>
-    <small>Местоположение в начале</small>
-  </a>
-  <a href="#v043" className={styles.step}>
-    <span>v0.4.3</span>
-    <strong>Основа</strong>
-    <small>Чище архитектура</small>
-  </a>
-  <a href="#v044" className={styles.step}>
-    <span>v0.4.4</span>
-    <strong>Время</strong>
-    <small>Прошлое + будущее</small>
-  </a>
-  <a href="#v045" className={styles.step}>
-    <span>v0.4.5</span>
-    <strong>Погода</strong>
-    <small>Больше контекста</small>
-  </a>
-  <a href="#v046" className={styles.step}>
-    <span>v0.4.6</span>
-    <strong>Сводка</strong>
-    <small>Чистый доступ к данным</small>
-  </a>
-  <a href="#v047" className={styles.step}>
-    <span>v0.4.7</span>
-    <strong>Assist</strong>
-    <small>Ответы для AI</small>
-  </a>
-  <a href="#future-backlog" className={`${styles.step} ${styles.futureStep}`}>
-    <span>Будущее</span>
-    <strong>Карты + домены</strong>
-    <small>Пыль, пожары, 2D-слой</small>
-  </a>
+<div className={styles.roadmapStripShell} data-roadmap-strip-shell>
+  <div className={styles.roadmapStripFrame} data-roadmap-strip data-roadmap-strip-overflow="false">
+    <button
+      className={`${styles.roadmapStripArrow} ${styles.roadmapStripArrowLeft}`}
+      type="button"
+      aria-label="Прокрутить дорожную карту влево"
+      data-roadmap-strip-prev
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M15.4 5.6 9 12l6.4 6.4-1.4 1.4L6.2 12 14 4.2z" />
+      </svg>
+    </button>
+    <div className={styles.roadmapStripScroller} data-roadmap-strip-scroller tabIndex="0">
+      <div className={styles.roadmapStrip}>
+        <a href="#v042" className={`${styles.step} ${styles.activeStep}`} data-roadmap-anchor-link>
+          <span>v0.4.2</span>
+          <strong>Настройка</strong>
+          <small>Местоположение в начале</small>
+        </a>
+        <a href="#v043" className={styles.step} data-roadmap-anchor-link>
+          <span>v0.4.3</span>
+          <strong>Основа</strong>
+          <small>Чище архитектура</small>
+        </a>
+        <a href="#v044" className={styles.step} data-roadmap-anchor-link>
+          <span>v0.4.4</span>
+          <strong>Время</strong>
+          <small>Прошлое + будущее</small>
+        </a>
+        <a href="#v045" className={styles.step} data-roadmap-anchor-link>
+          <span>v0.4.5</span>
+          <strong>Погода</strong>
+          <small>Больше контекста</small>
+        </a>
+        <a href="#v046" className={styles.step} data-roadmap-anchor-link>
+          <span>v0.4.6</span>
+          <strong>Сводка</strong>
+          <small>Чистый доступ к данным</small>
+        </a>
+        <a href="#v047" className={styles.step} data-roadmap-anchor-link>
+          <span>v0.4.7</span>
+          <strong>Assist</strong>
+          <small>Ответы для AI</small>
+        </a>
+        <a href="#future-backlog" className={`${styles.step} ${styles.futureStep}`} data-roadmap-anchor-link>
+          <span>Будущее</span>
+          <strong>Карты + домены</strong>
+          <small>Пыль, пожары, 2D-слой</small>
+        </a>
+      </div>
+    </div>
+    <button
+      className={`${styles.roadmapStripArrow} ${styles.roadmapStripArrowRight}`}
+      type="button"
+      aria-label="Прокрутить дорожную карту вправо"
+      data-roadmap-strip-next
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="m8.6 18.4 6.4-6.4-6.4-6.4L10 4.2l7.8 7.8L10 19.8z" />
+      </svg>
+    </button>
+  </div>
 </div>
+
+<RoadmapStripRuntime />
 
 <section id="release-plan" className={styles.sectionHeader}>
   <span className={styles.eyebrow}>План релизов</span>
@@ -90,7 +119,7 @@ import styles from '@site/src/pages/roadmap.module.css';
 </section>
 
 <div className={styles.releaseGrid}>
-  <article id="v042" className={styles.releaseCard}>
+  <article id="v042" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.2</span>
       <span className={styles.statusBadge}>Следующий</span>
@@ -108,7 +137,7 @@ import styles from '@site/src/pages/roadmap.module.css';
     </ul>
   </article>
 
-  <article id="v043" className={styles.releaseCard}>
+  <article id="v043" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.3</span>
       <span className={styles.statusBadgeMuted}>Основа</span>
@@ -124,7 +153,7 @@ import styles from '@site/src/pages/roadmap.module.css';
     </ul>
   </article>
 
-  <article id="v044" className={styles.releaseCard}>
+  <article id="v044" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.4</span>
       <span className={styles.statusBadgeMuted}>Временная шкала</span>
@@ -143,7 +172,7 @@ import styles from '@site/src/pages/roadmap.module.css';
     </ul>
   </article>
 
-  <article id="v045" className={styles.releaseCard}>
+  <article id="v045" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.5</span>
       <span className={styles.statusBadgeMuted}>Погода</span>
@@ -160,7 +189,7 @@ import styles from '@site/src/pages/roadmap.module.css';
     </ul>
   </article>
 
-  <article id="v046" className={styles.releaseCard}>
+  <article id="v046" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.6</span>
       <span className={styles.statusBadgeMuted}>Доступ к данным</span>
@@ -176,7 +205,7 @@ import styles from '@site/src/pages/roadmap.module.css';
     </ul>
   </article>
 
-  <article id="v047" className={styles.releaseCard}>
+  <article id="v047" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.7</span>
       <span className={styles.statusBadgeMuted}>Assist</span>
