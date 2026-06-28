@@ -1,129 +1,280 @@
 ---
 title: Главная
-description: Главная страница проекта SILAM Pollen
+description: SILAM Pollen для Home Assistant — сенсоры пыльцы, прогнозные сущности, проверка покрытия и данные для автоматизаций на основе FMI SILAM.
 hide_table_of_contents: true
 ---
 
 import Link from '@docusaurus/Link';
+import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
 import shared from '@site/src/pages/siteShared.module.css';
+import roadmapStyles from '@site/src/pages/roadmap.module.css';
+import styles from '@site/src/pages/home.module.css';
 
-# SILAM Pollen
-
-<div className={shared.hero}>
-  <div className={shared.heroContent}>
-    <span className={shared.eyebrow}>Прогноз пыльцы для Home Assistant</span>
-    <h2 className={shared.heroTitle}>Home Assistant с учётом аллергии, на данных SILAM.</h2>
-    <p className={shared.heroText}>
-      SILAM Pollen превращает открытые прогнозные данные Finnish Meteorological Institute в практичные сущности Home Assistant, панели, автоматизации и будущий картографический контекст.
-    </p>
-    <div className={shared.heroActions}>
-      <Link className={shared.primaryButton} to="/docs/intro">Открыть документацию</Link>
-      <Link className={shared.secondaryButton} to="/coverage">Карта покрытия</Link>
-      <Link className={shared.secondaryButton} to="/roadmap">Дорожная карта</Link>
+<section id="overview" className={styles.homeSectionAnchor}>
+  <div className={`${shared.hero} ${styles.homeHero}`}>
+    <div className={shared.heroContent}>
+      <span className={shared.eyebrow}>Прогноз пыльцы для Home Assistant</span>
+      <h1 className={shared.heroTitle}>Home Assistant с учётом аллергии, на данных SILAM.</h1>
+      <p className={shared.heroText}>
+        SILAM Pollen превращает открытые прогнозные данные Finnish Meteorological Institute в практичные сущности Home Assistant, панели, автоматизации и будущий картографический контекст.
+      </p>
+      <div className={shared.heroActions}>
+        <Link className={shared.primaryButton} to="/docs/intro">Открыть документацию</Link>
+        <Link className={shared.secondaryButton} to="/coverage">Карта покрытия</Link>
+        <Link className={shared.secondaryButton} to="/roadmap">Дорожная карта</Link>
+      </div>
+    </div>
+    <div className={shared.heroPanel}>
+      <div className={shared.signalCard}>
+        <span className={shared.signalIcon}>🌿</span>
+        <strong>Сенсоры аллергенов</strong>
+        <small>Ольха, берёза, злаковые, орешник, полынь, олива и амброзия для выбранной зоны Home Assistant.</small>
+      </div>
+      <div className={shared.signalCard}>
+        <span className={shared.signalIcon}>⛅</span>
+        <strong>Прогнозная сущность</strong>
+        <small>Дополнительная погодная сущность с почасовым прогнозом, блоками дважды в сутки и ежедневными значениями.</small>
+      </div>
+      <div className={shared.signalCard}>
+        <span className={shared.signalIcon}>🧭</span>
+        <strong>Умный выбор набора данных</strong>
+        <small>Использует доступные слои SILAM v6.1 и сохраняет диагностический контекст, если данные недоступны.</small>
+      </div>
     </div>
   </div>
-  <div className={shared.heroPanel}>
-    <div className={shared.signalCard}>
-      <span className={shared.signalIcon}>🌿</span>
-      <strong>Прогноз пыльцы</strong>
-      <small>Отслеживай ключевые аллергены и текущий риск вокруг выбранной точки Home Assistant.</small>
-    </div>
-    <div className={shared.signalCard}>
-      <span className={shared.signalIcon}>🗺️</span>
-      <strong>Сначала покрытие</strong>
-      <small>Проверь, попадает ли точка в область прогноза, прежде чем строить панели и автоматизации.</small>
-    </div>
-    <div className={shared.signalCard}>
-      <span className={shared.signalIcon}>🏠</span>
-      <strong>Для умного дома</strong>
-      <small>Используй прогноз в карточках, уведомлениях, логике проветривания и аллергичных сценариях.</small>
-    </div>
-  </div>
-</div>
-
-<div className={shared.notice}>
-  <strong>Примечание:</strong> это временная главная страница сайта проекта. Она использует общий визуальный язык дорожной карты и позже может быть расширена в полноценный лендинг.
-</div>
-
-<section className={shared.sectionHeader}>
-  <span className={shared.eyebrow}>С чего начать</span>
-  <h2>Основные разделы проекта</h2>
 </section>
 
-<div className={shared.releaseGrid}>
-  <article className={shared.releaseCard}>
-    <div className={shared.cardHeader}>
-      <span className={shared.versionBadge}>Документация</span>
-      <span className={shared.statusBadge}>Первый шаг</span>
+<nav className={roadmapStyles.roadmapStripShell} data-roadmap-strip-shell aria-label="Разделы главной страницы">
+  <div className={roadmapStyles.roadmapStripFrame} data-roadmap-strip data-roadmap-strip-overflow="false">
+    <button className={`${roadmapStyles.roadmapStripArrow} ${roadmapStyles.roadmapStripArrowLeft}`} type="button" aria-label="Прокрутить навигацию главной страницы влево" data-roadmap-strip-prev>
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15.4 5.6 9 12l6.4 6.4-1.4 1.4L6.2 12 14 4.2z" /></svg>
+    </button>
+    <div className={roadmapStyles.roadmapStripScroller} data-roadmap-strip-scroller tabIndex={0}>
+      <div className={roadmapStyles.roadmapStrip}>
+        <a className={`${roadmapStyles.step} ${roadmapStyles.activeStep}`} href="#overview" data-roadmap-anchor-link><span>01</span><strong>Обзор</strong><small>Что делает</small></a>
+        <a className={roadmapStyles.step} href="#why" data-roadmap-anchor-link><span>02</span><strong>Зачем</strong><small>Польза дома</small></a>
+        <a className={roadmapStyles.step} href="#features" data-roadmap-anchor-link><span>03</span><strong>Сущности</strong><small>Сенсоры + статус</small></a>
+        <a className={roadmapStyles.step} href="#forecast" data-roadmap-anchor-link><span>04</span><strong>Прогноз</strong><small>Часы + дни</small></a>
+        <a className={roadmapStyles.step} href="#coverage" data-roadmap-anchor-link><span>05</span><strong>Покрытие</strong><small>Зоны SILAM</small></a>
+        <a className={roadmapStyles.step} href="#automations" data-roadmap-anchor-link><span>06</span><strong>Автоматизации</strong><small>Сценарии</small></a>
+        <a className={roadmapStyles.step} href="#start" data-roadmap-anchor-link><span>07</span><strong>Старт</strong><small>Установка</small></a>
+      </div>
     </div>
-    <h3>Установка и настройка интеграции</h3>
+    <button className={`${roadmapStyles.roadmapStripArrow} ${roadmapStyles.roadmapStripArrowRight}`} type="button" aria-label="Прокрутить навигацию главной страницы вправо" data-roadmap-strip-next>
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8.6 18.4 6.4-6.4-6.4-6.4L10 4.2l7.8 7.8L10 19.8z" /></svg>
+    </button>
+  </div>
+</nav>
+
+<RoadmapStripRuntime />
+
+<section id="why" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>Зачем это нужно?</span>
+  <h2>Данные о пыльце там, где уже живут твои автоматизации</h2>
+</section>
+
+<div className={styles.homeIntroGrid}>
+  <article className={`${styles.homeWideCard} ${styles.homeHighlightCard}`}>
+    <h3>От прогностической модели к понятному состоянию Home Assistant</h3>
     <p>
-      Начни с документации, если нужно понять настройку, сущности, опции, поведение обновлений и данные прогноза внутри Home Assistant.
+      SILAM Pollen помогает добавить контекст пыльцы в панели, уведомления и сценарии Home Assistant без отдельного ключа доступа или платного аккаунта.
     </p>
-    <p>
-      <Link className={shared.secondaryButton} to="/docs/intro">Читать документацию</Link>
-    </p>
+    <div className={styles.homeMetricList}>
+      <div className={styles.homeMetric}>
+        <span className={styles.homeMetricIcon}>🔑</span>
+        <div><strong>Без ключей доступа</strong><small>Использует открытые прогнозные данные SILAM от Финского метеорологического института.</small></div>
+      </div>
+      <div className={styles.homeMetric}>
+        <span className={styles.homeMetricIcon}>🏠</span>
+        <div><strong>Настройка по зоне</strong><small>Можно использовать зону Home Assistant или вручную скорректировать координаты и высоту.</small></div>
+      </div>
+      <div className={styles.homeMetric}>
+        <span className={styles.homeMetricIcon}>🛡️</span>
+        <div><strong>Контроль данных</strong><small>Проверка покрытия, статус службы, восстановление из кэша и полное обновление помогают понимать поведение интеграции.</small></div>
+      </div>
+    </div>
   </article>
 
-  <article className={shared.releaseCard}>
-    <div className={shared.cardHeader}>
-      <span className={shared.versionBadge}>Покрытие</span>
-      <span className={shared.statusBadgeMuted}>Карта</span>
-    </div>
-    <h3>Проверь область покрытия SILAM</h3>
+  <article className={styles.homeWideCard}>
+    <h3>Под реальные ежедневные решения</h3>
+    <ul>
+      <li>Оставить окна закрытыми при высоком уровне берёзы или злаковых?</li>
+      <li>Будет ли завтра лучше для прогулки или проветривания?</li>
+      <li>Сломался внешний сервис или выбранная точка вне покрытия?</li>
+      <li>Какой аллерген отвечает за повышенный индекс?</li>
+    </ul>
     <p>
-      Страница покрытия помогает проверить, находится ли выбранная точка внутри текущей области прогноза пыльцы SILAM до настройки панелей и автоматизаций.
+      Прогнозы носят информационный характер и не заменяют медицинские рекомендации, но хорошо подходят как контекст для умного дома и личных сценариев.
     </p>
+  </article>
+</div>
+
+<section id="features" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>Сущности</span>
+  <h2>Что создаёт интеграция</h2>
+</section>
+
+<div className={styles.homeFeatureGrid}>
+  <article className={styles.homeCard}>
+    <span className={shared.futureIcon}>🌾</span>
+    <h3>Сенсоры концентрации аллергенов</h3>
+    <p>Отдельные сенсоры для выбранных типов пыльцы, обновляемые через один общий координатор и доступные как обычные сущности Home Assistant.</p>
+    <div className={styles.homePillList}>
+      <span className={styles.homePill}>Ольха</span>
+      <span className={styles.homePill}>Берёза</span>
+      <span className={styles.homePill}>Злаковые</span>
+      <span className={styles.homePill}>Орешник</span>
+      <span className={styles.homePill}>Полынь</span>
+      <span className={styles.homePill}>Олива</span>
+      <span className={styles.homePill}>Амброзия</span>
+    </div>
+  </article>
+
+  <article className={styles.homeCard}>
+    <span className={shared.futureIcon}>📈</span>
+    <h3>Индекс и ответственный аллерген</h3>
+    <p>Устаревший индекс может показывать сводное состояние, основной аллерген и прогноз на завтра, если включён режим прогноза.</p>
+  </article>
+
+  <article className={styles.homeCard}>
+    <span className={shared.futureIcon}>🧪</span>
+    <h3>Диагностика для отладки</h3>
+    <p>Статус службы, время запроса, горизонт прогноза, данные кэша, тип запроса и выбранный набор данных помогают понять последнее обновление.</p>
+  </article>
+</div>
+
+<section id="forecast" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>Режим прогноза</span>
+  <h2>Текущие значения, прогнозные окна и погодные карточки</h2>
+</section>
+
+<div className={styles.homeIntroGrid}>
+  <article className={styles.homeWideCard}>
+    <h3>Одна прогнозная сущность, несколько представлений</h3>
     <p>
+      При включённом режиме прогноза интеграция создаёт погодную сущность для условий пыльцы. Она может отдавать почасовой прогноз, прогноз дважды в сутки и ежедневный прогноз на основе объединённого ответа SILAM.
+    </p>
+    <div className={styles.homeMiniTimeline}>
+      <div className={styles.homeMiniTimelineItem}><span>Сейчас</span><div><strong>Текущее состояние</strong><small>Текущий индекс пыльцы и значения выбранных аллергенов.</small></div></div>
+      <div className={styles.homeMiniTimelineItem}><span>По часам</span><div><strong>Краткосрочные изменения</strong><small>Удобно для карточек, уведомлений и планирования дня.</small></div></div>
+      <div className={styles.homeMiniTimelineItem}><span>День / ночь</span><div><strong>Два раза в сутки</strong><small>Компактный прогноз, который хорошо помещается на панели.</small></div></div>
+      <div className={styles.homeMiniTimelineItem}><span>По дням</span><div><strong>Контекст на несколько дней</strong><small>Длительность прогноза настраивается от 36 до 120 часов.</small></div></div>
+    </div>
+  </article>
+
+  <article className={styles.homeWideCard}>
+    <h3>С учётом стоимости обновлений</h3>
+    <p>
+      Прогнозные запросы тяжелее текущих значений, поэтому интеграция использует общий координатор, восстановление из кэша, постепенную догрузку и отдельную службу полного обновления, когда свежие данные нужны явно.
+    </p>
+    <div className={styles.homePillList}>
+      <span className={styles.homePill}>Ручное обновление</span>
+      <span className={styles.homePill}>Полное обновление</span>
+      <span className={styles.homePill}>Восстановление из кэша</span>
+      <span className={styles.homePill}>Горизонт прогноза</span>
+      <span className={styles.homePill}>Статус службы</span>
+    </div>
+  </article>
+</div>
+
+<section id="coverage" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>Сначала покрытие</span>
+  <h2>Проверь местоположение до настройки автоматизаций</h2>
+</section>
+
+<div className={styles.homeIntroGrid}>
+  <article className={styles.homeWideCard}>
+    <h3>Несколько слоёв покрытия SILAM v6.1</h3>
+    <p>
+      Интеграция может работать с наборами данных для Европы, Северной Европы и Финляндии. Некоторые наборы показываются или выбираются только тогда, когда заданные координаты действительно попадают в покрытие.
+    </p>
+    <div className={styles.homePillList}>
+      <span className={styles.homePill}>Европа v6.1</span>
+      <span className={styles.homePill}>Северная Европа v6.1</span>
+      <span className={styles.homePill}>Финляндия v6.1</span>
+      <span className={styles.homePill}>Умный выбор</span>
+    </div>
+    <p className={styles.homeCardAction}>
       <Link className={shared.secondaryButton} to="/coverage">Открыть карту покрытия</Link>
     </p>
   </article>
+
+  <div className={styles.homeMapFrame} aria-hidden="true">
+    <div className={styles.homeMapBadge}>
+      <strong>Карта покрытия</strong>
+      <small>Используй карту до настройки, а затем интеграция проверит выбранную точку в мастере настройки.</small>
+    </div>
+  </div>
 </div>
 
-<section className={shared.sectionHeader}>
-  <span className={shared.eyebrow}>Что есть на сайте</span>
-  <h2>Документация, релизы и планы</h2>
+<section id="automations" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>Для автоматизаций</span>
+  <h2>Используй контекст пыльцы в реальных сценариях Home Assistant</h2>
 </section>
 
 <div className={shared.futureGrid}>
   <article className={shared.futureCard}>
-    <span className={shared.futureIcon}>📚</span>
-    <h3>Документация</h3>
-    <p>Настройка, поведение функций, прогнозные сущности, диагностика, кэш и требования к внешним источникам.</p>
+    <span className={shared.futureIcon}>🪟</span>
+    <h3>Проветривание</h3>
+    <p>Сочетай состояние пыльцы с погодой, влажностью, CO₂ или датчиками окон перед открытием вентиляции и напоминаниями.</p>
   </article>
 
   <article className={shared.futureCard}>
-    <span className={shared.futureIcon}>🧾</span>
-    <h3>Релизы</h3>
-    <p>Короткие списки изменений по версиям интеграции, стабильности, прогнозным функциям и обновлениям сайта.</p>
+    <span className={shared.futureIcon}>🔔</span>
+    <h3>Личные уведомления</h3>
+    <p>Отправляй предупреждения, когда злаковые, берёза, амброзия или общий индекс пересекают твой собственный порог.</p>
   </article>
 
   <article className={shared.futureCard}>
-    <span className={shared.futureIcon}>🧭</span>
-    <h3>Дорожная карта</h3>
-    <p>Планы по настройке, контексту прогноза, AI-сводкам, картам покрытия и будущим экологическим доменам.</p>
+    <span className={shared.futureIcon}>📊</span>
+    <h3>Панели и карточки</h3>
+    <p>Показывай текущие значения, прогноз на завтра, блоки прогноза, диагностику и ссылку на покрытие на одной панели.</p>
   </article>
 </div>
 
-<section className={shared.sectionHeader}>
-  <span className={shared.eyebrow}>URL покрытия</span>
-  <h2>Статичная карта покрытия</h2>
+<section id="start" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>С чего начать</span>
+  <h2>Установи, проверь покрытие и только потом автоматизируй</h2>
 </section>
 
-<div className={shared.endpointGrid}>
-  <div>
-    <h3>Карта на GitHub Pages</h3>
-    <code>https://danishru.github.io/silam_pollen/</code>
-    <p>Отдельная карта покрытия также доступна в корне GitHub Pages для быстрой проверки вне сайта документации.</p>
-  </div>
-  <div>
-    <h3>Страница Docusaurus</h3>
-    <code>/coverage</code>
-    <p>Страница покрытия внутри сайта встраивает ту же локальную карту под верхним меню проекта.</p>
-  </div>
-  <div>
-    <h3>Направление проекта</h3>
-    <code>/roadmap</code>
-    <p>Дорожная карта показывает, что планируется сделать богаче, понятнее и удобнее в следующих версиях.</p>
-  </div>
+<div className={styles.homeStartGrid}>
+  <article className={styles.homeCodeCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Шаг 1</span>
+      <span className={shared.statusBadge}>Справка</span>
+    </div>
+    <h3>Установить интеграцию</h3>
+    <p>Начни с инструкции, выбери зону Home Assistant или ручные координаты, отметь аллергены и реши, нужен ли режим прогноза.</p>
+    <p><Link className={shared.primaryButton} to="/docs/intro">Открыть документацию</Link></p>
+  </article>
+
+  <article className={styles.homeCodeCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Шаг 2</span>
+      <span className={shared.statusBadgeMuted}>Карта</span>
+    </div>
+    <h3>Проверить покрытие</h3>
+    <p>Используй визуальную карту и встроенную проверку мастера настройки, чтобы убедиться, что SILAM отдаёт данные для выбранной точки.</p>
+    <p><Link className={shared.secondaryButton} to="/coverage">Проверить покрытие</Link></p>
+  </article>
+
+  <article className={styles.homeCodeCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Шаг 3</span>
+      <span className={shared.statusBadgeMuted}>Релизы</span>
+    </div>
+    <h3>Следить за обновлениями</h3>
+    <p>Смотри описание релизов, когда меняются сущности, кэш, диагностика, страницы сайта или поведение прогноза.</p>
+    <p><Link className={shared.secondaryButton} to="/blog">Читать релизы</Link></p>
+  </article>
+
+  <article className={styles.homeCodeCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Шаг 4</span>
+      <span className={shared.statusBadgeMuted}>Планы</span>
+    </div>
+    <h3>Посмотреть планы</h3>
+    <p>Дорожная карта показывает будущую работу: улучшение настройки, контекст прогноза, картографические слои и возможные новые типы данных.</p>
+    <p><Link className={shared.secondaryButton} to="/roadmap">Открыть планы</Link></p>
+  </article>
 </div>

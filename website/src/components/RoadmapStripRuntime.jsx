@@ -137,9 +137,15 @@ export default function RoadmapStripRuntime() {
       let dragStartX = 0;
       let dragStartY = 0;
       let dragStartOffset = 0;
+      let dragLastX = 0;
+      let dragLastTime = 0;
+      let dragVelocity = 0;
       let isStripDragging = false;
       let didStripDrag = false;
       let suppressStripClickUntil = 0;
+      let momentumFrame = 0;
+      let momentumLastTime = 0;
+      let momentumVelocity = 0;
 
       const setStripDragging = (nextDragging) => {
         if (nextDragging) {
@@ -148,6 +154,68 @@ export default function RoadmapStripRuntime() {
         }
 
         delete root.dataset.roadmapStripDragging;
+      };
+
+      const stopMomentumScroll = () => {
+        if (momentumFrame) {
+          window.cancelAnimationFrame(momentumFrame);
+          momentumFrame = 0;
+        }
+
+        momentumLastTime = 0;
+        momentumVelocity = 0;
+      };
+
+      const startMomentumScroll = (initialVelocity) => {
+        const maxOffset = getMaxOffset();
+        const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+
+        stopMomentumScroll();
+
+        if (prefersReducedMotion || maxOffset <= 2 || Math.abs(initialVelocity) < 0.34) {
+          return;
+        }
+
+        momentumVelocity = clamp(initialVelocity, -2.4, 2.4);
+        momentumLastTime = window.performance?.now?.() ?? Date.now();
+
+        const tick = (timestamp) => {
+          const now = timestamp || (window.performance?.now?.() ?? Date.now());
+          const deltaTime = clamp(now - momentumLastTime, 0, 34);
+          momentumLastTime = now;
+
+          const nextMaxOffset = getMaxOffset();
+
+          if (nextMaxOffset <= 2) {
+            stopMomentumScroll();
+            applyOffset();
+            return;
+          }
+
+          offset = clamp(offset + momentumVelocity * deltaTime, 0, nextMaxOffset);
+          applyOffset();
+
+          const hitLeftEdge = offset <= 0 && momentumVelocity < 0;
+          const hitRightEdge = offset >= nextMaxOffset && momentumVelocity > 0;
+
+          if (hitLeftEdge || hitRightEdge) {
+            stopMomentumScroll();
+            return;
+          }
+
+          // Инерция затухает по времени, чтобы короткий слабый свайп почти сразу
+          // останавливался, а быстрый флик заметно докатывался после отпускания.
+          momentumVelocity *= Math.exp(-deltaTime / 360);
+
+          if (Math.abs(momentumVelocity) < 0.025) {
+            stopMomentumScroll();
+            return;
+          }
+
+          momentumFrame = window.requestAnimationFrame(tick);
+        };
+
+        momentumFrame = window.requestAnimationFrame(tick);
       };
 
       const finishStripDrag = (event, options = {}) => {
@@ -161,13 +229,17 @@ export default function RoadmapStripRuntime() {
           viewport.releasePointerCapture(dragPointerId);
         }
 
+        const releaseVelocity = shouldSuppressClick ? dragVelocity : 0;
+
         dragPointerId = null;
         isStripDragging = false;
         didStripDrag = false;
+        dragVelocity = 0;
         setStripDragging(false);
 
         if (shouldSuppressClick) {
           suppressStripClickUntil = (window.performance?.now?.() ?? Date.now()) + 450;
+          startMomentumScroll(releaseVelocity);
         }
       };
 
@@ -176,10 +248,14 @@ export default function RoadmapStripRuntime() {
           return;
         }
 
+        stopMomentumScroll();
         dragPointerId = event.pointerId;
         dragStartX = event.clientX;
         dragStartY = event.clientY;
         dragStartOffset = offset;
+        dragLastX = event.clientX;
+        dragLastTime = window.performance?.now?.() ?? Date.now();
+        dragVelocity = 0;
         isStripDragging = false;
         didStripDrag = false;
         viewport.setPointerCapture?.(dragPointerId);
@@ -216,7 +292,21 @@ export default function RoadmapStripRuntime() {
         }
 
         event.preventDefault();
+        const now = window.performance?.now?.() ?? Date.now();
+        const sampleDeltaTime = now - dragLastTime;
+        const sampleDeltaOffset = dragLastX - event.clientX;
+
         offset = clamp(dragStartOffset - deltaX, 0, getMaxOffset());
+
+        if (sampleDeltaTime > 0 && sampleDeltaTime < 120) {
+          const instantVelocity = sampleDeltaOffset / sampleDeltaTime;
+          dragVelocity = dragVelocity === 0
+            ? instantVelocity
+            : (dragVelocity * 0.35) + (instantVelocity * 0.65);
+        }
+
+        dragLastX = event.clientX;
+        dragLastTime = now;
         applyOffset();
       };
 
@@ -235,6 +325,35 @@ export default function RoadmapStripRuntime() {
         }
       };
 
+      const normalizeWheelDelta = (delta, event) => {
+        if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+          return delta * 18;
+        }
+
+        if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+          return delta * Math.max(180, viewport.clientWidth * 0.82);
+        }
+
+        return delta;
+      };
+
+      const getVelocityAwareWheelDelta = (delta, event) => {
+        const normalizedDelta = normalizeWheelDelta(delta, event);
+        const direction = Math.sign(normalizedDelta);
+        const absDelta = Math.abs(normalizedDelta);
+
+        if (!direction || absDelta <= 0) {
+          return 0;
+        }
+
+        const pageSize = Math.max(180, viewport.clientWidth * 0.82);
+        const baseDelta = Math.min(absDelta, pageSize * 0.92);
+        const velocityBoost = clamp(absDelta / 260, 0, 1.75);
+
+        // Маленькая прокрутка остаётся точной, а сильный флик получает ускорение.
+        return direction * Math.min(pageSize * 1.35, baseDelta * (1 + velocityBoost));
+      };
+
       const handleViewportWheel = (event) => {
         const maxOffset = getMaxOffset();
 
@@ -250,9 +369,16 @@ export default function RoadmapStripRuntime() {
           return;
         }
 
+        const scrollDelta = getVelocityAwareWheelDelta(horizontalDelta, event);
+
+        if (!scrollDelta) {
+          return;
+        }
+
         event.preventDefault();
+        stopMomentumScroll();
         stopAnchorScrollCorrection({stopNativeScroll: true});
-        offset = clamp(offset + horizontalDelta, 0, maxOffset);
+        offset = clamp(offset + scrollDelta, 0, maxOffset);
         applyOffset();
       };
 
@@ -571,8 +697,14 @@ export default function RoadmapStripRuntime() {
         scrollToAnchor(linkUrl.hash);
       };
 
-      const handlePrevClick = () => moveByPage(-1);
-      const handleNextClick = () => moveByPage(1);
+      const handlePrevClick = () => {
+        stopMomentumScroll();
+        moveByPage(-1);
+      };
+      const handleNextClick = () => {
+        stopMomentumScroll();
+        moveByPage(1);
+      };
       const handleViewportKeyDown = (event) => {
         if (event.key === 'ArrowLeft') {
           event.preventDefault();
@@ -631,6 +763,7 @@ export default function RoadmapStripRuntime() {
       return () => {
         clearAnchorCorrections();
         clearAnchorHighlightWatch();
+        stopMomentumScroll();
         if (compactFrame) {
           window.cancelAnimationFrame(compactFrame);
         }

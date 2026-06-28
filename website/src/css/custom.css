@@ -498,6 +498,7 @@ div[class^='codeBlockContainer_'] {
   -webkit-backdrop-filter: none !important;
   text-decoration: none !important;
   transform: none !important;
+  filter: none !important;
   transition:
     color 180ms ease,
     background 180ms ease,
@@ -505,18 +506,28 @@ div[class^='codeBlockContainer_'] {
     filter 180ms ease !important;
 }
 
-.navbar__brand:hover,
-.navbar__brand:focus-visible,
-.navbar-sidebar__brand .navbar__brand:hover,
-.navbar-sidebar__brand .navbar__brand:focus-visible {
-  /* Hover повторяет прежний вид ненажатой бренд-кнопки. */
+/* В пассивном состоянии у brand нет овала: акцент живёт только на тексте. */
+.navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active),
+.navbar-sidebar__brand .navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active) {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):hover,
+.navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):focus-visible,
+.navbar-sidebar__brand .navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):hover,
+.navbar-sidebar__brand .navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):focus-visible {
+  /* На других страницах hover остаётся прежним мягким glass-состоянием. */
   color: var(--silam-accent-green) !important;
   background: var(--silam-brand-idle-panel) !important;
   box-shadow: var(--silam-brand-idle-shadow) !important;
   backdrop-filter: var(--silam-glass-filter-soft) !important;
   -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
   text-decoration: none !important;
-  filter: brightness(1.02);
+  filter: brightness(1.02) !important;
   transform: none !important;
 }
 
@@ -534,8 +545,23 @@ div[class^='codeBlockContainer_'] {
   box-shadow: var(--silam-brand-active-shadow) !important;
   backdrop-filter: var(--silam-glass-filter-soft) !important;
   -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
-  filter: brightness(1.04);
+  filter: brightness(1.04) !important;
   transform: none !important;
+}
+
+.navbar__brand[aria-current='page']:hover,
+.navbar__brand[aria-current='page']:focus-visible,
+.navbar__brand.navbar__brand--active:hover,
+.navbar__brand.navbar__brand--active:focus-visible,
+.navbar-sidebar__brand .navbar__brand[aria-current='page']:hover,
+.navbar-sidebar__brand .navbar__brand[aria-current='page']:focus-visible,
+.navbar-sidebar__brand .navbar__brand.navbar__brand--active:hover,
+.navbar-sidebar__brand .navbar__brand.navbar__brand--active:focus-visible {
+  /* На главной brand уже активен и не должен визуально переключаться в hover-состояние. */
+  color: var(--silam-text-inverse) !important;
+  background: var(--silam-brand-active-panel) !important;
+  box-shadow: var(--silam-brand-active-shadow) !important;
+  filter: brightness(1.04) !important;
 }
 
 .navbar__brand:active::after,
@@ -574,23 +600,23 @@ html[data-theme='dark'] .navbar-sidebar__brand .navbar__brand:focus-visible {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   filter:
-    drop-shadow(0 0 8px rgb(var(--silam-accent-green-rgb) / 0.22))
-    drop-shadow(0 0 16px rgb(var(--silam-accent-blue-rgb) / 0.15));
+    drop-shadow(0 0 8px rgb(var(--silam-accent-green-rgb) / 0.26))
+    drop-shadow(0 0 16px rgb(var(--silam-accent-blue-rgb) / 0.16));
   font-weight: 880 !important;
   letter-spacing: -0.04em !important;
 }
 
-.navbar__brand:hover .navbar__title,
-.navbar__brand:focus-visible .navbar__title,
-.navbar-sidebar__brand .navbar__brand:hover .navbar__title,
-.navbar-sidebar__brand .navbar__brand:focus-visible .navbar__title {
+.navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):hover .navbar__title,
+.navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):focus-visible .navbar__title,
+.navbar-sidebar__brand .navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):hover .navbar__title,
+.navbar-sidebar__brand .navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):focus-visible .navbar__title {
   background: var(--silam-brand-idle-text);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   filter:
-    drop-shadow(0 0 9px rgb(var(--silam-accent-green-rgb) / 0.25))
-    drop-shadow(0 0 18px rgb(var(--silam-accent-blue-rgb) / 0.18));
+    drop-shadow(0 0 9px rgb(var(--silam-accent-green-rgb) / 0.30))
+    drop-shadow(0 0 18px rgb(var(--silam-accent-blue-rgb) / 0.20));
 }
 
 .navbar__brand:active .navbar__title,
@@ -604,7 +630,30 @@ html[data-theme='dark'] .navbar-sidebar__brand .navbar__brand:focus-visible {
   color: var(--silam-text-inverse) !important;
   background: none !important;
   -webkit-text-fill-color: var(--silam-text-inverse);
-  filter: none;
+  filter: none !important;
+}
+
+
+/* На не-главных страницах нажатие по brand должно кратко показывать активное состояние.
+   Без этого hover-состояние с более высокой специфичностью перекрывает :active. */
+.navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):active,
+.navbar-sidebar__brand .navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):active {
+  border-color: transparent !important;
+  color: var(--silam-text-inverse) !important;
+  background: var(--silam-brand-active-panel) !important;
+  box-shadow: var(--silam-brand-active-shadow) !important;
+  backdrop-filter: var(--silam-glass-filter-soft) !important;
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft) !important;
+  filter: brightness(1.04) !important;
+  transform: none !important;
+}
+
+.navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):active .navbar__title,
+.navbar-sidebar__brand .navbar__brand:not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active):active .navbar__title {
+  color: var(--silam-text-inverse) !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--silam-text-inverse);
+  filter: none !important;
 }
 
 .navbar__link,

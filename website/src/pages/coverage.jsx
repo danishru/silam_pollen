@@ -78,9 +78,43 @@ function CoverageMapFrame({text}) {
     );
   }, [colorMode, navbarHeight, text.lang]);
 
+  const sendNavbarHover = useCallback((hover) => {
+    const frameWindow = frameRef.current?.contentWindow;
+    if (!frameWindow) {
+      return;
+    }
+
+    frameWindow.postMessage(
+      {
+        type: 'silam-coverage-navbar-hover',
+        hover,
+      },
+      '*',
+    );
+  }, []);
+
   useEffect(() => {
     sendFrameContext();
   }, [sendFrameContext]);
+
+  useEffect(() => {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) {
+      return undefined;
+    }
+
+    const hideInfoWindow = () => sendNavbarHover(true);
+
+    navbar.addEventListener('pointerenter', hideInfoWindow);
+    navbar.addEventListener('focusin', hideInfoWindow);
+    navbar.addEventListener('touchstart', hideInfoWindow, {passive: true});
+
+    return () => {
+      navbar.removeEventListener('pointerenter', hideInfoWindow);
+      navbar.removeEventListener('focusin', hideInfoWindow);
+      navbar.removeEventListener('touchstart', hideInfoWindow);
+    };
+  }, [sendNavbarHover]);
 
   return (
     <main

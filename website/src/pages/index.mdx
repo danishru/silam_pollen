@@ -1,129 +1,280 @@
 ---
 title: Home
-description: SILAM Pollen project home page
+description: SILAM Pollen for Home Assistant — local pollen forecast context, coverage checks, and automation-ready entities from FMI SILAM.
 hide_table_of_contents: true
 ---
 
 import Link from '@docusaurus/Link';
+import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
 import shared from '@site/src/pages/siteShared.module.css';
+import roadmapStyles from '@site/src/pages/roadmap.module.css';
+import styles from '@site/src/pages/home.module.css';
 
-# SILAM Pollen
-
-<div className={shared.hero}>
-  <div className={shared.heroContent}>
-    <span className={shared.eyebrow}>Home Assistant pollen forecast</span>
-    <h2 className={shared.heroTitle}>Allergy-aware Home Assistant, powered by SILAM.</h2>
-    <p className={shared.heroText}>
-      SILAM Pollen turns open forecast data from the Finnish Meteorological Institute into practical Home Assistant entities, dashboards, automations, and future map-based context.
-    </p>
-    <div className={shared.heroActions}>
-      <Link className={shared.primaryButton} to="/docs/intro">Open docs</Link>
-      <Link className={shared.secondaryButton} to="/coverage">Coverage map</Link>
-      <Link className={shared.secondaryButton} to="/roadmap">Roadmap</Link>
+<section id="overview" className={styles.homeSectionAnchor}>
+  <div className={`${shared.hero} ${styles.homeHero}`}>
+    <div className={shared.heroContent}>
+      <span className={shared.eyebrow}>Pollen forecast for Home Assistant</span>
+      <h1 className={shared.heroTitle}>Allergy-aware Home Assistant, powered by SILAM data.</h1>
+      <p className={shared.heroText}>
+        SILAM Pollen turns open forecast data from the Finnish Meteorological Institute into practical Home Assistant entities, dashboards, automations, and future map context.
+      </p>
+      <div className={shared.heroActions}>
+        <Link className={shared.primaryButton} to="/docs/intro">Open documentation</Link>
+        <Link className={shared.secondaryButton} to="/coverage">Coverage map</Link>
+        <Link className={shared.secondaryButton} to="/roadmap">Roadmap</Link>
+      </div>
+    </div>
+    <div className={shared.heroPanel}>
+      <div className={shared.signalCard}>
+        <span className={shared.signalIcon}>🌿</span>
+        <strong>Allergen sensors</strong>
+        <small>Alder, birch, grass, hazel, mugwort, olive, and ragweed values for the selected Home Assistant zone.</small>
+      </div>
+      <div className={shared.signalCard}>
+        <span className={shared.signalIcon}>⛅</span>
+        <strong>Forecast entity</strong>
+        <small>Optional weather-style pollen forecast with hourly, twice-daily, and daily views when forecast mode is enabled.</small>
+      </div>
+      <div className={shared.signalCard}>
+        <span className={shared.signalIcon}>🧭</span>
+        <strong>Smart dataset choice</strong>
+        <small>Uses available SILAM v6.1 coverage layers and keeps diagnostic context when data is unavailable.</small>
+      </div>
     </div>
   </div>
-  <div className={shared.heroPanel}>
-    <div className={shared.signalCard}>
-      <span className={shared.signalIcon}>🌿</span>
-      <strong>Pollen forecast</strong>
-      <small>Track key allergens and understand the current risk around your Home Assistant location.</small>
-    </div>
-    <div className={shared.signalCard}>
-      <span className={shared.signalIcon}>🗺️</span>
-      <strong>Coverage first</strong>
-      <small>Check whether your point is covered before relying on the forecast in daily automations.</small>
-    </div>
-    <div className={shared.signalCard}>
-      <span className={shared.signalIcon}>🏠</span>
-      <strong>Built for the home</strong>
-      <small>Use forecast data in cards, notifications, ventilation logic, and allergy-aware routines.</small>
-    </div>
-  </div>
-</div>
-
-<div className={shared.notice}>
-  <strong>Note:</strong> this is a temporary landing page for the project site. It uses the shared visual language from the roadmap page and will be expanded into a fuller home page later.
-</div>
-
-<section className={shared.sectionHeader}>
-  <span className={shared.eyebrow}>Start here</span>
-  <h2>Project entry points</h2>
 </section>
 
-<div className={shared.releaseGrid}>
-  <article className={shared.releaseCard}>
-    <div className={shared.cardHeader}>
-      <span className={shared.versionBadge}>Docs</span>
-      <span className={shared.statusBadge}>First step</span>
+<nav className={roadmapStyles.roadmapStripShell} data-roadmap-strip-shell aria-label="Home page sections">
+  <div className={roadmapStyles.roadmapStripFrame} data-roadmap-strip data-roadmap-strip-overflow="false">
+    <button className={`${roadmapStyles.roadmapStripArrow} ${roadmapStyles.roadmapStripArrowLeft}`} type="button" aria-label="Scroll home page navigation left" data-roadmap-strip-prev>
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15.4 5.6 9 12l6.4 6.4-1.4 1.4L6.2 12 14 4.2z" /></svg>
+    </button>
+    <div className={roadmapStyles.roadmapStripScroller} data-roadmap-strip-scroller tabIndex={0}>
+      <div className={roadmapStyles.roadmapStrip}>
+        <a className={`${roadmapStyles.step} ${roadmapStyles.activeStep}`} href="#overview" data-roadmap-anchor-link><span>01</span><strong>Overview</strong><small>What it does</small></a>
+        <a className={roadmapStyles.step} href="#why" data-roadmap-anchor-link><span>02</span><strong>Why it helps</strong><small>Daily use</small></a>
+        <a className={roadmapStyles.step} href="#features" data-roadmap-anchor-link><span>03</span><strong>Entities</strong><small>Sensors + status</small></a>
+        <a className={roadmapStyles.step} href="#forecast" data-roadmap-anchor-link><span>04</span><strong>Forecast</strong><small>Hours + days</small></a>
+        <a className={roadmapStyles.step} href="#coverage" data-roadmap-anchor-link><span>05</span><strong>Coverage</strong><small>SILAM areas</small></a>
+        <a className={roadmapStyles.step} href="#automations" data-roadmap-anchor-link><span>06</span><strong>Automations</strong><small>Scenarios</small></a>
+        <a className={roadmapStyles.step} href="#start" data-roadmap-anchor-link><span>07</span><strong>Start</strong><small>Install path</small></a>
+      </div>
     </div>
-    <h3>Install and configure the integration</h3>
+    <button className={`${roadmapStyles.roadmapStripArrow} ${roadmapStyles.roadmapStripArrowRight}`} type="button" aria-label="Scroll home page navigation right" data-roadmap-strip-next>
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8.6 18.4 6.4-6.4-6.4-6.4L10 4.2l7.8 7.8L10 19.8z" /></svg>
+    </button>
+  </div>
+</nav>
+
+<RoadmapStripRuntime />
+
+<section id="why" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>Why use it?</span>
+  <h2>Pollen context where your automations already live</h2>
+</section>
+
+<div className={styles.homeIntroGrid}>
+  <article className={`${styles.homeWideCard} ${styles.homeHighlightCard}`}>
+    <h3>From forecast model to clear Home Assistant state</h3>
     <p>
-      Start with the documentation when you need to understand setup, entities, options, update behavior, and forecast data inside Home Assistant.
+      SILAM Pollen brings pollen context into Home Assistant dashboards, notifications, and routines without a separate access key or paid account.
     </p>
-    <p>
-      <Link className={shared.secondaryButton} to="/docs/intro">Read documentation</Link>
-    </p>
+    <div className={styles.homeMetricList}>
+      <div className={styles.homeMetric}>
+        <span className={styles.homeMetricIcon}>🔑</span>
+        <div><strong>No access keys</strong><small>Uses openly available SILAM forecast data from the Finnish Meteorological Institute.</small></div>
+      </div>
+      <div className={styles.homeMetric}>
+        <span className={styles.homeMetricIcon}>🏠</span>
+        <div><strong>Zone-based setup</strong><small>Use a Home Assistant zone or manually adjust coordinates and altitude.</small></div>
+      </div>
+      <div className={styles.homeMetric}>
+        <span className={styles.homeMetricIcon}>🛡️</span>
+        <div><strong>Data control</strong><small>Coverage checks, service status, saved-data recovery, and full refresh help explain integration behavior.</small></div>
+      </div>
+    </div>
   </article>
 
-  <article className={shared.releaseCard}>
-    <div className={shared.cardHeader}>
-      <span className={shared.versionBadge}>Coverage</span>
-      <span className={shared.statusBadgeMuted}>Map</span>
-    </div>
-    <h3>Check the SILAM coverage area</h3>
+  <article className={styles.homeWideCard}>
+    <h3>Built around real daily choices</h3>
+    <ul>
+      <li>Should the windows stay closed during a high birch or grass period?</li>
+      <li>Is tomorrow likely to be better for a walk or ventilation?</li>
+      <li>Is the external service unavailable, or is the selected point outside coverage?</li>
+      <li>Which allergen is driving the elevated index?</li>
+    </ul>
     <p>
-      The coverage page helps verify whether the selected location is inside the current SILAM pollen forecast area before you build dashboards or automations around it.
+      Forecasts are informational and do not replace medical guidance, but they are useful context for smart home routines and personal planning.
     </p>
+  </article>
+</div>
+
+<section id="features" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>Entities</span>
+  <h2>What the integration creates</h2>
+</section>
+
+<div className={styles.homeFeatureGrid}>
+  <article className={styles.homeCard}>
+    <span className={shared.futureIcon}>🌾</span>
+    <h3>Pollen concentration sensors</h3>
+    <p>Separate sensors for selected pollen types, updated together and exposed as regular Home Assistant entities.</p>
+    <div className={styles.homePillList}>
+      <span className={styles.homePill}>Alder</span>
+      <span className={styles.homePill}>Birch</span>
+      <span className={styles.homePill}>Grass</span>
+      <span className={styles.homePill}>Hazel</span>
+      <span className={styles.homePill}>Mugwort</span>
+      <span className={styles.homePill}>Olive</span>
+      <span className={styles.homePill}>Ragweed</span>
+    </div>
+  </article>
+
+  <article className={styles.homeCard}>
+    <span className={shared.futureIcon}>📈</span>
+    <h3>Index and leading allergen</h3>
+    <p>The forecast entity can show a clear pollen condition, the allergen behind it, and tomorrow context when forecast data is enabled.</p>
+  </article>
+
+  <article className={styles.homeCard}>
+    <span className={shared.futureIcon}>🧪</span>
+    <h3>Diagnostics for troubleshooting</h3>
+    <p>Service status, request time, forecast horizon, saved data, request type, and selected dataset help explain the last update.</p>
+  </article>
+</div>
+
+<section id="forecast" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>Forecast mode</span>
+  <h2>Current values and short forecast views</h2>
+</section>
+
+<div className={styles.homeIntroGrid}>
+  <article className={styles.homeWideCard}>
+    <h3>One forecast entity, several views</h3>
     <p>
+      When forecast mode is enabled, SILAM Pollen creates a Home Assistant weather entity for pollen conditions. It can show near-term changes, day and night blocks, and daily context from the same SILAM data.
+    </p>
+    <div className={styles.homeMiniTimeline}>
+      <div className={styles.homeMiniTimelineItem}><span>Now</span><div><strong>Current condition</strong><small>Current pollen index and selected allergen readings.</small></div></div>
+      <div className={styles.homeMiniTimelineItem}><span>Next hours</span><div><strong>Short-term changes</strong><small>Useful for cards, notifications, and daily planning.</small></div></div>
+      <div className={styles.homeMiniTimelineItem}><span>Day / night</span><div><strong>Twice-daily view</strong><small>Compact forecast context that fits well on dashboards.</small></div></div>
+      <div className={styles.homeMiniTimelineItem}><span>Coming days</span><div><strong>Multi-day context</strong><small>Forecast duration is configurable from 36 to 120 hours.</small></div></div>
+    </div>
+  </article>
+
+  <article className={styles.homeWideCard}>
+    <h3>Designed to update responsibly</h3>
+    <p>
+      Forecast requests can be heavier than current values, so the integration uses shared updates, saved-data recovery, incremental refresh paths, and a full refresh service when fresh data is explicitly needed.
+    </p>
+    <div className={styles.homePillList}>
+      <span className={styles.homePill}>Manual update</span>
+      <span className={styles.homePill}>Full refresh</span>
+      <span className={styles.homePill}>Saved-data recovery</span>
+      <span className={styles.homePill}>Forecast horizon</span>
+      <span className={styles.homePill}>Service status</span>
+    </div>
+  </article>
+</div>
+
+<section id="coverage" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>Coverage first</span>
+  <h2>Check your location before building automations</h2>
+</section>
+
+<div className={styles.homeIntroGrid}>
+  <article className={styles.homeWideCard}>
+    <h3>Several SILAM v6.1 coverage areas</h3>
+    <p>
+      The integration can work with Europe, Northern Europe, and Finland-focused SILAM pollen datasets. Some choices are shown or selected only when the configured coordinates are actually covered.
+    </p>
+    <div className={styles.homePillList}>
+      <span className={styles.homePill}>Europe v6.1</span>
+      <span className={styles.homePill}>Northern Europe v6.1</span>
+      <span className={styles.homePill}>Finland v6.1</span>
+      <span className={styles.homePill}>Smart selection</span>
+    </div>
+    <p className={styles.homeCardAction}>
       <Link className={shared.secondaryButton} to="/coverage">Open coverage map</Link>
     </p>
   </article>
+
+  <div className={styles.homeMapFrame} aria-hidden="true">
+    <div className={styles.homeMapBadge}>
+      <strong>Coverage map</strong>
+      <small>Use the map before setup, then let the integration validate the selected point during configuration.</small>
+    </div>
+  </div>
 </div>
 
-<section className={shared.sectionHeader}>
-  <span className={shared.eyebrow}>What this site contains</span>
-  <h2>Docs, releases, and future plans</h2>
+<section id="automations" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>Automation-ready</span>
+  <h2>Use pollen context in real Home Assistant scenarios</h2>
 </section>
 
 <div className={shared.futureGrid}>
   <article className={shared.futureCard}>
-    <span className={shared.futureIcon}>📚</span>
-    <h3>Documentation</h3>
-    <p>Configuration notes, feature behavior, forecast entities, diagnostics, cache behavior, and setup requirements.</p>
+    <span className={shared.futureIcon}>🪟</span>
+    <h3>Ventilation decisions</h3>
+    <p>Combine pollen state with weather, humidity, CO₂, or window sensors before opening vents or sending reminders.</p>
   </article>
 
   <article className={shared.futureCard}>
-    <span className={shared.futureIcon}>🧾</span>
-    <h3>Release notes</h3>
-    <p>Short changelogs for integration releases, stability improvements, forecast features, and website updates.</p>
+    <span className={shared.futureIcon}>🔔</span>
+    <h3>Personal notifications</h3>
+    <p>Notify sensitive users when grass, birch, ragweed, or the general index crosses your own threshold.</p>
   </article>
 
   <article className={shared.futureCard}>
-    <span className={shared.futureIcon}>🧭</span>
-    <h3>Roadmap</h3>
-    <p>Planned work around setup flow, forecast context, AI-ready summaries, coverage maps, and future environmental domains.</p>
+    <span className={shared.futureIcon}>📊</span>
+    <h3>Dashboards and cards</h3>
+    <p>Show current values, tomorrow context, forecast blocks, diagnostics, and coverage links in one home dashboard.</p>
   </article>
 </div>
 
-<section className={shared.sectionHeader}>
-  <span className={shared.eyebrow}>Coverage URL</span>
-  <h2>Static coverage map root</h2>
+<section id="start" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
+  <span className={shared.eyebrow}>Start here</span>
+  <h2>Install, verify coverage, then automate</h2>
 </section>
 
-<div className={shared.endpointGrid}>
-  <div>
-    <h3>GitHub Pages map</h3>
-    <code>https://danishru.github.io/silam_pollen/</code>
-    <p>The standalone coverage map also lives at the GitHub Pages root for quick checks outside the documentation site.</p>
-  </div>
-  <div>
-    <h3>Docusaurus page</h3>
-    <code>/coverage</code>
-    <p>The site coverage page embeds the same local map experience under the project navigation bar.</p>
-  </div>
-  <div>
-    <h3>Project direction</h3>
-    <code>/roadmap</code>
-    <p>The roadmap tracks what should become richer, clearer, and easier to use in upcoming versions.</p>
-  </div>
+<div className={styles.homeStartGrid}>
+  <article className={styles.homeCodeCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Step 1</span>
+      <span className={shared.statusBadge}>Docs</span>
+    </div>
+    <h3>Install the integration</h3>
+    <p>Start with the guide, choose a Home Assistant zone or manual coordinates, select allergens, then decide whether forecast mode is needed.</p>
+    <p><Link className={shared.primaryButton} to="/docs/intro">Open documentation</Link></p>
+  </article>
+
+  <article className={styles.homeCodeCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Step 2</span>
+      <span className={shared.statusBadgeMuted}>Map</span>
+    </div>
+    <h3>Verify coverage</h3>
+    <p>Use the visual coverage page and the built-in setup check to confirm that SILAM has data for your selected point.</p>
+    <p><Link className={shared.secondaryButton} to="/coverage">Check coverage</Link></p>
+  </article>
+
+  <article className={styles.homeCodeCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Step 3</span>
+      <span className={shared.statusBadgeMuted}>Updates</span>
+    </div>
+    <h3>Follow updates</h3>
+    <p>Read the release notes when entities, saved data, diagnostics, website pages, or forecast behavior changes.</p>
+    <p><Link className={shared.secondaryButton} to="/blog">Read release notes</Link></p>
+  </article>
+
+  <article className={styles.homeCodeCard}>
+    <div className={shared.cardHeader}>
+      <span className={shared.versionBadge}>Step 4</span>
+      <span className={shared.statusBadgeMuted}>Plans</span>
+    </div>
+    <h3>See what is next</h3>
+    <p>The roadmap tracks planned work such as better setup guidance, richer forecast context, map overlays, and possible new data types.</p>
+    <p><Link className={shared.secondaryButton} to="/roadmap">Open roadmap</Link></p>
+  </article>
 </div>

@@ -1,0 +1,416 @@
+/* SILAM Pollen home page styles.
+ * Place this content into: website/src/pages/home.module.css
+ *
+ * Локальные стили главной страницы: sticky-навигация, промо-секции,
+ * списки возможностей и небольшие информационные блоки.
+ */
+
+
+:global(.container.container--fluid.margin-vert--lg) {
+  --silam-home-page-gutter: 26px;
+  padding-right: var(--silam-home-page-gutter) !important;
+  padding-left: var(--silam-home-page-gutter) !important;
+}
+
+/* Та же настройка нужна для статичного preview, где CSS Modules не обрабатывается сборщиком. */
+.container.container--fluid.margin-vert--lg {
+  --silam-home-page-gutter: 26px;
+  padding-right: var(--silam-home-page-gutter) !important;
+  padding-left: var(--silam-home-page-gutter) !important;
+}
+
+:global(html) {
+  --silam-home-anchor-offset: calc(var(--ifm-navbar-height) + 5.65rem);
+  scroll-padding-top: var(--silam-home-anchor-offset);
+}
+
+.homeSectionAnchor,
+#overview,
+#why,
+#features,
+#forecast,
+#coverage,
+#automations,
+#start {
+  scroll-margin-top: var(--silam-home-anchor-offset);
+}
+
+
+.homeHero {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+}
+
+.homeHero > * {
+  min-width: 0;
+}
+
+.homeNavShell {
+  position: sticky;
+  top: calc(var(--ifm-navbar-height) + 0.5rem);
+  z-index: 850;
+  overflow-anchor: none;
+  box-sizing: border-box;
+  margin: 1.5rem 0 2rem;
+  padding: 0.45rem 0;
+  --silam-home-nav-page-gutter: var(--silam-home-page-gutter, 26px);
+  --silam-home-nav-step-min: 128px;
+  --silam-home-nav-gap: 0.75rem;
+  --silam-home-nav-shadow: 0 -18px 46px -24px rgb(9 74 72 / 0.18);
+}
+
+html[data-theme='dark'] .homeNavShell {
+  --silam-home-nav-shadow: 0 -18px 48px -24px rgb(0 0 0 / 0.34);
+}
+
+.homeNavShell::before {
+  position: absolute;
+  top: 0;
+  right: calc(50% - 50vw);
+  bottom: 0;
+  left: calc(50% - 50vw);
+  z-index: 0;
+  pointer-events: none;
+  content: '';
+  border-top: 1px solid var(--silam-glass-border);
+  border-bottom: 1px solid rgb(var(--silam-accent-blue-rgb) / 0.075);
+  background: var(--silam-glass-surface);
+  box-shadow:
+    var(--silam-home-nav-shadow),
+    0 10px 18px -18px rgb(var(--silam-accent-blue-rgb) / 0.32);
+  backdrop-filter: var(--silam-glass-filter-soft);
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft);
+}
+
+.homeNavScroller {
+  position: relative;
+  z-index: 1;
+  overflow-x: auto;
+  overflow-y: visible;
+  min-width: 0;
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, black 34px, black calc(100% - 34px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, black 34px, black calc(100% - 34px), transparent 100%);
+}
+
+.homeNavScroller::-webkit-scrollbar {
+  display: none;
+}
+
+.homeNavStrip {
+  display: grid;
+  min-width: max-content;
+  grid-template-columns: repeat(7, minmax(var(--silam-home-nav-step-min), 1fr));
+  gap: var(--silam-home-nav-gap);
+  padding: 0.45rem 0;
+}
+
+.homeNavItem {
+  position: relative;
+  min-width: var(--silam-home-nav-step-min);
+  padding: 0.82rem 0.9rem;
+  overflow: hidden;
+  border: 1px solid var(--silam-glass-border);
+  border-radius: var(--silam-radius-xl);
+  color: var(--silam-text-main) !important;
+  background: var(--silam-glass-surface);
+  background-clip: padding-box;
+  text-decoration: none !important;
+  backdrop-filter: var(--silam-glass-filter-soft);
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft);
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    filter 180ms ease;
+}
+
+.homeNavItem:hover,
+.homeNavItem:focus-visible {
+  border-color: rgb(var(--silam-accent-mint-rgb) / 0.34);
+  color: var(--silam-menu-hover-text) !important;
+  background: var(--silam-menu-hover-panel);
+  text-decoration: none !important;
+}
+
+.homeNavItem:focus-visible {
+  outline: 2px solid var(--silam-accent-blue);
+  outline-offset: 2px;
+}
+
+.homeNavItem span,
+.homeNavItem strong {
+  display: block;
+}
+
+.homeNavItem span {
+  color: var(--ifm-color-primary-dark);
+  font-size: 0.70rem;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.homeNavItem strong {
+  margin-top: 0.22rem;
+  font-size: 0.94rem;
+  line-height: 1.14;
+}
+
+.homeIntroGrid,
+.homeFeatureGrid,
+.homeStartGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.homeIntroGrid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+}
+
+.homeFeatureGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.homeStartGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.homeCard,
+.homeWideCard,
+.homeCodeCard {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--silam-card-border);
+  border-radius: var(--silam-radius-3xl);
+  background: var(--silam-card-surface);
+}
+
+.homeCard,
+.homeCodeCard {
+  padding: 1.15rem;
+}
+
+.homeWideCard {
+  padding: clamp(1.15rem, 2.5vw, 1.6rem);
+}
+
+.homeCard h3,
+.homeWideCard h3,
+.homeCodeCard h3 {
+  margin-top: 0;
+}
+
+.homeCard p,
+.homeWideCard p,
+.homeCodeCard p,
+.homeCard li,
+.homeWideCard li {
+  color: var(--silam-text-soft);
+}
+
+.homeCard ul,
+.homeWideCard ul {
+  padding-left: 1.15rem;
+}
+
+.homeHighlightCard {
+  border-color: rgb(var(--silam-accent-mint-rgb) / 0.32);
+  background:
+    radial-gradient(circle at top left, rgb(var(--silam-accent-mint-rgb) / 0.16), transparent 24rem),
+    var(--silam-card-surface);
+}
+
+.homeMetricList {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1rem 0 0;
+}
+
+.homeMetric {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border: 1px solid var(--silam-glass-border);
+  border-radius: var(--silam-radius-xl);
+  background: var(--silam-bg-surface-soft);
+}
+
+.homeMetric strong,
+.homeMetric small {
+  display: block;
+}
+
+.homeMetric small {
+  color: var(--silam-text-soft);
+}
+
+.homeMetricIcon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border-radius: var(--silam-radius-lg);
+  background: rgb(var(--silam-accent-mint-rgb) / 0.14);
+}
+
+.homePillList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+
+.homeCardAction {
+  margin: 1.15rem 0 0;
+}
+
+.homePillList + .homeCardAction {
+  margin-top: 1.25rem;
+}
+
+.homeCardAction:last-child {
+  margin-bottom: 0;
+}
+
+.homePill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0.28rem 0.62rem;
+  border: 1px solid var(--silam-glass-border);
+  border-radius: var(--silam-radius-pill);
+  color: var(--silam-text-main);
+  background: var(--silam-bg-surface-soft);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.homeMiniTimeline {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.homeMiniTimelineItem {
+  display: grid;
+  grid-template-columns: 5.6rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.7rem 0.8rem;
+  border-radius: var(--silam-radius-xl);
+  background: var(--silam-bg-surface-soft);
+}
+
+.homeMiniTimelineItem span {
+  color: var(--ifm-color-primary-dark);
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.homeMiniTimelineItem strong {
+  display: block;
+  margin-bottom: 0.1rem;
+}
+
+.homeMiniTimelineItem small {
+  display: block;
+  color: var(--silam-text-soft);
+}
+
+.homeCodeCard code {
+  display: inline-block;
+  margin: 0.12rem 0;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.homeMapFrame {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid var(--silam-glass-border);
+  border-radius: var(--silam-radius-3xl);
+  background:
+    radial-gradient(circle at 24% 22%, rgb(var(--silam-accent-mint-rgb) / 0.24), transparent 12rem),
+    radial-gradient(circle at 72% 68%, rgb(var(--silam-accent-blue-rgb) / 0.18), transparent 14rem),
+    linear-gradient(135deg, rgb(var(--silam-accent-green-rgb) / 0.08), rgb(var(--silam-accent-blue-rgb) / 0.06));
+}
+
+.homeMapFrame::before {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(circle at center, black, transparent 82%);
+}
+
+.homeMapBadge {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 1;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--silam-glass-border);
+  border-radius: var(--silam-radius-2xl);
+  background: var(--silam-glass-surface-strong);
+  backdrop-filter: var(--silam-glass-filter-soft);
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft);
+}
+
+.homeMapBadge strong,
+.homeMapBadge small {
+  display: block;
+}
+
+.homeMapBadge small {
+  color: var(--silam-text-soft);
+}
+
+@media (max-width: 996px) {
+  .homeIntroGrid,
+  .homeFeatureGrid,
+  .homeStartGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .homeNavStrip {
+    grid-template-columns: repeat(7, minmax(118px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  :global(html) {
+    --silam-home-anchor-offset: calc(var(--ifm-navbar-height) + 6.2rem);
+  }
+
+  .homeNavShell {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .homeNavShell::before {
+    right: calc(var(--silam-home-nav-page-gutter, 26px) * -1);
+    left: calc(var(--silam-home-nav-page-gutter, 26px) * -1);
+  }
+
+  .homeNavItem {
+    padding: 0.72rem 0.75rem;
+  }
+
+  .homeMiniTimelineItem {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
