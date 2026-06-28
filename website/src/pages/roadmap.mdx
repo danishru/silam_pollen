@@ -17,8 +17,8 @@ import styles from '@site/src/pages/roadmap.module.css';
       SILAM Pollen is moving from a focused pollen sensor integration toward a smarter environmental forecast experience for Home Assistant: easier setup, more transparent data sources, richer forecast context, AI-ready summaries, and future map-based visualizations.
     </p>
     <div className={styles.heroActions}>
-      <a className={styles.primaryButton} href="#release-plan">View roadmap</a>
-      <a className={styles.secondaryButton} href="#future-backlog">Explore future ideas</a>
+      <a className={styles.primaryButton} href="#release-plan" data-roadmap-anchor-link>View roadmap</a>
+      <a className={styles.secondaryButton} href="#future-backlog" data-roadmap-anchor-link>Explore future ideas</a>
     </div>
   </div>
   <div className={styles.heroPanel}>
@@ -46,43 +46,439 @@ import styles from '@site/src/pages/roadmap.module.css';
 
 ## Visual overview
 
-<div className={styles.roadmapStrip}>
-  <a href="#v042" className={`${styles.step} ${styles.activeStep}`}>
+<div className={styles.roadmapStripShell} data-roadmap-strip-shell>
+  <div className={styles.roadmapStripFrame} data-roadmap-strip data-roadmap-strip-overflow="false">
+    <button
+      className={`${styles.roadmapStripArrow} ${styles.roadmapStripArrowLeft}`}
+      type="button"
+      aria-label="Scroll roadmap steps left"
+      data-roadmap-strip-prev
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M15.4 5.6 9 12l6.4 6.4-1.4 1.4L6.2 12 14 4.2z" />
+      </svg>
+    </button>
+    <div className={styles.roadmapStripScroller} data-roadmap-strip-scroller tabIndex="0">
+      <div className={styles.roadmapStrip}>
+  <a href="#v042" className={`${styles.step} ${styles.activeStep}`} data-roadmap-anchor-link>
     <span>v0.4.2</span>
     <strong>Setup</strong>
     <small>Location-first onboarding</small>
   </a>
-  <a href="#v043" className={styles.step}>
+  <a href="#v043" className={styles.step} data-roadmap-anchor-link>
     <span>v0.4.3</span>
     <strong>Foundation</strong>
     <small>Cleaner internals</small>
   </a>
-  <a href="#v044" className={styles.step}>
+  <a href="#v044" className={styles.step} data-roadmap-anchor-link>
     <span>v0.4.4</span>
     <strong>Timeline</strong>
     <small>Past + future forecast</small>
   </a>
-  <a href="#v045" className={styles.step}>
+  <a href="#v045" className={styles.step} data-roadmap-anchor-link>
     <span>v0.4.5</span>
     <strong>Weather</strong>
     <small>More forecast context</small>
   </a>
-  <a href="#v046" className={styles.step}>
+  <a href="#v046" className={styles.step} data-roadmap-anchor-link>
     <span>v0.4.6</span>
     <strong>Summary</strong>
     <small>Clean data access</small>
   </a>
-  <a href="#v047" className={styles.step}>
+  <a href="#v047" className={styles.step} data-roadmap-anchor-link>
     <span>v0.4.7</span>
     <strong>Assist</strong>
     <small>AI-ready answers</small>
   </a>
-  <a href="#future-backlog" className={`${styles.step} ${styles.futureStep}`}>
+  <a href="#future-backlog" className={`${styles.step} ${styles.futureStep}`} data-roadmap-anchor-link>
     <span>Future</span>
     <strong>Maps + domains</strong>
     <small>Dust, fire, 2D overlay</small>
   </a>
+      </div>
+    </div>
+    <button
+      className={`${styles.roadmapStripArrow} ${styles.roadmapStripArrowRight}`}
+      type="button"
+      aria-label="Scroll roadmap steps right"
+      data-roadmap-strip-next
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="m8.6 18.4 6.4-6.4-6.4-6.4L10 4.2l7.8 7.8L10 19.8z" />
+      </svg>
+    </button>
+  </div>
 </div>
+
+<script>{`
+(() => {
+  const initRoadmapStrip = () => {
+    document.querySelectorAll('[data-roadmap-strip]').forEach((root) => {
+      const shell = root.closest('[data-roadmap-strip-shell]') || root.parentElement;
+      const viewport = root.querySelector('[data-roadmap-strip-scroller]');
+      const track = viewport?.firstElementChild;
+      const prev = root.querySelector('[data-roadmap-strip-prev]');
+      const next = root.querySelector('[data-roadmap-strip-next]');
+
+      if (!shell || !viewport || !track || !prev || !next || root.dataset.roadmapStripReady === 'true') {
+        return;
+      }
+
+      root.dataset.roadmapStripReady = 'true';
+      let offset = 0;
+      let compactFrame = 0;
+      let resizeFrame = 0;
+      let isCompact = shell.dataset.roadmapStripCompact === 'true';
+      let compactBaseScrollY = 0;
+      const compactEnterOffset = 250;
+      const compactExitOffset = 8;
+      const compactTransitionLockMs = 840;
+      let compactLockUntil = 0;
+
+      const stickySentinel = document.createElement('span');
+      stickySentinel.dataset.roadmapStripStickySentinel = 'true';
+      stickySentinel.setAttribute('aria-hidden', 'true');
+      stickySentinel.style.cssText = 'display:block;width:0;height:0;overflow:hidden;pointer-events:none;';
+      shell.before(stickySentinel);
+      shell.dataset.roadmapStripCompact = isCompact ? 'true' : 'false';
+
+      const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+      const getMaxOffset = () => Math.max(0, track.scrollWidth - viewport.clientWidth);
+
+      const getStickyTop = () => {
+        const stickyTop = Number.parseFloat(window.getComputedStyle(shell).top);
+        return Number.isFinite(stickyTop) ? stickyTop : 0;
+      };
+
+      const measureCompactBaseScrollY = () => {
+        compactBaseScrollY = window.scrollY + stickySentinel.getBoundingClientRect().top - getStickyTop();
+      };
+
+      const setCompactState = (nextCompact, options = {}) => {
+        if (nextCompact === isCompact) {
+          return false;
+        }
+
+        const now = window.performance?.now?.() ?? Date.now();
+
+        if (options.instant) {
+          shell.dataset.roadmapAnchorSettling = 'true';
+        }
+
+        isCompact = nextCompact;
+        compactLockUntil = now + compactTransitionLockMs;
+        shell.dataset.roadmapStripCompact = isCompact ? 'true' : 'false';
+
+        if (options.instant) {
+          // Принудительно применяем финальную высоту до расчёта позиции якоря.
+          void shell.offsetHeight;
+          requestAnimationFrame(() => {
+            delete shell.dataset.roadmapAnchorSettling;
+          });
+        }
+
+        requestAnimationFrame(applyOffset);
+        window.setTimeout(applyOffset, compactTransitionLockMs + 80);
+        return true;
+      };
+
+      const getExpectedCompactStateForScrollY = (nextScrollY) => {
+        const enterScrollY = compactBaseScrollY + compactEnterOffset;
+        const exitScrollY = compactBaseScrollY + compactExitOffset;
+
+        return isCompact
+          ? nextScrollY > exitScrollY
+          : nextScrollY >= enterScrollY;
+      };
+
+      const updateCompactState = (options = {}) => {
+        const now = window.performance?.now?.() ?? Date.now();
+
+        if (!options.force && now < compactLockUntil) {
+          return;
+        }
+
+        setCompactState(getExpectedCompactStateForScrollY(window.scrollY), options);
+      };
+
+      const scheduleCompactState = () => {
+        if (compactFrame) {
+          return;
+        }
+
+        compactFrame = window.requestAnimationFrame(() => {
+          compactFrame = 0;
+          updateCompactState();
+        });
+      };
+
+      const scheduleResizeWork = () => {
+        if (resizeFrame) {
+          return;
+        }
+
+        resizeFrame = window.requestAnimationFrame(() => {
+          resizeFrame = 0;
+          measureCompactBaseScrollY();
+          applyOffset();
+          updateCompactState({ force: true });
+        });
+      };
+
+      const applyOffset = () => {
+        const maxOffset = getMaxOffset();
+        const hasOverflow = maxOffset > 2;
+        offset = clamp(offset, 0, maxOffset);
+
+        track.style.setProperty('--roadmap-strip-offset', offset + 'px');
+        root.dataset.roadmapStripOverflow = hasOverflow ? 'true' : 'false';
+        prev.disabled = !hasOverflow || offset <= 2;
+        next.disabled = !hasOverflow || offset >= maxOffset - 2;
+      };
+
+      const moveByPage = (direction) => {
+        offset += direction * Math.max(180, viewport.clientWidth * 0.82);
+        applyOffset();
+      };
+
+      let pendingAnchorTarget = null;
+      let pendingAnchorTimers = [];
+      let pendingAnchorScrollActive = false;
+      let pendingAnchorHighlightDone = false;
+
+      const getTargetOffset = (target) => {
+        const scrollMarginTop = Number.parseFloat(window.getComputedStyle(target).scrollMarginTop);
+        return Number.isFinite(scrollMarginTop) ? scrollMarginTop : 0;
+      };
+
+      const getTargetScrollY = (target) => (
+        Math.max(0, window.scrollY + target.getBoundingClientRect().top - getTargetOffset(target))
+      );
+
+      const clearAnchorCorrections = () => {
+        pendingAnchorTimers.forEach((timerId) => window.clearTimeout(timerId));
+        pendingAnchorTimers = [];
+      };
+
+
+      const triggerAnchorHighlight = (target) => {
+        if (!target?.matches?.('[data-roadmap-anchor-highlight-target]')) {
+          return;
+        }
+
+        target.removeAttribute('data-roadmap-anchor-highlight');
+        void target.offsetWidth;
+        target.dataset.roadmapAnchorHighlight = 'true';
+
+        const clearHighlight = () => {
+          target.removeAttribute('data-roadmap-anchor-highlight');
+          target.removeEventListener('animationend', clearHighlight);
+        };
+
+        target.addEventListener('animationend', clearHighlight);
+        window.setTimeout(clearHighlight, 1400);
+      };
+
+      const stopAnchorScrollCorrection = (options = {}) => {
+        const hadPendingAnchorScroll = pendingAnchorScrollActive || pendingAnchorTarget || pendingAnchorTimers.length > 0;
+
+        pendingAnchorTarget = null;
+        pendingAnchorScrollActive = false;
+        pendingAnchorHighlightDone = false;
+        clearAnchorCorrections();
+
+        if (hadPendingAnchorScroll && options.stopNativeScroll) {
+          // Прерываем нативный smooth scroll, чтобы отложенные корректировки не спорили с ручной прокруткой.
+          window.scrollTo({
+            top: window.scrollY,
+            behavior: 'auto',
+          });
+        }
+      };
+
+      const cancelAnchorScrollOnUserInput = (event) => {
+        if (event.type === 'keydown') {
+          const scrollKeys = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
+
+          if (!scrollKeys.includes(event.key)) {
+            return;
+          }
+        }
+
+        stopAnchorScrollCorrection({ stopNativeScroll: true });
+      };
+
+      const correctAnchorScroll = (target) => {
+        if (!target || !document.contains(target)) {
+          return;
+        }
+
+        const targetTop = getTargetScrollY(target);
+
+        if (Math.abs(window.scrollY - targetTop) > 1) {
+          window.scrollTo({
+            top: targetTop,
+            behavior: 'auto',
+          });
+        }
+
+        measureCompactBaseScrollY();
+        applyOffset();
+      };
+
+      const scheduleAnchorCorrections = (target) => {
+        pendingAnchorTarget = target;
+        pendingAnchorHighlightDone = false;
+        clearAnchorCorrections();
+
+        // Делаем несколько коротких корректировок: после применения compact-состояния,
+        // после завершения transition и после возможного завершения native smooth scroll.
+        [80, compactTransitionLockMs + 120, compactTransitionLockMs + 520].forEach((delay, index, delays) => {
+          const timerId = window.setTimeout(() => {
+            if (pendingAnchorTarget !== target) {
+              return;
+            }
+
+            correctAnchorScroll(target);
+
+            if (!pendingAnchorHighlightDone) {
+              pendingAnchorHighlightDone = true;
+              triggerAnchorHighlight(target);
+            }
+
+            if (index === delays.length - 1) {
+              pendingAnchorTarget = null;
+              pendingAnchorScrollActive = false;
+              clearAnchorCorrections();
+            }
+          }, delay);
+
+          pendingAnchorTimers.push(timerId);
+        });
+      };
+
+      const scrollToAnchor = (hash) => {
+        const targetId = decodeURIComponent(hash.slice(1));
+        const target = document.getElementById(targetId);
+
+        if (!target) {
+          return false;
+        }
+
+        measureCompactBaseScrollY();
+
+        const preliminaryTargetTop = getTargetScrollY(target);
+        const shouldCompactForTarget = getExpectedCompactStateForScrollY(preliminaryTargetTop);
+        setCompactState(shouldCompactForTarget, { instant: true });
+
+        const targetTop = getTargetScrollY(target);
+        pendingAnchorScrollActive = true;
+        window.history.pushState(null, '', hash);
+        window.scrollTo({
+          top: targetTop,
+          behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 'auto' : 'smooth',
+        });
+
+        scheduleAnchorCorrections(target);
+
+        requestAnimationFrame(() => {
+          measureCompactBaseScrollY();
+          applyOffset();
+        });
+
+        return true;
+      };
+
+      if (document.documentElement.dataset.roadmapAnchorDelegationReady !== 'true') {
+        document.documentElement.dataset.roadmapAnchorDelegationReady = 'true';
+
+        document.addEventListener('click', (event) => {
+          if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+          }
+
+          const link = event.target.closest('a[href]');
+
+          if (!link) {
+            return;
+          }
+
+          const rawHref = link.getAttribute('href');
+
+          if (!rawHref || rawHref === '#') {
+            return;
+          }
+
+          const linkUrl = new URL(rawHref, window.location.href);
+
+          if (linkUrl.origin !== window.location.origin || linkUrl.pathname !== window.location.pathname || !linkUrl.hash) {
+            return;
+          }
+
+          const targetId = decodeURIComponent(linkUrl.hash.slice(1));
+
+          if (!targetId || !document.getElementById(targetId)) {
+            return;
+          }
+
+          event.preventDefault();
+          scrollToAnchor(linkUrl.hash);
+        });
+      }
+
+      prev.addEventListener('click', () => moveByPage(-1));
+      next.addEventListener('click', () => moveByPage(1));
+      viewport.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          moveByPage(-1);
+        }
+        if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          moveByPage(1);
+        }
+      });
+
+      window.addEventListener('resize', scheduleResizeWork);
+      window.addEventListener('scroll', scheduleCompactState, { passive: true });
+      window.addEventListener('wheel', cancelAnchorScrollOnUserInput, { passive: true });
+      window.addEventListener('touchstart', cancelAnchorScrollOnUserInput, { passive: true });
+      window.addEventListener('pointerdown', cancelAnchorScrollOnUserInput, { passive: true });
+      window.addEventListener('keydown', cancelAnchorScrollOnUserInput);
+      window.addEventListener('hashchange', () => {
+        requestAnimationFrame(() => {
+          measureCompactBaseScrollY();
+          updateCompactState({ force: true });
+          applyOffset();
+        });
+      });
+
+      if ('ResizeObserver' in window) {
+        const resizeObserver = new ResizeObserver(() => {
+          applyOffset();
+        });
+        resizeObserver.observe(viewport);
+        resizeObserver.observe(track);
+      }
+
+      measureCompactBaseScrollY();
+      applyOffset();
+      updateCompactState({ force: true });
+      requestAnimationFrame(() => {
+        measureCompactBaseScrollY();
+        applyOffset();
+        updateCompactState({ force: true });
+      });
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRoadmapStrip);
+  } else {
+    initRoadmapStrip();
+  }
+})();
+`}</script>
 
 <section id="release-plan" className={styles.sectionHeader}>
   <span className={styles.eyebrow}>Release plan</span>
@@ -90,7 +486,7 @@ import styles from '@site/src/pages/roadmap.module.css';
 </section>
 
 <div className={styles.releaseGrid}>
-  <article id="v042" className={styles.releaseCard}>
+  <article id="v042" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.2</span>
       <span className={styles.statusBadge}>Next</span>
@@ -108,7 +504,7 @@ import styles from '@site/src/pages/roadmap.module.css';
     </ul>
   </article>
 
-  <article id="v043" className={styles.releaseCard}>
+  <article id="v043" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.3</span>
       <span className={styles.statusBadgeMuted}>Foundation</span>
@@ -124,7 +520,7 @@ import styles from '@site/src/pages/roadmap.module.css';
     </ul>
   </article>
 
-  <article id="v044" className={styles.releaseCard}>
+  <article id="v044" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.4</span>
       <span className={styles.statusBadgeMuted}>Timeline</span>
@@ -143,7 +539,7 @@ import styles from '@site/src/pages/roadmap.module.css';
     </ul>
   </article>
 
-  <article id="v045" className={styles.releaseCard}>
+  <article id="v045" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.5</span>
       <span className={styles.statusBadgeMuted}>Weather</span>
@@ -160,7 +556,7 @@ import styles from '@site/src/pages/roadmap.module.css';
     </ul>
   </article>
 
-  <article id="v046" className={styles.releaseCard}>
+  <article id="v046" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.6</span>
       <span className={styles.statusBadgeMuted}>Data access</span>
@@ -176,7 +572,7 @@ import styles from '@site/src/pages/roadmap.module.css';
     </ul>
   </article>
 
-  <article id="v047" className={styles.releaseCard}>
+  <article id="v047" className={styles.releaseCard} data-roadmap-anchor-highlight-target>
     <div className={styles.cardHeader}>
       <span className={styles.versionBadge}>v0.4.7</span>
       <span className={styles.statusBadgeMuted}>Assist</span>

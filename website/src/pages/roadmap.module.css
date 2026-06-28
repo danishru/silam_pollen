@@ -5,6 +5,134 @@
  * Глобальная дизайн-система, navbar/sidebar/footer и общие токены живут в custom.css.
  */
 
+@property --silam-roadmap-step-min {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 132px;
+}
+
+@property --silam-roadmap-strip-gap {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0.85rem;
+}
+
+@property --silam-roadmap-strip-padding-y {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0.45rem;
+}
+
+@property --silam-roadmap-step-padding-y {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 1rem;
+}
+
+@property --silam-roadmap-step-padding-x {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 1rem;
+}
+
+@property --silam-roadmap-step-title-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 1rem;
+}
+
+@property --silam-roadmap-step-version-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0.76rem;
+}
+
+:global(.container.container--fluid.margin-vert--lg) {
+  --silam-roadmap-page-gutter: 26px;
+  padding-right: var(--silam-roadmap-page-gutter) !important;
+  padding-left: var(--silam-roadmap-page-gutter) !important;
+}
+
+/* Та же настройка нужна для статичного preview, где CSS Modules не обрабатывается сборщиком. */
+.container.container--fluid.margin-vert--lg {
+  --silam-roadmap-page-gutter: 26px;
+  padding-right: var(--silam-roadmap-page-gutter) !important;
+  padding-left: var(--silam-roadmap-page-gutter) !important;
+}
+
+
+/* Настраиваемые отступы для переходов по якорям под navbar + sticky roadmap strip. */
+:global(html) {
+  --silam-roadmap-anchor-default-offset: calc(var(--ifm-navbar-height) + 5.50rem);
+  --silam-roadmap-anchor-release-plan-offset: calc(var(--silam-roadmap-anchor-default-offset) + 6.4rem);
+  --silam-roadmap-anchor-future-backlog-offset: var(--silam-roadmap-anchor-default-offset);
+  --silam-roadmap-anchor-strip-offset: var(--silam-roadmap-anchor-default-offset);
+  scroll-padding-top: var(--silam-roadmap-anchor-default-offset);
+}
+
+/* Та же настройка нужна для статичного preview, где CSS Modules не обрабатывается сборщиком. */
+html {
+  --silam-roadmap-anchor-default-offset: calc(var(--ifm-navbar-height) + 5.50rem);
+  --silam-roadmap-anchor-release-plan-offset: calc(var(--silam-roadmap-anchor-default-offset) + 6.4rem);
+  --silam-roadmap-anchor-future-backlog-offset: var(--silam-roadmap-anchor-default-offset);
+  --silam-roadmap-anchor-strip-offset: var(--silam-roadmap-anchor-default-offset);
+  scroll-padding-top: var(--silam-roadmap-anchor-default-offset);
+}
+
+.sectionHeader,
+.releaseCard,
+.futureCard,
+.endpointSectionHeader,
+.previewCoverageSectionHeader {
+  scroll-margin-top: var(--silam-roadmap-anchor-default-offset);
+}
+
+:global(#release-plan) {
+  scroll-margin-top: var(--silam-roadmap-anchor-release-plan-offset);
+}
+
+/* Та же настройка нужна для статичного preview. */
+#release-plan {
+  scroll-margin-top: var(--silam-roadmap-anchor-release-plan-offset);
+}
+
+:global(#future-backlog) {
+  scroll-margin-top: var(--silam-roadmap-anchor-future-backlog-offset);
+}
+
+/* Та же настройка нужна для статичного preview. */
+#future-backlog {
+  scroll-margin-top: var(--silam-roadmap-anchor-future-backlog-offset);
+}
+
+:global(#v042),
+:global(#v043),
+:global(#v044),
+:global(#v045),
+:global(#v046),
+:global(#v047) {
+  scroll-margin-top: var(--silam-roadmap-anchor-strip-offset);
+}
+
+/* Та же настройка нужна для статичного preview. */
+#v042,
+#v043,
+#v044,
+#v045,
+#v046,
+#v047 {
+  scroll-margin-top: var(--silam-roadmap-anchor-strip-offset);
+}
+
+:global(.anchor[id]) {
+  scroll-margin-top: var(--silam-roadmap-anchor-default-offset);
+}
+
+/* Та же настройка нужна для статичного preview. */
+.anchor[id] {
+  scroll-margin-top: var(--silam-roadmap-anchor-default-offset);
+}
+
 .hero {
   position: relative;
   display: grid;
@@ -20,7 +148,6 @@
     radial-gradient(circle at top left, rgb(var(--silam-accent-mint-rgb) / 0.22), transparent 34rem),
     radial-gradient(circle at bottom right, rgb(var(--silam-accent-blue-rgb) / 0.18), transparent 28rem),
     linear-gradient(135deg, rgb(var(--silam-accent-green-rgb) / 0.10), rgb(var(--silam-accent-blue-rgb) / 0.07));
-  box-shadow: var(--silam-card-shadow);
 }
 
 .hero::before {
@@ -89,18 +216,48 @@
   border-radius: var(--silam-radius-pill);
   font-weight: 750;
   text-decoration: none !important;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
 }
 
 .primaryButton {
   color: var(--silam-text-inverse) !important;
   background: var(--silam-gradient-accent);
-  box-shadow: 0 16px 36px rgb(var(--silam-accent-blue-rgb) / 0.22);
 }
 
 .secondaryButton {
   border: 1px solid var(--silam-card-border);
   color: var(--silam-text-main) !important;
   background: var(--silam-card-surface);
+}
+
+.primaryButton:hover,
+.secondaryButton:hover {
+  text-decoration: none !important;
+}
+
+.primaryButton:hover {
+  background:
+    linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.14),
+      rgb(255 255 255 / 0.030)
+    ),
+    var(--silam-gradient-accent);
+  filter: saturate(1.10) contrast(1.035);
+}
+
+.secondaryButton:hover {
+  border-color: rgb(var(--silam-accent-green-rgb) / 0.24);
+  color: var(--ifm-color-primary-dark) !important;
+  background:
+    linear-gradient(
+      135deg,
+      rgb(var(--silam-accent-green-rgb) / 0.075),
+      rgb(var(--silam-accent-blue-rgb) / 0.050)
+    );
 }
 
 .heroPanel {
@@ -114,7 +271,6 @@
   border: 1px solid var(--silam-glass-border);
   border-radius: var(--silam-radius-2xl);
   background: var(--silam-glass-surface-strong);
-  box-shadow: var(--silam-glass-shadow);
   backdrop-filter: var(--silam-glass-filter-soft);
   -webkit-backdrop-filter: var(--silam-glass-filter-soft);
 }
@@ -149,26 +305,400 @@
   background: var(--silam-bg-surface-soft);
 }
 
-.roadmapStrip {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(7, minmax(130px, 1fr));
-  gap: 0.85rem;
+.roadmapStripShell {
+  position: sticky;
+  top: calc(var(--ifm-navbar-height) + 0.5rem);
+  z-index: 900;
+  overflow-anchor: none;
+  box-sizing: border-box;
   margin: 1.5rem 0 2rem;
-  padding: 0.35rem 0.1rem 0.8rem;
-  overflow-x: auto;
+  padding: var(--silam-roadmap-shell-padding-y, 0.45rem) 0;
+  --silam-roadmap-shell-padding-y: 0.45rem;
+  --silam-roadmap-step-min: 132px;
+  --silam-roadmap-strip-gap: 0.85rem;
+  --silam-roadmap-strip-padding-y: 0.45rem;
+  --silam-roadmap-step-padding-y: 1rem;
+  --silam-roadmap-step-padding-x: 1rem;
+  --silam-roadmap-step-title-size: 1rem;
+  --silam-roadmap-step-version-size: 0.76rem;
+  --silam-roadmap-navbar-top-shadow: 0 -18px 46px -24px rgb(9 74 72 / 0.18);
+  transition:
+    padding 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-roadmap-shell-padding-y 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-roadmap-step-min 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-roadmap-strip-gap 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-roadmap-strip-padding-y 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-roadmap-step-padding-y 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-roadmap-step-padding-x 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-roadmap-step-title-size 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-roadmap-step-version-size 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+html[data-theme='dark'] .roadmapStripShell {
+  --silam-roadmap-navbar-top-shadow: 0 -18px 48px -24px rgb(0 0 0 / 0.34);
+}
+
+
+.roadmapStripShell::before {
+  position: absolute;
+  top: 0;
+  right: calc(50% - 50vw);
+  bottom: 0;
+  left: calc(50% - 50vw);
+  z-index: 0;
+  pointer-events: none;
+  content: '';
+  border-top: 1px solid var(--silam-glass-border);
+  border-bottom: 1px solid rgb(var(--silam-accent-blue-rgb) / 0.075);
+  background: var(--silam-glass-surface);
+  background-color: var(--silam-glass-surface);
+  background-image: none;
+  box-shadow:
+    var(--silam-roadmap-navbar-top-shadow),
+    0 10px 18px -18px rgb(var(--silam-accent-blue-rgb) / 0.32);
+  backdrop-filter: var(--silam-glass-filter-soft);
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft);
+}
+
+@media (max-width: 420px) {
+  .roadmapStripShell::before {
+    right: calc(var(--silam-roadmap-page-gutter, 26px) * -1);
+    left: calc(var(--silam-roadmap-page-gutter, 26px) * -1);
+  }
+}
+
+.roadmapStripFrame {
+  position: relative;
+  z-index: 1;
+  overflow-anchor: none;
+  min-width: 0;
+  max-width: 100%;
+  margin-top: calc(var(--silam-roadmap-shell-padding-y, 0.45rem) * -1);
+  margin-right: 0;
+  margin-bottom: calc(var(--silam-roadmap-shell-padding-y, 0.45rem) * -1);
+  margin-left: 0;
+  padding-top: var(--silam-roadmap-shell-padding-y, 0.45rem);
+  padding-right: 0;
+  padding-bottom: var(--silam-roadmap-shell-padding-y, 0.45rem);
+  padding-left: 0;
+  overflow-x: visible;
+  overflow-y: visible;
+  --silam-roadmap-edge-icon-zone: min(28px, var(--silam-roadmap-page-gutter, 26px));
+  --silam-roadmap-edge-fade-zone: clamp(42px, 8vw, 58px);
+  --silam-roadmap-edge-fade-dead-zone: 15px;
+  --silam-roadmap-edge-fade-soft-stop: 24px;
+  --silam-roadmap-edge-fade-mid-stop: 39px;
+  --silam-roadmap-edge-fade-inset-y: 1px;
+  --silam-roadmap-edge-divider-inset-top: 1px;
+  --silam-roadmap-edge-divider-inset-bottom: 0px;
+  transition:
+    margin 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+
+
+
+.roadmapStripScroller {
+  position: relative;
+  overflow-anchor: none;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  overflow-y: visible;
+  overscroll-behavior-x: contain;
+  --silam-roadmap-left-fade-edge-alpha: 1;
+  --silam-roadmap-left-fade-soft-alpha: 1;
+  --silam-roadmap-left-fade-mid-alpha: 1;
+  --silam-roadmap-left-fade-dead-size: 0px;
+  --silam-roadmap-left-fade-soft-size: 0px;
+  --silam-roadmap-left-fade-mid-size: 0px;
+  --silam-roadmap-left-fade-size: 0px;
+  --silam-roadmap-right-fade-edge-alpha: 1;
+  --silam-roadmap-right-fade-soft-alpha: 1;
+  --silam-roadmap-right-fade-mid-alpha: 1;
+  --silam-roadmap-right-fade-dead-size: 0px;
+  --silam-roadmap-right-fade-soft-size: 0px;
+  --silam-roadmap-right-fade-mid-size: 0px;
+  --silam-roadmap-right-fade-size: 0px;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    rgb(0 0 0 / var(--silam-roadmap-left-fade-edge-alpha)) 0,
+    rgb(0 0 0 / var(--silam-roadmap-left-fade-edge-alpha)) var(--silam-roadmap-left-fade-dead-size),
+    rgb(0 0 0 / var(--silam-roadmap-left-fade-soft-alpha)) var(--silam-roadmap-left-fade-soft-size),
+    rgb(0 0 0 / var(--silam-roadmap-left-fade-mid-alpha)) var(--silam-roadmap-left-fade-mid-size),
+    black var(--silam-roadmap-left-fade-size),
+    black calc(100% - var(--silam-roadmap-right-fade-size)),
+    rgb(0 0 0 / var(--silam-roadmap-right-fade-mid-alpha)) calc(100% - var(--silam-roadmap-right-fade-mid-size)),
+    rgb(0 0 0 / var(--silam-roadmap-right-fade-soft-alpha)) calc(100% - var(--silam-roadmap-right-fade-soft-size)),
+    rgb(0 0 0 / var(--silam-roadmap-right-fade-edge-alpha)) calc(100% - var(--silam-roadmap-right-fade-dead-size)),
+    rgb(0 0 0 / var(--silam-roadmap-right-fade-edge-alpha)) 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    rgb(0 0 0 / var(--silam-roadmap-left-fade-edge-alpha)) 0,
+    rgb(0 0 0 / var(--silam-roadmap-left-fade-edge-alpha)) var(--silam-roadmap-left-fade-dead-size),
+    rgb(0 0 0 / var(--silam-roadmap-left-fade-soft-alpha)) var(--silam-roadmap-left-fade-soft-size),
+    rgb(0 0 0 / var(--silam-roadmap-left-fade-mid-alpha)) var(--silam-roadmap-left-fade-mid-size),
+    black var(--silam-roadmap-left-fade-size),
+    black calc(100% - var(--silam-roadmap-right-fade-size)),
+    rgb(0 0 0 / var(--silam-roadmap-right-fade-mid-alpha)) calc(100% - var(--silam-roadmap-right-fade-mid-size)),
+    rgb(0 0 0 / var(--silam-roadmap-right-fade-soft-alpha)) calc(100% - var(--silam-roadmap-right-fade-soft-size)),
+    rgb(0 0 0 / var(--silam-roadmap-right-fade-edge-alpha)) calc(100% - var(--silam-roadmap-right-fade-dead-size)),
+    rgb(0 0 0 / var(--silam-roadmap-right-fade-edge-alpha)) 100%
+  );
+}
+
+.roadmapStripFrame:has(.roadmapStripArrowLeft:not(:disabled)) .roadmapStripScroller {
+  --silam-roadmap-left-fade-edge-alpha: 0;
+  --silam-roadmap-left-fade-soft-alpha: 0.18;
+  --silam-roadmap-left-fade-mid-alpha: 0.68;
+  --silam-roadmap-left-fade-dead-size: var(--silam-roadmap-edge-fade-dead-zone);
+  --silam-roadmap-left-fade-soft-size: var(--silam-roadmap-edge-fade-soft-stop);
+  --silam-roadmap-left-fade-mid-size: var(--silam-roadmap-edge-fade-mid-stop);
+  --silam-roadmap-left-fade-size: var(--silam-roadmap-edge-fade-zone);
+}
+
+.roadmapStripFrame:has(.roadmapStripArrowRight:not(:disabled)) .roadmapStripScroller {
+  --silam-roadmap-right-fade-edge-alpha: 0;
+  --silam-roadmap-right-fade-soft-alpha: 0.18;
+  --silam-roadmap-right-fade-mid-alpha: 0.68;
+  --silam-roadmap-right-fade-dead-size: var(--silam-roadmap-edge-fade-dead-zone);
+  --silam-roadmap-right-fade-soft-size: var(--silam-roadmap-edge-fade-soft-stop);
+  --silam-roadmap-right-fade-mid-size: var(--silam-roadmap-edge-fade-mid-stop);
+  --silam-roadmap-right-fade-size: var(--silam-roadmap-edge-fade-zone);
+}
+
+.roadmapStrip {
+  display: grid;
+  overflow-anchor: none;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(7, minmax(var(--silam-roadmap-step-min, 132px), 1fr));
+  gap: var(--silam-roadmap-strip-gap, 0.85rem);
+  padding: var(--silam-roadmap-strip-padding-y, 0.45rem) 0;
+  overflow: visible;
+  transform: translate3d(calc(var(--roadmap-strip-offset, 0px) * -1), 0, 0);
+  transition:
+    grid-template-columns 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    gap 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roadmapStrip,
+  .roadmapStripShell,
+  .roadmapStripFrame,
+  .step,
+  .step span,
+  .step strong,
+  .step small {
+    transition: none;
+  }
+}
+
+
+/* На время программного перехода по якорю отключаем анимацию сжатия,
+   чтобы итоговая позиция считалась уже от финальной высоты sticky-полосы. */
+.roadmapStripShell[data-roadmap-anchor-settling='true'],
+.roadmapStripShell[data-roadmap-anchor-settling='true'] .roadmapStripFrame,
+.roadmapStripShell[data-roadmap-anchor-settling='true'] .roadmapStrip,
+.roadmapStripShell[data-roadmap-anchor-settling='true'] .step,
+.roadmapStripShell[data-roadmap-anchor-settling='true'] .step span,
+.roadmapStripShell[data-roadmap-anchor-settling='true'] .step strong,
+.roadmapStripShell[data-roadmap-anchor-settling='true'] .step small {
+  transition: none !important;
+}
+
+
+.roadmapStripShell[data-roadmap-strip-compact='true'] {
+  --silam-roadmap-shell-padding-y: 0.22rem;
+  --silam-roadmap-step-min: 112px;
+  --silam-roadmap-strip-gap: 0.55rem;
+  --silam-roadmap-strip-padding-y: 0.28rem;
+  --silam-roadmap-step-padding-y: 0.55rem;
+  --silam-roadmap-step-padding-x: 0.72rem;
+  --silam-roadmap-step-title-size: 0.92rem;
+  --silam-roadmap-step-version-size: 0.68rem;
+  padding-top: var(--silam-roadmap-shell-padding-y);
+  padding-bottom: var(--silam-roadmap-shell-padding-y);
+}
+
+.roadmapStripShell[data-roadmap-strip-compact='true'] .step {
+  border-radius: var(--silam-radius-lg);
+}
+
+.roadmapStripShell[data-roadmap-strip-compact='true'] .step:hover {
+  transform: none;
+}
+
+.roadmapStripShell[data-roadmap-strip-compact='true'] .step span {
+  line-height: 1.05;
+}
+
+.roadmapStripShell[data-roadmap-strip-compact='true'] .step strong {
+  margin-top: 0.18rem;
+  overflow: hidden;
+  line-height: 1.08;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roadmapStripShell[data-roadmap-strip-compact='true'] .step small {
+  max-height: 0;
+  margin-top: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+}
+
+
+.roadmapStripArrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  width: calc(var(--silam-roadmap-edge-icon-zone) + var(--silam-roadmap-edge-fade-zone));
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--silam-glass-text);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    opacity 160ms ease,
+    color 160ms ease,
+    filter 160ms ease;
+}
+
+.roadmapStripArrow::before,
+.roadmapStripArrow::after {
+  position: absolute;
+  pointer-events: none;
+  content: '';
+}
+
+.roadmapStripArrow::before {
+  top: var(--silam-roadmap-edge-divider-inset-top, 1px);
+  bottom: var(--silam-roadmap-edge-divider-inset-bottom, 0px);
+  z-index: 1;
+  width: 1px;
+  background: var(--silam-card-border);
+}
+
+.roadmapStripArrow::after {
+  top: var(--silam-roadmap-edge-fade-inset-y, 1px);
+  bottom: var(--silam-roadmap-edge-fade-inset-y, 1px);
+  z-index: 0;
+  width: var(--silam-roadmap-edge-fade-zone);
+  transition:
+    background 160ms ease,
+    opacity 160ms ease;
+}
+
+.roadmapStripArrow:hover:not(:disabled),
+.roadmapStripArrow:focus-visible:not(:disabled),
+.roadmapStripArrow:active:not(:disabled) {
+  color: var(--silam-menu-hover-text);
+}
+
+.roadmapStripArrow:focus-visible {
+  outline: 2px solid var(--silam-accent-blue);
+  outline-offset: -3px;
+}
+
+.roadmapStripArrow svg {
+  position: relative;
+  z-index: 2;
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: currentColor;
+}
+
+.roadmapStripArrowLeft {
+  left: calc(var(--silam-roadmap-edge-icon-zone, 26px) * -1);
+  justify-content: flex-start;
+  padding-left: 0.12rem;
+}
+
+.roadmapStripArrowLeft::before {
+  left: var(--silam-roadmap-edge-icon-zone);
+}
+
+.roadmapStripArrowLeft::after {
+  left: var(--silam-roadmap-edge-icon-zone);
+  background: linear-gradient(
+    90deg,
+    rgb(var(--silam-accent-blue-rgb) / 0.055) 0%,
+    rgb(var(--silam-accent-blue-rgb) / 0.024) 36%,
+    transparent 100%
+  );
+}
+
+
+.roadmapStripArrowRight {
+  right: calc(var(--silam-roadmap-edge-icon-zone, 26px) * -1);
+  justify-content: flex-end;
+  padding-right: 0.12rem;
+}
+
+.roadmapStripArrowRight::before {
+  right: var(--silam-roadmap-edge-icon-zone);
+}
+
+.roadmapStripArrowRight::after {
+  right: var(--silam-roadmap-edge-icon-zone);
+  background: linear-gradient(
+    270deg,
+    rgb(var(--silam-accent-blue-rgb) / 0.055) 0%,
+    rgb(var(--silam-accent-blue-rgb) / 0.024) 36%,
+    transparent 100%
+  );
+}
+
+
+.roadmapStripFrame[data-roadmap-strip-overflow='false'] .roadmapStripArrow,
+.roadmapStripArrow:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
 
 .step {
   position: relative;
-  min-width: 132px;
-  padding: 1rem;
-  border: 1px solid var(--silam-card-border);
+  min-width: var(--silam-roadmap-step-min, 132px);
+  padding: var(--silam-roadmap-step-padding-y, 1rem) var(--silam-roadmap-step-padding-x, 1rem);
+  overflow: hidden;
+  border: 1px solid var(--silam-glass-border);
   border-radius: var(--silam-radius-xl);
   color: var(--silam-text-main) !important;
-  background: var(--silam-card-surface);
+  background: var(--silam-glass-surface);
+  background-clip: padding-box;
   text-decoration: none !important;
-  box-shadow: var(--silam-card-shadow);
+  backdrop-filter: var(--silam-glass-filter-soft);
+  -webkit-backdrop-filter: var(--silam-glass-filter-soft);
+  transition:
+    min-width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 180ms ease,
+    border-color 180ms ease,
+    border-radius 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 180ms ease,
+    filter 180ms ease,
+    transform 180ms ease;
+}
+
+.step:hover {
+  border-color: rgb(var(--silam-accent-green-rgb) / 0.24);
+  color: var(--silam-menu-hover-text) !important;
+  background: var(--silam-menu-hover-panel);
+  background-clip: padding-box;
+  text-decoration: none !important;
+  transform: translateY(-1px);
 }
 
 .step::after {
@@ -193,23 +723,125 @@
 
 .step span {
   color: var(--ifm-color-primary-dark);
-  font-size: 0.76rem;
+  font-size: var(--silam-roadmap-step-version-size, 0.76rem);
   font-weight: 800;
+  line-height: 1.12;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  transition:
+    font-size 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    line-height 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .step strong {
   margin-top: 0.35rem;
-  font-size: 1rem;
+  font-size: var(--silam-roadmap-step-title-size, 1rem);
+  transition:
+    margin 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    font-size 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    line-height 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .step small {
+  max-height: 2.8em;
   margin-top: 0.15rem;
+  overflow: hidden;
   color: var(--silam-text-soft);
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    max-height 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease,
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .activeStep {
+  border-color: rgb(var(--silam-accent-mint-rgb) / 0.45);
+  background: var(--silam-menu-active-panel);
+  background-clip: padding-box;
+}
+
+.activeStep:hover {
+  border-color: rgb(var(--silam-accent-mint-rgb) / 0.68);
+  background:
+    linear-gradient(
+      135deg,
+      rgb(var(--silam-accent-mint-rgb) / 0.24),
+      rgb(var(--silam-accent-blue-rgb) / 0.14) 54%,
+      rgb(var(--silam-accent-green-rgb) / 0.10)
+    ),
+    var(--silam-menu-active-panel-strong);
+  background-clip: padding-box;
+}
+
+
+html:not([data-theme='dark']) .step:hover:not(.activeStep),
+html:not([data-theme='dark']) .futureStep:hover:not(.activeStep) {
+  border-color: rgb(var(--silam-accent-mint-rgb) / 0.34);
+  color: var(--ifm-color-primary-dark) !important;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.64),
+      rgb(255 255 255 / 0.46)
+    ),
+    linear-gradient(
+      135deg,
+      rgb(var(--silam-accent-mint-rgb) / 0.085),
+      rgb(var(--silam-accent-blue-rgb) / 0.070) 62%,
+      rgb(var(--silam-accent-green-rgb) / 0.040)
+    );
+  background-clip: padding-box;
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+}
+
+html[data-theme='dark'] .step:not(.activeStep),
+html[data-theme='dark'] .futureStep:not(.activeStep) {
+  border-color: var(--silam-card-border);
+  color: var(--silam-text-main) !important;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.026),
+      rgb(255 255 255 / 0.010)
+    ),
+    linear-gradient(
+      135deg,
+      rgb(var(--silam-accent-mint-rgb) / 0.018),
+      rgb(var(--silam-accent-blue-rgb) / 0.020)
+    ),
+    rgb(9 28 30 / 0.32);
+  background-clip: padding-box;
+  backdrop-filter: blur(16px) saturate(1.06);
+  -webkit-backdrop-filter: blur(16px) saturate(1.06);
+}
+
+html[data-theme='dark'] .step:hover:not(.activeStep),
+html[data-theme='dark'] .futureStep:hover:not(.activeStep) {
+  border-color: rgb(var(--silam-accent-mint-rgb) / 0.30);
+  color: var(--silam-text-main) !important;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.034),
+      rgb(255 255 255 / 0.012)
+    ),
+    linear-gradient(
+      135deg,
+      rgb(var(--silam-accent-mint-rgb) / 0.040),
+      rgb(var(--silam-accent-blue-rgb) / 0.046) 62%,
+      rgb(var(--silam-accent-green-rgb) / 0.018)
+    ),
+    rgb(9 28 30 / 0.34);
+  background-clip: padding-box;
+  backdrop-filter: blur(16px) saturate(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
+}
+
+
+html[data-theme='dark'] .activeStep {
   border-color: rgb(var(--silam-accent-mint-rgb) / 0.45);
   background:
     linear-gradient(
@@ -217,6 +849,26 @@
       rgb(var(--silam-accent-mint-rgb) / 0.16),
       rgb(var(--silam-accent-blue-rgb) / 0.08)
     );
+  background-clip: padding-box;
+}
+
+html[data-theme='dark'] .step.activeStep:hover,
+html[data-theme='dark'] .activeStep:hover {
+  border-color: rgb(var(--silam-accent-mint-rgb) / 0.68);
+  background:
+    linear-gradient(
+      135deg,
+      rgb(var(--silam-accent-mint-rgb) / 0.25),
+      rgb(var(--silam-accent-blue-rgb) / 0.16) 54%,
+      rgb(var(--silam-accent-green-rgb) / 0.115)
+    ),
+    linear-gradient(
+      180deg,
+      rgb(var(--silam-accent-mint-rgb) / 0.19),
+      rgb(var(--silam-accent-blue-rgb) / 0.105)
+    );
+  background-clip: padding-box;
+  filter: brightness(1.025) saturate(1.06);
 }
 
 .futureStep {
@@ -249,7 +901,6 @@
   border: 1px solid var(--silam-card-border);
   border-radius: var(--silam-radius-3xl);
   background: var(--silam-card-surface);
-  box-shadow: var(--silam-card-shadow);
 }
 
 .releaseCard,
@@ -271,6 +922,90 @@
 
 .releaseCard ul {
   padding-left: 1.2rem;
+}
+
+
+.releaseCard {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.releaseCard > * {
+  position: relative;
+  z-index: 1;
+}
+
+.releaseCard::after {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  content: '';
+  background:
+    linear-gradient(
+      110deg,
+      transparent 0%,
+      rgb(var(--silam-accent-mint-rgb) / 0.00) 20%,
+      rgb(var(--silam-accent-mint-rgb) / 0.18) 43%,
+      rgb(var(--silam-accent-blue-rgb) / 0.12) 56%,
+      rgb(var(--silam-accent-green-rgb) / 0.10) 68%,
+      transparent 100%
+    );
+  opacity: 0;
+  transform: translate3d(-115%, 0, 0) skewX(-14deg);
+}
+
+.releaseCard[data-roadmap-anchor-highlight='true'] {
+  animation: silamRoadmapAnchorBorderPulse 1150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.releaseCard[data-roadmap-anchor-highlight='true']::after {
+  animation: silamRoadmapAnchorGradientSweep 1150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes silamRoadmapAnchorBorderPulse {
+  0%,
+  100% {
+    border-color: var(--silam-card-border);
+  }
+
+  18%,
+  68% {
+    border-color: rgb(var(--silam-accent-mint-rgb) / 0.68);
+  }
+}
+
+@keyframes silamRoadmapAnchorGradientSweep {
+  0% {
+    opacity: 0;
+    transform: translate3d(-115%, 0, 0) skewX(-14deg);
+  }
+
+  22% {
+    opacity: 0.82;
+  }
+
+  72% {
+    opacity: 0.18;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(115%, 0, 0) skewX(-14deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .releaseCard[data-roadmap-anchor-highlight='true'] {
+    border-color: rgb(var(--silam-accent-mint-rgb) / 0.56);
+    animation: none;
+  }
+
+  .releaseCard[data-roadmap-anchor-highlight='true']::after {
+    display: none;
+    animation: none;
+  }
 }
 
 .cardHeader {

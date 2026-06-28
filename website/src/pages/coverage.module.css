@@ -1,7 +1,8 @@
 /* SILAM Coverage map page.
  *
- * Нормальная fullscreen-реализация:
- * - страница фиксируется под фактической высотой navbar;
+ * Fullscreen-реализация под стеклянным navbar:
+ * - страница занимает весь viewport от верхнего края браузера;
+ * - navbar остаётся поверх карты и размывает карту под собой;
  * - нижняя граница привязана к viewport, а не вычисляется вручную;
  * - iframe не обрезается через guessed calc-height;
  * - OpenLayers attribution остаётся видимым.
@@ -9,11 +10,11 @@
 
 .coveragePage {
   position: fixed;
-  top: var(--silam-coverage-top, var(--ifm-navbar-height));
+  top: 0;
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 1;
+  z-index: 0;
   display: block;
   box-sizing: border-box;
   margin: 0;

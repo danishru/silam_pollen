@@ -505,11 +505,13 @@ div[class^='codeBlockContainer_'] {
 
 .navbar__brand:hover,
 .navbar__brand:focus-visible,
+.navbar__brand:focus:not(:focus-visible),
 .navbar__brand[aria-current='page'],
 .navbar__brand.navbar__brand--active,
 .navbar__brand.navbar__link--active,
 .navbar-sidebar__brand .navbar__brand:hover,
 .navbar-sidebar__brand .navbar__brand:focus-visible,
+.navbar-sidebar__brand .navbar__brand:focus:not(:focus-visible),
 .navbar-sidebar__brand .navbar__brand[aria-current='page'],
 .navbar-sidebar__brand .navbar__brand.navbar__brand--active,
 .navbar-sidebar__brand .navbar__brand.navbar__link--active {
@@ -542,11 +544,13 @@ div[class^='codeBlockContainer_'] {
 
 .navbar__brand:hover .navbar__title,
 .navbar__brand:focus-visible .navbar__title,
+.navbar__brand:focus:not(:focus-visible) .navbar__title,
 .navbar__brand[aria-current='page'] .navbar__title,
 .navbar__brand.navbar__brand--active .navbar__title,
 .navbar__brand.navbar__link--active .navbar__title,
 .navbar-sidebar__brand .navbar__brand:hover .navbar__title,
 .navbar-sidebar__brand .navbar__brand:focus-visible .navbar__title,
+.navbar-sidebar__brand .navbar__brand:focus:not(:focus-visible) .navbar__title,
 .navbar-sidebar__brand .navbar__brand[aria-current='page'] .navbar__title,
 .navbar-sidebar__brand .navbar__brand.navbar__brand--active .navbar__title,
 .navbar-sidebar__brand .navbar__brand.navbar__link--active .navbar__title {
@@ -1201,7 +1205,7 @@ html[data-theme='dark'] .navbar-sidebar .clean-btn:focus-visible {
   }
 
   html[lang^='ru'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown::after {
-    content: 'RUS' !important;
+    content: 'РУС' !important;
   }
 
   html[lang^='en'] .navbar__items--right > .navbar__item:has(> .silamLocaleDropdown) > .silamLocaleDropdown::after {
