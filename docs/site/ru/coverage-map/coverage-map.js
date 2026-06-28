@@ -10,6 +10,8 @@
       lon: "Долгота",
       copied: "Координаты скопированы",
       copyFailed: "Не удалось скопировать",
+      shiftZoomKey: "⇧ Shift + выделение",
+      shiftZoomText: "приблизить область",
       switchToLight: "Switch to light theme",
       switchToDark: "Switch to dark theme",
     },
@@ -18,6 +20,8 @@
       lon: "Lon",
       copied: "Coordinates copied",
       copyFailed: "Copy failed",
+      shiftZoomKey: "⇧ Shift + drag",
+      shiftZoomText: "zoom to area",
       switchToLight: "Switch to light theme",
       switchToDark: "Switch to dark theme",
     },
@@ -322,6 +326,7 @@
     toastEl.classList.remove(
       "is-mobile-center",
       "is-below-element",
+      "is-above-element",
       "is-fallback"
     );
 
@@ -329,19 +334,28 @@
     toastEl.style.top = "";
     toastEl.style.bottom = "";
     toastEl.style.transform = "";
+    toastEl.textContent = message;
 
     if (placement.type === "mobile-center") {
       toastEl.classList.add("is-mobile-center");
     } else if (placement.type === "below-element" && placement.element) {
       const rect = placement.element.getBoundingClientRect();
-      toastEl.classList.add("is-below-element");
+      const viewportPadding = 12;
+      const gap = 8;
+      const toastHeight = toastEl.getBoundingClientRect().height || 36;
+      const placeAbove = rect.bottom + gap + toastHeight > window.innerHeight - viewportPadding;
+
+      // Поднимаем toast над карточкой только когда снизу ему реально не хватает места.
+      // В обычной нижней части экрана он остаётся под карточкой, как и раньше.
+      toastEl.classList.add(placeAbove ? "is-above-element" : "is-below-element");
       toastEl.style.left = `${rect.left + rect.width / 2}px`;
-      toastEl.style.top = `${rect.bottom + 8}px`;
+      toastEl.style.top = placeAbove
+        ? `${rect.top - gap}px`
+        : `${rect.bottom + gap}px`;
     } else {
       toastEl.classList.add("is-fallback");
     }
 
-    toastEl.textContent = message;
     toastEl.classList.add("is-visible");
 
     window.clearTimeout(showCopyToast.hideTimer);
@@ -528,6 +542,96 @@
       });
   }
 
+  function updateShiftZoomHintText(hintEl, text) {
+    if (!hintEl) {
+      return;
+    }
+
+    hintEl.innerHTML = `
+      <span class="coverage-shift-zoom-hint__key">${text.shiftZoomKey}</span>
+      <span class="coverage-shift-zoom-hint__text">${text.shiftZoomText}</span>
+    `;
+  }
+
+  function addShiftZoomHint(mapEl, text) {
+    if (!mapEl) {
+      return null;
+    }
+
+    const el = document.createElement("div");
+    el.className = "coverage-shift-zoom-hint";
+    el.setAttribute("aria-hidden", "true");
+    updateShiftZoomHintText(el, text);
+
+    stopMapDragOnControl(el);
+    mapEl.appendChild(el);
+    return el;
+  }
+
+  function setShiftZoomHintActive(hintEl, active) {
+    if (!hintEl) {
+      return;
+    }
+
+    hintEl.classList.toggle("coverage-shift-zoom-hint--active", Boolean(active));
+  }
+
+  function setShiftZoomHintDrawing(hintEl, drawing) {
+    if (!hintEl) {
+      return;
+    }
+
+    hintEl.classList.toggle("coverage-shift-zoom-hint--drawing", Boolean(drawing));
+  }
+
+
+  const MAP_CONTROL_HIDE_SELECTOR = [
+    ".coverage-control-cluster",
+    ".map-aux-control-cluster",
+    ".ol-control",
+    ".coverage-shift-zoom-hint",
+    ".copy-toast",
+  ].join(", ");
+
+  function isMapControlTarget(target) {
+    if (!(target instanceof Element)) {
+      return false;
+    }
+
+    return Boolean(target.closest(MAP_CONTROL_HIDE_SELECTOR));
+  }
+
+  function isPointInsideElement(clientX, clientY, element) {
+    if (!element || typeof element.getBoundingClientRect !== "function") {
+      return false;
+    }
+
+    const rect = element.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      return false;
+    }
+
+    return clientX >= rect.left
+      && clientX <= rect.right
+      && clientY >= rect.top
+      && clientY <= rect.bottom;
+  }
+
+  function isMapControlPointer(event) {
+    if (!event || isMapControlTarget(event.target)) {
+      return Boolean(event);
+    }
+
+    const clientX = Number(event.clientX);
+    const clientY = Number(event.clientY);
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
+      return false;
+    }
+
+    return Array.from(document.querySelectorAll(MAP_CONTROL_HIDE_SELECTOR))
+      .some((element) => isPointInsideElement(clientX, clientY, element));
+  }
+
   function arrangePrimaryControls(legendEl) {
     const zoomEl = document.querySelector(".ol-zoom");
     if (!legendEl) {
@@ -625,8 +729,12 @@
         legendEl.appendChild(infoWindow);
       }
       infoWindow.classList.add("legend-info");
+      infoWindow.classList.remove("info-window--hidden");
+      clearInfoWindowEdgeTransitionTimer(infoWindow);
+      infoWindow.classList.remove("info-window--edge-adjusted");
       infoWindow.style.left = "";
       infoWindow.style.top = "";
+      infoWindow.style.transform = "";
       return;
     }
 
@@ -634,6 +742,175 @@
       mapEl.appendChild(infoWindow);
     }
     infoWindow.classList.remove("legend-info");
+  }
+
+  function clampNumber(value, min, max) {
+    if (max < min) {
+      return min;
+    }
+
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function clearInfoWindowEdgeTransitionTimer(infoWindow) {
+    if (!infoWindow || !infoWindow.silamEdgeTransitionTimer) {
+      return;
+    }
+
+    window.clearTimeout(infoWindow.silamEdgeTransitionTimer);
+    infoWindow.silamEdgeTransitionTimer = null;
+  }
+
+  function scheduleInfoWindowEdgeTransitionEnd(infoWindow, delayMs, clearTransform = false) {
+    if (!infoWindow) {
+      return;
+    }
+
+    clearInfoWindowEdgeTransitionTimer(infoWindow);
+    infoWindow.silamEdgeTransitionTimer = window.setTimeout(() => {
+      infoWindow.classList.remove("info-window--edge-transition");
+
+      if (clearTransform) {
+        infoWindow.classList.remove("info-window--edge-adjusted");
+        infoWindow.style.transform = "";
+        infoWindow.silamInfoWindowEdgeTransform = "";
+      }
+
+      infoWindow.silamEdgeTransitionTimer = null;
+    }, delayMs);
+  }
+
+  function setInfoWindowTransform(infoWindow, transform) {
+    if (!infoWindow || infoWindow.silamInfoWindowEdgeTransform === transform) {
+      return;
+    }
+
+    infoWindow.style.transform = transform;
+    infoWindow.silamInfoWindowEdgeTransform = transform;
+  }
+
+  function applyInfoWindowEdgeTransform(infoWindow, offsetX, offsetY) {
+    if (!infoWindow) {
+      return;
+    }
+
+    const rawX = Math.abs(offsetX) < 1.5 ? 0 : offsetX;
+    const rawY = Math.abs(offsetY) < 1.5 ? 0 : offsetY;
+    const roundedX = Math.round(rawX);
+    const roundedY = Math.round(rawY);
+    const hasOffset = Math.abs(roundedX) > 0 || Math.abs(roundedY) > 0;
+    const wasConstrained = infoWindow.silamInfoWindowEdgeConstrained === true;
+
+    if (hasOffset) {
+      infoWindow.classList.add("info-window--edge-adjusted");
+
+      if (!wasConstrained) {
+        // Transition включаем только на первом мягком смещении от края.
+        // Дальше, пока курсор идёт вдоль края, позицию обновляем напрямую,
+        // чтобы не вернуть микродрожание.
+        clearInfoWindowEdgeTransitionTimer(infoWindow);
+        infoWindow.classList.add("info-window--edge-transition");
+        scheduleInfoWindowEdgeTransitionEnd(infoWindow, 140);
+      } else {
+        infoWindow.classList.remove("info-window--edge-transition");
+      }
+
+      infoWindow.silamInfoWindowEdgeConstrained = true;
+      setInfoWindowTransform(
+        infoWindow,
+        `translate3d(${roundedX}px, ${roundedY}px, 0)`,
+      );
+      return;
+    }
+
+    if (wasConstrained || infoWindow.style.transform) {
+      infoWindow.silamInfoWindowEdgeConstrained = false;
+      clearInfoWindowEdgeTransitionTimer(infoWindow);
+      infoWindow.classList.add("info-window--edge-adjusted");
+      infoWindow.classList.add("info-window--edge-transition");
+      setInfoWindowTransform(infoWindow, "translate3d(0, 0, 0)");
+      scheduleInfoWindowEdgeTransitionEnd(infoWindow, 140, true);
+      return;
+    }
+
+    clearInfoWindowEdgeTransitionTimer(infoWindow);
+    infoWindow.silamInfoWindowEdgeConstrained = false;
+    infoWindow.silamInfoWindowEdgeTransform = "";
+    infoWindow.classList.remove("info-window--edge-adjusted");
+    infoWindow.classList.remove("info-window--edge-transition");
+    infoWindow.style.transform = "";
+  }
+
+  function positionDesktopInfoWindow(mapEl, infoWindow, pixel) {
+    if (!mapEl || !infoWindow || !pixel || isMobileLayout()) {
+      return;
+    }
+
+    const pointerOffset = 15;
+    const viewportMargin = 12;
+    // Небольшой запас перед краем начинает сдвиг чуть раньше фактического
+    // упора. Значение маленькое, чтобы оставалось ощущение, что подсказку
+    // именно мягко толкает край окна браузера.
+    const edgePushLead = 10;
+    const pointerX = Number(pixel[0]);
+    const pointerY = Number(pixel[1]);
+
+    if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY)) {
+      return;
+    }
+
+    const mapRect = mapEl.getBoundingClientRect();
+    const infoRect = infoWindow.getBoundingClientRect();
+    const infoWidth = Math.ceil(infoWindow.offsetWidth || infoRect.width || 0);
+    const infoHeight = Math.ceil(infoWindow.offsetHeight || infoRect.height || 0);
+
+    if (!infoWidth || !infoHeight || !mapRect.width || !mapRect.height) {
+      return;
+    }
+
+    const defaultX = pointerX + pointerOffset;
+    const defaultY = pointerY + pointerOffset;
+
+    // Базовую позицию всегда обновляем сразу, как в старом поведении карты:
+    // подсказка жёстко следует за курсором справа-снизу.
+    infoWindow.style.left = `${Math.round(defaultX)}px`;
+    infoWindow.style.top = `${Math.round(defaultY)}px`;
+
+    const minX = Math.max(viewportMargin, viewportMargin - mapRect.left);
+    const minY = Math.max(viewportMargin, viewportMargin - mapRect.top);
+    const maxX = Math.min(
+      mapRect.width - infoWidth - viewportMargin,
+      window.innerWidth - mapRect.left - infoWidth - viewportMargin,
+    );
+    const maxY = Math.min(
+      mapRect.height - infoHeight - viewportMargin,
+      window.innerHeight - mapRect.top - infoHeight - viewportMargin,
+    );
+
+    const effectiveMinX = maxX - minX > edgePushLead * 2
+      ? minX + edgePushLead
+      : minX;
+    const effectiveMaxX = maxX - minX > edgePushLead * 2
+      ? maxX - edgePushLead
+      : maxX;
+    const effectiveMinY = maxY - minY > edgePushLead * 2
+      ? minY + edgePushLead
+      : minY;
+    const effectiveMaxY = maxY - minY > edgePushLead * 2
+      ? maxY - edgePushLead
+      : maxY;
+
+    const nextX = clampNumber(defaultX, effectiveMinX, effectiveMaxX);
+    const nextY = clampNumber(defaultY, effectiveMinY, effectiveMaxY);
+
+    // У краёв не переворачиваем подсказку заранее. Она остаётся рядом с
+    // курсором, но маленький lead даёт краю начать мягко «толкать» её до
+    // жёсткого упора.
+    applyInfoWindowEdgeTransform(
+      infoWindow,
+      nextX - defaultX,
+      nextY - defaultY,
+    );
   }
 
   function addLocalThemeToggle(map, onThemeChange) {
@@ -774,6 +1051,9 @@
     let legendEl = null;
     let themeToggleEl = null;
     let mobileInfoFrame = null;
+    let shiftZoomHintEl = null;
+
+    infoWindow.classList.add("info-window--hidden");
 
     function getActiveCoverageAtPixel(pixel) {
       let activeItem = null;
@@ -784,6 +1064,28 @@
       });
 
       return activeItem;
+    }
+
+    function hideDesktopInfoWindow() {
+      if (isMobileLayout()) {
+        return;
+      }
+
+      clearInfoWindowEdgeTransitionTimer(infoWindow);
+      infoWindow.classList.add("info-window--hidden");
+      infoWindow.classList.remove("info-window--edge-adjusted");
+      infoWindow.classList.remove("info-window--edge-transition");
+      infoWindow.style.transform = "";
+      infoWindow.silamInfoWindowEdgeTransform = "";
+      infoWindow.silamInfoWindowEdgeConstrained = false;
+    }
+
+    function showDesktopInfoWindow() {
+      if (isMobileLayout()) {
+        return;
+      }
+
+      infoWindow.classList.remove("info-window--hidden");
     }
 
     function renderInfo(coordinate, pixel) {
@@ -848,10 +1150,27 @@
       mobileInfoFrame = requestAnimationFrame(updateMobileCenterInfo);
     }
 
+    function bindDesktopInfoWindowHideZone(element) {
+      if (!element || element.silamInfoWindowHideBound) {
+        return;
+      }
+
+      element.silamInfoWindowHideBound = true;
+      element.addEventListener("pointerenter", hideDesktopInfoWindow);
+      element.addEventListener("pointermove", hideDesktopInfoWindow);
+      element.addEventListener("focusin", hideDesktopInfoWindow);
+    }
+
+    function bindDesktopInfoWindowHideZones() {
+      document.querySelectorAll(MAP_CONTROL_HIDE_SELECTOR)
+        .forEach(bindDesktopInfoWindowHideZone);
+    }
+
     function arrangeMapControls() {
       arrangePrimaryControls(legendEl);
       arrangeAuxControls(themeToggleEl);
       arrangeInfoWindowPlacement(mapEl, legendEl, infoWindow);
+      bindDesktopInfoWindowHideZones();
 
       if (isMobileLayout()) {
         scheduleMobileCenterInfoUpdate();
@@ -890,12 +1209,24 @@
       locale = normalized;
       text = TEXT[locale] || TEXT.en;
       document.documentElement.lang = locale;
+      updateShiftZoomHintText(shiftZoomHintEl, text);
       scheduleMobileCenterInfoUpdate();
     }
 
     function handleParentContextMessage(event) {
       const data = event.data;
-      if (!data || data.type !== "silam-coverage-context") {
+      if (!data) {
+        return;
+      }
+
+      if (data.type === "silam-coverage-navbar-hover") {
+        if (data.hover) {
+          hideDesktopInfoWindow();
+        }
+        return;
+      }
+
+      if (data.type !== "silam-coverage-context") {
         return;
       }
 
@@ -917,6 +1248,7 @@
     });
 
     normalizeZoomButtons();
+    shiftZoomHintEl = addShiftZoomHint(mapEl, text);
     arrangeMapControls();
     requestAnimationFrame(arrangeMapControls);
     setTimeout(arrangeMapControls, 0);
@@ -987,7 +1319,50 @@
         }));
     });
 
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Shift") {
+        setShiftZoomHintActive(shiftZoomHintEl, true);
+      }
+    });
+    window.addEventListener("keyup", (event) => {
+      if (event.key === "Shift") {
+        setShiftZoomHintActive(shiftZoomHintEl, false);
+        setShiftZoomHintDrawing(shiftZoomHintEl, false);
+      }
+    });
+    window.addEventListener("blur", () => {
+      setShiftZoomHintActive(shiftZoomHintEl, false);
+      setShiftZoomHintDrawing(shiftZoomHintEl, false);
+    });
+    mapEl.addEventListener("pointerdown", (event) => {
+      if (event.shiftKey) {
+        setShiftZoomHintDrawing(shiftZoomHintEl, true);
+      }
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((eventName) => {
+      mapEl.addEventListener(eventName, () => {
+        setShiftZoomHintDrawing(shiftZoomHintEl, false);
+      });
+    });
+
+    function hideInfoWindowOnMapControls(event) {
+      if (isMobileLayout() || !isMapControlPointer(event)) {
+        return;
+      }
+
+      hideDesktopInfoWindow();
+    }
+
     window.addEventListener("resize", arrangeMapControls);
+    mapEl.addEventListener("pointerleave", hideDesktopInfoWindow);
+    mapEl.addEventListener("pointerover", hideInfoWindowOnMapControls, true);
+    mapEl.addEventListener("pointermove", hideInfoWindowOnMapControls, true);
+    mapEl.addEventListener("focusin", hideInfoWindowOnMapControls, true);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        hideDesktopInfoWindow();
+      }
+    });
 
     const view = map.getView();
     let saveViewStateFrame = null;
@@ -1019,10 +1394,15 @@
         return;
       }
 
+      if (isMapControlPointer(event.originalEvent)) {
+        hideDesktopInfoWindow();
+        return;
+      }
+
       const coordinate = ol.proj.toLonLat(event.coordinate);
+      showDesktopInfoWindow();
       renderInfo(coordinate, event.pixel);
-      infoWindow.style.left = `${event.pixel[0] + 15}px`;
-      infoWindow.style.top = `${event.pixel[1] + 15}px`;
+      positionDesktopInfoWindow(mapEl, infoWindow, event.pixel);
 
       copyCoordinate(coordinate, text, {
         type: "below-element",
@@ -1035,9 +1415,15 @@
         return;
       }
 
+      if (isMapControlPointer(event.originalEvent)) {
+        hideDesktopInfoWindow();
+        return;
+      }
+
+      setShiftZoomHintActive(shiftZoomHintEl, Boolean(event.originalEvent?.shiftKey));
+      showDesktopInfoWindow();
       renderInfo(ol.proj.toLonLat(event.coordinate), event.pixel);
-      infoWindow.style.left = `${event.pixel[0] + 15}px`;
-      infoWindow.style.top = `${event.pixel[1] + 15}px`;
+      positionDesktopInfoWindow(mapEl, infoWindow, event.pixel);
     });
 
     scheduleMobileCenterInfoUpdate();

@@ -125,8 +125,15 @@ html[data-theme="dark"] .ol-layer canvas {
   background-color: transparent !important;
 }
 
+.coverage-control-cluster,
+.map-aux-control-cluster {
+  pointer-events: auto !important;
+}
+
 .legend-control,
 .info-window,
+.coverage-shift-zoom-hint,
+.ol-attribution.ol-uncollapsible,
 .ol-zoom button,
 .ol-rotate button,
 .theme-toggle-control button,
@@ -141,12 +148,16 @@ html[data-theme="dark"] .ol-layer canvas {
 }
 
 .legend-control,
-.info-window {
+.info-window,
+.coverage-shift-zoom-hint,
+.ol-attribution.ol-uncollapsible {
   font: var(--ui-font-size) / var(--ui-line-height) var(--ui-font-family);
 }
 
 html[data-theme="dark"] .legend-control .name,
 html[data-theme="dark"] .info-window,
+html[data-theme="dark"] .coverage-shift-zoom-hint,
+html[data-theme="dark"] .ol-attribution.ol-uncollapsible,
 html[data-theme="dark"] .theme-toggle-control button,
 html[data-theme="dark"] .ol-rotate button,
 html[data-theme="dark"] .mobile-coordinate-badge {
@@ -434,16 +445,136 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 }
 
 /* ------------------------------------------------------------------
+   Shift zoom hint
+   ------------------------------------------------------------------ */
+
+.coverage-shift-zoom-hint {
+  position: absolute;
+  left: var(--control-edge-offset-desktop, 16px);
+  bottom: 16px;
+  z-index: 1180;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border-radius: 999px;
+
+  opacity: 1;
+  isolation: isolate;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+
+  transition:
+    opacity .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease,
+    background .18s ease;
+}
+
+
+.coverage-shift-zoom-hint:hover,
+.coverage-shift-zoom-hint--active {
+  border-color: color-mix(in srgb, var(--ui-accent), transparent 32%) !important;
+}
+
+.coverage-shift-zoom-hint--active {
+  box-shadow:
+    var(--ui-glass-shadow),
+    0 0 0 1px rgb(var(--silam-accent-mint-rgb) / 0.18),
+    0 0 26px rgb(var(--silam-accent-mint-rgb) / 0.18) !important;
+}
+
+
+.coverage-shift-zoom-hint--drawing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.coverage-shift-zoom-hint > * {
+  position: relative;
+  z-index: 2;
+}
+
+.coverage-shift-zoom-hint__key,
+.coverage-shift-zoom-hint__text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.coverage-shift-zoom-hint__key {
+  color: var(--ui-glass-text);
+  opacity: .95;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.coverage-shift-zoom-hint__text {
+  color: var(--ui-glass-text);
+  opacity: .95;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .coverage-shift-zoom-hint--active {
+    border-color: rgb(var(--silam-accent-mint-rgb) / 0.56) !important;
+    animation: none;
+  }
+
+}
+
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  .coverage-shift-zoom-hint {
+    display: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------
    Info window and mobile coordinates
    ------------------------------------------------------------------ */
 
 .info-window {
   position: absolute;
   z-index: 1200;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 24px));
   pointer-events: none;
   padding: 7px 9px;
   border-radius: 12px;
-  white-space: nowrap;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.info-window.info-window--hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* JS держит left/top в обычной позиции возле курсора, а transform
+   включает только когда подсказку реально ограничивает край viewport. */
+.info-window.info-window--edge-adjusted {
+  will-change: transform;
+}
+
+/* Transition используется только при входе/выходе из edge-состояния.
+   Во время движения вдоль края он отключается, чтобы не было микродрожания. */
+.info-window.info-window--edge-transition {
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .legend-control > .info-window.legend-info,
@@ -515,6 +646,7 @@ html[data-theme="dark"] .mobile-coordinate-badge {
 
 .coverage-hover-badge {
   display: inline-block;
+  white-space: nowrap;
   padding: 2px 6px;
   border: 1px solid var(--ui-glass-border);
   border-radius: 6px;
@@ -562,20 +694,77 @@ html[data-theme="dark"] .center-pointer {
 .ol-attribution:not(.ol-collapsed) ul,
 .ol-attribution.ol-uncollapsible,
 .ol-attribution.ol-uncollapsible ul {
-  background: transparent !important;
   background-color: transparent !important;
+}
+
+.ol-attribution.ol-uncollapsible {
+  left: auto !important;
+  right: var(--control-edge-offset-desktop, 16px) !important;
+  bottom: 16px !important;
+  top: auto !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+
+  max-width: min(44vw, calc(100vw - 32px));
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+  padding: 7px 10px !important;
+  border-radius: 999px !important;
+
+  color: var(--ui-glass-text) !important;
+  line-height: var(--ui-line-height) !important;
+  text-align: right !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+
+.ol-attribution.ol-uncollapsible ul {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 4px !important;
+
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  color: inherit !important;
   border: 0 !important;
   box-shadow: none !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
 }
 
-.ol-attribution {
-  color: var(--ui-attribution-text) !important;
-  text-shadow: var(--ui-attribution-shadow);
+.ol-attribution.ol-uncollapsible li {
+  display: inline !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  color: color-mix(in srgb, var(--ui-glass-text), transparent 34%) !important;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
 
-.ol-attribution a {
-  color: var(--ui-attribution-link) !important;
-  text-decoration-color: color-mix(in srgb, var(--ui-attribution-link), transparent 40%) !important;
+.ol-attribution.ol-uncollapsible a {
+  color: var(--ui-glass-text) !important;
+  font-weight: 650;
+  opacity: 1;
+  text-decoration-color: color-mix(in srgb, var(--ui-glass-text), transparent 48%) !important;
+}
+
+.ol-attribution.ol-uncollapsible button {
+  display: none !important;
+}
+
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  .ol-attribution.ol-uncollapsible {
+    right: .75rem !important;
+    bottom: .75rem !important;
+    max-width: calc(100vw - 1.5rem);
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -827,6 +1016,12 @@ html[data-theme="dark"] .center-pointer {
   transform: translate(-50%, 8px);
 }
 
+/* В нижней части окна toast поднимается над карточкой координат. */
+.copy-toast.is-above-element {
+  bottom: auto;
+  transform: translate(-50%, calc(-100% - 8px));
+}
+
 /* Fallback, если якорь не передан. */
 .copy-toast.is-fallback {
   left: 50%;
@@ -839,6 +1034,11 @@ html[data-theme="dark"] .center-pointer {
 .copy-toast.is-visible.is-fallback {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+.copy-toast.is-visible.is-above-element {
+  opacity: 1;
+  transform: translate(-50%, -100%);
 }
 
 /* ------------------------------------------------------------------
