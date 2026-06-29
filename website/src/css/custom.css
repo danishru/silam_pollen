@@ -336,14 +336,24 @@ html[data-theme='dark'] {
 /* -------------------------------------------------------------------------- */
 
 html {
+  overflow-x: clip;
   scroll-behavior: smooth;
 }
 
 body {
+  overflow-x: clip;
   color: var(--silam-text-main);
   background-color: var(--silam-bg-page);
   background-image: var(--silam-page-gradient);
   background-attachment: fixed;
+}
+
+@supports not (overflow: clip) {
+  html,
+  body {
+    /* Защита от лишней горизонтальной прокрутки на full-bleed декоративных слоях. */
+    overflow-x: hidden;
+  }
 }
 
 a {
