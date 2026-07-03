@@ -1,48 +1,342 @@
 import {useEffect} from 'react';
 
-export default function RoadmapStripRuntime() {
+// Универсальный runtime для горизонтальной anchor-навигации.
+// Страница должна предоставить разметку с data-anchor-strip-* атрибутами.
+
+export default function AnchorStripRuntime() {
   useEffect(() => {
     const cleanupHandlers = [];
 
-    const initRoadmapStrip = (root) => {
-      const shell = root.closest('[data-roadmap-strip-shell]') || root.parentElement;
-      const viewport = root.querySelector('[data-roadmap-strip-scroller]');
+    const initAnchorStrip = (root) => {
+      const shell = root.closest('[data-anchor-strip-shell]') || root.parentElement;
+      const layout = root.closest('[data-anchor-strip-layout]') || shell?.closest?.('[data-anchor-strip-layout]') || shell;
+      const stickyHost = layout || shell;
+      const viewport = root.querySelector('[data-anchor-strip-scroller]');
       const track = viewport?.firstElementChild;
-      const prev = root.querySelector('[data-roadmap-strip-prev]');
-      const next = root.querySelector('[data-roadmap-strip-next]');
+      const prev = root.querySelector('[data-anchor-strip-prev]');
+      const next = root.querySelector('[data-anchor-strip-next]');
 
-      if (!shell || !viewport || !track || !prev || !next || root.dataset.roadmapStripReady === 'true') {
+      if (!shell || !layout || !viewport || !track || !prev || !next || root.dataset.anchorStripReady === 'true') {
         return null;
       }
 
-      root.dataset.roadmapStripReady = 'true';
+      root.dataset.anchorStripReady = 'true';
       let offset = 0;
       let compactFrame = 0;
       let resizeFrame = 0;
-      let isCompact = shell.dataset.roadmapStripCompact === 'true';
+      let isCompact = shell.dataset.anchorStripCompact === 'true';
       let compactBaseScrollY = 0;
-      const compactEnterOffset = 250;
-      const compactExitOffset = 8;
+      const compactStickyOffset = 8;
+      const mobileCompactExitGap = 32;
+      const mobileDockReleaseTolerance = 6;
+      const mobileDockScrollDelta = 3;
+      const mobilePlaceholderTransitionMs = 320;
       const compactTransitionLockMs = 840;
       let compactLockUntil = 0;
+      let isMobileBottomDocked = layout.dataset.anchorStripMobileBottomDocked === 'true';
+      let isMobileBottomReturning = layout.dataset.anchorStripMobileBottomReturning === 'true';
+      let lastMobileBottomScrollY = Math.max(0, window.scrollY || 0);
+      let mobileBottomReturnStartedAt = 0;
+      let mobileBottomSettleTimer = 0;
+      let isMobileNavbarHidden = document.documentElement.dataset.anchorMobileNavbarHidden === 'true';
+      let lastMobileNavbarScrollY = Math.max(0, window.scrollY || 0);
+      const mobileNavbarScrollDelta = 6;
+      const mobileNavbarTopRevealOffset = 24;
       let resizeObserver = null;
+      let isDisposed = false;
+      const activeFrameIds = new Set();
+      const activeTimerIds = new Set();
+      const mobileBottomModeQuery = window.matchMedia?.('(max-width: 640px) and (pointer: coarse)');
+      const requestFrame = (callback) => {
+        const frameId = window.requestAnimationFrame((timestamp) => {
+          activeFrameIds.delete(frameId);
+          if (!isDisposed) {
+            callback(timestamp);
+          }
+        });
+        activeFrameIds.add(frameId);
+        return frameId;
+      };
 
+      const cancelFrame = (frameId) => {
+        if (!frameId) {
+          return;
+        }
+        activeFrameIds.delete(frameId);
+        window.cancelAnimationFrame(frameId);
+      };
+
+      const setTimer = (callback, delay) => {
+        const timerId = window.setTimeout(() => {
+          activeTimerIds.delete(timerId);
+          if (!isDisposed) {
+            callback();
+          }
+        }, delay);
+        activeTimerIds.add(timerId);
+        return timerId;
+      };
+
+      const clearTimer = (timerId) => {
+        if (!timerId) {
+          return;
+        }
+        activeTimerIds.delete(timerId);
+        window.clearTimeout(timerId);
+      };
+
+      const clearDeferredWork = () => {
+        activeFrameIds.forEach((frameId) => window.cancelAnimationFrame(frameId));
+        activeFrameIds.clear();
+        activeTimerIds.forEach((timerId) => window.clearTimeout(timerId));
+        activeTimerIds.clear();
+      };
+
+      const safeDecodeHash = (hash) => {
+        if (!hash || hash === '#') {
+          return null;
+        }
+
+        try {
+          return decodeURIComponent(hash.slice(1));
+        } catch {
+          return null;
+        }
+      };
+
+      const findAnchorLink = (target) => {
+        const element = target instanceof Element ? target : target?.parentElement;
+        return element?.closest?.('a[href][data-anchor-link]') || null;
+      };
+
+      // Sentinel привязан к sticky/layout-слою, а не к визуальному shell.
+      // Так базовая точка sticky/compact считается от места strip в потоке страницы,
+      // а shell остаётся только визуальной стеклянной оболочкой.
       const stickySentinel = document.createElement('span');
-      stickySentinel.dataset.roadmapStripStickySentinel = 'true';
+      stickySentinel.dataset.anchorStripStickySentinel = 'true';
       stickySentinel.setAttribute('aria-hidden', 'true');
       stickySentinel.style.cssText = 'display:block;width:0;height:0;overflow:hidden;pointer-events:none;';
-      shell.before(stickySentinel);
-      shell.dataset.roadmapStripCompact = isCompact ? 'true' : 'false';
+      stickyHost.before(stickySentinel);
+      shell.dataset.anchorStripCompact = isCompact ? 'true' : 'false';
 
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
       const getMaxOffset = () => Math.max(0, track.scrollWidth - viewport.clientWidth);
 
+      const getRootFontSize = () => {
+        const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize);
+        return Number.isFinite(rootFontSize) ? rootFontSize : 16;
+      };
+
+      const getNavbarHeight = () => {
+        const navbarHeight = Number.parseFloat(
+          window.getComputedStyle(document.documentElement).getPropertyValue('--ifm-navbar-height'),
+        );
+
+        return Number.isFinite(navbarHeight) ? navbarHeight : 0;
+      };
+
+      const isMobileBottomMode = () => mobileBottomModeQuery?.matches === true;
+
+      const getVirtualStickyTop = () => (
+        getNavbarHeight() + getRootFontSize() * 0.5
+      );
+
       const getStickyTop = () => {
-        const stickyTop = Number.parseFloat(window.getComputedStyle(shell).top);
-        return Number.isFinite(stickyTop) ? stickyTop : 0;
+        const stickyTop = Number.parseFloat(window.getComputedStyle(stickyHost).top);
+
+        if (Number.isFinite(stickyTop)) {
+          return stickyTop;
+        }
+
+        // В мобильном bottom-dock режиме layout больше не sticky к верхней панели.
+        // Compact-порог всё равно считаем от виртуальной верхней точки, как если бы
+        // меню страницы продолжало идти вверх и коснулось navbar.
+        return getVirtualStickyTop();
+      };
+
+      const getMobileBottomGap = () => {
+        const bottomGap = Number.parseFloat(
+          window.getComputedStyle(stickyHost).getPropertyValue('--silam-anchor-strip-mobile-bottom-gap'),
+        );
+
+        return Number.isFinite(bottomGap) ? bottomGap : 12;
+      };
+
+      const setMobileNavbarHidden = (nextHidden) => {
+        if (nextHidden === isMobileNavbarHidden) {
+          return;
+        }
+
+        isMobileNavbarHidden = nextHidden;
+
+        if (nextHidden) {
+          document.documentElement.dataset.anchorMobileNavbarHidden = 'true';
+          return;
+        }
+
+        delete document.documentElement.dataset.anchorMobileNavbarHidden;
+      };
+
+      const clearMobileNavbarState = () => {
+        setMobileNavbarHidden(false);
+        lastMobileNavbarScrollY = Math.max(0, window.scrollY || 0);
+      };
+
+      const updateMobileNavbarState = (options = {}) => {
+        const nextScrollY = Math.max(0, window.scrollY || 0);
+
+        if (!isMobileBottomMode()) {
+          clearMobileNavbarState();
+          return;
+        }
+
+        if (options.force) {
+          lastMobileNavbarScrollY = nextScrollY;
+          setMobileNavbarHidden(nextScrollY > mobileNavbarTopRevealOffset);
+          return;
+        }
+
+        if (nextScrollY <= mobileNavbarTopRevealOffset) {
+          lastMobileNavbarScrollY = nextScrollY;
+          setMobileNavbarHidden(false);
+          return;
+        }
+
+        const scrollDelta = nextScrollY - lastMobileNavbarScrollY;
+
+        if (Math.abs(scrollDelta) < mobileNavbarScrollDelta) {
+          return;
+        }
+
+        lastMobileNavbarScrollY = nextScrollY;
+
+        // На touch/mobile верхняя панель освобождает экран при движении вниз
+        // и сразу возвращается, когда направление прокрутки меняется вверх.
+        setMobileNavbarHidden(scrollDelta > 0);
+      };
+
+      const clearMobileBottomDockState = () => {
+        isMobileBottomDocked = false;
+        isMobileBottomReturning = false;
+        lastMobileBottomScrollY = Math.max(0, window.scrollY || 0);
+        delete layout.dataset.anchorStripMobileBottomDocked;
+        delete layout.dataset.anchorStripMobileBottomReturning;
+        delete layout.dataset.anchorStripMobileBottomSettling;
+        clearTimer(mobileBottomSettleTimer);
+        mobileBottomSettleTimer = 0;
+        mobileBottomReturnStartedAt = 0;
+        layout.style.removeProperty('--anchor-strip-mobile-return-shift');
+        layout.style.removeProperty('--anchor-strip-mobile-placeholder-height');
+        layout.style.removeProperty('--anchor-strip-mobile-left');
+        layout.style.removeProperty('--anchor-strip-mobile-width');
+      };
+
+      const updateMobileBottomDockState = () => {
+        if (!isMobileBottomMode()) {
+          clearMobileBottomDockState();
+          return;
+        }
+
+        const viewportHeight = getViewportHeight();
+        const shellHeight = Math.ceil(shell.getBoundingClientRect().height);
+
+        if (!viewportHeight || !Number.isFinite(shellHeight) || shellHeight <= 0) {
+          clearMobileBottomDockState();
+          return;
+        }
+
+        const now = window.performance?.now?.() ?? Date.now();
+        const scrollY = Math.max(0, window.scrollY || 0);
+        const bottomGap = getMobileBottomGap();
+        const layoutRect = layout.getBoundingClientRect();
+        const dockTop = viewportHeight - shellHeight - bottomGap;
+        const scrollDelta = scrollY - lastMobileBottomScrollY;
+        const isScrollingUp = scrollDelta < -mobileDockScrollDelta;
+        const isScrollingDown = scrollDelta > mobileDockScrollDelta;
+        const placeholderHeight = Math.max(1, Math.ceil(shellHeight));
+        let nextDocked = isMobileBottomDocked;
+        let nextReturning = isMobileBottomReturning;
+        let shouldStartSettling = false;
+        let settleShift = 0;
+
+        lastMobileBottomScrollY = scrollY;
+        layout.style.setProperty('--anchor-strip-mobile-placeholder-height', `${placeholderHeight}px`);
+        layout.style.setProperty('--anchor-strip-mobile-left', `${Math.max(0, Math.round(layoutRect.left))}px`);
+        layout.style.setProperty('--anchor-strip-mobile-width', `${Math.max(0, Math.round(layoutRect.width))}px`);
+
+        // В mobile/touch режиме placeholder всегда анимируется между числовыми
+        // px-значениями: вниз он схлопывается до 0, вверх сначала раскрывается
+        // обратно, а shell остаётся fixed снизу до безопасного возврата в поток.
+        if (!isMobileBottomDocked) {
+          nextDocked = layoutRect.top <= dockTop - mobileDockReleaseTolerance;
+          nextReturning = false;
+          mobileBottomReturnStartedAt = 0;
+        } else {
+          if (isScrollingUp && !isMobileBottomReturning) {
+            nextReturning = true;
+            mobileBottomReturnStartedAt = now;
+          } else if (isScrollingDown) {
+            nextReturning = false;
+            mobileBottomReturnStartedAt = 0;
+          }
+
+          const returnAnimationReady = nextReturning
+            && mobileBottomReturnStartedAt > 0
+            && now - mobileBottomReturnStartedAt >= mobilePlaceholderTransitionMs;
+          const flowTopDelta = layoutRect.top - dockTop;
+          const flowIsCloseEnough = Math.abs(flowTopDelta) <= mobileDockReleaseTolerance;
+          const flowHasReachedDockPoint = layoutRect.top >= dockTop - mobileDockReleaseTolerance;
+
+          if (returnAnimationReady && flowHasReachedDockPoint) {
+            nextDocked = false;
+            nextReturning = false;
+            mobileBottomReturnStartedAt = 0;
+
+            if (!flowIsCloseEnough) {
+              shouldStartSettling = true;
+              settleShift = dockTop - layoutRect.top;
+            }
+          } else {
+            nextDocked = true;
+          }
+        }
+
+        isMobileBottomDocked = nextDocked;
+        isMobileBottomReturning = nextReturning;
+
+        if (nextDocked) {
+          layout.dataset.anchorStripMobileBottomDocked = 'true';
+        } else {
+          delete layout.dataset.anchorStripMobileBottomDocked;
+        }
+
+        if (nextReturning) {
+          layout.dataset.anchorStripMobileBottomReturning = 'true';
+        } else {
+          delete layout.dataset.anchorStripMobileBottomReturning;
+        }
+
+        if (shouldStartSettling) {
+          clearTimer(mobileBottomSettleTimer);
+          layout.dataset.anchorStripMobileBottomSettling = 'true';
+          layout.style.setProperty('--anchor-strip-mobile-return-shift', `${settleShift}px`);
+
+          requestFrame(() => {
+            layout.style.setProperty('--anchor-strip-mobile-return-shift', '0px');
+          });
+
+          mobileBottomSettleTimer = setTimer(() => {
+            mobileBottomSettleTimer = 0;
+            delete layout.dataset.anchorStripMobileBottomSettling;
+            layout.style.removeProperty('--anchor-strip-mobile-return-shift');
+          }, mobilePlaceholderTransitionMs + 80);
+        }
       };
 
       const measureCompactBaseScrollY = () => {
+        // Базу compact считаем от sentinel перед sticky/layout-контейнером.
+        // На desktop это реальная sticky-top позиция, а на mobile-bottom это
+        // виртуальная верхняя точка: момент, когда меню коснулось бы navbar.
         compactBaseScrollY = window.scrollY + stickySentinel.getBoundingClientRect().top - getStickyTop();
       };
 
@@ -51,8 +345,8 @@ export default function RoadmapStripRuntime() {
         const hasOverflow = maxOffset > 2;
         offset = clamp(offset, 0, maxOffset);
 
-        track.style.setProperty('--roadmap-strip-offset', offset + 'px');
-        root.dataset.roadmapStripOverflow = hasOverflow ? 'true' : 'false';
+        track.style.setProperty('--anchor-strip-offset', offset + 'px');
+        root.dataset.anchorStripOverflow = hasOverflow ? 'true' : 'false';
         prev.disabled = !hasOverflow || offset <= 2;
         next.disabled = !hasOverflow || offset >= maxOffset - 2;
       };
@@ -65,33 +359,46 @@ export default function RoadmapStripRuntime() {
         const now = window.performance?.now?.() ?? Date.now();
 
         if (options.instant) {
-          shell.dataset.roadmapAnchorSettling = 'true';
+          shell.dataset.anchorSettling = 'true';
         }
 
         isCompact = nextCompact;
         compactLockUntil = now + compactTransitionLockMs;
-        shell.dataset.roadmapStripCompact = isCompact ? 'true' : 'false';
+        shell.dataset.anchorStripCompact = isCompact ? 'true' : 'false';
 
         if (options.instant) {
           // Принудительно применяем финальную высоту до расчёта позиции якоря.
           void shell.offsetHeight;
-          window.requestAnimationFrame(() => {
-            delete shell.dataset.roadmapAnchorSettling;
+          requestFrame(() => {
+            delete shell.dataset.anchorSettling;
           });
         }
 
-        window.requestAnimationFrame(applyOffset);
-        window.setTimeout(applyOffset, compactTransitionLockMs + 80);
+        requestFrame(() => {
+          updateMobileBottomDockState();
+          applyOffset();
+        });
+        setTimer(() => {
+          updateMobileBottomDockState();
+          applyOffset();
+        }, compactTransitionLockMs + 80);
         return true;
       };
 
-      const getExpectedCompactStateForScrollY = (nextScrollY) => {
-        const enterScrollY = compactBaseScrollY + compactEnterOffset;
-        const exitScrollY = compactBaseScrollY + compactExitOffset;
+      const getExpectedCompactStateForScrollY = (nextScrollY, options = {}) => {
+        const enterScrollY = compactBaseScrollY + compactStickyOffset;
 
-        return isCompact
-          ? nextScrollY > exitScrollY
-          : nextScrollY >= enterScrollY;
+        if (isMobileBottomMode() && !options.anchor) {
+          // В мобильном bottom-dock режиме добавляем небольшой hysteresis,
+          // чтобы около точки касания верхней панели меню не сжималось и
+          // не раскрывалось туда-сюда от микродвижений scroll или смены высоты.
+          const exitScrollY = compactBaseScrollY - mobileCompactExitGap;
+          return isCompact ? nextScrollY > exitScrollY : nextScrollY > enterScrollY;
+        }
+
+        // Для desktop и программного перехода по якорю оставляем один
+        // предсказуемый порог: ниже sticky-зоны меню compact, выше — expanded.
+        return nextScrollY > enterScrollY;
       };
 
       const updateCompactState = (options = {}) => {
@@ -109,8 +416,10 @@ export default function RoadmapStripRuntime() {
           return;
         }
 
-        compactFrame = window.requestAnimationFrame(() => {
+        compactFrame = requestFrame(() => {
           compactFrame = 0;
+          updateMobileNavbarState();
+          updateMobileBottomDockState();
           updateCompactState();
         });
       };
@@ -120,9 +429,11 @@ export default function RoadmapStripRuntime() {
           return;
         }
 
-        resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = requestFrame(() => {
           resizeFrame = 0;
           measureCompactBaseScrollY();
+          updateMobileNavbarState({force: true});
+          updateMobileBottomDockState();
           applyOffset();
           updateCompactState({force: true});
         });
@@ -152,16 +463,16 @@ export default function RoadmapStripRuntime() {
 
       const setStripDragging = (nextDragging) => {
         if (nextDragging) {
-          root.dataset.roadmapStripDragging = 'true';
+          root.dataset.anchorStripDragging = 'true';
           return;
         }
 
-        delete root.dataset.roadmapStripDragging;
+        delete root.dataset.anchorStripDragging;
       };
 
       const stopMomentumScroll = () => {
         if (momentumFrame) {
-          window.cancelAnimationFrame(momentumFrame);
+          cancelFrame(momentumFrame);
           momentumFrame = 0;
         }
 
@@ -223,10 +534,10 @@ export default function RoadmapStripRuntime() {
             return;
           }
 
-          momentumFrame = window.requestAnimationFrame(tick);
+          momentumFrame = requestFrame(tick);
         };
 
-        momentumFrame = window.requestAnimationFrame(tick);
+        momentumFrame = requestFrame(tick);
       };
 
       const finishStripDrag = (event, options = {}) => {
@@ -283,9 +594,7 @@ export default function RoadmapStripRuntime() {
         dragVelocity = 0;
         isStripDragging = false;
         didStripDrag = false;
-        dragStartLink = event.target instanceof Element
-          ? event.target.closest('a[href]')
-          : null;
+        dragStartLink = findAnchorLink(event.target);
 
         // Указатель захватываем сразу для всех типов ввода: так мышиный drag
         // не теряется за пределами ссылки, а обычный click по якорю ниже
@@ -334,7 +643,7 @@ export default function RoadmapStripRuntime() {
           didStripDrag = true;
           setStripDragging(true);
           captureStripPointer(event);
-          stopAnchorScrollCorrection({stopNativeScroll: true});
+          stopAnchorScrollState({stopNativeScroll: true});
         }
 
         event.preventDefault();
@@ -448,21 +757,78 @@ export default function RoadmapStripRuntime() {
 
         event.preventDefault();
         stopMomentumScroll();
-        stopAnchorScrollCorrection({stopNativeScroll: true});
+        stopAnchorScrollState({stopNativeScroll: true});
         offset = clamp(offset + scrollDelta, 0, maxOffset);
         applyOffset();
       };
 
       let pendingAnchorTarget = null;
-      let pendingAnchorTimers = [];
+      let pendingAnchorReleaseTimer = 0;
       let pendingAnchorScrollActive = false;
       let pendingAnchorHighlightDone = false;
       let pendingAnchorHighlightTarget = null;
       let pendingAnchorHighlightObserver = null;
       let pendingAnchorHighlightTimer = 0;
       let pendingAnchorHighlightFrame = 0;
+      let anchorStripHeightLocked = false;
+
+      const getLayoutFlowHeight = () => {
+        const layoutHeight = layout.getBoundingClientRect().height;
+        const shellHeight = shell.getBoundingClientRect().height;
+        return layoutHeight || shellHeight;
+      };
+
+      const lockAnchorStripHeightForAnchorScroll = () => {
+        if (anchorStripHeightLocked) {
+          return;
+        }
+
+        // Layout-lock держим на внешнем контейнере без стеклянной подложки.
+        // Сам shell продолжает визуально сжиматься, а место в потоке страницы
+        // временно удерживает прозрачный layout-контейнер.
+        const lockedHeight = Math.ceil(getLayoutFlowHeight());
+
+        if (!Number.isFinite(lockedHeight) || lockedHeight <= 0) {
+          return;
+        }
+
+        layout.style.setProperty('--anchor-strip-locked-height', `${lockedHeight}px`);
+        layout.dataset.anchorStripHeightLocked = 'true';
+        anchorStripHeightLocked = true;
+      };
+
+      const unlockAnchorStripHeightForAnchorScroll = (options = {}) => {
+        if (!anchorStripHeightLocked) {
+          return;
+        }
+
+        const preserveTarget = options.preserveTarget;
+        const previousTargetTop = preserveTarget && document.contains(preserveTarget)
+          ? preserveTarget.getBoundingClientRect().top
+          : null;
+
+        anchorStripHeightLocked = false;
+        delete layout.dataset.anchorStripHeightLocked;
+        layout.style.removeProperty('--anchor-strip-locked-height');
+
+        if (previousTargetTop !== null) {
+          void layout.offsetHeight;
+          const nextTargetTop = preserveTarget.getBoundingClientRect().top;
+          const delta = nextTargetTop - previousTargetTop;
+
+          if (Math.abs(delta) > 0.5) {
+            window.scrollTo({
+              top: Math.max(0, window.scrollY + delta),
+              behavior: 'auto',
+            });
+          }
+        }
+      };
 
       const getTargetOffset = (target) => {
+        // Offset якоря берём из scroll-margin-top самого target.
+        // Важно: не используем высоту layout/spacer, потому что он может быть
+        // временно залочен; визуально контент перекрывает только sticky shell.
         const scrollMarginTop = Number.parseFloat(window.getComputedStyle(target).scrollMarginTop);
         return Number.isFinite(scrollMarginTop) ? scrollMarginTop : 0;
       };
@@ -509,39 +875,41 @@ export default function RoadmapStripRuntime() {
         pendingAnchorHighlightObserver = null;
 
         if (pendingAnchorHighlightTimer) {
-          window.clearTimeout(pendingAnchorHighlightTimer);
+          clearTimer(pendingAnchorHighlightTimer);
           pendingAnchorHighlightTimer = 0;
         }
 
         if (pendingAnchorHighlightFrame) {
-          window.cancelAnimationFrame(pendingAnchorHighlightFrame);
+          cancelFrame(pendingAnchorHighlightFrame);
           pendingAnchorHighlightFrame = 0;
         }
 
         pendingAnchorHighlightTarget = null;
       };
 
-      const clearAnchorCorrections = () => {
-        pendingAnchorTimers.forEach((timerId) => window.clearTimeout(timerId));
-        pendingAnchorTimers = [];
+      const clearAnchorReleaseTimer = () => {
+        if (pendingAnchorReleaseTimer) {
+          clearTimer(pendingAnchorReleaseTimer);
+          pendingAnchorReleaseTimer = 0;
+        }
       };
 
       const triggerAnchorHighlight = (target) => {
-        if (!target?.matches?.('[data-roadmap-anchor-highlight-target]')) {
+        if (!target?.matches?.('[data-anchor-highlight-target]')) {
           return;
         }
 
-        target.removeAttribute('data-roadmap-anchor-highlight');
+        target.removeAttribute('data-anchor-highlight');
         void target.offsetWidth;
-        target.dataset.roadmapAnchorHighlight = 'true';
+        target.dataset.anchorHighlight = 'true';
 
         const clearHighlight = () => {
-          target.removeAttribute('data-roadmap-anchor-highlight');
+          target.removeAttribute('data-anchor-highlight');
           target.removeEventListener('animationend', clearHighlight);
         };
 
         target.addEventListener('animationend', clearHighlight);
-        window.setTimeout(clearHighlight, 1400);
+        setTimer(clearHighlight, 1400);
       };
 
       const tryTriggerAnchorHighlightWhenVisible = (target) => {
@@ -565,7 +933,7 @@ export default function RoadmapStripRuntime() {
       };
 
       const scheduleAnchorHighlightWhenVisible = (target) => {
-        if (!target?.matches?.('[data-roadmap-anchor-highlight-target]') || pendingAnchorHighlightDone) {
+        if (!target?.matches?.('[data-anchor-highlight-target]') || pendingAnchorHighlightDone) {
           return;
         }
 
@@ -598,7 +966,7 @@ export default function RoadmapStripRuntime() {
 
         // Страховка для браузеров без IntersectionObserver или редких случаев,
         // когда smooth-scroll завершился между событиями наблюдателя.
-        pendingAnchorHighlightTimer = window.setTimeout(() => {
+        pendingAnchorHighlightTimer = setTimer(() => {
           if (!tryTriggerAnchorHighlightWhenVisible(target)) {
             clearAnchorHighlightWatch();
           }
@@ -612,23 +980,24 @@ export default function RoadmapStripRuntime() {
           return;
         }
 
-        pendingAnchorHighlightFrame = window.requestAnimationFrame(() => {
+        pendingAnchorHighlightFrame = requestFrame(() => {
           pendingAnchorHighlightFrame = 0;
           tryTriggerAnchorHighlightWhenVisible(target);
         });
       };
 
-      const stopAnchorScrollCorrection = (options = {}) => {
-        const hadPendingAnchorScroll = pendingAnchorScrollActive || pendingAnchorTarget || pendingAnchorTimers.length > 0;
+      const stopAnchorScrollState = (options = {}) => {
+        const hadPendingAnchorScroll = pendingAnchorScrollActive || pendingAnchorTarget || pendingAnchorReleaseTimer;
 
         pendingAnchorTarget = null;
         pendingAnchorScrollActive = false;
         pendingAnchorHighlightDone = false;
-        clearAnchorCorrections();
+        clearAnchorReleaseTimer();
         clearAnchorHighlightWatch();
+        unlockAnchorStripHeightForAnchorScroll();
 
         if (hadPendingAnchorScroll && options.stopNativeScroll) {
-          // Прерываем нативный smooth scroll, чтобы отложенные корректировки не спорили с ручной прокруткой.
+          // Прерываем нативный smooth-scroll, если пользователь начал ручную прокрутку.
           window.scrollTo({
             top: window.scrollY,
             behavior: 'auto',
@@ -645,84 +1014,122 @@ export default function RoadmapStripRuntime() {
           }
         }
 
-        stopAnchorScrollCorrection({stopNativeScroll: true});
+        stopAnchorScrollState({stopNativeScroll: true});
       };
 
-      const correctAnchorScroll = (target) => {
-        if (!target || !document.contains(target)) {
+      const scheduleAnchorHeightUnlock = (target, options = {}) => {
+        clearAnchorReleaseTimer();
+
+        if (!options.releaseHeightLock) {
+          pendingAnchorTarget = null;
+          pendingAnchorScrollActive = false;
+          requestFrame(() => {
+            measureCompactBaseScrollY();
+            updateMobileNavbarState();
+            updateMobileBottomDockState();
+            applyOffset();
+          });
           return;
         }
 
-        const targetTop = getTargetScrollY(target);
+        pendingAnchorTarget = target;
+        pendingAnchorReleaseTimer = setTimer(() => {
+          pendingAnchorReleaseTimer = 0;
 
-        if (Math.abs(window.scrollY - targetTop) > 1) {
-          window.scrollTo({
-            top: targetTop,
-            behavior: 'auto',
+          if (pendingAnchorTarget !== target) {
+            return;
+          }
+
+          unlockAnchorStripHeightForAnchorScroll({preserveTarget: target});
+          pendingAnchorTarget = null;
+          pendingAnchorScrollActive = false;
+
+          requestFrame(() => {
+            measureCompactBaseScrollY();
+            updateMobileNavbarState();
+            updateMobileBottomDockState();
+            applyOffset();
           });
-        }
-
-        measureCompactBaseScrollY();
-        applyOffset();
+        }, compactTransitionLockMs + 80);
       };
 
-      const scheduleAnchorCorrections = (target) => {
+      const performAnchorScroll = (target, hash, options = {}) => {
+        const targetTop = getTargetScrollY(target);
+        pendingAnchorScrollActive = true;
+
+        if (options.updateHistory !== false && window.location.hash !== hash) {
+          window.history.pushState(null, '', hash);
+        }
+
+        window.scrollTo({
+          top: targetTop,
+          behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 'auto' : 'smooth',
+        });
+
         pendingAnchorTarget = target;
-        pendingAnchorHighlightDone = false;
-        clearAnchorCorrections();
+        scheduleAnchorHeightUnlock(target, {
+          releaseHeightLock: options.releaseHeightLock,
+        });
 
-        // Делаем несколько коротких корректировок: после применения compact-состояния,
-        // после завершения transition и после возможного завершения native smooth scroll.
-        [80, compactTransitionLockMs + 120, compactTransitionLockMs + 520].forEach((delay, index, delays) => {
-          const timerId = window.setTimeout(() => {
-            if (pendingAnchorTarget !== target) {
-              return;
-            }
+        scheduleAnchorHighlightWhenVisible(target);
 
-            correctAnchorScroll(target);
-
-            if (!pendingAnchorHighlightDone) {
-              scheduleAnchorHighlightWhenVisible(target);
-            }
-
-            if (index === delays.length - 1) {
-              pendingAnchorTarget = null;
-              pendingAnchorScrollActive = false;
-              clearAnchorCorrections();
-            }
-          }, delay);
-
-          pendingAnchorTimers.push(timerId);
+        requestFrame(() => {
+          measureCompactBaseScrollY();
+          updateMobileNavbarState();
+          updateMobileBottomDockState();
+          applyOffset();
         });
       };
 
-      const scrollToAnchor = (hash) => {
-        const targetId = decodeURIComponent(hash.slice(1));
+      const scrollToAnchor = (hash, options = {}) => {
+        const targetId = safeDecodeHash(hash);
+
+        if (!targetId) {
+          return false;
+        }
+
         const target = document.getElementById(targetId);
 
         if (!target) {
           return false;
         }
 
+        stopAnchorScrollState({stopNativeScroll: pendingAnchorScrollActive});
         measureCompactBaseScrollY();
+        updateMobileBottomDockState();
 
         const preliminaryTargetTop = getTargetScrollY(target);
-        const shouldCompactForTarget = getExpectedCompactStateForScrollY(preliminaryTargetTop);
-        setCompactState(shouldCompactForTarget, {instant: true});
+        const shouldCompactForTarget = getExpectedCompactStateForScrollY(preliminaryTargetTop, {anchor: true});
+        const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+        const shouldAnimateCompact = options.smoothCompact === true
+          && !prefersReducedMotion
+          && shouldCompactForTarget !== isCompact;
 
-        const targetTop = getTargetScrollY(target);
+        if (!shouldAnimateCompact) {
+          setCompactState(shouldCompactForTarget, {instant: true});
+          performAnchorScroll(target, hash, options);
+          return true;
+        }
+
+        pendingAnchorTarget = target;
         pendingAnchorScrollActive = true;
-        window.history.pushState(null, '', hash);
-        window.scrollTo({
-          top: targetTop,
-          behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 'auto' : 'smooth',
-        });
+        pendingAnchorHighlightDone = false;
 
-        scheduleAnchorCorrections(target);
+        const shouldLockFlowHeight = shouldCompactForTarget !== isCompact;
 
-        window.requestAnimationFrame(() => {
-          measureCompactBaseScrollY();
-          applyOffset();
+        if (shouldLockFlowHeight) {
+          lockAnchorStripHeightForAnchorScroll();
+        }
+
+        // При клике compact/expanded и scroll стартуют сразу вместе.
+        // Если состояние меню меняется, временно фиксируем layout-высоту:
+        // shell визуально сжимается или раскрывается плавно, а секции ниже
+        // не меняют flow-позицию во время smooth-scroll к якорю; стеклянная
+        // подложка shell при этом не растягивается layout-lock'ом.
+        setCompactState(shouldCompactForTarget);
+        performAnchorScroll(target, hash, {
+          ...options,
+          releaseHeightLock: shouldLockFlowHeight,
         });
 
         return true;
@@ -748,7 +1155,7 @@ export default function RoadmapStripRuntime() {
         }
 
         if (linkUrl.origin === window.location.origin && linkUrl.pathname === window.location.pathname && linkUrl.hash) {
-          scrollToAnchor(linkUrl.hash);
+          scrollToAnchor(linkUrl.hash, {smoothCompact: true});
           return;
         }
 
@@ -761,7 +1168,7 @@ export default function RoadmapStripRuntime() {
         }
 
         const eventTarget = event.target instanceof Element ? event.target : event.target?.parentElement;
-        const link = eventTarget?.closest?.('a[href]');
+        const link = findAnchorLink(eventTarget);
 
         if (!link) {
           return;
@@ -785,14 +1192,14 @@ export default function RoadmapStripRuntime() {
           return;
         }
 
-        const targetId = decodeURIComponent(linkUrl.hash.slice(1));
+        const targetId = safeDecodeHash(linkUrl.hash);
 
         if (!targetId || !document.getElementById(targetId)) {
           return;
         }
 
         event.preventDefault();
-        scrollToAnchor(linkUrl.hash);
+        scrollToAnchor(linkUrl.hash, {smoothCompact: true});
       };
 
       const handlePrevClick = () => {
@@ -814,8 +1221,14 @@ export default function RoadmapStripRuntime() {
         }
       };
       const handleHashChange = () => {
-        window.requestAnimationFrame(() => {
+        if (window.location.hash && scrollToAnchor(window.location.hash, {updateHistory: false})) {
+          return;
+        }
+
+        requestFrame(() => {
           measureCompactBaseScrollY();
+          updateMobileNavbarState({force: true});
+          updateMobileBottomDockState();
           updateCompactState({force: true});
           applyOffset();
         });
@@ -841,8 +1254,9 @@ export default function RoadmapStripRuntime() {
       window.addEventListener('keydown', cancelAnchorScrollOnUserInput);
       viewport.addEventListener('dragstart', handleViewportDragStart);
       window.addEventListener('hashchange', handleHashChange);
+      mobileBottomModeQuery?.addEventListener?.('change', scheduleResizeWork);
 
-      const stripLinkDraggableStates = Array.from(viewport.querySelectorAll('a[href]')).map((link) => {
+      const stripLinkDraggableStates = Array.from(viewport.querySelectorAll('a[href][data-anchor-link]')).map((link) => {
         const draggableAttribute = link.getAttribute('draggable');
         link.setAttribute('draggable', 'false');
         return [link, draggableAttribute];
@@ -857,24 +1271,36 @@ export default function RoadmapStripRuntime() {
       }
 
       measureCompactBaseScrollY();
+      updateMobileNavbarState({force: true});
+      updateMobileBottomDockState();
       applyOffset();
       updateCompactState({force: true});
-      window.requestAnimationFrame(() => {
+      requestFrame(() => {
         measureCompactBaseScrollY();
+        updateMobileNavbarState({force: true});
+        updateMobileBottomDockState();
         applyOffset();
         updateCompactState({force: true});
+
+        if (window.location.hash) {
+          scrollToAnchor(window.location.hash, {updateHistory: false});
+        }
       });
 
       return () => {
-        clearAnchorCorrections();
+        isDisposed = true;
+        clearAnchorReleaseTimer();
         clearAnchorHighlightWatch();
         stopMomentumScroll();
         if (compactFrame) {
-          window.cancelAnimationFrame(compactFrame);
+          cancelFrame(compactFrame);
+          compactFrame = 0;
         }
         if (resizeFrame) {
-          window.cancelAnimationFrame(resizeFrame);
+          cancelFrame(resizeFrame);
+          resizeFrame = 0;
         }
+        clearDeferredWork();
         resizeObserver?.disconnect?.();
         prev.removeEventListener('click', handlePrevClick);
         next.removeEventListener('click', handleNextClick);
@@ -896,6 +1322,7 @@ export default function RoadmapStripRuntime() {
         window.removeEventListener('keydown', cancelAnchorScrollOnUserInput);
         viewport.removeEventListener('dragstart', handleViewportDragStart);
         window.removeEventListener('hashchange', handleHashChange);
+        mobileBottomModeQuery?.removeEventListener?.('change', scheduleResizeWork);
         stripLinkDraggableStates.forEach(([link, draggableAttribute]) => {
           if (!link.isConnected) {
             return;
@@ -909,17 +1336,21 @@ export default function RoadmapStripRuntime() {
           link.setAttribute('draggable', draggableAttribute);
         });
         stickySentinel.remove();
-        delete root.dataset.roadmapStripReady;
-        delete root.dataset.roadmapStripOverflow;
-        delete root.dataset.roadmapStripDragging;
-        delete shell.dataset.roadmapStripCompact;
-        delete shell.dataset.roadmapAnchorSettling;
-        track.style.removeProperty('--roadmap-strip-offset');
+        delete root.dataset.anchorStripReady;
+        delete root.dataset.anchorStripOverflow;
+        delete root.dataset.anchorStripDragging;
+        delete shell.dataset.anchorStripCompact;
+        delete shell.dataset.anchorSettling;
+        delete layout.dataset.anchorStripHeightLocked;
+        layout.style.removeProperty('--anchor-strip-locked-height');
+        clearMobileBottomDockState();
+        clearMobileNavbarState();
+        track.style.removeProperty('--anchor-strip-offset');
       };
     };
 
-    document.querySelectorAll('[data-roadmap-strip]').forEach((root) => {
-      const cleanup = initRoadmapStrip(root);
+    document.querySelectorAll('[data-anchor-strip]').forEach((root) => {
+      const cleanup = initAnchorStrip(root);
       if (cleanup) {
         cleanupHandlers.push(cleanup);
       }

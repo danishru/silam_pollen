@@ -2,82 +2,166 @@
  * Place this content into: website/src/pages/roadmap.module.css
  *
  * Файл содержит только поведение и композицию страницы roadmap:
- * sticky strip, якорные отступы, шаги, стрелки и highlight карточек.
+ * reusable anchor strip, якорные отступы, шаги, стрелки и highlight карточек.
  * Переиспользуемые визуальные блоки вынесены в siteShared.module.css.
  */
 
-@property --silam-roadmap-step-min {
+@property --silam-anchor-strip-step-min {
   syntax: '<length>';
   inherits: true;
   initial-value: 132px;
 }
 
-@property --silam-roadmap-strip-gap {
+@property --silam-anchor-strip-gap {
   syntax: '<length>';
   inherits: true;
   initial-value: 0.85rem;
 }
 
-@property --silam-roadmap-strip-padding-y {
+@property --silam-anchor-strip-padding-y {
   syntax: '<length>';
   inherits: true;
   initial-value: 0.45rem;
 }
 
-@property --silam-roadmap-step-padding-y {
+@property --silam-anchor-strip-step-padding-y {
   syntax: '<length>';
   inherits: true;
   initial-value: 1rem;
 }
 
-@property --silam-roadmap-step-padding-x {
+@property --silam-anchor-strip-step-padding-x {
   syntax: '<length>';
   inherits: true;
   initial-value: 1rem;
 }
 
-@property --silam-roadmap-step-title-size {
+@property --silam-anchor-strip-step-title-size {
   syntax: '<length>';
   inherits: true;
   initial-value: 1rem;
 }
 
-@property --silam-roadmap-step-version-size {
+@property --silam-anchor-strip-step-version-size {
   syntax: '<length>';
   inherits: true;
   initial-value: 0.76rem;
 }
 
 :global(.container.container--fluid.margin-vert--lg) {
-  --silam-roadmap-page-gutter: 26px;
-  padding-right: var(--silam-roadmap-page-gutter) !important;
-  padding-left: var(--silam-roadmap-page-gutter) !important;
+  --silam-anchor-strip-page-gutter: 26px;
+  padding-right: var(--silam-anchor-strip-page-gutter) !important;
+  padding-left: var(--silam-anchor-strip-page-gutter) !important;
 }
 
 /* Та же настройка нужна для статичного preview, где CSS Modules не обрабатывается сборщиком. */
 .container.container--fluid.margin-vert--lg {
-  --silam-roadmap-page-gutter: 26px;
-  padding-right: var(--silam-roadmap-page-gutter) !important;
-  padding-left: var(--silam-roadmap-page-gutter) !important;
+  --silam-anchor-strip-page-gutter: 26px;
+  padding-right: var(--silam-anchor-strip-page-gutter) !important;
+  padding-left: var(--silam-anchor-strip-page-gutter) !important;
 }
 
 
 /* Настраиваемые отступы для переходов по якорям под navbar + sticky roadmap strip. */
 :global(html) {
-  --silam-roadmap-anchor-default-offset: calc(var(--ifm-navbar-height) + 5.50rem);
-  --silam-roadmap-anchor-release-plan-offset: calc(var(--silam-roadmap-anchor-default-offset) + 6.4rem);
-  --silam-roadmap-anchor-future-backlog-offset: var(--silam-roadmap-anchor-default-offset);
-  --silam-roadmap-anchor-strip-offset: var(--silam-roadmap-anchor-default-offset);
-  scroll-padding-top: var(--silam-roadmap-anchor-default-offset);
+  --silam-anchor-default-offset: calc(var(--ifm-navbar-height) + 5.50rem);
+  --silam-anchor-release-plan-offset: calc(var(--silam-anchor-default-offset) + 6.4rem);
+  --silam-anchor-future-backlog-offset: var(--silam-anchor-default-offset);
+  --silam-anchor-target-strip-offset: var(--silam-anchor-default-offset);
+  scroll-padding-top: var(--silam-anchor-default-offset);
 }
 
 /* Та же настройка нужна для статичного preview, где CSS Modules не обрабатывается сборщиком. */
 html {
-  --silam-roadmap-anchor-default-offset: calc(var(--ifm-navbar-height) + 5.50rem);
-  --silam-roadmap-anchor-release-plan-offset: calc(var(--silam-roadmap-anchor-default-offset) + 6.4rem);
-  --silam-roadmap-anchor-future-backlog-offset: var(--silam-roadmap-anchor-default-offset);
-  --silam-roadmap-anchor-strip-offset: var(--silam-roadmap-anchor-default-offset);
-  scroll-padding-top: var(--silam-roadmap-anchor-default-offset);
+  --silam-anchor-default-offset: calc(var(--ifm-navbar-height) + 5.50rem);
+  --silam-anchor-release-plan-offset: calc(var(--silam-anchor-default-offset) + 6.4rem);
+  --silam-anchor-future-backlog-offset: var(--silam-anchor-default-offset);
+  --silam-anchor-target-strip-offset: var(--silam-anchor-default-offset);
+  scroll-padding-top: var(--silam-anchor-default-offset);
+}
+
+@media (max-width: 640px) and (pointer: coarse) {
+  :global(html) {
+    /* Расстояние скрытия задаём в абсолютной величине, а не в процентах.
+       Так active-brand и его тень точно уходят выше navbar, а glass-слой
+       продолжает плавно сдвигаться, без clip-path и без потери backdrop-filter. */
+    --silam-mobile-navbar-hide-distance: calc(var(--ifm-navbar-height) + 1.75rem);
+    --silam-mobile-navbar-transition: 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  :global(.navbar) {
+    /* Сам navbar остаётся на месте, чтобы не ломать стеклянный ::before-слой
+       и Docusaurus mobile layout. Плавно уезжают только стекло и содержимое. */
+    overflow: visible !important;
+    transition: none;
+    transform: none !important;
+  }
+
+  :global(.navbar)::before,
+  :global(.navbar .navbar__inner),
+  :global(.navbar .navbar__brand),
+  :global(.navbar .navbar__brand.navbar__brand--active),
+  :global(.navbar .navbar__brand.navbar__link--active),
+  :global(.navbar .navbar__brand[aria-current='page']) {
+    transition: transform var(--silam-mobile-navbar-transition);
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+  }
+
+  :global(html[data-anchor-mobile-navbar-hidden='true'] .navbar) {
+    pointer-events: none;
+  }
+
+  :global(html[data-anchor-mobile-navbar-hidden='true'] .navbar)::before,
+  :global(html[data-anchor-mobile-navbar-hidden='true'] .navbar .navbar__inner) {
+    transform: translate3d(0, calc(-1 * var(--silam-mobile-navbar-hide-distance)), 0);
+  }
+
+  :global(html[data-anchor-mobile-navbar-hidden='true'] .navbar .navbar__brand),
+  :global(html[data-anchor-mobile-navbar-hidden='true'] .navbar .navbar__brand.navbar__brand--active),
+  :global(html[data-anchor-mobile-navbar-hidden='true'] .navbar .navbar__brand.navbar__link--active),
+  :global(html[data-anchor-mobile-navbar-hidden='true'] .navbar .navbar__brand[aria-current='page']) {
+    transform: translate3d(0, calc(-1 * var(--silam-mobile-navbar-hide-distance)), 0) !important;
+  }
+
+  /* Та же настройка нужна для статичного preview, где CSS Modules не обрабатывается сборщиком. */
+  html {
+    --silam-mobile-navbar-hide-distance: calc(var(--ifm-navbar-height) + 1.75rem);
+    --silam-mobile-navbar-transition: 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .navbar {
+    overflow: visible !important;
+    transition: none;
+    transform: none !important;
+  }
+
+  .navbar::before,
+  .navbar .navbar__inner,
+  .navbar .navbar__brand,
+  .navbar .navbar__brand.navbar__brand--active,
+  .navbar .navbar__brand.navbar__link--active,
+  .navbar .navbar__brand[aria-current='page'] {
+    transition: transform var(--silam-mobile-navbar-transition);
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+  }
+
+  html[data-anchor-mobile-navbar-hidden='true'] .navbar {
+    pointer-events: none;
+  }
+
+  html[data-anchor-mobile-navbar-hidden='true'] .navbar::before,
+  html[data-anchor-mobile-navbar-hidden='true'] .navbar .navbar__inner {
+    transform: translate3d(0, calc(-1 * var(--silam-mobile-navbar-hide-distance)), 0);
+  }
+
+  html[data-anchor-mobile-navbar-hidden='true'] .navbar .navbar__brand,
+  html[data-anchor-mobile-navbar-hidden='true'] .navbar .navbar__brand.navbar__brand--active,
+  html[data-anchor-mobile-navbar-hidden='true'] .navbar .navbar__brand.navbar__link--active,
+  html[data-anchor-mobile-navbar-hidden='true'] .navbar .navbar__brand[aria-current='page'] {
+    transform: translate3d(0, calc(-1 * var(--silam-mobile-navbar-hide-distance)), 0) !important;
+  }
 }
 
 .sectionHeader,
@@ -85,25 +169,25 @@ html {
 .futureCard,
 .endpointSectionHeader,
 .previewCoverageSectionHeader {
-  scroll-margin-top: var(--silam-roadmap-anchor-default-offset);
+  scroll-margin-top: var(--silam-anchor-default-offset);
 }
 
 :global(#release-plan) {
-  scroll-margin-top: var(--silam-roadmap-anchor-release-plan-offset);
+  scroll-margin-top: var(--silam-anchor-release-plan-offset);
 }
 
 /* Та же настройка нужна для статичного preview. */
 #release-plan {
-  scroll-margin-top: var(--silam-roadmap-anchor-release-plan-offset);
+  scroll-margin-top: var(--silam-anchor-release-plan-offset);
 }
 
 :global(#future-backlog) {
-  scroll-margin-top: var(--silam-roadmap-anchor-future-backlog-offset);
+  scroll-margin-top: var(--silam-anchor-future-backlog-offset);
 }
 
 /* Та же настройка нужна для статичного preview. */
 #future-backlog {
-  scroll-margin-top: var(--silam-roadmap-anchor-future-backlog-offset);
+  scroll-margin-top: var(--silam-anchor-future-backlog-offset);
 }
 
 :global(#v042),
@@ -112,7 +196,7 @@ html {
 :global(#v045),
 :global(#v046),
 :global(#v047) {
-  scroll-margin-top: var(--silam-roadmap-anchor-strip-offset);
+  scroll-margin-top: var(--silam-anchor-target-strip-offset);
 }
 
 /* Та же настройка нужна для статичного preview. */
@@ -122,53 +206,119 @@ html {
 #v045,
 #v046,
 #v047 {
-  scroll-margin-top: var(--silam-roadmap-anchor-strip-offset);
+  scroll-margin-top: var(--silam-anchor-target-strip-offset);
 }
 
 :global(.anchor[id]) {
-  scroll-margin-top: var(--silam-roadmap-anchor-default-offset);
+  scroll-margin-top: var(--silam-anchor-default-offset);
 }
 
 /* Та же настройка нужна для статичного preview. */
 .anchor[id] {
-  scroll-margin-top: var(--silam-roadmap-anchor-default-offset);
+  scroll-margin-top: var(--silam-anchor-default-offset);
 }
 
-.roadmapStripShell {
+.anchorStripLayout {
   position: sticky;
   top: calc(var(--ifm-navbar-height) + 0.5rem);
   z-index: 900;
+  display: flow-root;
   overflow-anchor: none;
   box-sizing: border-box;
   margin: 1.5rem 0 2rem;
-  padding: var(--silam-roadmap-shell-padding-y, 0.45rem) 0;
-  --silam-roadmap-shell-padding-y: 0.45rem;
-  --silam-roadmap-step-min: 132px;
-  --silam-roadmap-strip-gap: 0.85rem;
-  --silam-roadmap-strip-padding-y: 0.45rem;
-  --silam-roadmap-step-padding-y: 1rem;
-  --silam-roadmap-step-padding-x: 1rem;
-  --silam-roadmap-step-title-size: 1rem;
-  --silam-roadmap-step-version-size: 0.76rem;
-  --silam-roadmap-navbar-top-shadow: 0 -18px 46px -24px rgb(9 74 72 / 0.18);
+}
+
+.anchorStripLayout[data-anchor-strip-height-locked='true'] {
+  height: var(--anchor-strip-locked-height);
+  min-height: var(--anchor-strip-locked-height);
+}
+
+
+@media (max-width: 640px) and (pointer: coarse) {
+  .anchorStripLayout {
+    position: relative;
+    top: auto;
+    z-index: 950;
+    height: var(--anchor-strip-mobile-placeholder-height, auto);
+    min-height: var(--anchor-strip-mobile-placeholder-height, auto);
+    margin-bottom: calc(2rem + 12px + env(safe-area-inset-bottom));
+    overflow: visible;
+    --silam-anchor-strip-mobile-bottom-gap: 12px;
+    --silam-anchor-strip-mobile-dock-transition: 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition:
+      height var(--silam-anchor-strip-mobile-dock-transition),
+      min-height var(--silam-anchor-strip-mobile-dock-transition),
+      margin-bottom var(--silam-anchor-strip-mobile-dock-transition);
+  }
+
+  .anchorStripLayout[data-anchor-strip-mobile-bottom-docked='true'] {
+    height: 0;
+    min-height: 0;
+    margin-bottom: 0;
+  }
+
+  .anchorStripLayout[data-anchor-strip-mobile-bottom-returning='true'] {
+    height: var(--anchor-strip-mobile-placeholder-height, 0px);
+    min-height: var(--anchor-strip-mobile-placeholder-height, 0px);
+    margin-bottom: calc(2rem + 12px + env(safe-area-inset-bottom));
+  }
+
+  .anchorStripLayout[data-anchor-strip-mobile-bottom-docked='true'] .anchorStripShell {
+    position: fixed;
+    right: auto;
+    bottom: calc(var(--silam-anchor-strip-mobile-bottom-gap, 12px) + env(safe-area-inset-bottom));
+    left: var(--anchor-strip-mobile-left, var(--silam-anchor-strip-page-gutter, 26px));
+    z-index: 950;
+    width: var(--anchor-strip-mobile-width, calc(100vw - (var(--silam-anchor-strip-page-gutter, 26px) * 2)));
+    margin: 0;
+  }
+
+
+  .anchorStripLayout[data-anchor-strip-mobile-bottom-settling='true'] .anchorStripShell {
+    transform: translate3d(0, var(--anchor-strip-mobile-return-shift, 0px), 0);
+    transition: transform var(--silam-anchor-strip-mobile-dock-transition);
+    will-change: transform;
+  }
+
+  .anchorStripLayout[data-anchor-strip-height-locked='true'] {
+    height: var(--anchor-strip-locked-height);
+    min-height: var(--anchor-strip-locked-height);
+  }
+}
+
+.anchorStripShell {
+  position: relative;
+  overflow-anchor: none;
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--silam-anchor-strip-shell-padding-y, 0.45rem) 0;
+  --silam-anchor-strip-shell-padding-y: 0.45rem;
+  --silam-anchor-strip-step-min: 132px;
+  --silam-anchor-strip-gap: 0.85rem;
+  --silam-anchor-strip-padding-y: 0.45rem;
+  --silam-anchor-strip-step-padding-y: 1rem;
+  --silam-anchor-strip-step-padding-x: 1rem;
+  --silam-anchor-strip-step-title-size: 1rem;
+  --silam-anchor-strip-step-version-size: 0.76rem;
+  --silam-anchor-strip-navbar-top-shadow: 0 -18px 46px -24px rgb(9 74 72 / 0.18);
   transition:
     padding 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    --silam-roadmap-shell-padding-y 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    --silam-roadmap-step-min 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    --silam-roadmap-strip-gap 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    --silam-roadmap-strip-padding-y 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    --silam-roadmap-step-padding-y 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    --silam-roadmap-step-padding-x 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    --silam-roadmap-step-title-size 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    --silam-roadmap-step-version-size 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    --silam-anchor-strip-shell-padding-y 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-anchor-strip-step-min 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-anchor-strip-gap 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-anchor-strip-padding-y 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-anchor-strip-step-padding-y 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-anchor-strip-step-padding-x 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-anchor-strip-step-title-size 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    --silam-anchor-strip-step-version-size 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-html[data-theme='dark'] .roadmapStripShell {
-  --silam-roadmap-navbar-top-shadow: 0 -18px 48px -24px rgb(0 0 0 / 0.34);
+html[data-theme='dark'] .anchorStripShell {
+  --silam-anchor-strip-navbar-top-shadow: 0 -18px 48px -24px rgb(0 0 0 / 0.34);
 }
 
 
-.roadmapStripShell::before {
+.anchorStripShell::before {
   position: absolute;
   top: 0;
   right: calc(50% - 50vw);
@@ -183,50 +333,50 @@ html[data-theme='dark'] .roadmapStripShell {
   background-color: var(--silam-glass-surface);
   background-image: none;
   box-shadow:
-    var(--silam-roadmap-navbar-top-shadow),
+    var(--silam-anchor-strip-navbar-top-shadow),
     0 10px 18px -18px rgb(var(--silam-accent-blue-rgb) / 0.32);
   backdrop-filter: var(--silam-glass-filter-soft);
   -webkit-backdrop-filter: var(--silam-glass-filter-soft);
 }
 
 @media (max-width: 420px) {
-  .roadmapStripShell::before {
-    right: calc(var(--silam-roadmap-page-gutter, 26px) * -1);
-    left: calc(var(--silam-roadmap-page-gutter, 26px) * -1);
+  .anchorStripShell::before {
+    right: calc(var(--silam-anchor-strip-page-gutter, 26px) * -1);
+    left: calc(var(--silam-anchor-strip-page-gutter, 26px) * -1);
   }
 }
 
-.roadmapStripFrame {
+.anchorStripFrame {
   position: relative;
   z-index: 1;
   overflow-anchor: none;
   min-width: 0;
   max-width: 100%;
-  margin-top: calc(var(--silam-roadmap-shell-padding-y, 0.45rem) * -1);
+  margin-top: calc(var(--silam-anchor-strip-shell-padding-y, 0.45rem) * -1);
   margin-right: 0;
-  margin-bottom: calc(var(--silam-roadmap-shell-padding-y, 0.45rem) * -1);
+  margin-bottom: calc(var(--silam-anchor-strip-shell-padding-y, 0.45rem) * -1);
   margin-left: 0;
-  padding-top: var(--silam-roadmap-shell-padding-y, 0.45rem);
+  padding-top: var(--silam-anchor-strip-shell-padding-y, 0.45rem);
   padding-right: 0;
-  padding-bottom: var(--silam-roadmap-shell-padding-y, 0.45rem);
+  padding-bottom: var(--silam-anchor-strip-shell-padding-y, 0.45rem);
   padding-left: 0;
   overflow-x: visible;
   overflow-y: visible;
-  --silam-roadmap-edge-icon-zone: min(28px, var(--silam-roadmap-page-gutter, 26px));
-  --silam-roadmap-edge-fade-zone: clamp(42px, 8vw, 58px);
-  --silam-roadmap-edge-fade-dead-zone: 15px;
-  --silam-roadmap-edge-fade-soft-stop: 24px;
-  --silam-roadmap-edge-fade-mid-stop: 39px;
-  --silam-roadmap-edge-fade-inset-y: 1px;
-  --silam-roadmap-edge-divider-inset-top: 1px;
-  --silam-roadmap-edge-divider-inset-bottom: 0px;
+  --silam-anchor-strip-edge-icon-zone: min(28px, var(--silam-anchor-strip-page-gutter, 26px));
+  --silam-anchor-strip-edge-fade-zone: clamp(42px, 8vw, 58px);
+  --silam-anchor-strip-edge-fade-dead-zone: 15px;
+  --silam-anchor-strip-edge-fade-soft-stop: 24px;
+  --silam-anchor-strip-edge-fade-mid-stop: 39px;
+  --silam-anchor-strip-edge-fade-inset-y: 1px;
+  --silam-anchor-strip-edge-divider-inset-top: 1px;
+  --silam-anchor-strip-edge-divider-inset-bottom: 0px;
   transition:
     margin 320ms cubic-bezier(0.22, 1, 0.36, 1),
     padding 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 
-.roadmapStripScroller {
+.anchorStripScroller {
   position: relative;
   overflow-anchor: none;
   min-width: 0;
@@ -236,78 +386,78 @@ html[data-theme='dark'] .roadmapStripShell {
   overscroll-behavior-x: contain;
   touch-action: pan-y;
   cursor: grab;
-  --silam-roadmap-left-fade-edge-alpha: 1;
-  --silam-roadmap-left-fade-soft-alpha: 1;
-  --silam-roadmap-left-fade-mid-alpha: 1;
-  --silam-roadmap-left-fade-dead-size: 0px;
-  --silam-roadmap-left-fade-soft-size: 0px;
-  --silam-roadmap-left-fade-mid-size: 0px;
-  --silam-roadmap-left-fade-size: 0px;
-  --silam-roadmap-right-fade-edge-alpha: 1;
-  --silam-roadmap-right-fade-soft-alpha: 1;
-  --silam-roadmap-right-fade-mid-alpha: 1;
-  --silam-roadmap-right-fade-dead-size: 0px;
-  --silam-roadmap-right-fade-soft-size: 0px;
-  --silam-roadmap-right-fade-mid-size: 0px;
-  --silam-roadmap-right-fade-size: 0px;
+  --silam-anchor-strip-left-fade-edge-alpha: 1;
+  --silam-anchor-strip-left-fade-soft-alpha: 1;
+  --silam-anchor-strip-left-fade-mid-alpha: 1;
+  --silam-anchor-strip-left-fade-dead-size: 0px;
+  --silam-anchor-strip-left-fade-soft-size: 0px;
+  --silam-anchor-strip-left-fade-mid-size: 0px;
+  --silam-anchor-strip-left-fade-size: 0px;
+  --silam-anchor-strip-right-fade-edge-alpha: 1;
+  --silam-anchor-strip-right-fade-soft-alpha: 1;
+  --silam-anchor-strip-right-fade-mid-alpha: 1;
+  --silam-anchor-strip-right-fade-dead-size: 0px;
+  --silam-anchor-strip-right-fade-soft-size: 0px;
+  --silam-anchor-strip-right-fade-mid-size: 0px;
+  --silam-anchor-strip-right-fade-size: 0px;
   -webkit-mask-image: linear-gradient(
     90deg,
-    rgb(0 0 0 / var(--silam-roadmap-left-fade-edge-alpha)) 0,
-    rgb(0 0 0 / var(--silam-roadmap-left-fade-edge-alpha)) var(--silam-roadmap-left-fade-dead-size),
-    rgb(0 0 0 / var(--silam-roadmap-left-fade-soft-alpha)) var(--silam-roadmap-left-fade-soft-size),
-    rgb(0 0 0 / var(--silam-roadmap-left-fade-mid-alpha)) var(--silam-roadmap-left-fade-mid-size),
-    black var(--silam-roadmap-left-fade-size),
-    black calc(100% - var(--silam-roadmap-right-fade-size)),
-    rgb(0 0 0 / var(--silam-roadmap-right-fade-mid-alpha)) calc(100% - var(--silam-roadmap-right-fade-mid-size)),
-    rgb(0 0 0 / var(--silam-roadmap-right-fade-soft-alpha)) calc(100% - var(--silam-roadmap-right-fade-soft-size)),
-    rgb(0 0 0 / var(--silam-roadmap-right-fade-edge-alpha)) calc(100% - var(--silam-roadmap-right-fade-dead-size)),
-    rgb(0 0 0 / var(--silam-roadmap-right-fade-edge-alpha)) 100%
+    rgb(0 0 0 / var(--silam-anchor-strip-left-fade-edge-alpha)) 0,
+    rgb(0 0 0 / var(--silam-anchor-strip-left-fade-edge-alpha)) var(--silam-anchor-strip-left-fade-dead-size),
+    rgb(0 0 0 / var(--silam-anchor-strip-left-fade-soft-alpha)) var(--silam-anchor-strip-left-fade-soft-size),
+    rgb(0 0 0 / var(--silam-anchor-strip-left-fade-mid-alpha)) var(--silam-anchor-strip-left-fade-mid-size),
+    black var(--silam-anchor-strip-left-fade-size),
+    black calc(100% - var(--silam-anchor-strip-right-fade-size)),
+    rgb(0 0 0 / var(--silam-anchor-strip-right-fade-mid-alpha)) calc(100% - var(--silam-anchor-strip-right-fade-mid-size)),
+    rgb(0 0 0 / var(--silam-anchor-strip-right-fade-soft-alpha)) calc(100% - var(--silam-anchor-strip-right-fade-soft-size)),
+    rgb(0 0 0 / var(--silam-anchor-strip-right-fade-edge-alpha)) calc(100% - var(--silam-anchor-strip-right-fade-dead-size)),
+    rgb(0 0 0 / var(--silam-anchor-strip-right-fade-edge-alpha)) 100%
   );
   mask-image: linear-gradient(
     90deg,
-    rgb(0 0 0 / var(--silam-roadmap-left-fade-edge-alpha)) 0,
-    rgb(0 0 0 / var(--silam-roadmap-left-fade-edge-alpha)) var(--silam-roadmap-left-fade-dead-size),
-    rgb(0 0 0 / var(--silam-roadmap-left-fade-soft-alpha)) var(--silam-roadmap-left-fade-soft-size),
-    rgb(0 0 0 / var(--silam-roadmap-left-fade-mid-alpha)) var(--silam-roadmap-left-fade-mid-size),
-    black var(--silam-roadmap-left-fade-size),
-    black calc(100% - var(--silam-roadmap-right-fade-size)),
-    rgb(0 0 0 / var(--silam-roadmap-right-fade-mid-alpha)) calc(100% - var(--silam-roadmap-right-fade-mid-size)),
-    rgb(0 0 0 / var(--silam-roadmap-right-fade-soft-alpha)) calc(100% - var(--silam-roadmap-right-fade-soft-size)),
-    rgb(0 0 0 / var(--silam-roadmap-right-fade-edge-alpha)) calc(100% - var(--silam-roadmap-right-fade-dead-size)),
-    rgb(0 0 0 / var(--silam-roadmap-right-fade-edge-alpha)) 100%
+    rgb(0 0 0 / var(--silam-anchor-strip-left-fade-edge-alpha)) 0,
+    rgb(0 0 0 / var(--silam-anchor-strip-left-fade-edge-alpha)) var(--silam-anchor-strip-left-fade-dead-size),
+    rgb(0 0 0 / var(--silam-anchor-strip-left-fade-soft-alpha)) var(--silam-anchor-strip-left-fade-soft-size),
+    rgb(0 0 0 / var(--silam-anchor-strip-left-fade-mid-alpha)) var(--silam-anchor-strip-left-fade-mid-size),
+    black var(--silam-anchor-strip-left-fade-size),
+    black calc(100% - var(--silam-anchor-strip-right-fade-size)),
+    rgb(0 0 0 / var(--silam-anchor-strip-right-fade-mid-alpha)) calc(100% - var(--silam-anchor-strip-right-fade-mid-size)),
+    rgb(0 0 0 / var(--silam-anchor-strip-right-fade-soft-alpha)) calc(100% - var(--silam-anchor-strip-right-fade-soft-size)),
+    rgb(0 0 0 / var(--silam-anchor-strip-right-fade-edge-alpha)) calc(100% - var(--silam-anchor-strip-right-fade-dead-size)),
+    rgb(0 0 0 / var(--silam-anchor-strip-right-fade-edge-alpha)) 100%
   );
 }
 
-.roadmapStripFrame:has(.roadmapStripArrowLeft:not(:disabled)) .roadmapStripScroller {
-  --silam-roadmap-left-fade-edge-alpha: 0;
-  --silam-roadmap-left-fade-soft-alpha: 0.18;
-  --silam-roadmap-left-fade-mid-alpha: 0.68;
-  --silam-roadmap-left-fade-dead-size: var(--silam-roadmap-edge-fade-dead-zone);
-  --silam-roadmap-left-fade-soft-size: var(--silam-roadmap-edge-fade-soft-stop);
-  --silam-roadmap-left-fade-mid-size: var(--silam-roadmap-edge-fade-mid-stop);
-  --silam-roadmap-left-fade-size: var(--silam-roadmap-edge-fade-zone);
+.anchorStripFrame:has(.anchorStripArrowLeft:not(:disabled)) .anchorStripScroller {
+  --silam-anchor-strip-left-fade-edge-alpha: 0;
+  --silam-anchor-strip-left-fade-soft-alpha: 0.18;
+  --silam-anchor-strip-left-fade-mid-alpha: 0.68;
+  --silam-anchor-strip-left-fade-dead-size: var(--silam-anchor-strip-edge-fade-dead-zone);
+  --silam-anchor-strip-left-fade-soft-size: var(--silam-anchor-strip-edge-fade-soft-stop);
+  --silam-anchor-strip-left-fade-mid-size: var(--silam-anchor-strip-edge-fade-mid-stop);
+  --silam-anchor-strip-left-fade-size: var(--silam-anchor-strip-edge-fade-zone);
 }
 
-.roadmapStripFrame:has(.roadmapStripArrowRight:not(:disabled)) .roadmapStripScroller {
-  --silam-roadmap-right-fade-edge-alpha: 0;
-  --silam-roadmap-right-fade-soft-alpha: 0.18;
-  --silam-roadmap-right-fade-mid-alpha: 0.68;
-  --silam-roadmap-right-fade-dead-size: var(--silam-roadmap-edge-fade-dead-zone);
-  --silam-roadmap-right-fade-soft-size: var(--silam-roadmap-edge-fade-soft-stop);
-  --silam-roadmap-right-fade-mid-size: var(--silam-roadmap-edge-fade-mid-stop);
-  --silam-roadmap-right-fade-size: var(--silam-roadmap-edge-fade-zone);
+.anchorStripFrame:has(.anchorStripArrowRight:not(:disabled)) .anchorStripScroller {
+  --silam-anchor-strip-right-fade-edge-alpha: 0;
+  --silam-anchor-strip-right-fade-soft-alpha: 0.18;
+  --silam-anchor-strip-right-fade-mid-alpha: 0.68;
+  --silam-anchor-strip-right-fade-dead-size: var(--silam-anchor-strip-edge-fade-dead-zone);
+  --silam-anchor-strip-right-fade-soft-size: var(--silam-anchor-strip-edge-fade-soft-stop);
+  --silam-anchor-strip-right-fade-mid-size: var(--silam-anchor-strip-edge-fade-mid-stop);
+  --silam-anchor-strip-right-fade-size: var(--silam-anchor-strip-edge-fade-zone);
 }
 
-.roadmapStrip {
+.anchorStrip {
   display: grid;
   overflow-anchor: none;
   width: 100%;
   min-width: 0;
-  grid-template-columns: repeat(7, minmax(var(--silam-roadmap-step-min, 132px), 1fr));
-  gap: var(--silam-roadmap-strip-gap, 0.85rem);
-  padding: var(--silam-roadmap-strip-padding-y, 0.45rem) 0;
+  grid-template-columns: repeat(7, minmax(var(--silam-anchor-strip-step-min, 132px), 1fr));
+  gap: var(--silam-anchor-strip-gap, 0.85rem);
+  padding: var(--silam-anchor-strip-padding-y, 0.45rem) 0;
   overflow: visible;
-  transform: translate3d(calc(var(--roadmap-strip-offset, 0px) * -1), 0, 0);
+  transform: translate3d(calc(var(--anchor-strip-offset, 0px) * -1), 0, 0);
   transition:
     grid-template-columns 320ms cubic-bezier(0.22, 1, 0.36, 1),
     gap 320ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -315,26 +465,26 @@ html[data-theme='dark'] .roadmapStripShell {
     transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.roadmapStripFrame[data-roadmap-strip-dragging='true'] .roadmapStripScroller {
+.anchorStripFrame[data-anchor-strip-dragging='true'] .anchorStripScroller {
   cursor: grabbing;
 }
 
-.roadmapStripFrame[data-roadmap-strip-dragging='true'] .roadmapStrip {
+.anchorStripFrame[data-anchor-strip-dragging='true'] .anchorStrip {
   transition:
     grid-template-columns 320ms cubic-bezier(0.22, 1, 0.36, 1),
     gap 320ms cubic-bezier(0.22, 1, 0.36, 1),
     padding 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.roadmapStripFrame[data-roadmap-strip-dragging='true'] .step {
+.anchorStripFrame[data-anchor-strip-dragging='true'] .step {
   pointer-events: none;
   user-select: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .roadmapStrip,
-  .roadmapStripShell,
-  .roadmapStripFrame,
+  .anchorStrip,
+  .anchorStripShell,
+  .anchorStripFrame,
   .step,
   .step span,
   .step strong,
@@ -346,43 +496,43 @@ html[data-theme='dark'] .roadmapStripShell {
 
 /* На время программного перехода по якорю отключаем анимацию сжатия,
    чтобы итоговая позиция считалась уже от финальной высоты sticky-полосы. */
-.roadmapStripShell[data-roadmap-anchor-settling='true'],
-.roadmapStripShell[data-roadmap-anchor-settling='true'] .roadmapStripFrame,
-.roadmapStripShell[data-roadmap-anchor-settling='true'] .roadmapStrip,
-.roadmapStripShell[data-roadmap-anchor-settling='true'] .step,
-.roadmapStripShell[data-roadmap-anchor-settling='true'] .step span,
-.roadmapStripShell[data-roadmap-anchor-settling='true'] .step strong,
-.roadmapStripShell[data-roadmap-anchor-settling='true'] .step small {
+.anchorStripShell[data-anchor-settling='true'],
+.anchorStripShell[data-anchor-settling='true'] .anchorStripFrame,
+.anchorStripShell[data-anchor-settling='true'] .anchorStrip,
+.anchorStripShell[data-anchor-settling='true'] .step,
+.anchorStripShell[data-anchor-settling='true'] .step span,
+.anchorStripShell[data-anchor-settling='true'] .step strong,
+.anchorStripShell[data-anchor-settling='true'] .step small {
   transition: none !important;
 }
 
 
-.roadmapStripShell[data-roadmap-strip-compact='true'] {
-  --silam-roadmap-shell-padding-y: 0.22rem;
-  --silam-roadmap-step-min: 112px;
-  --silam-roadmap-strip-gap: 0.55rem;
-  --silam-roadmap-strip-padding-y: 0.28rem;
-  --silam-roadmap-step-padding-y: 0.55rem;
-  --silam-roadmap-step-padding-x: 0.72rem;
-  --silam-roadmap-step-title-size: 0.92rem;
-  --silam-roadmap-step-version-size: 0.68rem;
-  padding-top: var(--silam-roadmap-shell-padding-y);
-  padding-bottom: var(--silam-roadmap-shell-padding-y);
+.anchorStripShell[data-anchor-strip-compact='true'] {
+  --silam-anchor-strip-shell-padding-y: 0.22rem;
+  --silam-anchor-strip-step-min: 112px;
+  --silam-anchor-strip-gap: 0.55rem;
+  --silam-anchor-strip-padding-y: 0.28rem;
+  --silam-anchor-strip-step-padding-y: 0.55rem;
+  --silam-anchor-strip-step-padding-x: 0.72rem;
+  --silam-anchor-strip-step-title-size: 0.92rem;
+  --silam-anchor-strip-step-version-size: 0.68rem;
+  padding-top: var(--silam-anchor-strip-shell-padding-y);
+  padding-bottom: var(--silam-anchor-strip-shell-padding-y);
 }
 
-.roadmapStripShell[data-roadmap-strip-compact='true'] .step {
+.anchorStripShell[data-anchor-strip-compact='true'] .step {
   border-radius: var(--silam-radius-lg);
 }
 
-.roadmapStripShell[data-roadmap-strip-compact='true'] .step:hover {
+.anchorStripShell[data-anchor-strip-compact='true'] .step:hover {
   transform: none;
 }
 
-.roadmapStripShell[data-roadmap-strip-compact='true'] .step span {
+.anchorStripShell[data-anchor-strip-compact='true'] .step span {
   line-height: 1.05;
 }
 
-.roadmapStripShell[data-roadmap-strip-compact='true'] .step strong {
+.anchorStripShell[data-anchor-strip-compact='true'] .step strong {
   margin-top: 0.18rem;
   overflow: hidden;
   line-height: 1.08;
@@ -390,7 +540,7 @@ html[data-theme='dark'] .roadmapStripShell {
   white-space: nowrap;
 }
 
-.roadmapStripShell[data-roadmap-strip-compact='true'] .step small {
+.anchorStripShell[data-anchor-strip-compact='true'] .step small {
   max-height: 0;
   margin-top: 0;
   opacity: 0;
@@ -399,14 +549,14 @@ html[data-theme='dark'] .roadmapStripShell {
 }
 
 
-.roadmapStripArrow {
+.anchorStripArrow {
   position: absolute;
   top: 0;
   bottom: 0;
   z-index: 3;
   display: inline-flex;
   align-items: center;
-  width: calc(var(--silam-roadmap-edge-icon-zone) + var(--silam-roadmap-edge-fade-zone));
+  width: calc(var(--silam-anchor-strip-edge-icon-zone) + var(--silam-anchor-strip-edge-fade-zone));
   height: auto;
   padding: 0;
   border: 0;
@@ -421,44 +571,44 @@ html[data-theme='dark'] .roadmapStripShell {
     filter 160ms ease;
 }
 
-.roadmapStripArrow::before,
-.roadmapStripArrow::after {
+.anchorStripArrow::before,
+.anchorStripArrow::after {
   position: absolute;
   pointer-events: none;
   content: '';
 }
 
-.roadmapStripArrow::before {
-  top: var(--silam-roadmap-edge-divider-inset-top, 1px);
-  bottom: var(--silam-roadmap-edge-divider-inset-bottom, 0px);
+.anchorStripArrow::before {
+  top: var(--silam-anchor-strip-edge-divider-inset-top, 1px);
+  bottom: var(--silam-anchor-strip-edge-divider-inset-bottom, 0px);
   z-index: 1;
   width: 1px;
   background: var(--silam-card-border);
 }
 
-.roadmapStripArrow::after {
-  top: var(--silam-roadmap-edge-fade-inset-y, 1px);
-  bottom: var(--silam-roadmap-edge-fade-inset-y, 1px);
+.anchorStripArrow::after {
+  top: var(--silam-anchor-strip-edge-fade-inset-y, 1px);
+  bottom: var(--silam-anchor-strip-edge-fade-inset-y, 1px);
   z-index: 0;
-  width: var(--silam-roadmap-edge-fade-zone);
+  width: var(--silam-anchor-strip-edge-fade-zone);
   transition:
     background 160ms ease,
     opacity 160ms ease;
 }
 
-.roadmapStripArrow:hover:not(:disabled),
-.roadmapStripArrow:focus-visible:not(:disabled),
-.roadmapStripArrow:active:not(:disabled) {
+.anchorStripArrow:hover:not(:disabled),
+.anchorStripArrow:focus-visible:not(:disabled),
+.anchorStripArrow:active:not(:disabled) {
   color: var(--silam-accent-green);
   filter: drop-shadow(0 0 10px rgb(var(--silam-accent-green-rgb) / 0.24));
 }
 
-.roadmapStripArrow:focus-visible {
+.anchorStripArrow:focus-visible {
   outline: 2px solid var(--silam-accent-blue);
   outline-offset: -3px;
 }
 
-.roadmapStripArrow svg {
+.anchorStripArrow svg {
   position: relative;
   z-index: 2;
   width: 1.45rem;
@@ -466,18 +616,18 @@ html[data-theme='dark'] .roadmapStripShell {
   fill: currentColor;
 }
 
-.roadmapStripArrowLeft {
-  left: calc(var(--silam-roadmap-edge-icon-zone, 26px) * -1);
+.anchorStripArrowLeft {
+  left: calc(var(--silam-anchor-strip-edge-icon-zone, 26px) * -1);
   justify-content: flex-start;
   padding-left: 0.12rem;
 }
 
-.roadmapStripArrowLeft::before {
-  left: var(--silam-roadmap-edge-icon-zone);
+.anchorStripArrowLeft::before {
+  left: var(--silam-anchor-strip-edge-icon-zone);
 }
 
-.roadmapStripArrowLeft::after {
-  left: var(--silam-roadmap-edge-icon-zone);
+.anchorStripArrowLeft::after {
+  left: var(--silam-anchor-strip-edge-icon-zone);
   background: linear-gradient(
     90deg,
     rgb(var(--silam-accent-blue-rgb) / 0.055) 0%,
@@ -487,18 +637,18 @@ html[data-theme='dark'] .roadmapStripShell {
 }
 
 
-.roadmapStripArrowRight {
-  right: calc(var(--silam-roadmap-edge-icon-zone, 26px) * -1);
+.anchorStripArrowRight {
+  right: calc(var(--silam-anchor-strip-edge-icon-zone, 26px) * -1);
   justify-content: flex-end;
   padding-right: 0.12rem;
 }
 
-.roadmapStripArrowRight::before {
-  right: var(--silam-roadmap-edge-icon-zone);
+.anchorStripArrowRight::before {
+  right: var(--silam-anchor-strip-edge-icon-zone);
 }
 
-.roadmapStripArrowRight::after {
-  right: var(--silam-roadmap-edge-icon-zone);
+.anchorStripArrowRight::after {
+  right: var(--silam-anchor-strip-edge-icon-zone);
   background: linear-gradient(
     270deg,
     rgb(var(--silam-accent-blue-rgb) / 0.055) 0%,
@@ -508,8 +658,8 @@ html[data-theme='dark'] .roadmapStripShell {
 }
 
 
-.roadmapStripFrame[data-roadmap-strip-overflow='false'] .roadmapStripArrow,
-.roadmapStripArrow:disabled {
+.anchorStripFrame[data-anchor-strip-overflow='false'] .anchorStripArrow,
+.anchorStripArrow:disabled {
   opacity: 0;
   pointer-events: none;
 }
@@ -517,8 +667,8 @@ html[data-theme='dark'] .roadmapStripShell {
 
 .step {
   position: relative;
-  min-width: var(--silam-roadmap-step-min, 132px);
-  padding: var(--silam-roadmap-step-padding-y, 1rem) var(--silam-roadmap-step-padding-x, 1rem);
+  min-width: var(--silam-anchor-strip-step-min, 132px);
+  padding: var(--silam-anchor-strip-step-padding-y, 1rem) var(--silam-anchor-strip-step-padding-x, 1rem);
   overflow: hidden;
   border: 1px solid var(--silam-glass-border);
   border-radius: var(--silam-radius-xl);
@@ -570,7 +720,7 @@ html[data-theme='dark'] .roadmapStripShell {
 
 .step span {
   color: var(--ifm-color-primary-dark);
-  font-size: var(--silam-roadmap-step-version-size, 0.76rem);
+  font-size: var(--silam-anchor-strip-step-version-size, 0.76rem);
   font-weight: 800;
   line-height: 1.12;
   letter-spacing: 0.04em;
@@ -582,7 +732,7 @@ html[data-theme='dark'] .roadmapStripShell {
 
 .step strong {
   margin-top: 0.35rem;
-  font-size: var(--silam-roadmap-step-title-size, 1rem);
+  font-size: var(--silam-anchor-strip-step-title-size, 1rem);
   transition:
     margin 320ms cubic-bezier(0.22, 1, 0.36, 1),
     font-size 320ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -753,19 +903,19 @@ html[data-theme='dark'] .activeStep:hover {
   transform: translate3d(-115%, 0, 0) skewX(-14deg);
 }
 
-.releaseCard[data-roadmap-anchor-highlight='true'] {
-  animation-name: silamRoadmapAnchorBorderPulse;
+.releaseCard[data-anchor-highlight='true'] {
+  animation-name: silamAnchorHighlightBorderPulse;
   animation-duration: 1150ms;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.releaseCard[data-roadmap-anchor-highlight='true']::after {
-  animation-name: silamRoadmapAnchorGradientSweep;
+.releaseCard[data-anchor-highlight='true']::after {
+  animation-name: silamAnchorHighlightGradientSweep;
   animation-duration: 1150ms;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes silamRoadmapAnchorBorderPulse {
+@keyframes silamAnchorHighlightBorderPulse {
   0%,
   100% {
     border-color: var(--silam-card-border);
@@ -777,7 +927,7 @@ html[data-theme='dark'] .activeStep:hover {
   }
 }
 
-@keyframes silamRoadmapAnchorGradientSweep {
+@keyframes silamAnchorHighlightGradientSweep {
   0% {
     opacity: 0;
     transform: translate3d(-115%, 0, 0) skewX(-14deg);
@@ -798,12 +948,12 @@ html[data-theme='dark'] .activeStep:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .releaseCard[data-roadmap-anchor-highlight='true'] {
+  .releaseCard[data-anchor-highlight='true'] {
     border-color: rgb(var(--silam-accent-mint-rgb) / 0.56);
     animation: none;
   }
 
-  .releaseCard[data-roadmap-anchor-highlight='true']::after {
+  .releaseCard[data-anchor-highlight='true']::after {
     display: none;
     animation: none;
   }

@@ -498,7 +498,8 @@ div[class^='codeBlockContainer_'] {
   border: 0 !important;
   border-radius: var(--silam-radius-pill) !important;
   color: var(--silam-accent-green) !important;
-  overflow: hidden !important;
+  /* Не обрезаем текстовое свечение brand: иначе glow принимает форму контейнера. */
+  overflow: visible !important;
   isolation: isolate;
   outline: 0 !important;
   background: transparent !important;
@@ -664,6 +665,37 @@ html[data-theme='dark'] .navbar-sidebar__brand .navbar__brand:focus-visible {
   background: none !important;
   -webkit-text-fill-color: var(--silam-text-inverse);
   filter: none !important;
+}
+
+
+/* Финальный страховочный слой для пассивного brand: контейнер остаётся полностью прозрачным,
+   а мягкий акцент живёт только на тексте. Hover и active-состояния выше не затрагиваются. */
+.navbar__brand:not(:hover):not(:focus-visible):not(:active):not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active),
+.navbar-sidebar__brand .navbar__brand:not(:hover):not(:focus-visible):not(:active):not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active) {
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+.navbar__brand:not(:hover):not(:focus-visible):not(:active):not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active)::before,
+.navbar__brand:not(:hover):not(:focus-visible):not(:active):not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active)::after,
+.navbar-sidebar__brand .navbar__brand:not(:hover):not(:focus-visible):not(:active):not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active)::before,
+.navbar-sidebar__brand .navbar__brand:not(:hover):not(:focus-visible):not(:active):not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active)::after {
+  display: none !important;
+  content: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.navbar__brand:not(:hover):not(:focus-visible):not(:active):not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active) .navbar__title,
+.navbar-sidebar__brand .navbar__brand:not(:hover):not(:focus-visible):not(:active):not([aria-current='page']):not(.navbar__brand--active):not(.navbar__link--active) .navbar__title {
+  filter:
+    drop-shadow(0 0 7px rgb(var(--silam-accent-green-rgb) / 0.22))
+    drop-shadow(0 0 14px rgb(var(--silam-accent-blue-rgb) / 0.12));
 }
 
 .navbar__link,

@@ -19,20 +19,62 @@
   padding-left: var(--silam-home-page-gutter) !important;
 }
 
+/* Настраиваемые отступы для переходов по якорям на главной странице. */
 :global(html) {
-  --silam-home-anchor-offset: calc(var(--ifm-navbar-height) + 5.65rem);
-  scroll-padding-top: var(--silam-home-anchor-offset);
+  /*
+   * #overview соответствует активной кнопке step activeStep и сохраняет старую посадку.
+   * Остальные секции соответствуют обычным step и используют посадку как у roadmap #future-backlog.
+   */
+  --silam-home-default-offset: calc(var(--ifm-navbar-height) + 5.50rem);
+  --silam-home-active-anchor-offset: calc(var(--ifm-navbar-height) + 5.65rem);
+  --silam-home-step-anchor-offset: var(--silam-home-default-offset);
+  --silam-home-anchor-offset: var(--silam-home-step-anchor-offset);
+  scroll-padding-top: var(--silam-home-step-anchor-offset);
 }
 
-.homeSectionAnchor,
-#overview,
+/* Та же настройка нужна для статичного preview, где CSS Modules не обрабатывается сборщиком. */
+html {
+  /*
+   * #overview соответствует активной кнопке step activeStep и сохраняет старую посадку.
+   * Остальные секции соответствуют обычным step и используют посадку как у roadmap #future-backlog.
+   */
+  --silam-home-default-offset: calc(var(--ifm-navbar-height) + 5.50rem);
+  --silam-home-active-anchor-offset: calc(var(--ifm-navbar-height) + 5.65rem);
+  --silam-home-step-anchor-offset: var(--silam-home-default-offset);
+  --silam-home-anchor-offset: var(--silam-home-step-anchor-offset);
+  scroll-padding-top: var(--silam-home-step-anchor-offset);
+}
+
+.homeSectionAnchor {
+  scroll-margin-top: var(--silam-home-step-anchor-offset);
+}
+
+:global(#overview) {
+  scroll-margin-top: var(--silam-home-active-anchor-offset);
+}
+
+/* Та же настройка нужна для статичного preview. */
+#overview {
+  scroll-margin-top: var(--silam-home-active-anchor-offset);
+}
+
+:global(#why),
+:global(#features),
+:global(#forecast),
+:global(#coverage),
+:global(#automations),
+:global(#start) {
+  scroll-margin-top: var(--silam-home-step-anchor-offset);
+}
+
+/* Та же настройка нужна для статичного preview. */
 #why,
 #features,
 #forecast,
 #coverage,
 #automations,
 #start {
-  scroll-margin-top: var(--silam-home-anchor-offset);
+  scroll-margin-top: var(--silam-home-step-anchor-offset);
 }
 
 
@@ -392,7 +434,16 @@ html[data-theme='dark'] .homeNavShell {
 
 @media (max-width: 640px) {
   :global(html) {
-    --silam-home-anchor-offset: calc(var(--ifm-navbar-height) + 6.2rem);
+    --silam-home-default-offset: calc(var(--ifm-navbar-height) + 5.50rem);
+    --silam-home-active-anchor-offset: calc(var(--ifm-navbar-height) + 6.2rem);
+    --silam-home-step-anchor-offset: var(--silam-home-default-offset);
+  }
+
+  /* Та же настройка нужна для статичного preview, где CSS Modules не обрабатывается сборщиком. */
+  html {
+    --silam-home-default-offset: calc(var(--ifm-navbar-height) + 5.50rem);
+    --silam-home-active-anchor-offset: calc(var(--ifm-navbar-height) + 6.2rem);
+    --silam-home-step-anchor-offset: var(--silam-home-default-offset);
   }
 
   .homeNavShell {

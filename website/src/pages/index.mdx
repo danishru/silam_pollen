@@ -5,9 +5,9 @@ hide_table_of_contents: true
 ---
 
 import Link from '@docusaurus/Link';
-import RoadmapStripRuntime from '@site/src/components/RoadmapStripRuntime';
+import AnchorStripRuntime from '@site/src/components/AnchorStripRuntime';
 import shared from '@site/src/pages/siteShared.module.css';
-import roadmapStyles from '@site/src/pages/roadmap.module.css';
+import anchorStyles from '@site/src/pages/roadmap.module.css';
 import styles from '@site/src/pages/home.module.css';
 
 <section id="overview" className={styles.homeSectionAnchor}>
@@ -44,29 +44,31 @@ import styles from '@site/src/pages/home.module.css';
   </div>
 </section>
 
-<nav className={roadmapStyles.roadmapStripShell} data-roadmap-strip-shell aria-label="Home page sections">
-  <div className={roadmapStyles.roadmapStripFrame} data-roadmap-strip data-roadmap-strip-overflow="false">
-    <button className={`${roadmapStyles.roadmapStripArrow} ${roadmapStyles.roadmapStripArrowLeft}`} type="button" aria-label="Scroll home page navigation left" data-roadmap-strip-prev>
+<div className={anchorStyles.anchorStripLayout} data-anchor-strip-layout>
+<nav className={anchorStyles.anchorStripShell} data-anchor-strip-shell aria-label="Home page sections">
+  <div className={anchorStyles.anchorStripFrame} data-anchor-strip data-anchor-strip-overflow="false">
+    <button className={`${anchorStyles.anchorStripArrow} ${anchorStyles.anchorStripArrowLeft}`} type="button" aria-label="Scroll home page navigation left" data-anchor-strip-prev>
       <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15.4 5.6 9 12l6.4 6.4-1.4 1.4L6.2 12 14 4.2z" /></svg>
     </button>
-    <div className={roadmapStyles.roadmapStripScroller} data-roadmap-strip-scroller tabIndex={0}>
-      <div className={roadmapStyles.roadmapStrip}>
-        <a className={`${roadmapStyles.step} ${roadmapStyles.activeStep}`} href="#overview" data-roadmap-anchor-link><span>01</span><strong>Overview</strong><small>What it does</small></a>
-        <a className={roadmapStyles.step} href="#why" data-roadmap-anchor-link><span>02</span><strong>Why it helps</strong><small>Daily use</small></a>
-        <a className={roadmapStyles.step} href="#features" data-roadmap-anchor-link><span>03</span><strong>Entities</strong><small>Sensors + status</small></a>
-        <a className={roadmapStyles.step} href="#forecast" data-roadmap-anchor-link><span>04</span><strong>Forecast</strong><small>Hours + days</small></a>
-        <a className={roadmapStyles.step} href="#coverage" data-roadmap-anchor-link><span>05</span><strong>Coverage</strong><small>SILAM areas</small></a>
-        <a className={roadmapStyles.step} href="#automations" data-roadmap-anchor-link><span>06</span><strong>Automations</strong><small>Scenarios</small></a>
-        <a className={roadmapStyles.step} href="#start" data-roadmap-anchor-link><span>07</span><strong>Start</strong><small>Install path</small></a>
+    <div className={anchorStyles.anchorStripScroller} data-anchor-strip-scroller tabIndex={0}>
+      <div className={anchorStyles.anchorStrip}>
+        <a className={`${anchorStyles.step} ${anchorStyles.activeStep}`} href="#overview" data-anchor-link><span>01</span><strong>Overview</strong><small>What it does</small></a>
+        <a className={anchorStyles.step} href="#why" data-anchor-link><span>02</span><strong>Why it helps</strong><small>Daily use</small></a>
+        <a className={anchorStyles.step} href="#features" data-anchor-link><span>03</span><strong>Entities</strong><small>Sensors + status</small></a>
+        <a className={anchorStyles.step} href="#forecast" data-anchor-link><span>04</span><strong>Forecast</strong><small>Hours + days</small></a>
+        <a className={anchorStyles.step} href="#coverage" data-anchor-link><span>05</span><strong>Coverage</strong><small>SILAM areas</small></a>
+        <a className={anchorStyles.step} href="#automations" data-anchor-link><span>06</span><strong>Automations</strong><small>Scenarios</small></a>
+        <a className={anchorStyles.step} href="#start" data-anchor-link><span>07</span><strong>Start</strong><small>Install path</small></a>
       </div>
     </div>
-    <button className={`${roadmapStyles.roadmapStripArrow} ${roadmapStyles.roadmapStripArrowRight}`} type="button" aria-label="Scroll home page navigation right" data-roadmap-strip-next>
+    <button className={`${anchorStyles.anchorStripArrow} ${anchorStyles.anchorStripArrowRight}`} type="button" aria-label="Scroll home page navigation right" data-anchor-strip-next>
       <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8.6 18.4 6.4-6.4-6.4-6.4L10 4.2l7.8 7.8L10 19.8z" /></svg>
     </button>
   </div>
 </nav>
+</div>
 
-<RoadmapStripRuntime />
+<AnchorStripRuntime />
 
 <section id="why" className={`${shared.sectionHeader} ${styles.homeSectionAnchor}`}>
   <span className={shared.eyebrow}>Why use it?</span>
