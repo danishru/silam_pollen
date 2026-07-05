@@ -30,22 +30,36 @@ export default function AnchorStripRuntime() {
       const mobileCompactExitGap = 32;
       const mobileDockReleaseTolerance = 6;
       const mobileDockScrollDelta = 3;
-      const mobilePlaceholderTransitionMs = 320;
+      const mobileReturnProgressReleaseThreshold = 0.94;
+      const mobileReturnSettleMs = 180;
       const compactTransitionLockMs = 840;
       let compactLockUntil = 0;
       let isMobileBottomDocked = layout.dataset.anchorStripMobileBottomDocked === 'true';
       let isMobileBottomReturning = layout.dataset.anchorStripMobileBottomReturning === 'true';
       let lastMobileBottomScrollY = Math.max(0, window.scrollY || 0);
       let mobileBottomReturnStartedAt = 0;
+      let mobileBottomFlowMargin = 0;
       let mobileBottomSettleTimer = 0;
+      let mobileBottomPlaceholderFrame = 0;
+      let mobileBottomPlaceholderFrameKey = '';
       let isMobileNavbarHidden = document.documentElement.dataset.anchorMobileNavbarHidden === 'true';
+      let isMobileAnchorScrollNavbarLocked = false;
+      let mobileAnchorScrollNavbarTargetY = null;
+      let mobileAnchorScrollNavbarFrame = 0;
+      let mobileAnchorScrollNavbarFallbackTimer = 0;
+      let mobileAnchorScrollNavbarReleaseTimer = 0;
       let lastMobileNavbarScrollY = Math.max(0, window.scrollY || 0);
       const mobileNavbarScrollDelta = 6;
       const mobileNavbarTopRevealOffset = 24;
+      const mobileAnchorScrollNavbarFallbackMs = 2200;
+      const mobileAnchorScrollNavbarSettleMs = 520;
       let resizeObserver = null;
       let isDisposed = false;
       const activeFrameIds = new Set();
       const activeTimerIds = new Set();
+      let externalAnchorLinks = [];
+      let externalAnchorLinkObserver = null;
+      let externalAnchorLinkBindFrame = 0;
       const mobileBottomModeQuery = window.matchMedia?.('(max-width: 640px) and (pointer: coarse)');
       const requestFrame = (callback) => {
         const frameId = window.requestAnimationFrame((timestamp) => {
@@ -109,6 +123,23 @@ export default function AnchorStripRuntime() {
         return element?.closest?.('a[href][data-anchor-link]') || null;
       };
 
+      const findRuntimeAnchorLink = (target) => {
+        const element = target instanceof Element ? target : target?.parentElement;
+        const link = element?.closest?.('a[href]') || null;
+
+        if (!link) {
+          return null;
+        }
+
+        // Основной контракт для кнопок/пунктов, которые должны использовать
+        // runtime-переходы вместо штатного браузерного hash-scroll.
+        if (link.hasAttribute('data-anchor-link')) {
+          return link;
+        }
+
+        return null;
+      };
+
       // Sentinel привязан к sticky/layout-слою, а не к визуальному shell.
       // Так базовая точка sticky/compact считается от места strip в потоке страницы,
       // а shell остаётся только визуальной стеклянной оболочкой.
@@ -162,6 +193,24 @@ export default function AnchorStripRuntime() {
         return Number.isFinite(bottomGap) ? bottomGap : 12;
       };
 
+      const getMobileReturnStartGap = () => {
+        const returnStartGap = Number.parseFloat(
+          window.getComputedStyle(stickyHost).getPropertyValue('--silam-anchor-strip-mobile-return-start-gap'),
+        );
+
+        return Number.isFinite(returnStartGap) ? Math.max(1, returnStartGap) : 120;
+      };
+
+      const getMobilePlaceholderFlowMargin = (fallbackBottomGap = getMobileBottomGap()) => {
+        const marginBottom = Number.parseFloat(window.getComputedStyle(layout).marginBottom);
+
+        if (Number.isFinite(marginBottom) && marginBottom > 0) {
+          return marginBottom;
+        }
+
+        return getRootFontSize() * 2 + fallbackBottomGap;
+      };
+
       const setMobileNavbarHidden = (nextHidden) => {
         if (nextHidden === isMobileNavbarHidden) {
           return;
@@ -186,7 +235,14 @@ export default function AnchorStripRuntime() {
         const nextScrollY = Math.max(0, window.scrollY || 0);
 
         if (!isMobileBottomMode()) {
+          releaseMobileAnchorScrollNavbarLock({restoreNormalState: false});
           clearMobileNavbarState();
+          return;
+        }
+
+        if (isMobileAnchorScrollNavbarLocked) {
+          lastMobileNavbarScrollY = nextScrollY;
+          setMobileNavbarHidden(true);
           return;
         }
 
@@ -215,6 +271,95 @@ export default function AnchorStripRuntime() {
         setMobileNavbarHidden(scrollDelta > 0);
       };
 
+
+      const cancelMobileAnchorScrollNavbarWatch = () => {
+        if (mobileAnchorScrollNavbarFrame) {
+          cancelFrame(mobileAnchorScrollNavbarFrame);
+          mobileAnchorScrollNavbarFrame = 0;
+        }
+
+        clearTimer(mobileAnchorScrollNavbarFallbackTimer);
+        mobileAnchorScrollNavbarFallbackTimer = 0;
+
+        clearTimer(mobileAnchorScrollNavbarReleaseTimer);
+        mobileAnchorScrollNavbarReleaseTimer = 0;
+      };
+
+      const shouldRestoreMobileNavbarAfterAnchorScroll = () => {
+        const targetY = Number.isFinite(mobileAnchorScrollNavbarTargetY)
+          ? mobileAnchorScrollNavbarTargetY
+          : Math.max(0, window.scrollY || 0);
+
+        return targetY <= mobileNavbarTopRevealOffset;
+      };
+
+      const releaseMobileAnchorScrollNavbarLock = (options = {}) => {
+        if (!isMobileAnchorScrollNavbarLocked && !mobileAnchorScrollNavbarFrame && !mobileAnchorScrollNavbarFallbackTimer) {
+          return;
+        }
+
+        cancelMobileAnchorScrollNavbarWatch();
+        isMobileAnchorScrollNavbarLocked = false;
+        mobileAnchorScrollNavbarTargetY = null;
+        lastMobileNavbarScrollY = Math.max(0, window.scrollY || 0);
+
+        if (options.restoreNormalState !== false) {
+          updateMobileNavbarState({force: true});
+        }
+      };
+
+      const scheduleMobileAnchorScrollNavbarWatch = () => {
+        if (!isMobileAnchorScrollNavbarLocked || mobileAnchorScrollNavbarFrame) {
+          return;
+        }
+
+        mobileAnchorScrollNavbarFrame = requestFrame(() => {
+          mobileAnchorScrollNavbarFrame = 0;
+
+          if (!isMobileAnchorScrollNavbarLocked) {
+            return;
+          }
+
+          setMobileNavbarHidden(true);
+
+          if (
+            Number.isFinite(mobileAnchorScrollNavbarTargetY)
+            && Math.abs(window.scrollY - mobileAnchorScrollNavbarTargetY) <= 2
+          ) {
+            if (!mobileAnchorScrollNavbarReleaseTimer) {
+              mobileAnchorScrollNavbarReleaseTimer = setTimer(() => {
+                mobileAnchorScrollNavbarReleaseTimer = 0;
+                releaseMobileAnchorScrollNavbarLock({
+                  restoreNormalState: shouldRestoreMobileNavbarAfterAnchorScroll(),
+                });
+              }, mobileAnchorScrollNavbarSettleMs);
+            }
+            return;
+          }
+
+          scheduleMobileAnchorScrollNavbarWatch();
+        });
+      };
+
+      const startMobileAnchorScrollNavbarLock = (targetScrollY) => {
+        if (!isMobileBottomMode()) {
+          return;
+        }
+
+        cancelMobileAnchorScrollNavbarWatch();
+        isMobileAnchorScrollNavbarLocked = true;
+        mobileAnchorScrollNavbarTargetY = Number.isFinite(targetScrollY) ? targetScrollY : null;
+        lastMobileNavbarScrollY = Math.max(0, window.scrollY || 0);
+        setMobileNavbarHidden(true);
+
+        mobileAnchorScrollNavbarFallbackTimer = setTimer(() => {
+          releaseMobileAnchorScrollNavbarLock({
+            restoreNormalState: shouldRestoreMobileNavbarAfterAnchorScroll(),
+          });
+        }, mobileAnchorScrollNavbarFallbackMs);
+        scheduleMobileAnchorScrollNavbarWatch();
+      };
+
       const clearMobileBottomDockState = () => {
         isMobileBottomDocked = false;
         isMobileBottomReturning = false;
@@ -224,11 +369,156 @@ export default function AnchorStripRuntime() {
         delete layout.dataset.anchorStripMobileBottomSettling;
         clearTimer(mobileBottomSettleTimer);
         mobileBottomSettleTimer = 0;
+        if (mobileBottomPlaceholderFrame) {
+          cancelFrame(mobileBottomPlaceholderFrame);
+          mobileBottomPlaceholderFrame = 0;
+          mobileBottomPlaceholderFrameKey = '';
+        }
         mobileBottomReturnStartedAt = 0;
         layout.style.removeProperty('--anchor-strip-mobile-return-shift');
+        layout.style.removeProperty('--anchor-strip-mobile-return-progress');
+        layout.style.removeProperty('--anchor-strip-mobile-return-height');
+        layout.style.removeProperty('--anchor-strip-mobile-return-margin-bottom');
         layout.style.removeProperty('--anchor-strip-mobile-placeholder-height');
         layout.style.removeProperty('--anchor-strip-mobile-left');
         layout.style.removeProperty('--anchor-strip-mobile-width');
+      };
+
+      const applyMobileBottomDockDatasetState = (
+        nextDocked,
+        nextReturning,
+        placeholderHeight,
+        placeholderMargin,
+        returnProgress = nextReturning ? 0 : 1,
+      ) => {
+        const hasDockedDataset = layout.dataset.anchorStripMobileBottomDocked === 'true';
+        const hasReturningDataset = layout.dataset.anchorStripMobileBottomReturning === 'true';
+        const targetKey = `${nextDocked ? 'docked' : 'flow'}:${nextReturning ? 'returning' : 'steady'}`;
+        const nextPlaceholderHeightValue = Math.max(1, Math.ceil(placeholderHeight));
+        const nextPlaceholderMarginValue = Math.max(0, placeholderMargin);
+        const nextReturnProgressValue = clamp(returnProgress, 0, 1);
+        const nextPlaceholderHeight = `${nextPlaceholderHeightValue}px`;
+        const nextReturnProgress = nextReturnProgressValue.toFixed(3);
+        const nextReturnHeight = `${Math.round(nextPlaceholderHeightValue * nextReturnProgressValue)}px`;
+        const nextReturnMargin = `${Math.round(nextPlaceholderMarginValue * nextReturnProgressValue)}px`;
+
+        layout.style.setProperty('--anchor-strip-mobile-placeholder-height', nextPlaceholderHeight);
+        layout.style.setProperty('--anchor-strip-mobile-return-progress', nextReturnProgress);
+        layout.style.setProperty('--anchor-strip-mobile-return-height', nextReturnHeight);
+        layout.style.setProperty('--anchor-strip-mobile-return-margin-bottom', nextReturnMargin);
+
+        const applyTargetState = () => {
+          if (nextDocked) {
+            layout.dataset.anchorStripMobileBottomDocked = 'true';
+          } else {
+            delete layout.dataset.anchorStripMobileBottomDocked;
+          }
+
+          if (nextReturning) {
+            layout.dataset.anchorStripMobileBottomReturning = 'true';
+          } else {
+            delete layout.dataset.anchorStripMobileBottomReturning;
+          }
+        };
+
+        const scheduleTargetState = () => {
+          if (mobileBottomPlaceholderFrame && mobileBottomPlaceholderFrameKey === targetKey) {
+            return;
+          }
+
+          if (mobileBottomPlaceholderFrame) {
+            cancelFrame(mobileBottomPlaceholderFrame);
+          }
+
+          mobileBottomPlaceholderFrameKey = targetKey;
+          mobileBottomPlaceholderFrame = requestFrame(() => {
+            mobileBottomPlaceholderFrame = 0;
+            mobileBottomPlaceholderFrameKey = '';
+            applyTargetState();
+          });
+        };
+
+        // Чтобы браузер анимировал placeholder, сначала фиксируем старое
+        // числовое состояние и только на следующем кадре переключаем dataset.
+        // Иначе изменения height/min-height могут схлопнуться в один layout-pass
+        // и выглядеть как резкая ступенька.
+        if (nextDocked && !nextReturning && !hasDockedDataset) {
+          delete layout.dataset.anchorStripMobileBottomDocked;
+          delete layout.dataset.anchorStripMobileBottomReturning;
+          void layout.offsetHeight;
+          scheduleTargetState();
+          return;
+        }
+
+        if (nextDocked && nextReturning && hasDockedDataset && !hasReturningDataset) {
+          layout.dataset.anchorStripMobileBottomDocked = 'true';
+          delete layout.dataset.anchorStripMobileBottomReturning;
+          void layout.offsetHeight;
+          scheduleTargetState();
+          return;
+        }
+
+        if (mobileBottomPlaceholderFrame) {
+          cancelFrame(mobileBottomPlaceholderFrame);
+          mobileBottomPlaceholderFrame = 0;
+          mobileBottomPlaceholderFrameKey = '';
+        }
+
+        applyTargetState();
+      };
+
+      const forceMobileBottomDockForAnchorScroll = (options = {}) => {
+        if (!isMobileBottomMode()) {
+          return false;
+        }
+
+        const shouldSettleInstantly = options.instantPlaceholder === true;
+        const previousInlineTransition = layout.style.transition;
+
+        if (shouldSettleInstantly) {
+          // Кнопки-якоря могут находиться выше самого anchor strip. В этом случае
+          // перед расчётом target-позиции нужно сразу схлопнуть mobile-placeholder,
+          // иначе getBoundingClientRect() увидит промежуточную transition-высоту
+          // и посадит секцию ниже, чем переход из уже docked меню страницы.
+          layout.style.transition = 'none';
+          void layout.offsetHeight;
+        }
+
+        const bottomGap = getMobileBottomGap();
+        const layoutRect = layout.getBoundingClientRect();
+        const shellHeight = Math.ceil(shell.getBoundingClientRect().height);
+        const placeholderHeight = Math.max(1, shellHeight);
+
+        if (!mobileBottomFlowMargin) {
+          mobileBottomFlowMargin = getMobilePlaceholderFlowMargin(bottomGap);
+        }
+
+        if (mobileBottomPlaceholderFrame) {
+          cancelFrame(mobileBottomPlaceholderFrame);
+          mobileBottomPlaceholderFrame = 0;
+          mobileBottomPlaceholderFrameKey = '';
+        }
+
+        isMobileBottomDocked = true;
+        isMobileBottomReturning = false;
+        mobileBottomReturnStartedAt = 0;
+
+        layout.style.setProperty('--anchor-strip-mobile-placeholder-height', `${placeholderHeight}px`);
+        layout.style.setProperty('--anchor-strip-mobile-return-progress', '0.000');
+        layout.style.setProperty('--anchor-strip-mobile-return-height', '0px');
+        layout.style.setProperty('--anchor-strip-mobile-return-margin-bottom', '0px');
+        layout.style.setProperty('--anchor-strip-mobile-left', `${Math.max(0, Math.round(layoutRect.left))}px`);
+        layout.style.setProperty('--anchor-strip-mobile-width', `${Math.max(0, Math.round(layoutRect.width))}px`);
+
+        layout.dataset.anchorStripMobileBottomDocked = 'true';
+        delete layout.dataset.anchorStripMobileBottomReturning;
+
+        if (shouldSettleInstantly) {
+          void layout.offsetHeight;
+          layout.style.transition = previousInlineTransition;
+        }
+
+        return true;
       };
 
       const updateMobileBottomDockState = () => {
@@ -250,12 +540,26 @@ export default function AnchorStripRuntime() {
         const bottomGap = getMobileBottomGap();
         const layoutRect = layout.getBoundingClientRect();
         const dockTop = viewportHeight - shellHeight - bottomGap;
+        const returnStartGap = getMobileReturnStartGap();
+        const returnStartTop = dockTop - returnStartGap;
+        const rawReturnProgress = (layoutRect.top - returnStartTop) / returnStartGap;
+        const scrollDrivenReturnProgress = clamp(rawReturnProgress, 0, 1);
+        const isNearReturnPoint = layoutRect.top >= returnStartTop;
         const scrollDelta = scrollY - lastMobileBottomScrollY;
         const isScrollingUp = scrollDelta < -mobileDockScrollDelta;
         const isScrollingDown = scrollDelta > mobileDockScrollDelta;
         const placeholderHeight = Math.max(1, Math.ceil(shellHeight));
+
+        if (!isMobileBottomDocked) {
+          mobileBottomFlowMargin = getMobilePlaceholderFlowMargin(bottomGap);
+        } else if (!mobileBottomFlowMargin) {
+          mobileBottomFlowMargin = getRootFontSize() * 2 + bottomGap;
+        }
+
+        const placeholderMargin = mobileBottomFlowMargin;
         let nextDocked = isMobileBottomDocked;
         let nextReturning = isMobileBottomReturning;
+        let nextReturnProgress = isMobileBottomReturning ? scrollDrivenReturnProgress : 0;
         let shouldStartSettling = false;
         let settleShift = 0;
 
@@ -264,25 +568,35 @@ export default function AnchorStripRuntime() {
         layout.style.setProperty('--anchor-strip-mobile-left', `${Math.max(0, Math.round(layoutRect.left))}px`);
         layout.style.setProperty('--anchor-strip-mobile-width', `${Math.max(0, Math.round(layoutRect.width))}px`);
 
-        // В mobile/touch режиме placeholder всегда анимируется между числовыми
-        // px-значениями: вниз он схлопывается до 0, вверх сначала раскрывается
-        // обратно, а shell остаётся fixed снизу до безопасного возврата в поток.
+        // В mobile/touch режиме placeholder теперь раскрывается только рядом
+        // с точкой возврата и следует за прокруткой через progress 0..1.
+        // Это убирает раннее раскрытие большого пустого места и не заставляет
+        // fixed-меню ждать завершения таймера при быстром скролле вверх.
         if (!isMobileBottomDocked) {
           nextDocked = layoutRect.top <= dockTop - mobileDockReleaseTolerance;
           nextReturning = false;
+          nextReturnProgress = nextDocked ? 0 : 1;
           mobileBottomReturnStartedAt = 0;
         } else {
-          if (isScrollingUp && !isMobileBottomReturning) {
-            nextReturning = true;
-            mobileBottomReturnStartedAt = now;
-          } else if (isScrollingDown) {
+          if (isScrollingDown) {
             nextReturning = false;
+            nextReturnProgress = 0;
+            mobileBottomReturnStartedAt = 0;
+          } else if ((isScrollingUp || isMobileBottomReturning) && isNearReturnPoint) {
+            nextReturning = true;
+            nextReturnProgress = scrollDrivenReturnProgress;
+
+            if (!mobileBottomReturnStartedAt) {
+              mobileBottomReturnStartedAt = now;
+            }
+          } else if (!isMobileBottomReturning) {
+            nextReturning = false;
+            nextReturnProgress = 0;
             mobileBottomReturnStartedAt = 0;
           }
 
           const returnAnimationReady = nextReturning
-            && mobileBottomReturnStartedAt > 0
-            && now - mobileBottomReturnStartedAt >= mobilePlaceholderTransitionMs;
+            && nextReturnProgress >= mobileReturnProgressReleaseThreshold;
           const flowTopDelta = layoutRect.top - dockTop;
           const flowIsCloseEnough = Math.abs(flowTopDelta) <= mobileDockReleaseTolerance;
           const flowHasReachedDockPoint = layoutRect.top >= dockTop - mobileDockReleaseTolerance;
@@ -290,6 +604,7 @@ export default function AnchorStripRuntime() {
           if (returnAnimationReady && flowHasReachedDockPoint) {
             nextDocked = false;
             nextReturning = false;
+            nextReturnProgress = 1;
             mobileBottomReturnStartedAt = 0;
 
             if (!flowIsCloseEnough) {
@@ -304,17 +619,13 @@ export default function AnchorStripRuntime() {
         isMobileBottomDocked = nextDocked;
         isMobileBottomReturning = nextReturning;
 
-        if (nextDocked) {
-          layout.dataset.anchorStripMobileBottomDocked = 'true';
-        } else {
-          delete layout.dataset.anchorStripMobileBottomDocked;
-        }
-
-        if (nextReturning) {
-          layout.dataset.anchorStripMobileBottomReturning = 'true';
-        } else {
-          delete layout.dataset.anchorStripMobileBottomReturning;
-        }
+        applyMobileBottomDockDatasetState(
+          nextDocked,
+          nextReturning,
+          placeholderHeight,
+          placeholderMargin,
+          nextReturnProgress,
+        );
 
         if (shouldStartSettling) {
           clearTimer(mobileBottomSettleTimer);
@@ -329,7 +640,7 @@ export default function AnchorStripRuntime() {
             mobileBottomSettleTimer = 0;
             delete layout.dataset.anchorStripMobileBottomSettling;
             layout.style.removeProperty('--anchor-strip-mobile-return-shift');
-          }, mobilePlaceholderTransitionMs + 80);
+          }, mobileReturnSettleMs + 80);
         }
       };
 
@@ -574,8 +885,23 @@ export default function AnchorStripRuntime() {
         }
 
         if (restoreAnchorClickLink) {
+          const now = window.performance?.now?.() ?? Date.now();
+          const shouldActivateImmediately = event?.pointerType === 'touch'
+            || event?.pointerType === 'pen'
+            || isMobileBottomMode();
+
+          if (shouldActivateImmediately) {
+            // На мобильном pointer capture + изменение dock/placeholder иногда
+            // мешали браузеру сгенерировать первый click по ссылке меню.
+            // Поэтому для настоящего tap по пункту strip запускаем якорь сразу
+            // на pointerup, а следующий synthetic click подавляем ниже.
+            suppressStripClickUntil = now + 450;
+            activatePendingStripClickLink(restoreAnchorClickLink);
+            return;
+          }
+
           pendingStripClickLink = restoreAnchorClickLink;
-          pendingStripClickUntil = (window.performance?.now?.() ?? Date.now()) + 450;
+          pendingStripClickUntil = now + 450;
         }
       };
 
@@ -688,6 +1014,16 @@ export default function AnchorStripRuntime() {
         if (clickedLink) {
           pendingStripClickLink = null;
           pendingStripClickUntil = 0;
+
+          // Не полагаемся на document bubbling для пунктов самого strip:
+          // Docusaurus/браузерный hash-scroll может сработать иначе, а на
+          // mobile после pointer capture первый click иногда терялся.
+          // Внутренние пункты меню обрабатываем здесь, после drag-guard.
+          const runtimeLink = findRuntimeAnchorLink(clickedLink);
+          if (runtimeLink && root.contains(runtimeLink)) {
+            handleAnchorLinkActivation(event, runtimeLink);
+          }
+
           return;
         }
 
@@ -994,6 +1330,7 @@ export default function AnchorStripRuntime() {
         pendingAnchorHighlightDone = false;
         clearAnchorReleaseTimer();
         clearAnchorHighlightWatch();
+        releaseMobileAnchorScrollNavbarLock();
         unlockAnchorStripHeightForAnchorScroll();
 
         if (hadPendingAnchorScroll && options.stopNativeScroll) {
@@ -1056,6 +1393,7 @@ export default function AnchorStripRuntime() {
       const performAnchorScroll = (target, hash, options = {}) => {
         const targetTop = getTargetScrollY(target);
         pendingAnchorScrollActive = true;
+        startMobileAnchorScrollNavbarLock(targetTop);
 
         if (options.updateHistory !== false && window.location.hash !== hash) {
           window.history.pushState(null, '', hash);
@@ -1099,7 +1437,10 @@ export default function AnchorStripRuntime() {
         updateMobileBottomDockState();
 
         const preliminaryTargetTop = getTargetScrollY(target);
-        const shouldCompactForTarget = getExpectedCompactStateForScrollY(preliminaryTargetTop, {anchor: true});
+        const shouldCompactForTarget = isMobileBottomMode()
+          ? targetId !== 'overview'
+          : getExpectedCompactStateForScrollY(preliminaryTargetTop, {anchor: true});
+        const shouldForceMobileDockForTarget = isMobileBottomMode() && shouldCompactForTarget;
         const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
         const shouldAnimateCompact = options.smoothCompact === true
           && !prefersReducedMotion
@@ -1107,6 +1448,9 @@ export default function AnchorStripRuntime() {
 
         if (!shouldAnimateCompact) {
           setCompactState(shouldCompactForTarget, {instant: true});
+          if (shouldForceMobileDockForTarget) {
+            forceMobileBottomDockForAnchorScroll({instantPlaceholder: true});
+          }
           performAnchorScroll(target, hash, options);
           return true;
         }
@@ -1115,7 +1459,7 @@ export default function AnchorStripRuntime() {
         pendingAnchorScrollActive = true;
         pendingAnchorHighlightDone = false;
 
-        const shouldLockFlowHeight = shouldCompactForTarget !== isCompact;
+        const shouldLockFlowHeight = shouldCompactForTarget !== isCompact && !shouldForceMobileDockForTarget;
 
         if (shouldLockFlowHeight) {
           lockAnchorStripHeightForAnchorScroll();
@@ -1127,6 +1471,9 @@ export default function AnchorStripRuntime() {
         // не меняют flow-позицию во время smooth-scroll к якорю; стеклянная
         // подложка shell при этом не растягивается layout-lock'ом.
         setCompactState(shouldCompactForTarget);
+        if (shouldForceMobileDockForTarget) {
+          forceMobileBottomDockForAnchorScroll({instantPlaceholder: true});
+        }
         performAnchorScroll(target, hash, {
           ...options,
           releaseHeightLock: shouldLockFlowHeight,
@@ -1162,22 +1509,11 @@ export default function AnchorStripRuntime() {
         window.location.assign(linkUrl.href);
       };
 
-      const handleDocumentClick = (event) => {
-        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-          return;
-        }
-
-        const eventTarget = event.target instanceof Element ? event.target : event.target?.parentElement;
-        const link = findAnchorLink(eventTarget);
-
-        if (!link) {
-          return;
-        }
-
+      const handleAnchorLinkActivation = (event, link) => {
         const rawHref = link.getAttribute('href');
 
         if (!rawHref || rawHref === '#') {
-          return;
+          return false;
         }
 
         let linkUrl;
@@ -1185,21 +1521,113 @@ export default function AnchorStripRuntime() {
         try {
           linkUrl = new URL(rawHref, window.location.href);
         } catch {
-          return;
+          return false;
         }
 
         if (linkUrl.origin !== window.location.origin || linkUrl.pathname !== window.location.pathname || !linkUrl.hash) {
-          return;
+          return false;
         }
 
         const targetId = safeDecodeHash(linkUrl.hash);
 
         if (!targetId || !document.getElementById(targetId)) {
-          return;
+          return false;
         }
 
         event.preventDefault();
         scrollToAnchor(linkUrl.hash, {smoothCompact: true});
+        return true;
+      };
+
+      const shouldHandleAnchorClickEvent = (event, options = {}) => (
+        (options.allowDefaultPrevented === true || !event.defaultPrevented)
+        && event.button === 0
+        && !event.metaKey
+        && !event.ctrlKey
+        && !event.shiftKey
+        && !event.altKey
+      );
+
+      const handleExternalAnchorLinkClickCapture = (event) => {
+        if (!shouldHandleAnchorClickEvent(event, {allowDefaultPrevented: true})) {
+          return;
+        }
+
+        const eventTarget = event.target instanceof Element ? event.target : event.target?.parentElement;
+        const link = findRuntimeAnchorLink(eventTarget);
+
+        if (!link || root.contains(link)) {
+          return;
+        }
+
+        // Внешние кнопки-якоря живут вне scrollable strip, поэтому для них
+        // запускаем тот же mobile anchor-scroll в capture-фазе. Ссылки внутри
+        // strip остаются на отдельной схеме click/drag, чтобы не ломать swipe.
+        if (handleAnchorLinkActivation(event, link)) {
+          event.stopImmediatePropagation?.();
+          event.stopPropagation();
+        }
+      };
+
+      const handleDocumentClick = (event) => {
+        if (!shouldHandleAnchorClickEvent(event)) {
+          return;
+        }
+
+        const eventTarget = event.target instanceof Element ? event.target : event.target?.parentElement;
+        const link = findRuntimeAnchorLink(eventTarget);
+
+        if (!link) {
+          return;
+        }
+
+        handleAnchorLinkActivation(event, link);
+      };
+
+      const handleDirectExternalAnchorLinkClickCapture = (event) => {
+        if (!shouldHandleAnchorClickEvent(event, {allowDefaultPrevented: true})) {
+          return;
+        }
+
+        const link = event.currentTarget instanceof Element
+          ? event.currentTarget
+          : findRuntimeAnchorLink(event.target);
+
+        if (!link || root.contains(link)) {
+          return;
+        }
+
+        if (handleAnchorLinkActivation(event, link)) {
+          event.stopImmediatePropagation?.();
+          event.stopPropagation();
+        }
+      };
+
+      const unbindExternalAnchorLinks = () => {
+        externalAnchorLinks.forEach((link) => {
+          link.removeEventListener('click', handleDirectExternalAnchorLinkClickCapture, true);
+        });
+        externalAnchorLinks = [];
+      };
+
+      const bindExternalAnchorLinks = () => {
+        unbindExternalAnchorLinks();
+        externalAnchorLinks = Array.from(document.querySelectorAll('a[href][data-anchor-link]'))
+          .filter((link) => !root.contains(link));
+        externalAnchorLinks.forEach((link) => {
+          link.addEventListener('click', handleDirectExternalAnchorLinkClickCapture, true);
+        });
+      };
+
+      const scheduleExternalAnchorLinkBinding = () => {
+        if (externalAnchorLinkBindFrame) {
+          return;
+        }
+
+        externalAnchorLinkBindFrame = requestFrame(() => {
+          externalAnchorLinkBindFrame = 0;
+          bindExternalAnchorLinks();
+        });
       };
 
       const handlePrevClick = () => {
@@ -1244,7 +1672,13 @@ export default function AnchorStripRuntime() {
       viewport.addEventListener('lostpointercapture', handleViewportPointerUp);
       viewport.addEventListener('click', handleViewportClickCapture, true);
       viewport.addEventListener('wheel', handleViewportWheel, {passive: false});
+      document.addEventListener('click', handleExternalAnchorLinkClickCapture, true);
       document.addEventListener('click', handleDocumentClick);
+      bindExternalAnchorLinks();
+      if ('MutationObserver' in window && document.body) {
+        externalAnchorLinkObserver = new MutationObserver(scheduleExternalAnchorLinkBinding);
+        externalAnchorLinkObserver.observe(document.body, {childList: true, subtree: true});
+      }
       window.addEventListener('resize', scheduleResizeWork);
       window.addEventListener('scroll', scheduleCompactState, {passive: true});
       window.addEventListener('scroll', scheduleAnchorHighlightVisibilityCheck, {passive: true});
@@ -1301,6 +1735,13 @@ export default function AnchorStripRuntime() {
           resizeFrame = 0;
         }
         clearDeferredWork();
+        if (externalAnchorLinkBindFrame) {
+          cancelFrame(externalAnchorLinkBindFrame);
+          externalAnchorLinkBindFrame = 0;
+        }
+        externalAnchorLinkObserver?.disconnect?.();
+        externalAnchorLinkObserver = null;
+        unbindExternalAnchorLinks();
         resizeObserver?.disconnect?.();
         prev.removeEventListener('click', handlePrevClick);
         next.removeEventListener('click', handleNextClick);
@@ -1312,6 +1753,7 @@ export default function AnchorStripRuntime() {
         viewport.removeEventListener('lostpointercapture', handleViewportPointerUp);
         viewport.removeEventListener('click', handleViewportClickCapture, true);
         viewport.removeEventListener('wheel', handleViewportWheel);
+        document.removeEventListener('click', handleExternalAnchorLinkClickCapture, true);
         document.removeEventListener('click', handleDocumentClick);
         window.removeEventListener('resize', scheduleResizeWork);
         window.removeEventListener('scroll', scheduleCompactState);

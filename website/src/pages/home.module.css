@@ -465,3 +465,32 @@ html[data-theme='dark'] .homeNavShell {
     gap: 0.25rem;
   }
 }
+
+@media (max-width: 640px) and (pointer: coarse) {
+  :global(html) {
+    /* На mobile anchor strip закреплён снизу, а верхний navbar во время
+       anchor-scroll принудительно скрыт runtime-ом. Поэтому оставляем сверху
+       только небольшой визуальный воздух.
+
+       Важно: этот блок стоит после обычного mobile-блока max-width: 640px,
+       чтобы общие mobile-offset'ы главной страницы не перетирали bottom-dock
+       посадку якорей на сенсорных устройствах. */
+    --silam-home-mobile-top-offset: 1.25rem;
+    --silam-home-default-offset: var(--silam-home-mobile-top-offset);
+    --silam-home-active-anchor-offset: var(--silam-home-mobile-top-offset);
+    --silam-home-step-anchor-offset: var(--silam-home-mobile-top-offset);
+    --silam-home-anchor-offset: var(--silam-home-mobile-top-offset);
+    scroll-padding-top: var(--silam-home-mobile-top-offset);
+  }
+
+  /* Та же настройка нужна для статичного preview, где CSS Modules не обрабатывается сборщиком. */
+  html {
+    --silam-home-mobile-top-offset: 1.25rem;
+    --silam-home-default-offset: var(--silam-home-mobile-top-offset);
+    --silam-home-active-anchor-offset: var(--silam-home-mobile-top-offset);
+    --silam-home-step-anchor-offset: var(--silam-home-mobile-top-offset);
+    --silam-home-anchor-offset: var(--silam-home-mobile-top-offset);
+    scroll-padding-top: var(--silam-home-mobile-top-offset);
+  }
+}
+

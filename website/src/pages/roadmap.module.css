@@ -82,6 +82,15 @@ html {
 
 @media (max-width: 640px) and (pointer: coarse) {
   :global(html) {
+    /* В mobile bottom-dock режиме anchor strip находится снизу,
+       поэтому переходы по якорям не должны резервировать место под верхнее меню страницы. */
+    --silam-anchor-mobile-top-offset: 1.25rem;
+    --silam-anchor-default-offset: var(--silam-anchor-mobile-top-offset);
+    --silam-anchor-release-plan-offset: var(--silam-anchor-mobile-top-offset);
+    --silam-anchor-future-backlog-offset: var(--silam-anchor-mobile-top-offset);
+    --silam-anchor-target-strip-offset: var(--silam-anchor-mobile-top-offset);
+    scroll-padding-top: var(--silam-anchor-mobile-top-offset);
+
     /* Расстояние скрытия задаём в абсолютной величине, а не в процентах.
        Так active-brand и его тень точно уходят выше navbar, а glass-слой
        продолжает плавно сдвигаться, без clip-path и без потери backdrop-filter. */
@@ -126,6 +135,13 @@ html {
 
   /* Та же настройка нужна для статичного preview, где CSS Modules не обрабатывается сборщиком. */
   html {
+    --silam-anchor-mobile-top-offset: 1.25rem;
+    --silam-anchor-default-offset: var(--silam-anchor-mobile-top-offset);
+    --silam-anchor-release-plan-offset: var(--silam-anchor-mobile-top-offset);
+    --silam-anchor-future-backlog-offset: var(--silam-anchor-mobile-top-offset);
+    --silam-anchor-target-strip-offset: var(--silam-anchor-mobile-top-offset);
+    scroll-padding-top: var(--silam-anchor-mobile-top-offset);
+
     --silam-mobile-navbar-hide-distance: calc(var(--ifm-navbar-height) + 1.75rem);
     --silam-mobile-navbar-transition: 520ms cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -244,11 +260,14 @@ html {
     margin-bottom: calc(2rem + 12px + env(safe-area-inset-bottom));
     overflow: visible;
     --silam-anchor-strip-mobile-bottom-gap: 12px;
-    --silam-anchor-strip-mobile-dock-transition: 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    --silam-anchor-strip-mobile-return-start-gap: 120px;
+    --silam-anchor-strip-mobile-dock-transition: 240ms cubic-bezier(0.22, 1, 0.36, 1);
+    --silam-anchor-strip-mobile-return-transition: 90ms linear;
     transition:
       height var(--silam-anchor-strip-mobile-dock-transition),
       min-height var(--silam-anchor-strip-mobile-dock-transition),
       margin-bottom var(--silam-anchor-strip-mobile-dock-transition);
+    will-change: height, min-height, margin-bottom;
   }
 
   .anchorStripLayout[data-anchor-strip-mobile-bottom-docked='true'] {
@@ -258,9 +277,13 @@ html {
   }
 
   .anchorStripLayout[data-anchor-strip-mobile-bottom-returning='true'] {
-    height: var(--anchor-strip-mobile-placeholder-height, 0px);
-    min-height: var(--anchor-strip-mobile-placeholder-height, 0px);
-    margin-bottom: calc(2rem + 12px + env(safe-area-inset-bottom));
+    height: var(--anchor-strip-mobile-return-height, 0px);
+    min-height: var(--anchor-strip-mobile-return-height, 0px);
+    margin-bottom: var(--anchor-strip-mobile-return-margin-bottom, 0px);
+    transition:
+      height var(--silam-anchor-strip-mobile-return-transition),
+      min-height var(--silam-anchor-strip-mobile-return-transition),
+      margin-bottom var(--silam-anchor-strip-mobile-return-transition);
   }
 
   .anchorStripLayout[data-anchor-strip-mobile-bottom-docked='true'] .anchorStripShell {
@@ -276,7 +299,7 @@ html {
 
   .anchorStripLayout[data-anchor-strip-mobile-bottom-settling='true'] .anchorStripShell {
     transform: translate3d(0, var(--anchor-strip-mobile-return-shift, 0px), 0);
-    transition: transform var(--silam-anchor-strip-mobile-dock-transition);
+    transition: transform var(--silam-anchor-strip-mobile-return-transition);
     will-change: transform;
   }
 
@@ -363,6 +386,10 @@ html[data-theme='dark'] .anchorStripShell {
   overflow-x: visible;
   overflow-y: visible;
   --silam-anchor-strip-edge-icon-zone: min(28px, var(--silam-anchor-strip-page-gutter, 26px));
+  --silam-anchor-strip-arrow-hit-overlap: clamp(14px, 3vw, 18px);
+  --silam-anchor-strip-arrow-hit-zone: calc(
+    var(--silam-anchor-strip-edge-icon-zone) + var(--silam-anchor-strip-arrow-hit-overlap)
+  );
   --silam-anchor-strip-edge-fade-zone: clamp(42px, 8vw, 58px);
   --silam-anchor-strip-edge-fade-dead-zone: 15px;
   --silam-anchor-strip-edge-fade-soft-stop: 24px;
@@ -556,7 +583,7 @@ html[data-theme='dark'] .anchorStripShell {
   z-index: 3;
   display: inline-flex;
   align-items: center;
-  width: calc(var(--silam-anchor-strip-edge-icon-zone) + var(--silam-anchor-strip-edge-fade-zone));
+  width: var(--silam-anchor-strip-arrow-hit-zone);
   height: auto;
   padding: 0;
   border: 0;
