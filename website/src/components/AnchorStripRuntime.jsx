@@ -28,17 +28,25 @@ export default function AnchorStripRuntime() {
       let compactBaseScrollY = 0;
       const compactStickyOffset = 8;
       const mobileCompactExitGap = 32;
-      const mobileDockReleaseTolerance = 6;
       const mobileDockScrollDelta = 3;
-      const mobileReturnProgressReleaseThreshold = 0.94;
-      const mobileReturnSettleMs = 180;
+      const mobileReturnProgressReleaseThreshold = 0.995;
+      const mobileReturnSettleMs = 160;
       const compactTransitionLockMs = 840;
       let compactLockUntil = 0;
+      let pendingDesktopAnchorCompactFreeze = false;
+      let pendingDesktopAnchorCompactFreezeTarget = null;
+      let pendingDesktopAnchorCompactFreezeFrame = 0;
+      let pendingDesktopAnchorCompactFreezeTimer = 0;
+      let pendingDesktopAnchorCompactFreezeLastScrollY = null;
+      let pendingDesktopAnchorCompactFreezeStableFrames = 0;
+      let pendingDesktopAnchorCompactFreezeStartedAt = 0;
       let isMobileBottomDocked = layout.dataset.anchorStripMobileBottomDocked === 'true';
       let isMobileBottomReturning = layout.dataset.anchorStripMobileBottomReturning === 'true';
       let lastMobileBottomScrollY = Math.max(0, window.scrollY || 0);
       let mobileBottomReturnStartedAt = 0;
+      let mobileBottomPlaceholderMode = '';
       let mobileBottomFlowMargin = 0;
+      let mobileBottomFlowMarginTop = 0;
       let mobileBottomSettleTimer = 0;
       let mobileBottomPlaceholderFrame = 0;
       let mobileBottomPlaceholderFrameKey = '';
@@ -48,6 +56,9 @@ export default function AnchorStripRuntime() {
       let mobileAnchorScrollNavbarFrame = 0;
       let mobileAnchorScrollNavbarFallbackTimer = 0;
       let mobileAnchorScrollNavbarReleaseTimer = 0;
+      let mobileAnchorScrollDockFreezeTarget = null;
+      let mobileAnchorScrollDockFreezeTimer = 0;
+      const mobileAnchorScrollDockFreezeTimeoutMs = 3600;
       let lastMobileNavbarScrollY = Math.max(0, window.scrollY || 0);
       const mobileNavbarScrollDelta = 6;
       const mobileNavbarTopRevealOffset = 24;
@@ -151,6 +162,10 @@ export default function AnchorStripRuntime() {
       shell.dataset.anchorStripCompact = isCompact ? 'true' : 'false';
 
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+      const formatMobilePx = (value, min = 0) => {
+        const safeValue = Number.isFinite(value) ? Math.max(min, value) : min;
+        return `${safeValue.toFixed(2)}px`;
+      };
       const getMaxOffset = () => Math.max(0, track.scrollWidth - viewport.clientWidth);
 
       const getRootFontSize = () => {
@@ -167,6 +182,34 @@ export default function AnchorStripRuntime() {
       };
 
       const isMobileBottomMode = () => mobileBottomModeQuery?.matches === true;
+
+      const clearMobileAnchorScrollDockFreeze = () => {
+        mobileAnchorScrollDockFreezeTarget = null;
+        clearTimer(mobileAnchorScrollDockFreezeTimer);
+        mobileAnchorScrollDockFreezeTimer = 0;
+      };
+
+      const startMobileAnchorScrollDockFreeze = (target) => {
+        if (!isMobileBottomMode() || !target) {
+          return;
+        }
+
+        clearMobileAnchorScrollDockFreeze();
+        mobileAnchorScrollDockFreezeTarget = target;
+        mobileAnchorScrollDockFreezeTimer = setTimer(() => {
+          mobileAnchorScrollDockFreezeTimer = 0;
+          mobileAnchorScrollDockFreezeTarget = null;
+          requestFrame(() => {
+            updateMobileBottomDockState();
+          });
+        }, mobileAnchorScrollDockFreezeTimeoutMs);
+      };
+
+      const isMobileAnchorScrollDockFrozen = () => (
+        isMobileBottomMode()
+        && mobileAnchorScrollDockFreezeTarget
+        && document.contains(mobileAnchorScrollDockFreezeTarget)
+      );
 
       const getVirtualStickyTop = () => (
         getNavbarHeight() + getRootFontSize() * 0.5
@@ -201,6 +244,34 @@ export default function AnchorStripRuntime() {
         return Number.isFinite(returnStartGap) ? Math.max(1, returnStartGap) : 120;
       };
 
+      const getMobileCompressStartGap = (fallbackReturnStartGap = getMobileReturnStartGap()) => {
+        const compressStartGap = Number.parseFloat(
+          window.getComputedStyle(stickyHost).getPropertyValue('--silam-anchor-strip-mobile-compress-start-gap'),
+        );
+
+        if (Number.isFinite(compressStartGap)) {
+          return Math.max(1, compressStartGap);
+        }
+
+        return Math.max(1, fallbackReturnStartGap * 0.5);
+      };
+
+      const getMobileCompressedTopGap = () => {
+        const compressedTopGap = Number.parseFloat(
+          window.getComputedStyle(stickyHost).getPropertyValue('--silam-anchor-strip-mobile-compressed-top-gap'),
+        );
+
+        return Number.isFinite(compressedTopGap) ? Math.max(0, compressedTopGap) : 4;
+      };
+
+      const getMobileDockLift = () => {
+        const dockLift = Number.parseFloat(
+          window.getComputedStyle(stickyHost).getPropertyValue('--silam-anchor-strip-mobile-dock-lift'),
+        );
+
+        return Number.isFinite(dockLift) ? Math.max(0, dockLift) : 0;
+      };
+
       const getMobilePlaceholderFlowMargin = (fallbackBottomGap = getMobileBottomGap()) => {
         const marginBottom = Number.parseFloat(window.getComputedStyle(layout).marginBottom);
 
@@ -209,6 +280,16 @@ export default function AnchorStripRuntime() {
         }
 
         return getRootFontSize() * 2 + fallbackBottomGap;
+      };
+
+      const getMobilePlaceholderFlowMarginTop = () => {
+        const marginTop = Number.parseFloat(window.getComputedStyle(layout).marginTop);
+
+        if (Number.isFinite(marginTop) && marginTop > 0) {
+          return marginTop;
+        }
+
+        return getRootFontSize() * 1.5;
       };
 
       const setMobileNavbarHidden = (nextHidden) => {
@@ -361,12 +442,15 @@ export default function AnchorStripRuntime() {
       };
 
       const clearMobileBottomDockState = () => {
+        clearMobileAnchorScrollDockFreeze();
         isMobileBottomDocked = false;
         isMobileBottomReturning = false;
         lastMobileBottomScrollY = Math.max(0, window.scrollY || 0);
         delete layout.dataset.anchorStripMobileBottomDocked;
         delete layout.dataset.anchorStripMobileBottomReturning;
         delete layout.dataset.anchorStripMobileBottomSettling;
+        delete layout.dataset.anchorStripMobileBottomSettlePhase;
+        delete layout.dataset.anchorStripMobileBottomReleaseLocked;
         clearTimer(mobileBottomSettleTimer);
         mobileBottomSettleTimer = 0;
         if (mobileBottomPlaceholderFrame) {
@@ -375,10 +459,18 @@ export default function AnchorStripRuntime() {
           mobileBottomPlaceholderFrameKey = '';
         }
         mobileBottomReturnStartedAt = 0;
+        mobileBottomPlaceholderMode = '';
+        mobileBottomFlowMargin = 0;
+        mobileBottomFlowMarginTop = 0;
         layout.style.removeProperty('--anchor-strip-mobile-return-shift');
+        layout.style.removeProperty('--anchor-strip-mobile-release-shift-y');
+        layout.style.removeProperty('--anchor-strip-mobile-docked-shift-y');
+        layout.style.removeProperty('--anchor-strip-mobile-flow-margin-bottom');
+        layout.style.removeProperty('--anchor-strip-mobile-flow-margin-top');
         layout.style.removeProperty('--anchor-strip-mobile-return-progress');
         layout.style.removeProperty('--anchor-strip-mobile-return-height');
         layout.style.removeProperty('--anchor-strip-mobile-return-margin-bottom');
+        layout.style.removeProperty('--anchor-strip-mobile-return-margin-top');
         layout.style.removeProperty('--anchor-strip-mobile-placeholder-height');
         layout.style.removeProperty('--anchor-strip-mobile-left');
         layout.style.removeProperty('--anchor-strip-mobile-width');
@@ -390,22 +482,33 @@ export default function AnchorStripRuntime() {
         placeholderHeight,
         placeholderMargin,
         returnProgress = nextReturning ? 0 : 1,
+        placeholderMarginTop = mobileBottomFlowMarginTop,
+        compressedTopGap = getMobileCompressedTopGap(),
       ) => {
         const hasDockedDataset = layout.dataset.anchorStripMobileBottomDocked === 'true';
         const hasReturningDataset = layout.dataset.anchorStripMobileBottomReturning === 'true';
         const targetKey = `${nextDocked ? 'docked' : 'flow'}:${nextReturning ? 'returning' : 'steady'}`;
-        const nextPlaceholderHeightValue = Math.max(1, Math.ceil(placeholderHeight));
+        const nextPlaceholderHeightValue = Math.max(1, placeholderHeight);
         const nextPlaceholderMarginValue = Math.max(0, placeholderMargin);
         const nextReturnProgressValue = clamp(returnProgress, 0, 1);
-        const nextPlaceholderHeight = `${nextPlaceholderHeightValue}px`;
+        const nextPlaceholderHeight = formatMobilePx(nextPlaceholderHeightValue, 1);
         const nextReturnProgress = nextReturnProgressValue.toFixed(3);
-        const nextReturnHeight = `${Math.round(nextPlaceholderHeightValue * nextReturnProgressValue)}px`;
-        const nextReturnMargin = `${Math.round(nextPlaceholderMarginValue * nextReturnProgressValue)}px`;
+        const nextReturnHeight = formatMobilePx(nextPlaceholderHeightValue * nextReturnProgressValue);
+        const nextReturnMargin = formatMobilePx(nextPlaceholderMarginValue * nextReturnProgressValue);
+        const nextPlaceholderMarginTopValue = Math.max(0, placeholderMarginTop);
+        const nextCompressedTopGapValue = clamp(compressedTopGap, 0, nextPlaceholderMarginTopValue);
+        const nextReturnMarginTop = formatMobilePx(
+          nextCompressedTopGapValue
+            + (nextPlaceholderMarginTopValue - nextCompressedTopGapValue) * nextReturnProgressValue,
+        );
 
         layout.style.setProperty('--anchor-strip-mobile-placeholder-height', nextPlaceholderHeight);
         layout.style.setProperty('--anchor-strip-mobile-return-progress', nextReturnProgress);
         layout.style.setProperty('--anchor-strip-mobile-return-height', nextReturnHeight);
         layout.style.setProperty('--anchor-strip-mobile-return-margin-bottom', nextReturnMargin);
+        layout.style.setProperty('--anchor-strip-mobile-return-margin-top', nextReturnMarginTop);
+        layout.style.setProperty('--anchor-strip-mobile-flow-margin-bottom', formatMobilePx(nextPlaceholderMarginValue));
+        layout.style.setProperty('--anchor-strip-mobile-flow-margin-top', formatMobilePx(nextPlaceholderMarginTopValue));
 
         const applyTargetState = () => {
           if (nextDocked) {
@@ -486,11 +589,14 @@ export default function AnchorStripRuntime() {
 
         const bottomGap = getMobileBottomGap();
         const layoutRect = layout.getBoundingClientRect();
-        const shellHeight = Math.ceil(shell.getBoundingClientRect().height);
+        const shellHeight = shell.getBoundingClientRect().height;
         const placeholderHeight = Math.max(1, shellHeight);
 
         if (!mobileBottomFlowMargin) {
           mobileBottomFlowMargin = getMobilePlaceholderFlowMargin(bottomGap);
+        }
+        if (!mobileBottomFlowMarginTop) {
+          mobileBottomFlowMarginTop = getMobilePlaceholderFlowMarginTop();
         }
 
         if (mobileBottomPlaceholderFrame) {
@@ -502,11 +608,15 @@ export default function AnchorStripRuntime() {
         isMobileBottomDocked = true;
         isMobileBottomReturning = false;
         mobileBottomReturnStartedAt = 0;
+        mobileBottomPlaceholderMode = '';
 
-        layout.style.setProperty('--anchor-strip-mobile-placeholder-height', `${placeholderHeight}px`);
+        layout.style.setProperty('--anchor-strip-mobile-placeholder-height', formatMobilePx(placeholderHeight, 1));
         layout.style.setProperty('--anchor-strip-mobile-return-progress', '0.000');
         layout.style.setProperty('--anchor-strip-mobile-return-height', '0px');
-        layout.style.setProperty('--anchor-strip-mobile-return-margin-bottom', '0px');
+        layout.style.setProperty('--anchor-strip-mobile-return-margin-bottom', '0.00px');
+        layout.style.setProperty('--anchor-strip-mobile-return-margin-top', formatMobilePx(getMobileCompressedTopGap()));
+        layout.style.setProperty('--anchor-strip-mobile-flow-margin-bottom', formatMobilePx(mobileBottomFlowMargin));
+        layout.style.setProperty('--anchor-strip-mobile-flow-margin-top', formatMobilePx(mobileBottomFlowMarginTop));
         layout.style.setProperty('--anchor-strip-mobile-left', `${Math.max(0, Math.round(layoutRect.left))}px`);
         layout.style.setProperty('--anchor-strip-mobile-width', `${Math.max(0, Math.round(layoutRect.width))}px`);
 
@@ -528,7 +638,7 @@ export default function AnchorStripRuntime() {
         }
 
         const viewportHeight = getViewportHeight();
-        const shellHeight = Math.ceil(shell.getBoundingClientRect().height);
+        const shellHeight = shell.getBoundingClientRect().height;
 
         if (!viewportHeight || !Number.isFinite(shellHeight) || shellHeight <= 0) {
           clearMobileBottomDockState();
@@ -538,53 +648,95 @@ export default function AnchorStripRuntime() {
         const now = window.performance?.now?.() ?? Date.now();
         const scrollY = Math.max(0, window.scrollY || 0);
         const bottomGap = getMobileBottomGap();
+        const dockLift = getMobileDockLift();
+        const visualBottomGap = bottomGap + dockLift;
         const layoutRect = layout.getBoundingClientRect();
-        const dockTop = viewportHeight - shellHeight - bottomGap;
+        const dockTop = viewportHeight - shellHeight - visualBottomGap;
         const returnStartGap = getMobileReturnStartGap();
+        const compressStartGap = getMobileCompressStartGap(returnStartGap);
         const returnStartTop = dockTop - returnStartGap;
+        const compressStartTop = dockTop - compressStartGap;
+        const flowTopDelta = layoutRect.top - dockTop;
         const rawReturnProgress = (layoutRect.top - returnStartTop) / returnStartGap;
+        const rawCompressProgress = (layoutRect.top - compressStartTop) / compressStartGap;
         const scrollDrivenReturnProgress = clamp(rawReturnProgress, 0, 1);
+        const scrollDrivenCompressProgress = clamp(rawCompressProgress, 0, 1);
         const isNearReturnPoint = layoutRect.top >= returnStartTop;
         const scrollDelta = scrollY - lastMobileBottomScrollY;
         const isScrollingUp = scrollDelta < -mobileDockScrollDelta;
         const isScrollingDown = scrollDelta > mobileDockScrollDelta;
-        const placeholderHeight = Math.max(1, Math.ceil(shellHeight));
+        const placeholderHeight = Math.max(1, shellHeight);
 
         if (!isMobileBottomDocked) {
           mobileBottomFlowMargin = getMobilePlaceholderFlowMargin(bottomGap);
-        } else if (!mobileBottomFlowMargin) {
-          mobileBottomFlowMargin = getRootFontSize() * 2 + bottomGap;
+          mobileBottomFlowMarginTop = getMobilePlaceholderFlowMarginTop();
+        } else {
+          if (!mobileBottomFlowMargin) {
+            mobileBottomFlowMargin = getRootFontSize() * 2 + bottomGap;
+          }
+          if (!mobileBottomFlowMarginTop) {
+            mobileBottomFlowMarginTop = getRootFontSize() * 1.5;
+          }
         }
 
         const placeholderMargin = mobileBottomFlowMargin;
+        const placeholderMarginTop = mobileBottomFlowMarginTop;
+        const compressedTopGap = getMobileCompressedTopGap();
+        layout.style.setProperty('--anchor-strip-mobile-flow-margin-bottom', formatMobilePx(placeholderMargin));
+        layout.style.setProperty('--anchor-strip-mobile-flow-margin-top', formatMobilePx(placeholderMarginTop));
         let nextDocked = isMobileBottomDocked;
         let nextReturning = isMobileBottomReturning;
         let nextReturnProgress = isMobileBottomReturning ? scrollDrivenReturnProgress : 0;
         let shouldStartSettling = false;
-        let settleShift = 0;
+        let shouldFreezePlaceholderOnRelease = false;
+        let releaseFlipBeforeRect = null;
 
         lastMobileBottomScrollY = scrollY;
-        layout.style.setProperty('--anchor-strip-mobile-placeholder-height', `${placeholderHeight}px`);
+        layout.style.setProperty('--anchor-strip-mobile-placeholder-height', formatMobilePx(placeholderHeight, 1));
         layout.style.setProperty('--anchor-strip-mobile-left', `${Math.max(0, Math.round(layoutRect.left))}px`);
         layout.style.setProperty('--anchor-strip-mobile-width', `${Math.max(0, Math.round(layoutRect.width))}px`);
 
-        // В mobile/touch режиме placeholder теперь раскрывается только рядом
-        // с точкой возврата и следует за прокруткой через progress 0..1.
-        // Это убирает раннее раскрытие большого пустого места и не заставляет
-        // fixed-меню ждать завершения таймера при быстром скролле вверх.
-        if (!isMobileBottomDocked) {
-          nextDocked = layoutRect.top <= dockTop - mobileDockReleaseTolerance;
+        // В mobile/touch режиме placeholder теперь и раскрывается, и сжимается
+        // рядом с точкой dock/release через scroll-driven progress 0..1.
+        // Так обе стороны перехода используют одну плавную механику, а не
+        // резкое переключение height/margin в момент flow ↔ fixed.
+        if (isMobileAnchorScrollDockFrozen()) {
+          // Во время программного перехода по якорю target-позиция уже посчитана
+          // после принудительного bottom-dock. Если сразу после старта smooth-scroll
+          // дать scroll-driven compression снова менять height/margin layout,
+          // якорь сначала попадает правильно, а затем страница резко «докатывается».
+          // Поэтому держим mobile-placeholder полностью схлопнутым до остановки
+          // anchor-scroll; обычная ручная прокрутка остаётся на плавной механике.
+          nextDocked = true;
           nextReturning = false;
-          nextReturnProgress = nextDocked ? 0 : 1;
+          nextReturnProgress = 0;
           mobileBottomReturnStartedAt = 0;
+          mobileBottomPlaceholderMode = 'anchor-scroll';
+          layout.style.setProperty('--anchor-strip-mobile-docked-shift-y', '0px');
+        } else if (!isMobileBottomDocked) {
+          const flowHasReachedDockPoint = Number.isFinite(flowTopDelta) && flowTopDelta <= 0;
+          nextDocked = flowHasReachedDockPoint;
+          // При первом касании bottom-dock оставляем placeholder полностью раскрытым.
+          // Дальше он сжимается тем же scroll-driven progress, как и раскрывается
+          // при возврате меню на своё место. Так исчезает резкая фаза flow → fixed.
+          nextReturning = nextDocked;
+          nextReturnProgress = 1;
+          mobileBottomReturnStartedAt = 0;
+          mobileBottomPlaceholderMode = nextDocked ? 'compress' : '';
+          layout.style.setProperty('--anchor-strip-mobile-docked-shift-y', '0px');
         } else {
           if (isScrollingDown) {
-            nextReturning = false;
-            nextReturnProgress = 0;
+            nextReturnProgress = scrollDrivenCompressProgress;
+            nextReturning = nextReturnProgress > 0.01;
+            mobileBottomPlaceholderMode = nextReturning ? 'compress' : '';
             mobileBottomReturnStartedAt = 0;
-          } else if ((isScrollingUp || isMobileBottomReturning) && isNearReturnPoint) {
+          } else if (
+            (isScrollingUp || (isMobileBottomReturning && mobileBottomPlaceholderMode === 'return'))
+            && isNearReturnPoint
+          ) {
             nextReturning = true;
             nextReturnProgress = scrollDrivenReturnProgress;
+            mobileBottomPlaceholderMode = 'return';
 
             if (!mobileBottomReturnStartedAt) {
               mobileBottomReturnStartedAt = now;
@@ -592,25 +744,44 @@ export default function AnchorStripRuntime() {
           } else if (!isMobileBottomReturning) {
             nextReturning = false;
             nextReturnProgress = 0;
+            mobileBottomPlaceholderMode = '';
             mobileBottomReturnStartedAt = 0;
           }
 
-          const returnAnimationReady = nextReturning
+          // Shell не двигаем отдельно от placeholder: визуальную плавность теперь
+          // даёт само место anchorStripLayout, которое сжимается/раскрывается
+          // через одинаковый scroll-driven progress.
+          layout.style.setProperty('--anchor-strip-mobile-docked-shift-y', '0px');
+
+          const isReturningToFlow = mobileBottomPlaceholderMode === 'return';
+          const returnAnimationReady = isReturningToFlow
+            && nextReturning
             && nextReturnProgress >= mobileReturnProgressReleaseThreshold;
-          const flowTopDelta = layoutRect.top - dockTop;
-          const flowIsCloseEnough = Math.abs(flowTopDelta) <= mobileDockReleaseTolerance;
-          const flowHasReachedDockPoint = layoutRect.top >= dockTop - mobileDockReleaseTolerance;
+          const flowHasReachedDockPoint = Number.isFinite(flowTopDelta) && flowTopDelta >= 0;
 
           if (returnAnimationReady && flowHasReachedDockPoint) {
+            // Release делаем только после реального касания flow-точки.
+            // Отрицательный pre-align запрещён: он поднимал fixed-shell на 1-4 px,
+            // а затем меню визуально возвращалось вниз и выглядело как дёрганье.
+            const releasePreAlignY = Math.max(0, flowTopDelta);
+            layout.style.setProperty(
+              '--anchor-strip-mobile-docked-shift-y',
+              `${releasePreAlignY.toFixed(2)}px`,
+            );
+            // Принудительно применяем fixed-transform перед снятием docked-state.
+            shell.getBoundingClientRect();
+
             nextDocked = false;
             nextReturning = false;
             nextReturnProgress = 1;
             mobileBottomReturnStartedAt = 0;
+            mobileBottomPlaceholderMode = '';
 
-            if (!flowIsCloseEnough) {
-              shouldStartSettling = true;
-              settleShift = dockTop - layoutRect.top;
-            }
+            // После pre-align FLIP обычно получает нулевую разницу. Оставляем
+            // его только как страховку от sub-pixel/viewport расхождений.
+            shouldStartSettling = true;
+            shouldFreezePlaceholderOnRelease = true;
+            releaseFlipBeforeRect = shell.getBoundingClientRect();
           } else {
             nextDocked = true;
           }
@@ -619,28 +790,82 @@ export default function AnchorStripRuntime() {
         isMobileBottomDocked = nextDocked;
         isMobileBottomReturning = nextReturning;
 
+        const previousReleaseLayoutTransition = layout.style.transition;
+        if (shouldFreezePlaceholderOnRelease) {
+          // В момент release фиксируем сам layout-контейнер в финальном размере.
+          // Иначе shell уже может быть выровнен, но anchorStripLayout продолжит
+          // менять height/margin-bottom и даст микросдвиг на 1-3 px.
+          layout.dataset.anchorStripMobileBottomReleaseLocked = 'true';
+          layout.style.transition = 'none';
+          layout.style.setProperty('--anchor-strip-mobile-return-progress', '1.000');
+          layout.style.setProperty('--anchor-strip-mobile-return-height', formatMobilePx(placeholderHeight, 1));
+          layout.style.setProperty('--anchor-strip-mobile-return-margin-bottom', formatMobilePx(placeholderMargin));
+          layout.style.setProperty('--anchor-strip-mobile-return-margin-top', formatMobilePx(placeholderMarginTop));
+          layout.style.setProperty('--anchor-strip-mobile-flow-margin-bottom', formatMobilePx(placeholderMargin));
+          layout.style.setProperty('--anchor-strip-mobile-flow-margin-top', formatMobilePx(placeholderMarginTop));
+          void layout.offsetHeight;
+        }
+
         applyMobileBottomDockDatasetState(
           nextDocked,
           nextReturning,
           placeholderHeight,
           placeholderMargin,
           nextReturnProgress,
+          placeholderMarginTop,
+          compressedTopGap,
         );
 
-        if (shouldStartSettling) {
-          clearTimer(mobileBottomSettleTimer);
-          layout.dataset.anchorStripMobileBottomSettling = 'true';
-          layout.style.setProperty('--anchor-strip-mobile-return-shift', `${settleShift}px`);
-
+        if (shouldFreezePlaceholderOnRelease) {
+          void layout.offsetHeight;
           requestFrame(() => {
-            layout.style.setProperty('--anchor-strip-mobile-return-shift', '0px');
+            layout.style.transition = previousReleaseLayoutTransition;
           });
+        }
 
-          mobileBottomSettleTimer = setTimer(() => {
-            mobileBottomSettleTimer = 0;
+        if (shouldStartSettling && releaseFlipBeforeRect) {
+          clearTimer(mobileBottomSettleTimer);
+
+          const releaseFlipAfterRect = shell.getBoundingClientRect();
+          const rawReleaseShiftY = releaseFlipBeforeRect.top - releaseFlipAfterRect.top;
+          // Микро-FLIP на 1-4 px сам воспринимается как короткий подъём/просадка.
+          // После contact-release и layout-lock лучше не анимировать такую разницу:
+          // shell уже находится в правильной точке, а cleanup нужен только для state.
+          const releaseShiftY = Math.abs(rawReleaseShiftY) > 4 ? rawReleaseShiftY : 0;
+
+          if (Math.abs(releaseShiftY) > 0.5) {
+            layout.dataset.anchorStripMobileBottomSettling = 'true';
+            layout.dataset.anchorStripMobileBottomSettlePhase = 'instant';
+            layout.style.setProperty('--anchor-strip-mobile-release-shift-y', `${releaseShiftY}px`);
+
+            // Принудительно применяем стартовый FLIP-сдвиг без transition,
+            // чтобы браузер не успел показать промежуточный скачок fixed → flow.
+            shell.getBoundingClientRect();
+
+            requestFrame(() => {
+              delete layout.dataset.anchorStripMobileBottomSettlePhase;
+              layout.style.setProperty('--anchor-strip-mobile-release-shift-y', '0px');
+            });
+
+            mobileBottomSettleTimer = setTimer(() => {
+              mobileBottomSettleTimer = 0;
+              delete layout.dataset.anchorStripMobileBottomSettling;
+              delete layout.dataset.anchorStripMobileBottomSettlePhase;
+              delete layout.dataset.anchorStripMobileBottomReleaseLocked;
+              layout.style.removeProperty('--anchor-strip-mobile-release-shift-y');
+              layout.style.removeProperty('--anchor-strip-mobile-docked-shift-y');
+            }, mobileReturnSettleMs + 100);
+          } else {
             delete layout.dataset.anchorStripMobileBottomSettling;
-            layout.style.removeProperty('--anchor-strip-mobile-return-shift');
-          }, mobileReturnSettleMs + 80);
+            delete layout.dataset.anchorStripMobileBottomSettlePhase;
+            layout.style.removeProperty('--anchor-strip-mobile-release-shift-y');
+
+            mobileBottomSettleTimer = setTimer(() => {
+              mobileBottomSettleTimer = 0;
+              delete layout.dataset.anchorStripMobileBottomReleaseLocked;
+              layout.style.removeProperty('--anchor-strip-mobile-docked-shift-y');
+            }, mobileReturnSettleMs + 100);
+          }
         }
       };
 
@@ -712,8 +937,53 @@ export default function AnchorStripRuntime() {
         return nextScrollY > enterScrollY;
       };
 
+      const getDesktopExpandedAnchorScrollLimit = () => (
+        Math.max(0, compactBaseScrollY + compactStickyOffset - 1)
+      );
+
+      const isAnchorHashRepresentedInStrip = (hash) => {
+        if (!hash) {
+          return false;
+        }
+
+        const normalizedHash = hash.startsWith('#') ? hash : `#${hash}`;
+        return Array.from(root.querySelectorAll('a[href]')).some((link) => {
+          const rawHref = link.getAttribute('href');
+
+          if (!rawHref || rawHref === '#') {
+            return false;
+          }
+
+          try {
+            const linkUrl = new URL(rawHref, window.location.href);
+            return linkUrl.origin === window.location.origin
+              && linkUrl.pathname === window.location.pathname
+              && linkUrl.hash === normalizedHash;
+          } catch {
+            return false;
+          }
+        });
+      };
+
+      const getPlannedDesktopExternalAnchorScrollY = (hash, target, targetScrollY) => {
+        if (isMobileBottomMode() || !target || isAnchorHashRepresentedInStrip(hash)) {
+          return targetScrollY;
+        }
+
+        // Внешние hero/page-кнопки могут вести к заголовкам, которые находятся
+        // прямо в зоне раскрытого sticky-strip. Если дать smooth-scroll пройти
+        // за compact-порог, меню сначала схлопнется, а затем визуально будет
+        // спорить с целевым положением секции. Поэтому для таких якорей заранее
+        // ограничиваем конечную scroll-позицию раскрытой стороной compact-границы.
+        return Math.min(targetScrollY, getDesktopExpandedAnchorScrollLimit());
+      };
+
       const updateCompactState = (options = {}) => {
         const now = window.performance?.now?.() ?? Date.now();
+
+        if (!options.force && pendingDesktopAnchorCompactFreeze) {
+          return;
+        }
 
         if (!options.force && now < compactLockUntil) {
           return;
@@ -1106,6 +1376,11 @@ export default function AnchorStripRuntime() {
       let pendingAnchorHighlightObserver = null;
       let pendingAnchorHighlightTimer = 0;
       let pendingAnchorHighlightFrame = 0;
+      let pendingAnchorHighlightLastScrollY = null;
+      let pendingAnchorHighlightStableFrames = 0;
+      let pendingAnchorHighlightStartedAt = 0;
+      const anchorHighlightStableFrameThreshold = 5;
+      const anchorHighlightScrollStopTimeoutMs = 3200;
       let anchorStripHeightLocked = false;
 
       const getLayoutFlowHeight = () => {
@@ -1177,12 +1452,24 @@ export default function AnchorStripRuntime() {
         window.innerHeight || document.documentElement?.clientHeight || 0
       );
 
+      const getAnchorHighlightVisibilityNode = (target) => (
+        target?.querySelector?.('[data-anchor-highlight-title]')
+          || target?.querySelector?.('[data-anchor-highlight-chip]')
+          || target
+      );
+
       const isAnchorTargetVisible = (target) => {
         if (!target || !document.contains(target)) {
           return false;
         }
 
-        const rect = target.getBoundingClientRect();
+        const visibilityNode = getAnchorHighlightVisibilityNode(target);
+
+        if (!visibilityNode || !document.contains(visibilityNode)) {
+          return false;
+        }
+
+        const rect = visibilityNode.getBoundingClientRect();
         const viewportHeight = getViewportHeight();
 
         if (!viewportHeight || rect.width <= 0 || rect.height <= 0) {
@@ -1221,6 +1508,9 @@ export default function AnchorStripRuntime() {
         }
 
         pendingAnchorHighlightTarget = null;
+        pendingAnchorHighlightLastScrollY = null;
+        pendingAnchorHighlightStableFrames = 0;
+        pendingAnchorHighlightStartedAt = 0;
       };
 
       const clearAnchorReleaseTimer = () => {
@@ -1246,9 +1536,18 @@ export default function AnchorStripRuntime() {
 
         target.addEventListener('animationend', clearHighlight);
         setTimer(clearHighlight, 1400);
+
+        if (mobileAnchorScrollDockFreezeTarget === target) {
+          setTimer(() => {
+            if (mobileAnchorScrollDockFreezeTarget === target) {
+              clearMobileAnchorScrollDockFreeze();
+              updateMobileBottomDockState();
+            }
+          }, 80);
+        }
       };
 
-      const tryTriggerAnchorHighlightWhenVisible = (target) => {
+      const tryTriggerAnchorHighlightAfterScrollStop = (target) => {
         if (pendingAnchorHighlightDone || pendingAnchorHighlightTarget !== target) {
           return true;
         }
@@ -1258,7 +1557,27 @@ export default function AnchorStripRuntime() {
           return true;
         }
 
-        if (!isAnchorTargetVisible(target)) {
+        const now = window.performance?.now?.() || Date.now();
+        const scrollY = Math.max(0, window.scrollY || 0);
+        const previousScrollY = pendingAnchorHighlightLastScrollY;
+        const scrollIsStable = previousScrollY !== null && Math.abs(scrollY - previousScrollY) <= 0.45;
+
+        pendingAnchorHighlightLastScrollY = scrollY;
+        pendingAnchorHighlightStableFrames = scrollIsStable
+          ? pendingAnchorHighlightStableFrames + 1
+          : 0;
+
+        const targetScrollY = getTargetScrollY(target);
+        const targetIsReached = Math.abs(scrollY - targetScrollY) <= 3 || isAnchorTargetVisible(target);
+        const heightLockReleased = pendingAnchorReleaseTimer === 0;
+        const scrollHasStopped = pendingAnchorHighlightStableFrames >= anchorHighlightStableFrameThreshold;
+        const isTimedOut = now - pendingAnchorHighlightStartedAt >= anchorHighlightScrollStopTimeoutMs;
+
+        if ((!heightLockReleased || !scrollHasStopped || !targetIsReached) && !isTimedOut) {
+          return false;
+        }
+
+        if (!isAnchorTargetVisible(target) && !targetIsReached) {
           return false;
         }
 
@@ -1268,58 +1587,160 @@ export default function AnchorStripRuntime() {
         return true;
       };
 
-      const scheduleAnchorHighlightWhenVisible = (target) => {
-        if (!target?.matches?.('[data-anchor-highlight-target]') || pendingAnchorHighlightDone) {
-          return;
-        }
-
-        if (pendingAnchorHighlightTarget === target) {
-          tryTriggerAnchorHighlightWhenVisible(target);
-          return;
-        }
-
-        clearAnchorHighlightWatch();
-        pendingAnchorHighlightTarget = target;
-
-        if (tryTriggerAnchorHighlightWhenVisible(target)) {
-          return;
-        }
-
-        if ('IntersectionObserver' in window) {
-          const topRootMargin = Math.max(0, Math.round(getTargetOffset(target) - 12));
-
-          pendingAnchorHighlightObserver = new IntersectionObserver((entries) => {
-            if (entries.some((entry) => entry.isIntersecting)) {
-              tryTriggerAnchorHighlightWhenVisible(target);
-            }
-          }, {
-            root: null,
-            rootMargin: `-${topRootMargin}px 0px -10% 0px`,
-            threshold: [0, 0.12, 0.24, 0.36],
-          });
-          pendingAnchorHighlightObserver.observe(target);
-        }
-
-        // Страховка для браузеров без IntersectionObserver или редких случаев,
-        // когда smooth-scroll завершился между событиями наблюдателя.
-        pendingAnchorHighlightTimer = setTimer(() => {
-          if (!tryTriggerAnchorHighlightWhenVisible(target)) {
-            clearAnchorHighlightWatch();
-          }
-        }, compactTransitionLockMs + 1500);
-      };
-
-      const scheduleAnchorHighlightVisibilityCheck = () => {
-        const target = pendingAnchorHighlightTarget;
-
+      const scheduleAnchorHighlightScrollStopCheck = (target) => {
         if (!target || pendingAnchorHighlightFrame) {
           return;
         }
 
         pendingAnchorHighlightFrame = requestFrame(() => {
           pendingAnchorHighlightFrame = 0;
-          tryTriggerAnchorHighlightWhenVisible(target);
+
+          if (!tryTriggerAnchorHighlightAfterScrollStop(target) && pendingAnchorHighlightTarget === target) {
+            scheduleAnchorHighlightScrollStopCheck(target);
+          }
         });
+      };
+
+      const scheduleAnchorHighlightWhenVisible = (target) => {
+        if (!target?.matches?.('[data-anchor-highlight-target]') || pendingAnchorHighlightDone) {
+          return;
+        }
+
+        clearAnchorHighlightWatch();
+        pendingAnchorHighlightTarget = target;
+        pendingAnchorHighlightLastScrollY = null;
+        pendingAnchorHighlightStableFrames = 0;
+        pendingAnchorHighlightStartedAt = window.performance?.now?.() || Date.now();
+
+        scheduleAnchorHighlightScrollStopCheck(target);
+
+        // Страховка: если браузер не даёт стабильной серии кадров smooth-scroll,
+        // ещё раз проверяем target после максимального времени ожидания.
+        pendingAnchorHighlightTimer = setTimer(() => {
+          if (pendingAnchorHighlightTarget === target && !pendingAnchorHighlightDone) {
+            pendingAnchorHighlightLastScrollY = Math.max(0, window.scrollY || 0);
+            pendingAnchorHighlightStableFrames = anchorHighlightStableFrameThreshold;
+            tryTriggerAnchorHighlightAfterScrollStop(target);
+          }
+        }, anchorHighlightScrollStopTimeoutMs + 120);
+      };
+
+      const clearDesktopAnchorCompactFreeze = () => {
+        pendingDesktopAnchorCompactFreeze = false;
+        pendingDesktopAnchorCompactFreezeTarget = null;
+        pendingDesktopAnchorCompactFreezeLastScrollY = null;
+        pendingDesktopAnchorCompactFreezeStableFrames = 0;
+        pendingDesktopAnchorCompactFreezeStartedAt = 0;
+
+        if (pendingDesktopAnchorCompactFreezeFrame) {
+          cancelFrame(pendingDesktopAnchorCompactFreezeFrame);
+          pendingDesktopAnchorCompactFreezeFrame = 0;
+        }
+
+        if (pendingDesktopAnchorCompactFreezeTimer) {
+          clearTimer(pendingDesktopAnchorCompactFreezeTimer);
+          pendingDesktopAnchorCompactFreezeTimer = 0;
+        }
+      };
+
+      const releaseDesktopAnchorCompactFreeze = (target) => {
+        if (target && pendingDesktopAnchorCompactFreezeTarget && pendingDesktopAnchorCompactFreezeTarget !== target) {
+          return;
+        }
+
+        clearDesktopAnchorCompactFreeze();
+        compactLockUntil = 0;
+        measureCompactBaseScrollY();
+        updateCompactState({force: true});
+        applyOffset();
+      };
+
+      const tryReleaseDesktopAnchorCompactFreezeAfterScrollStop = (target) => {
+        if (!pendingDesktopAnchorCompactFreeze || pendingDesktopAnchorCompactFreezeTarget !== target) {
+          return true;
+        }
+
+        if (!target || !document.contains(target)) {
+          releaseDesktopAnchorCompactFreeze(target);
+          return true;
+        }
+
+        const now = window.performance?.now?.() || Date.now();
+        const scrollY = Math.max(0, window.scrollY || 0);
+        const previousScrollY = pendingDesktopAnchorCompactFreezeLastScrollY;
+        const scrollIsStable = previousScrollY !== null && Math.abs(scrollY - previousScrollY) <= 0.45;
+
+        pendingDesktopAnchorCompactFreezeLastScrollY = scrollY;
+        pendingDesktopAnchorCompactFreezeStableFrames = scrollIsStable
+          ? pendingDesktopAnchorCompactFreezeStableFrames + 1
+          : 0;
+
+        const targetScrollY = getTargetScrollY(target);
+        const targetIsReached = Math.abs(scrollY - targetScrollY) <= 3 || isAnchorTargetVisible(target);
+        const scrollHasStopped = pendingDesktopAnchorCompactFreezeStableFrames >= anchorHighlightStableFrameThreshold;
+        const isTimedOut = now - pendingDesktopAnchorCompactFreezeStartedAt >= anchorHighlightScrollStopTimeoutMs;
+
+        if ((scrollHasStopped && targetIsReached) || isTimedOut) {
+          releaseDesktopAnchorCompactFreeze(target);
+          return true;
+        }
+
+        return false;
+      };
+
+      const scheduleDesktopAnchorCompactFreezeCheck = (target) => {
+        if (!target || pendingDesktopAnchorCompactFreezeFrame) {
+          return;
+        }
+
+        pendingDesktopAnchorCompactFreezeFrame = requestFrame(() => {
+          pendingDesktopAnchorCompactFreezeFrame = 0;
+
+          if (!tryReleaseDesktopAnchorCompactFreezeAfterScrollStop(target) && pendingDesktopAnchorCompactFreezeTarget === target) {
+            scheduleDesktopAnchorCompactFreezeCheck(target);
+          }
+        });
+      };
+
+      const startDesktopAnchorCompactFreezeForExternalLink = (target) => {
+        if (isMobileBottomMode() || !target) {
+          return;
+        }
+
+        clearDesktopAnchorCompactFreeze();
+        pendingDesktopAnchorCompactFreeze = true;
+        pendingDesktopAnchorCompactFreezeTarget = target;
+        pendingDesktopAnchorCompactFreezeLastScrollY = null;
+        pendingDesktopAnchorCompactFreezeStableFrames = 0;
+        pendingDesktopAnchorCompactFreezeStartedAt = window.performance?.now?.() || Date.now();
+
+        // Внешние hero/page-кнопки могут вести в зону около sticky-порога.
+        // На время auto-scroll держим текущее desktop compact-состояние, чтобы
+        // strip не схлопывался сразу при клике и не раскрывался обратно у цели.
+        compactLockUntil = Math.max(
+          compactLockUntil,
+          pendingDesktopAnchorCompactFreezeStartedAt + anchorHighlightScrollStopTimeoutMs + 240,
+        );
+
+        scheduleDesktopAnchorCompactFreezeCheck(target);
+        pendingDesktopAnchorCompactFreezeTimer = setTimer(() => {
+          if (pendingDesktopAnchorCompactFreezeTarget === target) {
+            releaseDesktopAnchorCompactFreeze(target);
+          }
+        }, anchorHighlightScrollStopTimeoutMs + 320);
+      };
+
+      const scheduleAnchorHighlightVisibilityCheck = () => {
+        const target = pendingAnchorHighlightTarget;
+
+        if (!target) {
+          return;
+        }
+
+        // Секции подсвечиваем только после остановки auto-scroll. Scroll-событие
+        // здесь не запускает highlight напрямую, а лишь гарантирует активную
+        // проверку остановки, если кадр был потерян браузером.
+        scheduleAnchorHighlightScrollStopCheck(target);
       };
 
       const stopAnchorScrollState = (options = {}) => {
@@ -1330,8 +1751,11 @@ export default function AnchorStripRuntime() {
         pendingAnchorHighlightDone = false;
         clearAnchorReleaseTimer();
         clearAnchorHighlightWatch();
+        clearDesktopAnchorCompactFreeze();
+        clearMobileAnchorScrollDockFreeze();
         releaseMobileAnchorScrollNavbarLock();
         unlockAnchorStripHeightForAnchorScroll();
+        clearDesktopAnchorCompactFreeze();
 
         if (hadPendingAnchorScroll && options.stopNativeScroll) {
           // Прерываем нативный smooth-scroll, если пользователь начал ручную прокрутку.
@@ -1391,7 +1815,9 @@ export default function AnchorStripRuntime() {
       };
 
       const performAnchorScroll = (target, hash, options = {}) => {
-        const targetTop = getTargetScrollY(target);
+        const targetTop = Number.isFinite(options.targetScrollY)
+          ? Math.max(0, options.targetScrollY)
+          : getTargetScrollY(target);
         pendingAnchorScrollActive = true;
         startMobileAnchorScrollNavbarLock(targetTop);
 
@@ -1436,10 +1862,31 @@ export default function AnchorStripRuntime() {
         measureCompactBaseScrollY();
         updateMobileBottomDockState();
 
-        const preliminaryTargetTop = getTargetScrollY(target);
+        let preliminaryTargetTop = getTargetScrollY(target);
+        const shouldUseDesktopExternalAnchorPlanning = options.externalAnchorLink === true && !isMobileBottomMode();
+        const shouldUseDesktopExternalStripAnchorPrecompact = shouldUseDesktopExternalAnchorPlanning
+          && isAnchorHashRepresentedInStrip(hash);
+
+        if (shouldUseDesktopExternalStripAnchorPrecompact) {
+          // Внешние кнопки, ведущие к пунктам самого anchor-strip, должны
+          // считаться сразу в финальной desktop compact-геометрии. Иначе
+          // браузер сначала попадает в позицию раскрытого меню, а затем после
+          // сжатия strip получает вторую короткую «докатку» к тому же якорю.
+          setCompactState(true, {instant: true});
+          measureCompactBaseScrollY();
+          updateMobileBottomDockState();
+          applyOffset();
+          preliminaryTargetTop = getTargetScrollY(target);
+        }
+
+        const plannedTargetTop = shouldUseDesktopExternalAnchorPlanning
+          ? getPlannedDesktopExternalAnchorScrollY(hash, target, preliminaryTargetTop)
+          : preliminaryTargetTop;
         const shouldCompactForTarget = isMobileBottomMode()
           ? targetId !== 'overview'
-          : getExpectedCompactStateForScrollY(preliminaryTargetTop, {anchor: true});
+          : shouldUseDesktopExternalStripAnchorPrecompact
+            ? true
+            : getExpectedCompactStateForScrollY(plannedTargetTop, {anchor: true});
         const shouldForceMobileDockForTarget = isMobileBottomMode() && shouldCompactForTarget;
         const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
         const shouldAnimateCompact = options.smoothCompact === true
@@ -1450,8 +1897,12 @@ export default function AnchorStripRuntime() {
           setCompactState(shouldCompactForTarget, {instant: true});
           if (shouldForceMobileDockForTarget) {
             forceMobileBottomDockForAnchorScroll({instantPlaceholder: true});
+            startMobileAnchorScrollDockFreeze(target);
           }
-          performAnchorScroll(target, hash, options);
+          performAnchorScroll(target, hash, {
+            ...options,
+            ...(shouldUseDesktopExternalAnchorPlanning ? {targetScrollY: plannedTargetTop} : {}),
+          });
           return true;
         }
 
@@ -1473,9 +1924,11 @@ export default function AnchorStripRuntime() {
         setCompactState(shouldCompactForTarget);
         if (shouldForceMobileDockForTarget) {
           forceMobileBottomDockForAnchorScroll({instantPlaceholder: true});
+          startMobileAnchorScrollDockFreeze(target);
         }
         performAnchorScroll(target, hash, {
           ...options,
+          ...(shouldUseDesktopExternalAnchorPlanning ? {targetScrollY: plannedTargetTop} : {}),
           releaseHeightLock: shouldLockFlowHeight,
         });
 
@@ -1509,7 +1962,7 @@ export default function AnchorStripRuntime() {
         window.location.assign(linkUrl.href);
       };
 
-      const handleAnchorLinkActivation = (event, link) => {
+      const handleAnchorLinkActivation = (event, link, options = {}) => {
         const rawHref = link.getAttribute('href');
 
         if (!rawHref || rawHref === '#') {
@@ -1535,7 +1988,7 @@ export default function AnchorStripRuntime() {
         }
 
         event.preventDefault();
-        scrollToAnchor(linkUrl.hash, {smoothCompact: true});
+        scrollToAnchor(linkUrl.hash, {smoothCompact: true, ...options});
         return true;
       };
 
@@ -1563,7 +2016,7 @@ export default function AnchorStripRuntime() {
         // Внешние кнопки-якоря живут вне scrollable strip, поэтому для них
         // запускаем тот же mobile anchor-scroll в capture-фазе. Ссылки внутри
         // strip остаются на отдельной схеме click/drag, чтобы не ломать swipe.
-        if (handleAnchorLinkActivation(event, link)) {
+        if (handleAnchorLinkActivation(event, link, {externalAnchorLink: true})) {
           event.stopImmediatePropagation?.();
           event.stopPropagation();
         }
@@ -1581,7 +2034,7 @@ export default function AnchorStripRuntime() {
           return;
         }
 
-        handleAnchorLinkActivation(event, link);
+        handleAnchorLinkActivation(event, link, root.contains(link) ? {} : {externalAnchorLink: true});
       };
 
       const handleDirectExternalAnchorLinkClickCapture = (event) => {
@@ -1597,7 +2050,7 @@ export default function AnchorStripRuntime() {
           return;
         }
 
-        if (handleAnchorLinkActivation(event, link)) {
+        if (handleAnchorLinkActivation(event, link, {externalAnchorLink: true})) {
           event.stopImmediatePropagation?.();
           event.stopPropagation();
         }
