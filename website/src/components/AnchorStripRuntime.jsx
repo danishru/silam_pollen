@@ -29,9 +29,6 @@ export default function AnchorStripRuntime() {
       const compactStickyOffset = 8;
       const mobileCompactExitGap = 32;
       const mobileDockScrollDelta = 3;
-      const mobileViewportScrollNoiseDelta = 0.5;
-      const mobileDockViewportSettleMs = 260;
-      const mobileDockViewportChromeResizeMax = 140;
       const mobileReturnProgressReleaseThreshold = 0.995;
       const mobileReturnSettleMs = 160;
       const compactTransitionLockMs = 840;
@@ -51,11 +48,6 @@ export default function AnchorStripRuntime() {
       let mobileBottomFlowMargin = 0;
       let mobileBottomFlowMarginTop = 0;
       let mobileBottomSettleTimer = 0;
-      let mobileDockViewportHeight = 0;
-      let mobileDockViewportRawHeight = 0;
-      let mobileDockViewportLastChangedAt = 0;
-      let mobileDockViewportLastScrollAt = 0;
-      let mobileDockViewportSettleTimer = 0;
       let mobileBottomPlaceholderFrame = 0;
       let mobileBottomPlaceholderFrameKey = '';
       let isMobileNavbarHidden = document.documentElement.dataset.anchorMobileNavbarHidden === 'true';
@@ -449,76 +441,7 @@ export default function AnchorStripRuntime() {
         scheduleMobileAnchorScrollNavbarWatch();
       };
 
-      const clearMobileDockViewportState = () => {
-        mobileDockViewportHeight = 0;
-        mobileDockViewportRawHeight = 0;
-        mobileDockViewportLastChangedAt = 0;
-        mobileDockViewportLastScrollAt = 0;
-        clearTimer(mobileDockViewportSettleTimer);
-        mobileDockViewportSettleTimer = 0;
-      };
-
-      const scheduleMobileDockViewportSettleCheck = () => {
-        if (!isMobileBottomMode()) {
-          return;
-        }
-
-        clearTimer(mobileDockViewportSettleTimer);
-        mobileDockViewportSettleTimer = setTimer(() => {
-          mobileDockViewportSettleTimer = 0;
-          updateMobileBottomDockState();
-        }, mobileDockViewportSettleMs + 40);
-      };
-
-      const getStableMobileDockViewportHeight = (rawHeight, now) => {
-        if (!Number.isFinite(rawHeight) || rawHeight <= 0) {
-          return rawHeight;
-        }
-
-        if (!isMobileBottomMode()) {
-          mobileDockViewportHeight = rawHeight;
-          mobileDockViewportRawHeight = rawHeight;
-          mobileDockViewportLastChangedAt = now;
-          clearTimer(mobileDockViewportSettleTimer);
-          mobileDockViewportSettleTimer = 0;
-          return rawHeight;
-        }
-
-        if (!mobileDockViewportHeight) {
-          mobileDockViewportHeight = rawHeight;
-          mobileDockViewportRawHeight = rawHeight;
-          mobileDockViewportLastChangedAt = now;
-          return rawHeight;
-        }
-
-        if (Math.abs(rawHeight - mobileDockViewportRawHeight) > 0.5) {
-          mobileDockViewportRawHeight = rawHeight;
-          mobileDockViewportLastChangedAt = now;
-          scheduleMobileDockViewportSettleCheck();
-        }
-
-        const viewportDelta = Math.abs(rawHeight - mobileDockViewportHeight);
-        if (viewportDelta <= 0.5) {
-          return mobileDockViewportHeight;
-        }
-
-        const isLikelyBrowserChromeResize = viewportDelta <= mobileDockViewportChromeResizeMax;
-        const scrollSettled = now - mobileDockViewportLastScrollAt >= mobileDockViewportSettleMs;
-        const viewportSettled = now - mobileDockViewportLastChangedAt >= mobileDockViewportSettleMs;
-
-        if (!isLikelyBrowserChromeResize || (scrollSettled && viewportSettled)) {
-          mobileDockViewportHeight = rawHeight;
-          clearTimer(mobileDockViewportSettleTimer);
-          mobileDockViewportSettleTimer = 0;
-          return mobileDockViewportHeight;
-        }
-
-        scheduleMobileDockViewportSettleCheck();
-        return mobileDockViewportHeight;
-      };
-
       const clearMobileBottomDockState = () => {
-        clearMobileDockViewportState();
         clearMobileAnchorScrollDockFreeze();
         isMobileBottomDocked = false;
         isMobileBottomReturning = false;
@@ -714,28 +637,16 @@ export default function AnchorStripRuntime() {
           return;
         }
 
-        const now = window.performance?.now?.() ?? Date.now();
-        const scrollY = Math.max(0, window.scrollY || 0);
-        const scrollDelta = scrollY - lastMobileBottomScrollY;
-
-        if (Math.abs(scrollDelta) > mobileViewportScrollNoiseDelta) {
-          mobileDockViewportLastScrollAt = now;
-        }
-
-        // На iPhone Safari нижняя панель браузера может скрываться/появляться
-        // прямо во время медленной прокрутки. Из-за этого window.innerHeight
-        // меняется без реального движения секции, а точка dock/release начинает
-        // ездить под пальцем. Для расчёта порога держим стабильную высоту
-        // viewport до короткой паузы в scroll/resize, но крупные resize
-        // вроде поворота экрана применяем сразу.
-        const rawViewportHeight = getViewportHeight();
-        const viewportHeight = getStableMobileDockViewportHeight(rawViewportHeight, now);
+        const viewportHeight = getViewportHeight();
         const shellHeight = shell.getBoundingClientRect().height;
 
         if (!viewportHeight || !Number.isFinite(shellHeight) || shellHeight <= 0) {
           clearMobileBottomDockState();
           return;
         }
+
+        const now = window.performance?.now?.() ?? Date.now();
+        const scrollY = Math.max(0, window.scrollY || 0);
         const bottomGap = getMobileBottomGap();
         const dockLift = getMobileDockLift();
         const visualBottomGap = bottomGap + dockLift;
@@ -751,6 +662,7 @@ export default function AnchorStripRuntime() {
         const scrollDrivenReturnProgress = clamp(rawReturnProgress, 0, 1);
         const scrollDrivenCompressProgress = clamp(rawCompressProgress, 0, 1);
         const isNearReturnPoint = layoutRect.top >= returnStartTop;
+        const scrollDelta = scrollY - lastMobileBottomScrollY;
         const isScrollingUp = scrollDelta < -mobileDockScrollDelta;
         const isScrollingDown = scrollDelta > mobileDockScrollDelta;
         const placeholderHeight = Math.max(1, shellHeight);
@@ -2221,7 +2133,6 @@ export default function AnchorStripRuntime() {
         externalAnchorLinkObserver.observe(document.body, {childList: true, subtree: true});
       }
       window.addEventListener('resize', scheduleResizeWork);
-      window.visualViewport?.addEventListener?.('resize', scheduleResizeWork, {passive: true});
       window.addEventListener('scroll', scheduleCompactState, {passive: true});
       window.addEventListener('scroll', scheduleAnchorHighlightVisibilityCheck, {passive: true});
       window.addEventListener('wheel', cancelAnchorScrollOnUserInput, {passive: true});
@@ -2298,7 +2209,6 @@ export default function AnchorStripRuntime() {
         document.removeEventListener('click', handleExternalAnchorLinkClickCapture, true);
         document.removeEventListener('click', handleDocumentClick);
         window.removeEventListener('resize', scheduleResizeWork);
-        window.visualViewport?.removeEventListener?.('resize', scheduleResizeWork);
         window.removeEventListener('scroll', scheduleCompactState);
         window.removeEventListener('scroll', scheduleAnchorHighlightVisibilityCheck);
         window.removeEventListener('wheel', cancelAnchorScrollOnUserInput);
