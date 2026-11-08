@@ -308,8 +308,8 @@
           "var": "Typ peľu",
           "update_interval": "Interval aktualizácií (minúty, min. 30)",
           "forecast": "Povoliť peľovú predpoveď?",
-          "forecast_duration": "Požadovaná dĺžka predpovede (36 – 120 h; predvolené 36)",
-          "legacy": "Povoliť zastaraný indexový senzor (zastarané)"
+          "legacy": "Povoliť zastaraný indexový senzor (zastarané)",
+          "forecast_duration": "Požadované trvanie predpovede (36 – 120 h; predvolené 36)"
         },
         "data_description": {
           "forecast": "Funkcia predpovede môže výrazne zvýšiť čas odozvy API.",
@@ -383,10 +383,6 @@
       "name": "Ručná aktualizácia",
       "description": "Ručne spustiť obnovenie dát pre vybrané služby SILAM Pollen.",
       "fields": {
-        "targets": {
-          "name": "Ciele",
-          "description": "Vyberte jedno alebo viac zariadení či entít na aktualizáciu."
-        },
         "device_id": {
           "name": "Služba SILAM Pollen",
           "description": "Vyberte jednu alebo viac služieb SILAM Pollen na aktualizáciu."
