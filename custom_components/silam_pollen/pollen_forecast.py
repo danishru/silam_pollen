@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from homeassistant.components.weather import WeatherEntity
+from homeassistant.core import callback
 from homeassistant.helpers.entity import EntityDescription, DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -112,6 +113,10 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
         self._extra_attributes: dict = {}
         self._current_condition: str | None = None
 
+        # Начальные значения из уже загруженных данных координатора
+        if self.coordinator.merged_data:
+            self._update_from_merged_data()
+
     # ---------------------------------------------------------------------
     #  Метаданные Home Assistant
     # ---------------------------------------------------------------------
@@ -139,23 +144,27 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
     #  Обработка обновлений координатора
     # ---------------------------------------------------------------------
 
-    def _update_listener(self) -> None:  # noqa: D401 (simple name)
-        """Запускает асинхронное обновление при каждом refresh координатора."""
-        self.hass.async_create_task(self._handle_coordinator_update())
-        return None  # явно — Coordinator ожидает None
+    # CoordinatorEntity.async_added_to_hass() уже подписывает
+    # _handle_coordinator_update на координатор и вызывает его синхронно,
+    # поэтому метод должен быть @callback, а не корутиной.
 
-    async def async_added_to_hass(self) -> None:
-        """Настраивает подписку на координатор и делает первое обновление."""
-        await super().async_added_to_hass()
-        if hasattr(self, "_unsub_coordinator_listener") and self._unsub_coordinator_listener:
-            self._unsub_coordinator_listener()
-            self._unsub_coordinator_listener = None
-        self.async_on_remove(
-            self.coordinator.async_add_listener(self._update_listener)
-        )
-        await self._handle_coordinator_update()
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Обновляет состояние и прогнозы после refresh координатора."""
+        if not self.coordinator.merged_data:
+            _LOGGER.warning("merged_data пуст — прогноз не обновлён")
+            return
 
-    async def _handle_coordinator_update(self) -> None:
+        self._update_from_merged_data()
+        super()._handle_coordinator_update()  # async_write_ha_state()
+
+        # Уведомляем подписчиков прогноза (карточки погоды в UI)
+        if entry := getattr(self.coordinator, "config_entry", None):
+            entry.async_create_task(self.hass, self.async_update_listeners(None))
+        else:
+            self.hass.async_create_task(self.async_update_listeners(None))
+
+    def _update_from_merged_data(self) -> None:
         """
         Извлекает прогнозы и атрибуты из `merged_data` координатора.
 
@@ -171,9 +180,6 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
         }
         """
         merged = self.coordinator.merged_data
-        if not merged:
-            _LOGGER.warning("merged_data пуст — прогноз не обновлён")
-            return
 
         # ---------- начисто собираем данные --------------------------------
         self._extra_attributes = {}
@@ -245,8 +251,6 @@ class PollenForecastSensor(CoordinatorEntity, WeatherEntity):
         else:
             # если блока now нет, состояние «unknown»
             self._current_condition = None
-
-        self.async_write_ha_state()
 
     # ---------------------------------------------------------------------
     #  API WeatherEntity — карточки HA используют эти методы
